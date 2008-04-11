@@ -1,0 +1,16 @@
+This is an example of how we might eventually use gasnet from python/cython.
+
+The only problem is that gasnet had to be compiled with a small patch to make
+this possible.  Here is what I had to do:
+
+Whereever the following appears in the gasnet source code::
+
+	extern char **environ;
+
+change it to (this is just on OS X)::
+	
+	#include <crt_externs.h>
+
+And in a the local scope (not global) where environ is used, do::
+
+	char **environ = *_NSGetEnviron();

@@ -1,0 +1,9 @@
+=============================
+Installing `ipythondistarray`
+=============================
+
+You should be able to install this package with::
+
+	python setup.py install
+	
+More details will be provided as things mature.
