@@ -1,12 +1,18 @@
-cdef public class Map [ object MapObj, type MapType ]:
-    
-    cdef int nglobal
-    cdef int nprocs
-    cdef int nlocal
-    
-cdef public class BlockMap(Map) [ object BlockMapObj, type BlockMapType ]:
-        
-    cdef int c_owner(BlockMap self, int global_index)      
-    cdef int local_index(BlockMap self, int global_index)  
-    cdef int global_index(BlockMap self, int owner, int local_index)
+cdef class Map:
+    cdef public int shape
+    cdef public int grid_shape
+    cdef public int local_shape
+    cdef int owner_c(self, int i)
+    cdef int local_index_c(self, int i)
+    cdef int global_index_c(self, int owner, int p)
+
+cdef class BlockMap(Map):
+    pass
+
+cdef class CyclicMap(Map):
+    pass
+
+cdef class BlockCyclicMap(Map):
+    pass
+
 

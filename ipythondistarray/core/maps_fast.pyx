@@ -1,56 +1,58 @@
 include "../include/python.pxi"
 
-# cdef public class Map [ object MapObj, type MapType ]:
 cdef class Map:
 
-    def __init__(self, nglobal, nprocs):
-        self.nglobal = nglobal
-        self.nprocs = nprocs
-        self.nlocal = self.nglobal/self.nprocs
-        if self.nglobal%self.nprocs > 0:
-            self.nlocal += 1
-        print self.nglobal
+    def __init__(self, shape, grid_shape):
+        self.shape = shape
+        self.grid_shape = grid_shape
+        self.local_shape = self.shape/self.grid_shape
+        if self.shape%self.grid_shape > 0:
+            self.local_shape += 1
+    
+    cdef int owner_c(self, int i):
+        raise NotImplementedError("this method needs to be implemented in a subclass")
+    
+    cdef int local_index_c(self, int i):
+        raise NotImplementedError("this method needs to be implemented in a subclass")
+    
+    cdef int global_index_c(self, int owner, int p):
+        raise NotImplementedError("this method needs to be implemented in a subclass")
+    
+    def owner(self, i):
+        return self.owner_c(i)
+    
+    def local_index(self, i):
+        return self.local_index_c(i)
+    
+    def global_index(self, owner, p):
+        return self.global_index_c(owner, p)
 
 
 cdef class BlockMap(Map):
-        
-    cdef int c_owner(BlockMap self, int global_index):
-        cdef int o
-        o = global_index/self.nlocal
-        return o
     
-    def owner(self, global_index):
-        return self.c_owner(global_index)
-        
-    cdef int local_index(BlockMap self, int global_index):
-        cdef int i
-        i = global_index%self.nprocs
-        return i
-        
-    cdef int global_index(BlockMap self, int owner, int local_index):
-        cdef int i
-        i = owner*self.nlocal + local_index
-        return i
+    cdef int owner_c(self, int i):
+        return i/self.local_shape
+    
+    cdef int local_index_c(self, int i):
+        return i%self.local_shape
+    
+    cdef int global_index_c(self, int owner, int p):
+        return owner*self.local_shape + p
 
-def test1():
-    cdef BlockMap m
-    m = BlockMap(16,4)
-    for i from 0 <= i < 1000:
-        m.owner(3)
 
-def test2():
-    cdef BlockMap m
-    m = BlockMap(16,4)
-    for i from 0 <= i < 1000:
-        m.owner(3)
+cdef class CyclicMap(Map):
+    
+    cdef int owner_c(self, int i):
+        return i%self.grid_shape
+    
+    cdef int local_index_c(self, int i):
+        return i/self.grid_shape
 
-def test3():
-    cdef BlockMap m
-    m = BlockMap(16,4)
-    for i from 0 <= i < 1000:
-        m.c_owner(3)
+    cdef int global_index_c(self, int owner, int p):
+        return owner + p*self.grid_shape
 
-cdef public foo(int i):
-    return i
+cdef class BlockCyclicMap(Map):
+    pass
+
 
 
