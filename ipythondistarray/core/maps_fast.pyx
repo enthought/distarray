@@ -1,4 +1,8 @@
-include "../include/python.pxi"
+# include "../include/python.pxi"
+
+import inspect
+
+from ipythondistarray.core.error import InvalidMapCode
 
 cdef class Map:
 
@@ -54,5 +58,39 @@ cdef class CyclicMap(Map):
 cdef class BlockCyclicMap(Map):
     pass
 
+class MapRegistry(object):
+    
+    def __init__(self):
+        self.maps = {}
+        
+    def register_map(self, code, m):
+        if inspect.isclass(m):
+            if issubclass(m, Map):
+                self.maps[code] = m
+            else:
+                raise TypeError("Must register a Map subclass.")
+        else:
+            raise TypeError("Must register a class")
 
+    def get_map_class(self, code):
+        m = self.maps.get(code)
+        if m is None:
+            if inspect.isclass(code): 
+                if issubclass(code, Map):
+                    return code
+                else:
+                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+            else:
+                raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+        else:
+            return m
+            
+            
+_map_registry = MapRegistry()
+register_map = _map_registry.register_map
+get_map_class = _map_registry.get_map_class
+
+register_map('b', BlockMap)
+register_map('c', CyclicMap)
+register_map('bc', BlockCyclicMap)
 
