@@ -22,13 +22,7 @@ def ext_modules():
     
     maps = dict(name='ipythondistarray.core.maps_fast',
                 sources=['ipythondistarray/core/maps_fast.c'])
-    procgrid = dict(name='ipythondistarray.core.procgrid_fast',
-                    sources=['ipythondistarray/core/procgrid_fast.c'])
-    mpibase = dict(name='ipythondistarray.mpi.mpibase_fast',
-                    sources=['ipythondistarray/mpi/mpibase_fast.c'])
-    test_mpi = dict(name='ipythondistarray.mpi.tests.test_mpi',
-                    sources=['ipythondistarray/mpi/tests/test_mpi.c'])
-    allext = [maps, procgrid, test_mpi]
+    allext = [maps]
     return allext
 
 def headers():
