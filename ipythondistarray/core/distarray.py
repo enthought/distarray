@@ -9,7 +9,7 @@ import numpy as np
 
 from ipythondistarray.mpi import mpibase
 from ipythondistarray.mpi.mpibase import MPI
-from ipythondistarray.core import maps
+from ipythondistarray.core import maps_fast as maps
 from ipythondistarray.core.error import *
 from ipythondistarray.core.base import BaseDistArray, arecompatible
 from ipythondistarray.core.construct import (

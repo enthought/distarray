@@ -11,13 +11,7 @@ from ipythondistarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from ipythondistarray.core import maps, distarray
-from ipythondistarray.core.nulldistarray import (
-    allnull, 
-    anynull, 
-    nonenull,
-    NullDistArray,
-    null_like)
+from ipythondistarray.core import maps_fast as maps, distarray
 
 
 class TestUnaryUFunc(unittest.TestCase):

@@ -9,7 +9,7 @@ from ipythondistarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from ipythondistarray.core import maps, distarray
+from ipythondistarray.core import maps_fast as maps, distarray
 from ipythondistarray import utils
 
 class TestInit(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestInit(unittest.TestCase):
                 self.assertEquals(da.ndistdim, 1)
                 self.assertEquals(da.distdims, (0,))
                 self.assertEquals(da.map_classes, (maps.BlockMap,))
-                self.assertEquals(da.comm.Get_topo(), (da.grid_shape,(0,),(da.comm_rank,)))
+                self.assertEquals(da.comm.Get_topo(), (list(da.grid_shape),[0],[da.comm_rank]))
                 self.assertEquals(len(da.maps), 1)
                 self.assertEquals(da.maps[0].local_shape, 4)
                 self.assertEquals(da.maps[0].shape, 16)

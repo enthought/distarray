@@ -9,8 +9,7 @@ from ipythondistarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from ipythondistarray.core import maps, distarray
-from ipythondistarray.core import nulldistarray
+from ipythondistarray.core import maps_fast as maps, distarray
 
 
 class TestFunctions(unittest.TestCase):
