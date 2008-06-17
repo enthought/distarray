@@ -1,3 +1,18 @@
+# encoding: utf-8
+
+__docformat__ = "restructuredtext en"
+
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008  The IPython Development Team
+#
+#  Distributed under the terms of the BSD License.  The full license is in
+#  the file COPYING, distributed as part of this software.
+#----------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+# Imports
+#----------------------------------------------------------------------------
+
 from ipythondistarray.core import distarray
 from ipythondistarray.core.construct import find_local_shape, init_base_comm
 from ipythondistarray.core.error import *
@@ -8,6 +23,10 @@ import numpy as np
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
 
+
+#----------------------------------------------------------------------------
+# Exports
+#----------------------------------------------------------------------------
 
 __all__ = [
     'beta',
