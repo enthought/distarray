@@ -13,8 +13,8 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from ipythondistarray.random import nprand
-from ipythondistarray.random.nprand import *
+from distarray.random import nprand
+from distarray.random.nprand import *
 
 __all__ = []
 __all__ += nprand.__all__

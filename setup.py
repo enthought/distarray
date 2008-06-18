@@ -24,7 +24,7 @@ import mpi4py
 #----------------------------------------------------------------------------
 
 metadata = {
-    'name'             : 'ipythondistarray',
+    'name'             : 'distarray',
     'version'          : '0.1',
     'description'      : 'Distributed Memory Arrays for Python',
     'keywords'         : 'parallel mpi distributed array',
@@ -41,13 +41,13 @@ def find_ext_modules():
     import sys
     
     maps = Extension(
-        name='ipythondistarray.core.maps_fast',
-        sources=['ipythondistarray/core/maps_fast.c']
+        name='distarray.core.maps_fast',
+        sources=['distarray/core/maps_fast.c']
     )
     # This extension shows how to call mpi4py's C layer using Cython
     mpi_test = Extension(
-        name='ipythondistarray.mpi.tests.helloworld',
-        sources=['ipythondistarray/mpi/tests/helloworld.c'],
+        name='distarray.mpi.tests.helloworld',
+        sources=['distarray/mpi/tests/helloworld.c'],
         include_dirs = [mpi4py.get_include()]
     )
     allext = [maps, mpi_test]
@@ -61,18 +61,18 @@ def find_executables():
     return []
 
 def find_packages():
-    return    ['ipythondistarray',
-              'ipythondistarray.tests',
-              'ipythondistarray.core',
-              'ipythondistarray.core.tests',
-              'ipythondistarray.mpi',
-              'ipythondistarray.mpi.tests',
-              'ipythondistarray.random',
-              'ipythondistarray.random.tests',
-              'ipythondistarray.linalg',
-              'ipythondistarray.linalg.tests',
-              'ipythondistarray.fft',
-              'ipythondistarray.fft.tests']
+    return    ['distarray',
+              'distarray.tests',
+              'distarray.core',
+              'distarray.core.tests',
+              'distarray.mpi',
+              'distarray.mpi.tests',
+              'distarray.random',
+              'distarray.random.tests',
+              'distarray.linalg',
+              'distarray.linalg.tests',
+              'distarray.fft',
+              'distarray.fft.tests']
 
 
 #----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def find_packages():
 
 def main():
     setup(packages = find_packages(),
-          package_data = {'ipythondistarray' : ['include/*.pxi']},
+          package_data = {'distarray' : ['include/*.pxi']},
           headers = find_headers(),
           ext_modules = find_ext_modules(),
           executables = find_executables(),

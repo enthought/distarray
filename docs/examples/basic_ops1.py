@@ -1,4 +1,4 @@
-import ipythondistarray as ipda
+import distarray as ipda
 
 a = ipda.random.rand((10,100,100), dist=(None,'b','c'))
 b = ipda.random.rand((10,100,100), dist=(None,'b','c'))

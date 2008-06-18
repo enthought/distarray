@@ -13,11 +13,11 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from ipythondistarray.mpi import mpibase
-from ipythondistarray.mpi.mpibase import *
+from distarray.mpi import mpibase
+from distarray.mpi.mpibase import *
 
-from ipythondistarray.mpi import error
-from ipythondistarray.mpi.error import *
+from distarray.mpi import error
+from distarray.mpi.error import *
 
 __all__ = []
 __all__ += mpibase.__all__

@@ -18,10 +18,10 @@ import math
 
 import numpy as np
 
-from ipythondistarray.mpi import mpibase
-from ipythondistarray.mpi.mpibase import MPI
-from ipythondistarray.core.error import *
-from ipythondistarray.core.construct import (
+from distarray.mpi import mpibase
+from distarray.mpi.mpibase import MPI
+from distarray.core.error import *
+from distarray.core.construct import (
     init_base_comm,
     init_dist,
     init_distdims,

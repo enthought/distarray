@@ -13,10 +13,10 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from ipythondistarray.core import distarray
-from ipythondistarray.core.construct import find_local_shape, init_base_comm
-from ipythondistarray.core.error import *
-from ipythondistarray.mpi import mpibase
+from distarray.core import distarray
+from distarray.core.construct import find_local_shape, init_base_comm
+from distarray.core.error import *
+from distarray.mpi import mpibase
 
 import numpy as np
 

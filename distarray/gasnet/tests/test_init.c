@@ -110,7 +110,7 @@ static void __Pyx_AddTraceback(char *funcname); /*proto*/
 
 static PyObject *__pyx_n_sys;
 
-/* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":16
+/* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":16
  * import sys
  * 
  * def main():             # <<<<<<<<<<<<<< 
@@ -124,7 +124,7 @@ static PyObject *__pyx_pf_9test_init_main(PyObject *__pyx_self, PyObject *unused
   char **__pyx_v_argv;
   PyObject *__pyx_r;
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":17
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":17
  * 
  * def main():
  *     cdef int argc = 0             # <<<<<<<<<<<<<< 
@@ -134,7 +134,7 @@ static PyObject *__pyx_pf_9test_init_main(PyObject *__pyx_self, PyObject *unused
   __pyx_v_argc = 0;
 
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":18
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":18
  * def main():
  *     cdef int argc = 0
  *     cdef char **argv = NULL             # <<<<<<<<<<<<<< 
@@ -144,7 +144,7 @@ static PyObject *__pyx_pf_9test_init_main(PyObject *__pyx_self, PyObject *unused
   __pyx_v_argv = NULL;
 
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":22
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":22
  *     cdef gasnet_node_t size
  *             
  *     gasnet_init(&argc,&argv)             # <<<<<<<<<<<<<< 
@@ -153,7 +153,7 @@ static PyObject *__pyx_pf_9test_init_main(PyObject *__pyx_self, PyObject *unused
  */
   gasnet_init((&__pyx_v_argc), (&__pyx_v_argv));
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":28
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":28
  *     # print rank, size
  *     
  *     gasnet_exit(0)             # <<<<<<<<<<<<<< 
@@ -202,7 +202,7 @@ PyMODINIT_FUNC inittest_init(void) {
   /*--- Function import code ---*/
   /*--- Execution code ---*/
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":14
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":14
  * 
  * 
  * import sys             # <<<<<<<<<<<<<< 
@@ -213,7 +213,7 @@ PyMODINIT_FUNC inittest_init(void) {
   if (PyObject_SetAttr(__pyx_m, __pyx_n_sys, __pyx_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 14; __pyx_clineno = __LINE__; goto __pyx_L1;}
   Py_DECREF(__pyx_1); __pyx_1 = 0;
 
-  /* "/Users/bgranger/Documents/Computation/IPython/branches/ipythondistarray/ipythondistarray/gasnet/tests/test_init.pyx":16
+  /* "/Users/bgranger/Documents/Computation/IPython/branches/distarray/distarray/gasnet/tests/test_init.pyx":16
  * import sys
  * 
  * def main():             # <<<<<<<<<<<<<< 

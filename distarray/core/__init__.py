@@ -13,11 +13,11 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from ipythondistarray.core import distarray
-from ipythondistarray.core.distarray import *
+from distarray.core import distarray
+from distarray.core.distarray import *
 
-from ipythondistarray.core import base
-from ipythondistarray.core.base import *
+from distarray.core import base
+from distarray.core.base import *
 
 __all__ = []
 __all__ += distarray.__all__

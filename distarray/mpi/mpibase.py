@@ -1,6 +1,6 @@
 from mpi4py import MPI
 
-from ipythondistarray.mpi.error import *
+from distarray.mpi.error import *
 
 __all__ = [
     'COMM_PRIVATE',

@@ -11,7 +11,7 @@ __docformat__ = "restructuredtext en"
 
 import inspect
 
-from ipythondistarray.core.error import InvalidMapCode
+from distarray.core.error import InvalidMapCode
 
 cdef class Map:
 

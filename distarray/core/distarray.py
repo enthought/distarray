@@ -18,12 +18,12 @@ import math
 
 import numpy as np
 
-from ipythondistarray.mpi import mpibase
-from ipythondistarray.mpi.mpibase import MPI
-from ipythondistarray.core.error import *
-from ipythondistarray.core.base import BaseDistArray, arecompatible
-from ipythondistarray.core.construct import init_base_comm
-from ipythondistarray.utils import _raise_nie
+from distarray.mpi import mpibase
+from distarray.mpi.mpibase import MPI
+from distarray.core.error import *
+from distarray.core.base import BaseDistArray, arecompatible
+from distarray.core.construct import init_base_comm
+from distarray.utils import _raise_nie
 
 
 #----------------------------------------------------------------------------

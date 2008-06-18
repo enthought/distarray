@@ -2,15 +2,15 @@ import unittest
 import numpy as np
 from numpy.testing.utils import assert_array_equal, assert_array_almost_equal
 
-from ipythondistarray.core.error import *
-from ipythondistarray.mpi.error import *
-from ipythondistarray.mpi import mpibase
-from ipythondistarray.mpi.mpibase import (
+from distarray.core.error import *
+from distarray.mpi.error import *
+from distarray.mpi import mpibase
+from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from ipythondistarray.core import maps_fast as maps, distarray
-from ipythondistarray import utils
+from distarray.core import maps_fast as maps, distarray
+from distarray import utils
 
 class TestInit(unittest.TestCase):
     """

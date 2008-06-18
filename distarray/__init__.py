@@ -13,12 +13,12 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from ipythondistarray import core
-from ipythondistarray.core import *
-from ipythondistarray import mpi
-from ipythondistarray.mpi import *
-from ipythondistarray import random
-from ipythondistarray.random import rand, randn
+from distarray import core
+from distarray.core import *
+from distarray import mpi
+from distarray.mpi import *
+from distarray import random
+from distarray.random import rand, randn
 
 __all__ = []
 __all__ += core.__all__

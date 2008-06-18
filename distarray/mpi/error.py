@@ -1,4 +1,4 @@
-from ipythondistarray.core.error import DistArrayError
+from distarray.core.error import DistArrayError
 
 __all__ = [
     'MPIDistArrayError',

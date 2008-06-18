@@ -4,24 +4,24 @@ CYTHON = cython
 PYTHON = python
 MPI4PY_INCLUDE = ${shell ${PYTHON} -c 'import mpi4py; print( mpi4py.get_include() )'}
 
-src: ipythondistarray/core/maps_fast.c ipythondistarray/mpi/tests/helloworld.c
+src: distarray/core/maps_fast.c distarray/mpi/tests/helloworld.c
 
 srcclean:
-	-${RM} ipythondistarray/core/maps_fast.c
-	-${RM} ipythondistarray/mpi/tests/helloworld.c
+	-${RM} distarray/core/maps_fast.c
+	-${RM} distarray/mpi/tests/helloworld.c
 
 clean:
 	${PYTHON} setup.py clean --all
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
 	-${RM} -r build  *.py[co]
-	-${RM} -r MANIFEST dist ipythondistarray.egg-info
+	-${RM} -r MANIFEST dist distarrayegg-info
 
-ipythondistarray/core/maps_fast.c: ipythondistarray/core/maps_fast.pyx
-	cd ipythondistarray/core && ${CYTHON} -I${MPI4PY_INCLUDE} maps_fast.pyx -o maps_fast.c
+distarray/core/maps_fast.c: distarray/core/maps_fast.pyx
+	cd distarray/core && ${CYTHON} -I${MPI4PY_INCLUDE} maps_fast.pyx -o maps_fast.c
 
-ipythondistarray/mpi/tests/helloworld.c: ipythondistarray/mpi/tests/helloworld.pyx
-	cd ipythondistarray/mpi/tests && ${CYTHON} -I${MPI4PY_INCLUDE} helloworld.pyx -o helloworld.c
+distarray/mpi/tests/helloworld.c: distarray/mpi/tests/helloworld.pyx
+	cd distarray/mpi/tests && ${CYTHON} -I${MPI4PY_INCLUDE} helloworld.pyx -o helloworld.c
 
 
 inplace: src

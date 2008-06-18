@@ -1,5 +1,5 @@
 =============================
-Installing `ipythondistarray`
+Installing `distarray`
 =============================
 
 You should be able to install this package with::

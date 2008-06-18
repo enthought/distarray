@@ -1,5 +1,5 @@
 import unittest
-from ipythondistarray import utils
+from distarray import utils
 
 
 class TestMultPartitions(unittest.TestCase):
