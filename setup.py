@@ -1,3 +1,23 @@
+# encoding: utf-8
+
+__docformat__ = "restructuredtext en"
+
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008  The IPython Development Team
+#
+#  Distributed under the terms of the BSD License.  The full license is in
+#  the file COPYING, distributed as part of this software.
+#----------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+# Imports
+#----------------------------------------------------------------------------
+
+from distutils.core import setup
+from mpidistutils import Distribution, Extension, Executable
+from mpidistutils import config, build, build_ext
+from mpidistutils import build_exe, install_exe, clean_exe
+import mpi4py
 
 #--------- -------------------------------------------------------------------
 # Metadata
@@ -17,22 +37,30 @@ metadata = {
 # Extension modules
 #----------------------------------------------------------------------------
 
-def ext_modules():
+def find_ext_modules():
     import sys
     
-    maps = dict(name='ipythondistarray.core.maps_fast',
-                sources=['ipythondistarray/core/maps_fast.c'])
-    allext = [maps]
+    maps = Extension(
+        name='ipythondistarray.core.maps_fast',
+        sources=['ipythondistarray/core/maps_fast.c']
+    )
+    # This extension shows how to call mpi4py's C layer using Cython
+    mpi_test = Extension(
+        name='ipythondistarray.mpi.tests.helloworld',
+        sources=['ipythondistarray/mpi/tests/helloworld.c'],
+        include_dirs = [mpi4py.get_include()]
+    )
+    allext = [maps, mpi_test]
     return allext
 
-def headers():
+def find_headers():
     # allheaders = ['mpi/ext/libmpi.h']
     return []
 
-def executables():
+def find_executables():
     return []
 
-def packages():
+def find_packages():
     return    ['ipythondistarray',
               'ipythondistarray.tests',
               'ipythondistarray.core',
@@ -51,21 +79,13 @@ def packages():
 # Setup
 #----------------------------------------------------------------------------
 
-from distutils.core import setup
-from mpidistutils import Distribution, Extension, Executable
-from mpidistutils import config, build, build_ext
-from mpidistutils import build_exe, install_exe, clean_exe
-
-LibHeader = lambda header: str(header)
-ExtModule = lambda extension: Extension(**extension)
-ExeBinary = lambda executable: Executable(**executable)
 
 def main():
-    setup(packages = packages(),
+    setup(packages = find_packages(),
           package_data = {'ipythondistarray' : ['include/*.pxi']},
-          headers = [LibHeader(hdr) for hdr in headers()],
-          ext_modules = [ExtModule(ext) for ext in ext_modules()],
-          executables = [ExeBinary(exe) for exe in executables()],
+          headers = find_headers(),
+          ext_modules = find_ext_modules(),
+          executables = find_executables(),
           distclass = Distribution,
           cmdclass = {'config'      : config,
                       'build'       : build,
