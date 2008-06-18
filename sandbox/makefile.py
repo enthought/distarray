@@ -3,10 +3,12 @@ import os, sys
 @target
 def cython(*args, **kwargs):
     config = kwargs.get('config')
+    exclude = ['base_fast.pyx']
     files = all_files('ipythondistarray', '*.pyx')
     for full_file in files:
         (a, b) = os.path.split(full_file)
-        xsys('cd %s && cython %s' % (a, b))
+        if b not in exclude:
+            xsys('cd %s && cython %s' % (a, b))
 
 @target
 def clean(*args, **kwargs):
