@@ -99,3 +99,10 @@ class TestRegistry(unittest.TestCase):
         """
         mc = maps.get_map_class(maps.BlockMap)
         self.assertEquals(mc, maps.BlockMap)
+
+
+if __name__ == '__main__':
+    try:
+        unittest.main()
+    except SystemExit:
+        pass

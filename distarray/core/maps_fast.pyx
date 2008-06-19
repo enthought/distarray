@@ -14,7 +14,7 @@ import inspect
 from distarray.core.error import InvalidMapCode
 
 cdef class Map:
-
+    
     def __init__(self, shape, grid_shape):
         self.shape = shape
         self.grid_shape = grid_shape

@@ -9,7 +9,7 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps_fast as maps, distarray
+from distarray.core import maps_fast as maps, densedistarray
 
 
 class TestFunctions(unittest.TestCase):
@@ -24,15 +24,15 @@ class TestFunctions(unittest.TestCase):
             pass
         else:
             try:
-                a = distarray.DistArray((16,16), dtype='int64', comm=comm)
-                b = distarray.DistArray((16,16), dtype='float32', comm=comm)
+                a = densedistarray.DistArray((16,16), dtype='int64', comm=comm)
+                b = densedistarray.DistArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
                 pass
             else:
-                self.assertEquals(distarray.arecompatible(a,b), True)
-                a = distarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
-                b = distarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
-                self.assertEquals(distarray.arecompatible(a,b), False)                
+                self.assertEquals(densedistarray.arecompatible(a,b), True)
+                a = densedistarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
+                b = densedistarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
+                self.assertEquals(densedistarray.arecompatible(a,b), False)                
                 comm.Free()
 
 

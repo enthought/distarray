@@ -10,26 +10,10 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
-# Imports
-#----------------------------------------------------------------------------
-
-from distarray.error import DistArrayError
-
-#----------------------------------------------------------------------------
 # Exports
 #----------------------------------------------------------------------------
 
-__all__ = [
-    'MPIDistArrayError',
-    'InvalidCommSizeError',
-    'InvalidRankError']
+__all__ = ['DistArrayError']
 
-class MPIDistArrayError(DistArrayError):
+class DistArrayError(Exception):
     pass
-
-class InvalidCommSizeError(MPIDistArrayError):
-    pass
-
-class InvalidRankError(MPIDistArrayError):
-    pass
-

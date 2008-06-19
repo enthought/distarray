@@ -18,10 +18,10 @@ clean:
 	-${RM} -r MANIFEST dist distarrayegg-info
 
 distarray/core/maps_fast.c: distarray/core/maps_fast.pyx
-	cd distarray/core && ${CYTHON} -I${MPI4PY_INCLUDE} maps_fast.pyx -o maps_fast.c
+	${CYTHON} -I. -I${MPI4PY_INCLUDE} distarray/core/maps_fast.pyx
 
 distarray/mpi/tests/helloworld.c: distarray/mpi/tests/helloworld.pyx
-	cd distarray/mpi/tests && ${CYTHON} -I${MPI4PY_INCLUDE} helloworld.pyx -o helloworld.c
+	${CYTHON} -I. -I${MPI4PY_INCLUDE} distarray/mpi/tests/helloworld.pyx
 
 
 inplace: src

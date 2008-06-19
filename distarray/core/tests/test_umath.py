@@ -11,7 +11,7 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps_fast as maps, distarray
+from distarray.core import maps_fast as maps, densedistarray
 
 
 class TestUnaryUFunc(unittest.TestCase):
@@ -26,19 +26,19 @@ class TestUnaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = distarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
                 a.fill(1)
-                b = distarray.negative(a)
+                b = densedistarray.negative(a)
                 self.assert_(np.all(a.local_array==-b.local_array))
-                b = distarray.empty_like(a)
-                b = distarray.negative(a, b)
+                b = densedistarray.empty_like(a)
+                b = densedistarray.negative(a, b)
                 self.assert_(np.all(a.local_array==-b.local_array))
-                a = distarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = distarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, distarray.negative, b, a)
+                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, densedistarray.negative, b, a)
 
 
 class TestBinaryUFunc(unittest.TestCase):
@@ -53,25 +53,25 @@ class TestBinaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = distarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = distarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
                 a.fill(1)
                 b.fill(1)
-                c = distarray.add(a, b)
+                c = densedistarray.add(a, b)
                 self.assert_(np.all(c.local_array==2))
-                c = distarray.empty_like(a)
-                c = distarray.add(a, b, c)
+                c = densedistarray.empty_like(a)
+                c = densedistarray.add(a, b, c)
                 self.assert_(np.all(c.local_array==2))
-                a = distarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = distarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, distarray.add, a, b)
-                a = distarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = distarray.DistArray((16,16), dtype='int32', comm=comm)
-                c = distarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, distarray.add, a, b, c)
+                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b)
+                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                c = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b, c)
 
 
 if __name__ == '__main__':
