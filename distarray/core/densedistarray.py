@@ -748,9 +748,12 @@ def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     return DistArray(shape, dtype, dist, grid_shape, comm)
 
 
-def empty_like(arr):
+def empty_like(arr, dtype=None):
     if isinstance(arr, DenseDistArray):
-        return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)        
+	if dtype==None:
+            return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
+        else:
+            return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
         raise TypeError("a DenseDistArray or subclass is expected")
 
