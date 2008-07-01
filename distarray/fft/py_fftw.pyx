@@ -244,7 +244,8 @@ def ifft2(A):
 			py_fftw_execute(pln)
 			py_fftw_destroy_plan(pln)
 			# del pln
-			return retval/(x*y)
+			ddarray.divide(retval, (x*y), retval)
+			return retval
 		else:
 			B = A.astype(numpy.complex128)
 			return ifft2(B)
