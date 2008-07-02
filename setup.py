@@ -48,9 +48,24 @@ def find_ext_modules():
     mpi_test = Extension(
         name='distarray.mpi.tests.helloworld',
         sources=['distarray/mpi/tests/helloworld.c'],
-        include_dirs = [mpi4py.get_include()]
+        include_dirs = [mpi4py.get_include(), '/scr_comet/mwrobel/openMpiInstall/include/']
     )
-    allext = [maps, mpi_test]
+
+    import os
+    fftw_dir = os.getenv("FFTW_DIR")
+    if fftw_dir == None:
+        print "please set FFTW_DIR in your environment"
+# ....or do we set it to /usr/include and then watch with surprise when it fails at a link/build stage?
+
+    py_fftw = Extension(
+        name = 'distarray.fft.py_fftw',
+        library_dirs = [fftw_dir+"/lib"],
+        include_dirs = [fftw_dir+"/include", mpi4py.get_include(),'/scr_comet/mwrobel/openMpiInstall/include/',
+            '/scr_comet/mwrobel/txviewVM5/local/lib/python2.5/site-packages/numpy/core/include/'],
+        libraries = ['fftw3_mpi', 'fftw3', 'fftw3f_mpi','fftw3f'],
+        sources = ['distarray/fft/py_fftw.c'],
+    )
+    allext = [maps, mpi_test, py_fftw]
     return allext
 
 def find_headers():
