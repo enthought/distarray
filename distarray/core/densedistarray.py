@@ -177,14 +177,14 @@ class DenseDistArray(BaseDistArray):
     def coords_to_rank(self, coords):
         return self.comm.Get_cart_rank(coords)
     
-    def local_ind(self, *global_ind):
+    def global_to_local(self, *global_ind):
         local_ind = list(global_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
             local_ind[dd] = self.maps[i].local_index(global_ind[dd])
         return tuple(local_ind)
     
-    def global_ind(self, owner, *local_ind):
+    def local_to_global(self, owner, *local_ind):
         if isinstance(owner, int):
             owner_coords = self.rank_to_coords(owner)
         else:
@@ -230,6 +230,7 @@ class DenseDistArray(BaseDistArray):
     #----------------------------------------------------------------------------
     # 3.2 ndarray methods
     #----------------------------------------------------------------------------   
+    
     
     #----------------------------------------------------------------------------
     # 3.2.1 Array conversion
@@ -334,7 +335,7 @@ class DenseDistArray(BaseDistArray):
         # for old_local_inds, item in np.ndenumerate(local_array):
         # 
         #     # Compute the new owner
-        #     global_inds = self.global_ind(new_da.comm_rank, old_local_inds)
+        #     global_inds = self.local_to_global(new_da.comm_rank, old_local_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
         #         pass
@@ -524,14 +525,48 @@ class DenseDistArray(BaseDistArray):
     def __len__(self):
         return self.shape[0]
     
+    def _check_key(self, key):
+        if not isinstance(key, tuple):
+            raise TypeError("index must be a sequence")
+        for i in key:
+            if not isinstance(i, int):
+                raise TypeError("index must be a sequence of ints")        
+    
     def __getitem__(self, key):
-        _raise_nie()
+        self._check_key(key)
+        owner_rank = self.owner_rank(*key)
+        if self.comm_rank == owner_rank:
+            local_inds = self.global_to_local(*key)
+            return self.local_array[local_inds]
+        else:
+            raise IndexError("nonlocal indexing not implemented yet")
     
     def __setitem__(self, key, value):
-        _raise_nie()
+        self._check_key(key)
+        owner_rank = self.owner_rank(*key)
+        if self.comm_rank == owner_rank:
+            local_inds = self.global_to_local(*key)
+            self.local_array[local_inds] = value
+        else:
+            raise IndexError("nonlocal indexing not implemented yet")
+    
+    def sync(self):
+        print "hi"
     
     def __contains__(self, item):
-        _raise_nie()
+        return item in self.local_array
+    
+    def pack_index(self, inds):
+        inds_array = np.array(inds)
+        strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
+        return np.sum(inds_array*strides_array)
+    
+    def unpack_index(self, packed_ind):
+        if packed_ind > np.prod(self.shape)-1 or packed_ind < 0:
+            raise ValueError("Invalid index, must be 0 <= x <= number of elements.")
+        strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
+        return tuple(packed_ind/strides_array % self.shape)
+        
     
     #----------------------------------------------------------------------------
     # 3.3.4 Arithmetic customization - binary
@@ -776,16 +811,31 @@ def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
 
 
+class GlobalIterator(object):
+    
+    def __init__(self, arr):
+        self.arr = arr
+        self.nditerator = np.ndenumerate(self.arr.local_view())
+    
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        local_inds, value = self.nditerator.next()
+        global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
+        return global_inds, value
+
+def ndenumerate(arr):
+    return GlobalIterator(arr)
+
 def fromfunction(function, shape, **kwargs):
     dtype = kwargs.pop('dtype', int)
     dist = kwargs.pop('dist', {0:'b'})
     grid_shape = kwargs.pop('grid_shape', None)
     comm = kwargs.pop('comm', None)
     da = empty(shape, dtype, dist, grid_shape, comm)
-    local_view = da.local_view()
-    for local_inds, x in np.ndenumerate(local_view):
-        global_inds = da.global_ind(da.comm_rank, *local_inds)
-        local_view[local_inds] = function(*global_inds, **kwargs)
+    for global_inds, x in ndenumerate(da):
+        da[global_inds] = function(*global_inds, **kwargs)
     return da
 
 
