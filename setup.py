@@ -18,6 +18,7 @@ from mpidistutils import Distribution, Extension, Executable
 from mpidistutils import config, build, build_ext
 from mpidistutils import build_exe, install_exe, clean_exe
 import mpi4py
+import numpy
 
 #--------- -------------------------------------------------------------------
 # Metadata
@@ -54,14 +55,15 @@ def find_ext_modules():
     import os
     fftw_dir = os.getenv("FFTW_DIR")
     if fftw_dir == None:
-        print "please set FFTW_DIR in your environment"
-# ....or do we set it to /usr/include and then watch with surprise when it fails at a link/build stage?
-
+        raise RuntimeError("Please set the FFTW_DIR environment variable to point to your fftw 3 installation")
+    
     py_fftw = Extension(
         name = 'distarray.fft.py_fftw',
         library_dirs = [fftw_dir+"/lib"],
-        include_dirs = [fftw_dir+"/include", mpi4py.get_include(),'/scr_comet/mwrobel/openMpiInstall/include/',
-            '/scr_comet/mwrobel/txviewVM5/local/lib/python2.5/site-packages/numpy/core/include/'],
+        include_dirs = [
+            fftw_dir+"/include", 
+            mpi4py.get_include(),
+            numpy.get_include()],
         libraries = ['fftw3_mpi', 'fftw3', 'fftw3f_mpi','fftw3f'],
         sources = ['distarray/fft/py_fftw.c'],
     )
