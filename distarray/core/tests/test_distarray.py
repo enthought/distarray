@@ -246,8 +246,8 @@ class TestGlobalInd(unittest.TestCase):
                 self.round_trip(da)
                 comm.Free()
 
-    def test_global_corners(self):
-        """Find the boundaries of a block distribution"""
+    def test_global_limits(self):
+        """Find the boundaries of a block distribution or no distribution"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -255,11 +255,17 @@ class TestGlobalInd(unittest.TestCase):
         else:        
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
-                b = densedistarray.DistArray((16,16), dist=(None,'b'),comm=comm)
+                b = densedistarray.DistArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
                 pass
             else:
-                # a.global_corners(0)
+                answers = [(0,3),(4,7),(8,11),(12,15)]
+                limits = a.global_limits(0)
+                self.assertEquals(limits, answers[a.comm_rank])
+                answers = 4*[(0,15)]
+                limits = a.global_limits(1)
+                self.assertEquals(limits, answers[a.comm_rank])
+                self.assertRaises(DistError, b.global_limits, 0)
                 comm.Free()        
 
 class TestIndexing(unittest.TestCase):

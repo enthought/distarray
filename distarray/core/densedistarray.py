@@ -195,11 +195,11 @@ class DenseDistArray(BaseDistArray):
             global_ind[dd] = self.maps[i].global_index(owner_coords[i], local_ind[dd])
         return tuple(global_ind)
     
-    def global_corners(self, dim):
+    def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
-        if self.dist[dim] == 'c':
-            raise DistError("global_corners only works with block distributed dimensions")
+        if self.dist[dim] == 'c' or self.dist[dim] == 'bc':
+            raise DistError("global_limits only works with block distributed dimensions")
         lower_local = self.ndim*[0,]
         lower_global = self.local_to_global(self.comm_rank, *lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
