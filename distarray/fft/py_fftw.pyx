@@ -305,7 +305,7 @@ def fftn(A):
 
     pln = py_fftw_mpi_plan_dft(shp, retval.local_view(), retval.local_view(), retval.comm, FFTW_FORWARD, FFTW_ESTIMATE)
     py_fftw_execute(pln)
-    py_fftw_destroy_plan(pln)	
+    py_fftw_destroy_plan(pln)
     return retval
     
 
