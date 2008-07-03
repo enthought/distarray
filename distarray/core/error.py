@@ -26,7 +26,8 @@ __all__ = ['InvalidBaseCommError',
     'DistMatrixError',
     'IncompatibleArrayError',
     'NullCommError',
-    'InvalidMapCode']
+    'InvalidMapCode',
+    'InvalidDimensionError']
 
 #----------------------------------------------------------------------------
 # Exceptions
@@ -55,3 +56,7 @@ class NullCommError(DistArrayError):
 
 class InvalidMapCode(DistArrayError):
     pass
+
+class InvalidDimensionError(DistArrayError):
+    pass
+
