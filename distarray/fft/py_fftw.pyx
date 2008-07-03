@@ -131,7 +131,7 @@ def py_fftw_mpi_plan_dft_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray output,
 	# flags --> FFTW_ESTIMATE = 2^6 = 64
 	if (input.dtype == output.dtype == numpy.complex128):
 		plan.p = fftw_mpi_plan_dft_2d(n0, n1, <fftw_complex*>input.c_data , <fftw_complex*>output.c_data , mpicom.ob_mpi, sign, flags)
-	elif (input.dtype == output.dtype == numpy.complex64):	
+	elif (input.dtype == output.dtype == numpy.complex64):
 		plan.p = fftwf_mpi_plan_dft_2d(n0, n1, <fftwf_complex*>input.c_data , <fftwf_complex*>output.c_data , mpicom.ob_mpi, sign, flags)
 	else:
 		raise DistArrayFFTError("Input and Output data type must be complex64/128 for fftw (c2c) dft")
@@ -154,6 +154,10 @@ def py_fftw_destroy_plan(py_fftw_plan p):
 
 def fft():
 	pass
+		
+def ifft():
+	pass
+
 
 def fft2(A):
 	if A.ndim != 2:
@@ -172,50 +176,50 @@ def fft2(A):
 	(localsize, ln0, ls0) = py_fftw_mpi_local_size_2d(x,y, A.comm)
 	if (lx*ly != localsize or ln0 != lx):
 		raise DistArrayFFTError("Distarray decomposition distribution does not match FFTW's expectations (local size is wrong)")
-		return None
-				
 
 
-	if numpy.issubdtype(A.dtype, numpy.floating):
-		retval = None
-		if (A.dtype==numpy.float32):
-			retval = ddarray.empty_like(A, numpy.complex64)
-			
-		elif (A.dtype==numpy.float64):
-			retval = ddarray.emtpy_like(A, numpy.complex128)
-		else:
-			B = A.astype(numpy.float64)
-			return fft2(B)
 
-		pln = py_fftw_mpi_plan_dft_r2c_2d(x,y, A.local_view(), retval.local_view(), A.comm, FFTW_ESTIMATE)
+
+	retval = None
+
+	if (A.dtype==numpy.complex64 or A.dtype==numpy.complex128):
+		retval = ddarray.empty_like(A)
+		pln = py_fftw_mpi_plan_dft_2d(x,y, A.local_view(), retval.local_view(), A.comm, FFTW_FORWARD, FFTW_ESTIMATE)
 		py_fftw_execute(pln)
 		py_fftw_destroy_plan(pln)
 		# del pln
 		return retval
 
-	elif numpy.issubdtype(A.dtype, numpy.integer):
-		B = A.astype(numpy.float64)
-		return fft2(B)
-
-	elif numpy.issubdtype(A.dtype, numpy.complexfloating):
-		if (A.dtype==numpy.complex64 or A.dtype==numpy.complex128):
-			retval = ddarray.empty_like(A)
-			pln = py_fftw_mpi_plan_dft_2d(x,y, A.local_view(), retval.local_view(), A.comm, FFTW_FORWARD, FFTW_ESTIMATE)
+	elif numpy.issubdtype(A.dtype, numpy.complexfloating):#in-place of new-typed copy (unknown complex)
+		retval = A.astype(numpy.complex128)
+		pln = py_fftw_mpi_plan_dft_2d(x,y, retval.local_view(), retval.local_view(), A.comm, FFTW_FORWARD, FFTW_ESTIMATE)
+		py_fftw_execute(pln)
+		py_fftw_destroy_plan(pln)
+		return retval
+	else:
+		tq32 = (A.dtype==numpy.float32)
+		tq64 = (A.dtype==numpy.float64)
+		if tq64:
+			retval = ddarray.empty_like(A, numpy.complex128)
+		elif tq32:
+			retval = ddarray.empty_like(A, numpy.complex64)
+		if (tq64 or tq32):
+			pln = py_fftw_mpi_plan_dft_r2c_2d(x,y, A.local_view(), retval.local_view(), A.comm, FFTW_ESTIMATE)
 			py_fftw_execute(pln)
 			py_fftw_destroy_plan(pln)
 			# del pln
 			return retval
+		elif numpy.issubdtype(A.dtype, numpy.integer) or numpy.issubdtype(A.dtype, numpy.floating): #int or unknown floating
+			retval = A.astype(numpy.complex128)
+			pln = py_fftw_mpi_plan_dft_2d(x,y, retval.local_view(), retval.local_view(), retval.comm, FFTW_FORWARD, FFTW_ESTIMATE)
+			py_fftw_execute(pln)
+			py_fftw_destroy_plan(pln)
+			return retval
 		else:
-			B = A.astype(numpy.complex128)
-			return fft2(B)			
-			
-	else:
-		raise DistArrayFFTError("ifft2 called with unsupported type: " + str(A.dtype))
+			raise DistArrayFFTError("ifft2 called with unsupported type: " + str(A.dtype))
 
-		
-		
-def ifft():
-	pass
+
+
 
 def ifft2(A):
 	if A.ndim != 2:
@@ -234,8 +238,6 @@ def ifft2(A):
 	(localsize, ln0, ls0) = py_fftw_mpi_local_size_2d(x,y, A.comm)
 	if (lx*ly != localsize or ln0 != lx):
 		raise DistArrayFFTError("Distarray decomposition distribution does not match FFTW's expectations (local size is wrong)")
-		return None
-
 
 	if numpy.issubdtype(A.dtype, numpy.complexfloating) or numpy.issubdtype(A.dtype, numpy.integer) or numpy.issubdtype(A.dtype, numpy.floating):
 		if (A.dtype==numpy.complex64 or A.dtype==numpy.complex128):
@@ -244,13 +246,25 @@ def ifft2(A):
 			py_fftw_execute(pln)
 			py_fftw_destroy_plan(pln)
 			# del pln
-			return retval/(x*y)
+			ddarray.divide(retval, (x*y), retval)
+			return retval
 		else:
-			B = A.astype(numpy.complex128)
-			return ifft2(B)
+			retval = A.astype(numpy.complex128)
+			pln = py_fftw_mpi_plan_dft_2d(x,y, retval.local_view(), retval.local_view(), A.comm, FFTW_BACKWARD, FFTW_ESTIMATE)
+			py_fftw_execute(pln)
+			py_fftw_destroy_plan(pln)
+			ddarray.divide(retval, (x*y), retval)
+			return retval
 	else:
 		raise DistArrayFFTError("ifft2 called with unsupported type: " + str(A.dtype))
 
+
+
+def fftn():
+	pass
+
+def ifftn():
+	pass
 
 def rfft():
 	pass

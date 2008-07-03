@@ -236,12 +236,12 @@ class DenseDistArray(BaseDistArray):
     # 3.2.1 Array conversion
     #---------------------------------------------------------------------------- 
     
-    def astype(self, dtype):
-        if dtype is None:
+    def astype(self, newdtype):
+        if newdtype is None:
             return self.copy()
         else:
-            local_copy = self.local_array.astype(dtype)
-            new_da = DistArray(self.shape, dtype=self.dtype, dist=self.dist,
+            local_copy = self.local_array.astype(newdtype)
+            new_da = DistArray(self.shape, dtype=newdtype, dist=self.dist,
                 grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
             return new_da
     
