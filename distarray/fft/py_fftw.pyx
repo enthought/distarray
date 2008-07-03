@@ -51,6 +51,14 @@ cdef extern from "fftw3-mpi.h":
 	
 	void fftw_execute(fftw_plan p)
 
+
+	fftw_plan fftwf_mpi_plan_dft(int rank, int* n, fftwf_complex* inArray, 
+			fftwf_complex* outArray, cmpi.MPI_Comm comm, int sign, unsigned flags)
+
+	fftw_plan fftw_mpi_plan_dft(int rank, int* n, fftw_complex* inArray, 
+			fftw_complex* outArray, cmpi.MPI_Comm comm, int sign, unsigned flags)
+	
+
 	fftw_plan fftwf_mpi_plan_dft_2d(ptrdiff_t n0, ptrdiff_t n1, fftwf_complex* inArray, 
 			fftwf_complex* outArray, cmpi.MPI_Comm comm, int sign, unsigned flags)
 
@@ -66,7 +74,8 @@ cdef extern from "fftw3-mpi.h":
 			fftw_complex* outArray, cmpi.MPI_Comm comm, unsigned flags)
 
 
-
+	ptrdiff_t fftw_mpi_local_size(int rank, int* n, cmpi.MPI_Comm comm,
+			ptrdiff_t *local_n0, ptrdiff_t *local_0_start)
 
 	ptrdiff_t fftw_mpi_local_size_2d(ptrdiff_t n0, ptrdiff_t n1, cmpi.MPI_Comm comm,
 			ptrdiff_t *local_n0, ptrdiff_t *local_0_start)
@@ -96,6 +105,22 @@ def py_fftw_mpi_init():
 def py_fftw_mpi_cleanup():
 	fftw_mpi_cleanup()
 
+def py_fftw_mpi_plan_dft(cnumpy.ndarray globaldims, cnumpy.ndarray input, cnumpy.ndarray output, CommType mpicom, sign, flags):
+	if (input.shape != output.shape):
+		raise DistArrayFFTError("Input and Output shape must match for fftw")
+	if not (input.flags.c_contiguous and output.flags.c_contiguous and input.flags.aligned and output.flags.aligned):
+		raise DistArrayFFTError, "FFTW requires that Input and Output arrays must be aligned and contiguous"
+	cdef py_fftw_plan plan = py_fftw_plan()
+	
+	if (input.dtype == output.dtype == numpy.complex128):
+		plan.p = fftw_mpi_plan_dft(len(globaldims), <int*>globaldims.c_data, <fftw_complex*>input.c_data , <fftw_complex*>output.c_data , mpicom.ob_mpi, sign, flags)
+	elif (input.dtype == output.dtype == numpy.complex64):
+		plan.p = fftwf_mpi_plan_dft(len(globaldims), <int*>globaldims.c_data, <fftwf_complex*>input.c_data , <fftwf_complex*>output.c_data , mpicom.ob_mpi, sign, flags)
+	else:
+		raise DistArrayFFTError("Input and Output data type must be complex64/128 for fftw (c2c) dft")
+	return plan
+	
+
 def py_fftw_mpi_plan_dft_r2c_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray output, CommType mpicom, flags):
 	if (input.shape != output.shape):
 		raise DistArrayFFTError("Input and Output shape must match for fftw r2c dft 2d")
@@ -112,7 +137,7 @@ def py_fftw_mpi_plan_dft_r2c_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray out
 		plan.p = fftwf_mpi_plan_dft_r2c_2d(n0, n1, <float*>input.c_data , <fftwf_complex*>output.c_data , mpicom.ob_mpi, flags)
 	else:
 		raise DistArrayFFTError("Input and Output data type must be float32/64 and complex64/128 respectively for fftw r2c dft")
-		return None
+
 	return plan
 
 
@@ -135,7 +160,6 @@ def py_fftw_mpi_plan_dft_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray output,
 		plan.p = fftwf_mpi_plan_dft_2d(n0, n1, <fftwf_complex*>input.c_data , <fftwf_complex*>output.c_data , mpicom.ob_mpi, sign, flags)
 	else:
 		raise DistArrayFFTError("Input and Output data type must be complex64/128 for fftw (c2c) dft")
-		return None
 	return plan
 	
 def py_fftw_mpi_local_size_2d(n0, n1, CommType mpicom):
@@ -260,10 +284,33 @@ def ifft2(A):
 
 
 
-def fftn():
-	pass
+def fftn(A):
+	if A.ndim < 2:
+		raise DistArrayFFTError("Presently, only ffts of dimension greater than 2 are parallelized.  Only call fftn with higher dim.")
+	shp = numpy.array(A.shape, dtype=numpy.int)
+	distdims = list(A.distdims)
+	dist = list(A.dist)
 
-def ifftn():
+	if len(distdims)!=1 or distdims[0]!=0:
+		raise DistArrayFFTError("fftw requires only the first dimension to be decomposed.")
+	correctdist = True
+	if (dist[0]!='b'):
+		correctdist = False
+	for i in range(1,len(dist)):
+		if dist[i]!=None:
+			correctdist = False
+	if not correctdist:
+		raise DistArrayFFTError("fftw requires block decomposition in the first dimension.")
+
+	retval = ddarray.empty_like(A)
+
+	pln = py_fftw_mpi_plan_dft(shp, retval.local_view(), retval.local_view(), retval.comm, FFTW_FORWARD, FFTW_ESTIMATE)
+	py_fftw_execute(pln)
+	py_fftw_destroy_plan(pln)	
+	return retval
+	
+
+def ifftn(A):
 	pass
 
 def rfft():
