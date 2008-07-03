@@ -152,7 +152,7 @@ class TestLocalInd(unittest.TestCase):
                 self.assertEquals(da.grid_shape,(4,))
                 row_result = [(0,0),(0,1),(0,2),(0,3)]
                 for row in range(da.shape[0]):
-                    calc_row_result = [da.local_ind(row,col) for col in range(da.shape[1])]
+                    calc_row_result = [da.global_to_local(row,col) for col in range(da.shape[1])]
                     self.assertEquals(row_result, calc_row_result)
                 comm.Free()
     
@@ -175,7 +175,7 @@ class TestLocalInd(unittest.TestCase):
                 self.assertEquals(da.grid_shape,(4,))
                 self.assertEquals(da.map_classes, (maps.CyclicMap,))
                 result = utils.outer_zip(4*(0,)+4*(1,),range(8))
-                calc_result = [[da.local_ind(row,col) for col in range(da.shape[1])] for row in range(da.shape[0])]
+                calc_result = [[da.global_to_local(row,col) for col in range(da.shape[1])] for row in range(da.shape[0])]
                 self.assertEquals(result,calc_result)
                 comm.Free()
 
@@ -187,9 +187,9 @@ class TestGlobalInd(unittest.TestCase):
     
     def round_trip(self, da):
         for indices in utils.multi_for( [xrange(s) for s in da.shape] ):
-            li = da.local_ind(*indices)
+            li = da.global_to_local(*indices)
             owner_rank = da.owner_rank(*indices)
-            gi = da.global_ind(owner_rank,*li)
+            gi = da.local_to_global(owner_rank,*li)
             self.assertEquals(gi,indices)
     
     
@@ -246,6 +246,68 @@ class TestGlobalInd(unittest.TestCase):
                 self.round_trip(da)
                 comm.Free()
 
+class TestIndexing(unittest.TestCase):
+    
+    def test_indexing0(self):
+        """Can we get and set local elements for a simple dist?"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            pass
+        else:        
+            try:
+                a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
+                b = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
+            except NullCommError:
+                pass
+            else:
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    a[global_inds] = 0.0
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    b[global_inds] = a[global_inds]
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    self.assertEquals(b[global_inds],a[global_inds])
+                    self.assertEquals(a[global_inds],0.0)                
+                comm.Free()
+    
+    def test_indexing1(self):
+        """Can we get and set local elements for a complex dist?"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            pass
+        else:        
+            try:
+                a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
+                b = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
+            except NullCommError:
+                pass
+            else:
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    a[global_inds] = 0.0
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    b[global_inds] = a[global_inds]
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    self.assertEquals(b[global_inds],a[global_inds])
+                    self.assertEquals(a[global_inds],0.0)                
+                comm.Free()    
+    
+    def test_pack_unpack_index(self):
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            pass
+        else:        
+            try:
+                a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
+            except NullCommError:
+                pass
+            else:
+                for global_inds, value in densedistarray.ndenumerate(a):
+                    packed_ind = a.pack_index(global_inds)
+                    self.assertEquals(global_inds, a.unpack_index(packed_ind))
+                comm.Free()        
+    
 
 class TestDistArrayMethods(unittest.TestCase):
     

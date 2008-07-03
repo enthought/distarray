@@ -176,11 +176,10 @@ def fft2(A):
 	(localsize, ln0, ls0) = py_fftw_mpi_local_size_2d(x,y, A.comm)
 	if (lx*ly != localsize or ln0 != lx):
 		raise DistArrayFFTError("Distarray decomposition distribution does not match FFTW's expectations (local size is wrong)")
-		return None
-				
 
 
-#	if numpy.issubdtype(A.dtype, numpy.floating):
+
+
 	retval = None
 
 	if (A.dtype==numpy.complex64 or A.dtype==numpy.complex128):
@@ -212,14 +211,13 @@ def fft2(A):
 			return retval
 		elif numpy.issubdtype(A.dtype, numpy.integer) or numpy.issubdtype(A.dtype, numpy.floating): #int or unknown floating
 			retval = A.astype(numpy.complex128)
-			print retval.dtype
 			pln = py_fftw_mpi_plan_dft_2d(x,y, retval.local_view(), retval.local_view(), retval.comm, FFTW_FORWARD, FFTW_ESTIMATE)
 			py_fftw_execute(pln)
 			py_fftw_destroy_plan(pln)
 			return retval
 		else:
 			raise DistArrayFFTError("ifft2 called with unsupported type: " + str(A.dtype))
-			return None
+
 
 
 
@@ -240,8 +238,6 @@ def ifft2(A):
 	(localsize, ln0, ls0) = py_fftw_mpi_local_size_2d(x,y, A.comm)
 	if (lx*ly != localsize or ln0 != lx):
 		raise DistArrayFFTError("Distarray decomposition distribution does not match FFTW's expectations (local size is wrong)")
-		return None
-
 
 	if numpy.issubdtype(A.dtype, numpy.complexfloating) or numpy.issubdtype(A.dtype, numpy.integer) or numpy.issubdtype(A.dtype, numpy.floating):
 		if (A.dtype==numpy.complex64 or A.dtype==numpy.complex128):
@@ -261,7 +257,7 @@ def ifft2(A):
 			return retval
 	else:
 		raise DistArrayFFTError("ifft2 called with unsupported type: " + str(A.dtype))
-		return None
+
 
 
 def fftn():
