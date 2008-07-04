@@ -120,25 +120,6 @@ def py_fftw_mpi_plan_dft(cnumpy.ndarray globaldims, cnumpy.ndarray input, cnumpy
     return plan
     
 
-def py_fftw_mpi_plan_dft_r2c_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray output, CommType mpicom, flags):
-    if (input.shape != output.shape):
-        raise DistArrayFFTError("Input and Output shape must match for fftw r2c dft 2d")
-    if (input.ndim != 2):
-        raise DistArrayFFTError("Input and Output must be 2-dimensional for fftw r2c dft 2d")
-
-    if not (input.flags.c_contiguous and output.flags.c_contiguous and input.flags.aligned and output.flags.aligned):
-        raise DistArrayFFTError, "FFTW requires that Input and Output arrays must be aligned and contiguous"
-
-    cdef py_fftw_plan plan = py_fftw_plan()
-    if (input.dtype == numpy.float64 and output.dtype == numpy.complex128):
-        plan.p = fftw_mpi_plan_dft_r2c_2d(n0, n1, <double*>input.c_data , <fftw_complex*>output.c_data , mpicom.ob_mpi, flags)
-    elif (input.dtype == numpy.float32 and output.dtype == numpy.complex64):
-        plan.p = fftwf_mpi_plan_dft_r2c_2d(n0, n1, <float*>input.c_data , <fftwf_complex*>output.c_data , mpicom.ob_mpi, flags)
-    else:
-        raise DistArrayFFTError("Input and Output data type must be float32/64 and complex64/128 respectively for fftw r2c dft")
-
-    return plan
-
 
 def py_fftw_mpi_plan_dft_2d(n0, n1, cnumpy.ndarray input, cnumpy.ndarray output, CommType mpicom, sign, flags):
     # sanity check on in/out shape, make sure complex, contiguous, aligned
@@ -165,6 +146,9 @@ def py_fftw_mpi_local_size_2d(n0, n1, CommType mpicom):
     cdef ptrdiff_t ln0, ls0
     localsize = fftw_mpi_local_size_2d(n0, n1, mpicom.ob_mpi, &ln0, &ls0)
     return (localsize, ln0, ls0)
+
+def py_fftw_mpi_local_size():
+    pass
 
 def py_fftw_execute(py_fftw_plan p):
     fftw_execute(p.p)
@@ -223,11 +207,11 @@ def fft2(A):
         tq32 = (A.dtype==numpy.float32)
         tq64 = (A.dtype==numpy.float64)
         if tq64:
-            retval = ddarray.empty_like(A, numpy.complex128)
+            retval = A.astype(numpy.complex128)
         elif tq32:
-            retval = ddarray.empty_like(A, numpy.complex64)
+            retval = A.astype(numpy.complex64)
         if (tq64 or tq32):
-            pln = py_fftw_mpi_plan_dft_r2c_2d(x,y, A.local_view(), retval.local_view(), A.comm, FFTW_ESTIMATE)
+            pln = py_fftw_mpi_plan_dft_2d(x,y, retval.local_view(), retval.local_view(), A.comm, FFTW_FORWARD, FFTW_ESTIMATE)
             py_fftw_execute(pln)
             py_fftw_destroy_plan(pln)
             # del pln
@@ -258,8 +242,9 @@ def ifft2(A):
         raise DistArrayFFTError("fftw requires block decomposition.  The decomposition is other than block")
     
     (lx,ly) = A.local_view().shape
+    (low, high) = A.global_limits(0)
     (localsize, ln0, ls0) = py_fftw_mpi_local_size_2d(x,y, A.comm)
-    if (lx*ly != localsize or ln0 != lx):
+    if (lx*ly != localsize or ln0 != lx or ls0 != low):
         raise DistArrayFFTError("Distarray decomposition distribution does not match FFTW's expectations (local size is wrong)")
 
     if numpy.issubdtype(A.dtype, numpy.complexfloating) or numpy.issubdtype(A.dtype, numpy.integer) or numpy.issubdtype(A.dtype, numpy.floating):

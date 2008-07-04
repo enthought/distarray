@@ -17,7 +17,7 @@ class Test2dForward(unittest.TestCase):
     """
     Is the __init__ method working properly?
     """
-    
+
     def test_float64(self):
         """
         Test basic DistArray creation.
@@ -37,10 +37,10 @@ class Test2dForward(unittest.TestCase):
                 result = fftw.fft2(da)
                 numpy_result = np.fft.fft2(np.fromfunction(f,(16,16),dtype='float64'))
                 (low, high) = result.global_limits(0)
-                self.assert_(assert_array_almost_equal(result.local_view(), numpy_result[low:high,:], 2))
+                assert_array_almost_equal(result.local_view(), numpy_result[low:high+1,:], 6)
                 # Compare the part of numpy_result that this processor has with result.local_array
                 comm.Free()
-                
+
     def test_float32(self):
         """
         Test basic DistArray creation.
@@ -60,7 +60,7 @@ class Test2dForward(unittest.TestCase):
                 result = fftw.fft2(da)
                 numpy_result = np.fft.fft2(np.fromfunction(f,(16,16),dtype='float32'))
                 (low, high) = result.global_limits(0)
-                self.assert_(assert_array_almost_equal(result.local_view(), numpy_result[low:high,:], 2))
+                assert_array_almost_equal(result.local_view(), numpy_result[low:high+1,:], 4)
                 # Compare the part of numpy_result that this processor has with result.local_array
                 comm.Free()
 
@@ -83,7 +83,7 @@ class Test2dForward(unittest.TestCase):
                 result = fftw.fft2(da)
                 numpy_result = np.fft.fft2(np.fromfunction(f,(16,16),dtype='int16'))
                 (low, high) = result.global_limits(0)
-                self.assert_(assert_array_almost_equal(result.local_view(), numpy_result[low:high,:], 2))
+                assert_array_almost_equal(result.local_view(), numpy_result[low:high+1,:], 6)
                 # Compare the part of numpy_result that this processor has with result.local_array
                 comm.Free()
 
@@ -99,16 +99,40 @@ class Test2dForward(unittest.TestCase):
             try:
                 def f(i,j):
                     return i+j
-                da = densedistarray.fromfunction(f,(16,16),comm=comm,dtype='complex128')
+                da = densedistarray.fromfunction(f,(16,16), dist=('b',None),comm=comm,dtype='complex128')
             except NullCommError:
                 pass
             else:
                 result = fftw.fft2(da)
                 numpy_result = np.fft.fft2(np.fromfunction(f,(16,16),dtype='complex128'))
                 (low, high) = result.global_limits(0)
-                self.assert_(assert_array_almost_equal(result.local_view(), numpy_result[low:high,:], 2))
+                assert_array_almost_equal(result.local_view(), numpy_result[low:high+1,:], 6)
                 # Compare the part of numpy_result that this processor has with result.local_array
                 comm.Free()
+    def test_complex128_input(self):
+        """
+        Test basic DistArray creation.
+        """
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            pass
+        else:
+            try:
+                def f(i,j):
+                    return i+j
+                da = densedistarray.fromfunction(f,(16,16), dist=('b',None),comm=comm,dtype='complex128')
+            except NullCommError:
+                pass
+            else:
+                result = fftw.fft2(da)
+                numpy_input = np.fromfunction(f,(16,16),dtype='complex128')
+                numpy_result = np.fft.fft2(numpy_input)
+                (low, high) = result.global_limits(0)
+                assert_array_equal(da.local_view(), numpy_input[low:high+1,:])
+                # Compare the part of numpy_result that this processor has with result.local_array
+                comm.Free()
+
 
 if __name__ == '__main__':
     try:
