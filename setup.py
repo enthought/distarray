@@ -34,6 +34,10 @@ metadata = {
     'author_email'     : 'ellisonbg@gmail.com',
     }
 
+# See if FFTW_DIR is set 
+import os
+fftw_dir = os.getenv("FFTW_DIR")
+
 #----------------------------------------------------------------------------
 # Extension modules
 #----------------------------------------------------------------------------
@@ -51,23 +55,22 @@ def find_ext_modules():
         sources=['distarray/mpi/tests/helloworld.c'],
         include_dirs = [mpi4py.get_include(), '/scr_comet/mwrobel/openMpiInstall/include/']
     )
-
-    import os
-    fftw_dir = os.getenv("FFTW_DIR")
-    if fftw_dir == None:
-        raise RuntimeError("Please set the FFTW_DIR environment variable to point to your fftw 3 installation")
     
-    py_fftw = Extension(
-        name = 'distarray.fft.py_fftw',
-        library_dirs = [fftw_dir+"/lib"],
-        include_dirs = [
-            fftw_dir+"/include", 
-            mpi4py.get_include(),
-            numpy.get_include()],
-        libraries = ['fftw3_mpi', 'fftw3', 'fftw3f_mpi','fftw3f'],
-        sources = ['distarray/fft/py_fftw.c'],
-    )
-    allext = [maps, mpi_test, py_fftw]
+    allext = [maps, mpi_test]
+    if not fftw_dir is None:
+        py_fftw = Extension(
+            name = 'distarray.fft.py_fftw',
+            library_dirs = [fftw_dir+"/lib"],
+            include_dirs = [
+                fftw_dir+"/include", 
+                mpi4py.get_include(),
+                numpy.get_include()],
+            libraries = ['fftw3_mpi', 'fftw3', 'fftw3f_mpi','fftw3f'],
+            sources = ['distarray/fft/py_fftw.c'],
+        )
+        allext.append(py_fftw)
+        print "FFTW found, including distarray.fft"
+    
     return allext
 
 def find_headers():
@@ -78,18 +81,26 @@ def find_executables():
     return []
 
 def find_packages():
-    return    ['distarray',
-              'distarray.tests',
-              'distarray.core',
-              'distarray.core.tests',
-              'distarray.mpi',
-              'distarray.mpi.tests',
-              'distarray.random',
-              'distarray.random.tests',
-              'distarray.linalg',
-              'distarray.linalg.tests',
-              'distarray.fft',
-              'distarray.fft.tests']
+    packages= [
+        'distarray',
+        'distarray.tests',
+        'distarray.core',
+        'distarray.core.tests',
+        'distarray.mpi',
+        'distarray.mpi.tests',
+        'distarray.random',
+        'distarray.random.tests',
+        'distarray.linalg',
+        'distarray.linalg.tests'
+    ]
+    
+    if not fftw_dir is None:
+        packages.extend([
+            'distarray.fft',
+            'distarray.fft.tests'
+        ])
+
+    return packages
 
 
 #----------------------------------------------------------------------------
