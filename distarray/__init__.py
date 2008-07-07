@@ -21,6 +21,7 @@ from distarray import core
 from distarray.core import *
 from distarray import random
 from distarray.random import rand, randn
+from distarray import fft
 
 __all__ = []
 __all__ += error.__all__
