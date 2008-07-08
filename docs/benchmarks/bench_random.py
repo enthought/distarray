@@ -6,6 +6,6 @@ def f(comm, size, reps):
     for i in range(reps):
         a = da.random.rand((size,size), comm=comm)
 
-benchmark_function(f, 1000, 1000)
-benchmark_function(f, 2000, 1000)
-benchmark_function(f, 4000, 1000)
+benchmark_function(f, 1000, 100)
+benchmark_function(f, 2000, 100)
+benchmark_function(f, 4000, 100)

@@ -38,3 +38,5 @@ def benchmark_function(f, *args, **kwargs):
             else:
                 "It failed"
             size *= 2
+        
+        
