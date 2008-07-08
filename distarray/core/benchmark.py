@@ -56,6 +56,6 @@ def benchmark_function(f, *args, **kwargs):
             else:
                 "It failed"
             size *= 2
-    return (sizes, times)
+    return (sizes, times, [times[0]/t for t in times])
         
         
