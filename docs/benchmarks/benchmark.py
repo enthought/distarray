@@ -14,6 +14,12 @@ def benchmark_function(f, *args, **kwargs):
     comm_size = MPI.COMM_WORLD.Get_size()
     comm_rank = MPI.COMM_WORLD.Get_rank()
     
+    if comm_rank==0:
+        print
+        print "Testing..."
+        print f.__doc__
+        print "args: ", args
+        print "kwargs: ", kwargs
     size = 1
     while size <= comm_size:
         try:
@@ -22,13 +28,11 @@ def benchmark_function(f, *args, **kwargs):
             pass
         else:
             try:
-                # t = timeit.Timer()
-                # t1 = t.timeit()
                 t1 = MPI.Wtime()
                 f(comm, *args, **kwargs)
-                # t2 = t.timeit()
                 t2 = MPI.Wtime()
-                print "Time for size=%s on rank=%s: %s" % (size, comm_rank, t2-t1)
+                if comm_rank==0:
+                    print "Time for size=%s on rank=%s: %s" % (size, comm_rank, t2-t1)
             except:
                 pass
             else:
