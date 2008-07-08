@@ -18,6 +18,7 @@ import numpy as np
 
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
+from distarray.mpi.error import *
 from distarray.core import maps_fast as maps
 from distarray.core.error import *
 from distarray import utils

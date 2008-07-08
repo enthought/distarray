@@ -22,7 +22,8 @@ from distarray.error import DistArrayError
 __all__ = [
     'MPIDistArrayError',
     'InvalidCommSizeError',
-    'InvalidRankError']
+    'InvalidRankError',
+    'MPICommError']
 
 class MPIDistArrayError(DistArrayError):
     pass
@@ -31,5 +32,8 @@ class InvalidCommSizeError(MPIDistArrayError):
     pass
 
 class InvalidRankError(MPIDistArrayError):
+    pass
+
+class MPICommError(MPIDistArrayError):
     pass
 

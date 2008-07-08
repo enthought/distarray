@@ -19,6 +19,10 @@ from distarray.core.densedistarray import *
 from distarray.core import base
 from distarray.core.base import *
 
+from distarray.core import benchmark
+from distarray.core.benchmark import *
+
 __all__ = []
 __all__ += densedistarray.__all__
 __all__ += base.__all__
+__all__ += benchmark.__all__

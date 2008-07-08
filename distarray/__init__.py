@@ -26,5 +26,5 @@ from distarray import fft
 __all__ = []
 __all__ += error.__all__
 __all__ += core.__all__
-# __all__ += mpi.__all__
+__all__ += mpi.__all__
 __all__ += ['rand', 'randn']

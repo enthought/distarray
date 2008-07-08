@@ -1,11 +1,14 @@
 import distarray as da
-from benchmark import benchmark_function
 
 def f(comm, size, reps):
     """Benchmark da.random.rand"""
     for i in range(reps):
         a = da.random.rand((size,size), comm=comm)
 
-benchmark_function(f, 1000, 100)
-benchmark_function(f, 2000, 100)
-benchmark_function(f, 4000, 100)
+for size, reps in zip([1000,2000,4000],3*[10]):
+    sizes, times = da.benchmark_function(f, size, reps)
+    if len(sizes)==3:
+        print
+        print "array_size, reps:", size, reps
+        print sizes
+        print times
