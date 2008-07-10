@@ -17,3 +17,12 @@ for size, reps in zip([1024,2048,4096],3*[1]):
         print "array_size, reps:", size, reps
         print sizes
         print times
+
+
+import distarray as da
+a = da.random.rand((4096,4096))
+b = a.astype(newdtype='complex128')
+filter = da.random.rand((4096, 4096))
+c = da.fft.fft2(b)
+d = c*filter
+e = da.fftw.ifft2(c)
