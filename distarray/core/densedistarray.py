@@ -60,6 +60,7 @@ __all__ = [
     'sum',
     'add',
     'subtract',
+    'multiply',
     'divide',
     'true_divide',
     'floor_divide',
@@ -105,6 +106,16 @@ __all__ = [
 # Base DistArray class
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
+
+mpi_dtypes = {
+    np.dtype('f') : MPI.FLOAT,
+    np.dtype('d') : MPI.DOUBLE,
+    np.dtype('i') : MPI.INTEGER,
+    np.dtype('l') : MPI.LONG
+}
+
+def mpi_type_for_ndarray(a):
+    return mpi_dtypes[a.dtype]
 
 
 class DenseDistArray(BaseDistArray):
@@ -962,7 +973,7 @@ can_cast = np.can_cast
 
 def sum(a, dtype=None):
     local_sum = a.local_array.sum(dtype)
-    global_sum = a.comm.Allreduce(local_sum, op=MPI.SUM)
+    global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
     return global_sum
 
 def average(a, axis=None, weights=None, returned=0):

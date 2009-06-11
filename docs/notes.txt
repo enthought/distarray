@@ -26,3 +26,26 @@ for p in stuff:
 		b[p,q] = a[p,q]
 b.sync()
 		
+
+Design Notes
+------------
+
+Currently, in our client, we end up creating lots of temp variable names for 
+things that get pushed to or created on the engines.  I am now using uuid's
+for these so they are unique.  However, we are not deleting these temp
+variables, so they will pollute the namespace on the engine.  What to do?
+
+It would be nice to be able to pull expressions, such as 'foo.bar' or 
+'foo.bar()' to make it easier to create proxy objects.
+
+When proxying, there is a difference between methods that get called on all
+engine and those that just get called on one.  These correspond to different
+types of proxies.
+
+When you take an ndarray, scatter it to the engines, take the fft and then
+gather the result back, the first block is the last, so the result is 
+not right.  Hmmmmm.
+
+We need a real and imag attribute.
+
+fromfunction works differently from numpy.fromfunction

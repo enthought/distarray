@@ -16,6 +16,6 @@ __docformat__ = "restructuredtext en"
 from distarray.fft import py_fftw
 from distarray.fft.py_fftw import fft2, ifft2, DistArrayFFTError
 
-__all__ = ['fft2','ifft2','DistArrayError']
+__all__ = ['fft2','ifft2','DistArrayFFTError']
 
 

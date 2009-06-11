@@ -53,7 +53,7 @@ def find_ext_modules():
     mpi_test = Extension(
         name='distarray.mpi.tests.helloworld',
         sources=['distarray/mpi/tests/helloworld.c'],
-        include_dirs = [mpi4py.get_include(), '/scr_comet/mwrobel/openMpiInstall/include/']
+        include_dirs = [mpi4py.get_include()]
     )
     
     allext = [maps, mpi_test]

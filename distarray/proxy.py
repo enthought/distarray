@@ -1,5 +1,4 @@
-from ipython1.kernel import client
-import numpy as np
+
 
 def plot_dist_matrix(name, mec):
     mec.execute('_dm = %s.get_dist_matrix()' % name, 0)

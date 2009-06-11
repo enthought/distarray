@@ -45,6 +45,7 @@ __all__ = ['BaseDistArray',
 # Exports
 #----------------------------------------------------------------------------
 
+
 class BaseDistArray(object):
     """Distribute memory Python arrays."""
     

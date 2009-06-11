@@ -14,14 +14,8 @@ from distarray import utils
 from distarray.fft import py_fftw as fftw
 
 class Test2dForward(unittest.TestCase):
-    """
-    Is the __init__ method working properly?
-    """
 
     def test_float64(self):
-        """
-        Test basic DistArray creation.
-        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -42,9 +36,6 @@ class Test2dForward(unittest.TestCase):
                 comm.Free()
 
     def test_float32(self):
-        """
-        Test basic DistArray creation.
-        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -65,9 +56,6 @@ class Test2dForward(unittest.TestCase):
                 comm.Free()
 
     def test_int16(self):
-        """
-        Test basic DistArray creation.
-        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -88,9 +76,6 @@ class Test2dForward(unittest.TestCase):
                 comm.Free()
 
     def test_complex128(self):
-        """
-        Test basic DistArray creation.
-        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -110,9 +95,6 @@ class Test2dForward(unittest.TestCase):
                 # Compare the part of numpy_result that this processor has with result.local_array
                 comm.Free()
     def test_complex128_input(self):
-        """
-        Test basic DistArray creation.
-        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
