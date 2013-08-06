@@ -87,10 +87,10 @@ class FFTModule(object):
 
 class DistArrayContext(object):
 
-    def __init__(self, mec, targets=None):
-        self.mec = mec
+    def __init__(self, view, targets=None):
+        self.view = view
 
-        all_targets = self.mec.get_ids()
+        all_targets = self.view.targets
         if targets is None:
             self.targets = all_targets
         else:
@@ -100,18 +100,18 @@ class DistArrayContext(object):
                 self.targets.append(target)
 
         self._targets_key = self._generate_key()
-        self.mec.push({self._targets_key:self.targets}, targets=self.targets, block=True)
+        self.view.push({self._targets_key:self.targets}, targets=self.targets, block=True)
 
-        self.mec.execute('import distarray')
+        self.view.execute('import distarray', block=True)
 
         self._comm_key = self._generate_key()
-        self.mec.execute(
+        self.view.execute(
             '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, self._targets_key),
             targets=self.targets, block=True
         )
         
-        self.random = RandomModule(self)
-        self.fft = FFTModule(self)
+        # self.random = RandomModule(self)
+        # self.fft = FFTModule(self)
 
     def _generate_key(self):
         uid = uuid.uuid4()
@@ -123,22 +123,22 @@ class DistArrayContext(object):
         return tuple(keys)
 
     def _execute(self, lines):
-        return self.mec.execute(lines,targets=self.targets,block=True)
+        return self.view.execute(lines,targets=self.targets,block=True)
 
     def _push(self, d):
-        return self.mec.push(d,targets=self.targets,block=True)
+        return self.view.push(d,targets=self.targets,block=True)
 
     def _pull(self, k):
-        return self.mec.pull(k,targets=self.targets,block=True)
+        return self.view.pull(k,targets=self.targets,block=True)
 
     def _execute0(self, lines):
-        return self.mec.execute(lines,targets=self.targets[0],block=True)
+        return self.view.execute(lines,targets=self.targets[0],block=True)
 
     def _push0(self, d):
-        return self.mec.push(d,targets=self.targets[0],block=True)
+        return self.view.push(d,targets=self.targets[0],block=True)
 
     def _pull0(self, k):
-        return self.mec.pull(k,targets=self.targets[0],block=True)[0]
+        return self.view.pull(k,targets=self.targets[0],block=True)
 
     def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -171,7 +171,7 @@ class DistArrayContext(object):
         keys = self._key_and_push(arr.shape, arr.dtype)
         arr_key = self._generate_key()
         new_key = self._generate_key()
-        self.mec.scatter(arr_key, arr, targets=self.targets, block=True)
+        self.view.scatter(arr_key, arr, targets=self.targets, block=True)
         subs = (new_key,) + keys + (arr_key,)
         self._execute(
             '%s = distarray.DistArray(%s,dtype=%s,buf=%s)' % subs
@@ -182,7 +182,7 @@ class DistArrayContext(object):
 
     def fromfunction(self, function, shape, **kwargs):
         func_key = self._generate_key()
-        self.mec.push_function({func_key:function},targets=self.targets,block=True)
+        self.view.push_function({func_key:function},targets=self.targets,block=True)
         keys = self._key_and_push(shape, kwargs)
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
@@ -325,7 +325,7 @@ class DistArrayProxy(object):
         subs = (local_name, self.key, local_shape, self.key)
         self.context._execute('%s = %s.local_view(); %s = %s.shape' % subs)
         shape = self.context._pull0(local_shape)
-        arr = self.context.mec.gather(
+        arr = self.context.view.gather(
             local_name,targets=self.context.targets,block=True)
         arr.shape = shape
         return arr
