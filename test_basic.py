@@ -1,3 +1,10 @@
+'''
+To run this file, you need to start a cluster with the following command:
+
+    $ ipcluster start -n <n> --engines=MPIEngineSetLauncher
+'''
+
+
 import numpy as np
 import os
 from IPython.parallel import Client
