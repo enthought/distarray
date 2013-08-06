@@ -6,7 +6,7 @@ from timeit import timeit
 
 c = Client()
 dv = c[:]
-dv.execute('import os; os.chdir("%s")', os.path.abspath(os.getcwd()))
+dv.execute('import os; os.chdir("%s")' % os.path.abspath(os.getcwd()))
 dac = DistArrayContext(dv)
 dist_timings = []
 np_timings = []
