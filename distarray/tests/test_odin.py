@@ -26,6 +26,11 @@ def local_sum(da):
     return np.sum(da)
 
 
+@odin.local(dac)
+def local_add_num(da, num):
+    return da + num
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -41,6 +46,9 @@ class TestLocal(unittest.TestCase):
 
     def test_local_sum(self):
         dd = local_sum(self.da)
+
+    def test_local_add_num(self):
+        de = local_add_num(self.da, 11)
 
 
 if __name__ == '__main__':
