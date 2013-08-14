@@ -50,6 +50,11 @@ def local_add_mixed(da, num1, dg, num2):
     return da + num1 + dg + num2
 
 
+@odin.local(dac)
+def local_add_ndarray(da, num, ndarr):
+    return da + num + ndarr
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -81,6 +86,12 @@ class TestLocal(unittest.TestCase):
         di = dac.empty((1024, 1024))
         di.fill(33)
         dj = local_add_mixed(self.da, 11, di, 12)
+
+    def test_local_add_ndarray(self):
+        shp = self.da.get_localshapes()[0]
+        ndarr = np.empty(shp)
+        ndarr.fill(33)
+        dj = local_add_ndarray(self.da, 11, ndarr)
 
 
 if __name__ == '__main__':
