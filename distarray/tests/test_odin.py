@@ -60,6 +60,11 @@ def local_add_ndarray(da, num, ndarr):
     return da + num + ndarr
 
 
+@odin.local(dac)
+def local_add_kwargs(da, num1, num2=55):
+    return da + num1 + num2
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -108,8 +113,12 @@ class TestLocal(unittest.TestCase):
         shp = self.da.get_localshapes()[0]
         ndarr = np.empty(shp)
         ndarr.fill(33)
-        dj = local_add_ndarray(self.da, 11, ndarr)
-        assert_allclose(dj, 2 * np.pi + 11 + 33)
+        dk = local_add_ndarray(self.da, 11, ndarr)
+        assert_allclose(dk, 2 * np.pi + 11 + 33)
+
+    def test_local_add_kwargs(self):
+        dl = local_add_kwargs(self.da, 11, num2=12)
+        assert_allclose(dl, 2 * np.pi + 11 + 12)
 
 
 if __name__ == '__main__':
