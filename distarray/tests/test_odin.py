@@ -109,6 +109,7 @@ class TestLocal(unittest.TestCase):
         ndarr = np.empty(shp)
         ndarr.fill(33)
         dj = local_add_ndarray(self.da, 11, ndarr)
+        assert_allclose(dj, 2 * np.pi + 11 + 33)
 
 
 if __name__ == '__main__':
