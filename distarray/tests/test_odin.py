@@ -6,6 +6,10 @@ from distarray import odin
 import unittest
 
 
+# To run these tests, you must have an ipcluster running
+# For example, `ipcluster -n 4
+
+
 c = Client()
 dv = c[:]
 dac = DistArrayContext(dv)
@@ -31,6 +35,21 @@ def local_add_num(da, num):
     return da + num
 
 
+@odin.local(dac)
+def local_add_nums(da, num1, num2, num3):
+    return da + num1 + num2 + num3
+
+
+@odin.local(dac)
+def local_add_distarrayproxies(da, dg):
+    return da + dg
+
+
+@odin.local(dac)
+def local_add_mixed(da, num1, dg, num2):
+    return da + num1 + dg + num2
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -49,6 +68,19 @@ class TestLocal(unittest.TestCase):
 
     def test_local_add_num(self):
         de = local_add_num(self.da, 11)
+
+    def test_local_add_nums(self):
+        df = local_add_nums(self.da, 11, 12, 13)
+
+    def test_local_add_distarrayproxies(self):
+        dg = dac.empty((1024, 1024))
+        dg.fill(33)
+        dh = local_add_distarrayproxies(self.da, dg)
+
+    def test_local_add_mixed(self):
+        di = dac.empty((1024, 1024))
+        di.fill(33)
+        dj = local_add_mixed(self.da, 11, di, 12)
 
 
 if __name__ == '__main__':
