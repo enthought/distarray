@@ -7,7 +7,7 @@ import unittest
 
 
 # To run these tests, you must have an ipcluster running
-# For example, `ipcluster -n 4
+# For example, `ipcluster start -n 4`
 
 
 c = Client()
