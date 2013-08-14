@@ -23,9 +23,23 @@ def flatten(lst):
         return list(reduce(add, lst))
 
 
-def key_and_push_args(context, args):
+def key_and_push_args(context, arglist):
+    """ For each arg in arglist, get or generate a key (UUID).
+
+    For DistArrayProxy objects, just get the existing key.  For
+    everything else, generate a key and push the value to the engines
+
+    Parameters
+    ----------
+    context : DistArrayContext
+    arglist : List of objects to key and/or push
+
+    Returns
+    -------
+    arg_keys : list of keys
+    """
     arg_keys = []
-    for arg in args:
+    for arg in arglist:
         if isinstance(arg, DistArrayProxy):
             # if a DistArrayProxy, use its existing key
             arg_keys.append(arg.key)
@@ -36,23 +50,6 @@ def key_and_push_args(context, args):
             # if not a DistArrayProxy, key it and push it to engines
             arg_keys.extend(context._key_and_push(arg))
     return arg_keys
-
-
-def key_and_push_kwargs(context, kwargs):
-    kwarg_names = []
-    kwarg_keys = []
-    for kwarg_name, kwarg_value in kwargs.items():
-        kwarg_names.append(kwarg_name)
-        if isinstance(kwarg_value, DistArrayProxy):
-            # if a DistArrayProxy, use its existing key
-            kwarg_keys.append(kwarg_value.key)
-            is_self = (context == kwarg_value.context)
-            err_msg_fmt = "distarray context mismatch: {} {}"
-            assert is_self, err_msg_fmt.format(context, kwarg_value.context)
-        else:
-            # if not a DistArrayProxy, key it and push it to engines
-            kwarg_keys.extend(context._key_and_push(kwarg_value))
-    return kwarg_names, kwarg_keys
 
 
 def local(context):
@@ -76,12 +73,14 @@ def local(context):
             # generate keys for each parameter
             # push to engines if not a DistArrayProxy
             arg_keys = key_and_push_args(context, args)
-            kwarg_names, kwarg_keys = key_and_push_kwargs(context, kwargs)
+            kwarg_names = kwargs.keys()
+            kwarg_keys = key_and_push_args(context, kwargs.values())
 
             # build up a python statement as a string
             args_fmt = ','.join(['{}'] * len(arg_keys))
             kwargs_fmt = ','.join(['{}={}'] * len(kwarg_keys))
-            statement_fmt = '{} = {}(' + args_fmt + ',' + kwargs_fmt + ')'
+            fnargs_fmt = ','.join([args_fmt, kwargs_fmt])
+            statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
             replacement_values = ([result_key, func_key] + arg_keys +
                                   flatten(zip(kwarg_names, kwarg_keys)))
             statement = statement_fmt.format(*replacement_values)
