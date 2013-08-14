@@ -65,6 +65,11 @@ def local_add_kwargs(da, num1, num2=55):
     return da + num1 + num2
 
 
+@odin.local(dac)
+def local_add_supermix(da, num1, db, num2, dc, num3=99, num4=66):
+    return da + num1 + db + num2 + dc + num3 + num4
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -119,6 +124,15 @@ class TestLocal(unittest.TestCase):
     def test_local_add_kwargs(self):
         dl = local_add_kwargs(self.da, 11, num2=12)
         assert_allclose(dl, 2 * np.pi + 11 + 12)
+
+    def test_local_add_supermix(self):
+        dm = dac.empty((1024, 1024))
+        dm.fill(22)
+        dn = dac.empty((1024, 1024))
+        dn.fill(44)
+        do = local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
+        expected = 2 * np.pi + 11 + 22 + 33 + 44 + 55 + 66
+        assert_allclose(do, expected)
 
 
 if __name__ == '__main__':
