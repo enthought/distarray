@@ -1,14 +1,17 @@
-import numpy as np
-from IPython.parallel import Client
-from distarray.client import DistArrayContext
-from distarray import odin
+"""
+Test Odin extensions to distarray.
+
+To run these tests, you must have an ipcluster running
+For example,
+
+    $ ipcluster start -n <n> --engines=MPIEngineSetLauncher
+"""
 
 import unittest
+import numpy as np
 
-
-# To run these tests, you must have an ipcluster running
-# For example,
-# $ ipcluster start -n <n> --engines=MPIEngineSetLauncher
+from distarray import odin
+from distarray.client import RandomModule
 
 
 @odin.local
