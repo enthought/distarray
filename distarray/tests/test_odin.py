@@ -66,6 +66,11 @@ def local_add_supermix(da, num1, db, num2, dc, num3=99, num4=66):
     return da + num1 + db + num2 + dc + num3 + num4
 
 
+@odin.local
+def local_none(da):
+    return None
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -130,6 +135,11 @@ class TestLocal(unittest.TestCase):
         do = local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * np.pi + 11 + 22 + 33 + 44 + 55 + 66
         assert_allclose(do, expected)
+
+    def test_local_none(self):
+        dp = local_none(self.da)
+        client_dp = odin.view.pull(dp.key)
+        print dp
 
 
 if __name__ == '__main__':
