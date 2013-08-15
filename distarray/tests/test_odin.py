@@ -28,7 +28,7 @@ def local_add50(da):
 
 @odin.local
 def local_sum(da):
-    return np.sum(da)
+    return np.sum(da.get_localarray())
 
 
 @odin.local
@@ -82,12 +82,13 @@ class TestLocal(unittest.TestCase):
         assert_allclose(dc, 2 * np.pi + 50)
 
     def test_local_sum(self):
-        shape = self.da.get_localshapes()[0]
         dd = local_sum(self.da)
         client_dd = np.array(odin.view.pull(dd.key))
+
+        shape = self.da.get_localshapes()[0]
         sum_val = shape[0] * shape[1] * (2 * np.pi)
-        # return value is actually the sum of the whole distarrayproxy?!?
-        assert_allclose(client_dd, sum_val * len(self.da.get_localshapes()))
+
+        assert_allclose(client_dd, sum_val)
 
     def test_local_add_num(self):
         de = local_add_num(self.da, 11)
