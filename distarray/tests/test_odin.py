@@ -143,7 +143,7 @@ class TestLocal(unittest.TestCase):
     def test_local_none(self):
         dp = local_none(self.da)
         client_dp = odin.view.pull(dp.key)
-        print dp
+        print client_dp
 
 
 if __name__ == '__main__':
