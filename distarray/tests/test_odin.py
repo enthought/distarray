@@ -77,7 +77,7 @@ def local_none(da):
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
-        odin.view.execute('import numpy as np')
+        odin.context._execute('import numpy as np')
         self.da = odin.context.empty((1024, 1024))
         self.da.fill(2 * np.pi)
 
