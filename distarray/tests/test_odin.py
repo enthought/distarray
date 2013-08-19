@@ -91,7 +91,7 @@ class TestLocal(unittest.TestCase):
 
     def test_local_sum(self):
         dd = local_sum(self.da)
-        client_dd = np.array(odin.view.pull(dd.key))
+        client_dd = np.array(odin.context._pull(dd.key))
 
         shape = self.da.get_localshapes()[0]
         sum_val = shape[0] * shape[1] * (2 * np.pi)
@@ -142,8 +142,13 @@ class TestLocal(unittest.TestCase):
     @unittest.skip("Doesn't know what to do with NoneType")
     def test_local_none(self):
         dp = local_none(self.da)
-        client_dp = odin.view.pull(dp.key)
+        client_dp = odin.context._pull(dp.key)
         print client_dp
+
+    def test_restricted_targets(self):
+        targets = [1, 3]
+        de = local_add_num(self.da, 11, targets=targets)
+        assert_allclose(de, 2 * np.pi + 11)
 
 
 if __name__ == '__main__':

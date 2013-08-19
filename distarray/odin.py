@@ -7,10 +7,11 @@ from distarray.client import DistArrayContext, DistArrayProxy
 from operator import add
 
 
-# Set up the DistArrayContext on import
-client = Client()
-view = client[:]
-context = DistArrayContext(view)
+# Set up a global DistArrayContext on import
+_global_client = Client()
+_global_view = _global_client[:]
+_global_context = DistArrayContext(_global_view)
+context = _global_context
 
 
 def flatten(lst):
@@ -30,7 +31,7 @@ def flatten(lst):
         return list(reduce(add, lst))
 
 
-def key_and_push_args(context, arglist):
+def key_and_push_args(context, arglist, targets=None):
     """ For each arg in arglist, get or generate a key (UUID).
 
     For DistArrayProxy objects, just get the existing key.  For
@@ -40,11 +41,17 @@ def key_and_push_args(context, arglist):
     ----------
     context : DistArrayContext
     arglist : List of objects to key and/or push
+    targets : List of client engines to push to
+        Defaults to odin.context.targets
 
     Returns
     -------
     arg_keys : list of keys
     """
+
+    if targets is None:
+        targets = context.targets
+
     arg_keys = []
     for arg in arglist:
         if isinstance(arg, DistArrayProxy):
@@ -55,7 +62,7 @@ def key_and_push_args(context, arglist):
             assert is_self, err_msg_fmt.format(context, arg.context)
         else:
             # if not a DistArrayProxy, key it and push it to engines
-            arg_keys.extend(context._key_and_push(arg))
+            arg_keys.extend(context._key_and_push(arg, targets=targets))
     return arg_keys
 
 
@@ -70,16 +77,20 @@ def local(fn):
     -------
     fn : function wrapped to run locally on engines
     """
-    func_key = context._key_and_push(fn)[0]
-    result_key = context._generate_key()
+    func_key = _global_context._key_and_push(fn)[0]
+    result_key = _global_context._generate_key()
 
     def inner(*args, **kwargs):
 
+        targets = kwargs.pop('targets', None)
+        if targets is None:
+            targets = _global_view.targets
+
         # generate keys for each parameter
         # push to engines if not a DistArrayProxy
-        arg_keys = key_and_push_args(context, args)
+        arg_keys = key_and_push_args(context, args, targets=targets)
         kwarg_names = kwargs.keys()
-        kwarg_keys = key_and_push_args(context, kwargs.values())
+        kwarg_keys = key_and_push_args(context, kwargs.values(), targets=targets)
 
         # build up a python statement as a string
         args_fmt = ','.join(['{}'] * len(arg_keys))
@@ -91,7 +102,7 @@ def local(fn):
         statement = statement_fmt.format(*replacement_values)
 
         # execute it locally and return the result as a DistArrayProxy
-        context._execute(statement)
+        context._execute(statement, targets=targets)
         return DistArrayProxy(result_key, context)
 
     return inner

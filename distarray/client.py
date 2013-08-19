@@ -117,19 +117,28 @@ class DistArrayContext(object):
         uid = uuid.uuid4()
         return '__distarray_%s' % uid.get_hex()
 
-    def _key_and_push(self, *values):
+    def _key_and_push(self, *values, **kwargs):
+        targets = kwargs.get('targets', None)
+        if targets is None:
+            targets=self.targets
         keys = [self._generate_key() for value in values]
-        self._push(dict(zip(keys, values)))
+        self._push(dict(zip(keys, values)), targets=targets)
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        if targets is None:
+            targets=self.targets
+        return self.view.execute(lines,targets=targets,block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        if targets is None:
+            targets=self.targets
+        return self.view.push(d,targets=targets,block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        if targets is None:
+            targets=self.targets
+        return self.view.pull(k,targets=targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
