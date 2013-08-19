@@ -2,8 +2,15 @@
 ODIN: ODin Isn't Numpy
 """
 
-from distarray.client import DistArrayProxy
+from IPython.parallel import Client
+from distarray.client import DistArrayContext, DistArrayProxy
 from operator import add
+
+
+# Set up the DistArrayContext on import
+client = Client()
+view = client[:]
+context = DistArrayContext(view)
 
 
 def flatten(lst):
@@ -52,43 +59,39 @@ def key_and_push_args(context, arglist):
     return arg_keys
 
 
-def local(context):
+def local(fn):
     """ Decorator indicating a function is run locally on engines.
 
     Parameters
     ----------
-    context : DistArrayContext
+    fn : function to wrap to run locally on engines
 
     Returns
     -------
     fn : function wrapped to run locally on engines
     """
+    func_key = context._key_and_push(fn)[0]
+    result_key = context._generate_key()
 
-    def wrap(fn):
+    def inner(*args, **kwargs):
 
-        func_key = context._key_and_push(fn)[0]
-        result_key = context._generate_key()
+        # generate keys for each parameter
+        # push to engines if not a DistArrayProxy
+        arg_keys = key_and_push_args(context, args)
+        kwarg_names = kwargs.keys()
+        kwarg_keys = key_and_push_args(context, kwargs.values())
 
-        def inner(*args, **kwargs):
-            # generate keys for each parameter
-            # push to engines if not a DistArrayProxy
-            arg_keys = key_and_push_args(context, args)
-            kwarg_names = kwargs.keys()
-            kwarg_keys = key_and_push_args(context, kwargs.values())
+        # build up a python statement as a string
+        args_fmt = ','.join(['{}'] * len(arg_keys))
+        kwargs_fmt = ','.join(['{}={}'] * len(kwarg_keys))
+        fnargs_fmt = ','.join([args_fmt, kwargs_fmt])
+        statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
+        replacement_values = ([result_key, func_key] + arg_keys +
+                              flatten(zip(kwarg_names, kwarg_keys)))
+        statement = statement_fmt.format(*replacement_values)
 
-            # build up a python statement as a string
-            args_fmt = ','.join(['{}'] * len(arg_keys))
-            kwargs_fmt = ','.join(['{}={}'] * len(kwarg_keys))
-            fnargs_fmt = ','.join([args_fmt, kwargs_fmt])
-            statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
-            replacement_values = ([result_key, func_key] + arg_keys +
-                                  flatten(zip(kwarg_names, kwarg_keys)))
-            statement = statement_fmt.format(*replacement_values)
+        # execute it locally and return the result as a DistArrayProxy
+        context._execute(statement)
+        return DistArrayProxy(result_key, context)
 
-            # execute it locally and return the result as a DistArrayProxy
-            context._execute(statement)
-            return DistArrayProxy(result_key, context)
-
-        return inner
-
-    return wrap
+    return inner
