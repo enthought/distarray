@@ -75,7 +75,9 @@ def local_none(da):
 
 @odin.local
 def call_local(da):
-    return local_add50(da)
+    db = local_add50(da)
+    dc = local_add_num(db, 99)
+    return dc
 
 
 class TestLocal(unittest.TestCase):
@@ -151,7 +153,7 @@ class TestLocal(unittest.TestCase):
 
     def test_call_local(self):
         dq = call_local(self.da)
-        assert_allclose(dq, 2 * np.pi + 50)
+        assert_allclose(dq, 2 * np.pi + 50 + 99)
 
 
 if __name__ == '__main__':
