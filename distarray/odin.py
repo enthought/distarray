@@ -70,7 +70,8 @@ def local(fn):
     -------
     fn : function wrapped to run locally on engines
     """
-    func_key = context._key_and_push(fn)[0]
+    func_key = fn.__name__
+    context._push({func_key: fn})
     result_key = context._generate_key()
 
     def inner(*args, **kwargs):
