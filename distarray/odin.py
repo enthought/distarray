@@ -31,7 +31,7 @@ def flatten(lst):
         return list(reduce(add, lst))
 
 
-def key_and_push_args(context, arglist, targets=None):
+def key_and_push_args(context, arglist):
     """ For each arg in arglist, get or generate a key (UUID).
 
     For DistArrayProxy objects, just get the existing key.  For
@@ -41,16 +41,11 @@ def key_and_push_args(context, arglist, targets=None):
     ----------
     context : DistArrayContext
     arglist : List of objects to key and/or push
-    targets : List of client engines to push to
-        Defaults to odin.context.targets
 
     Returns
     -------
     arg_keys : list of keys
     """
-
-    if targets is None:
-        targets = context.targets
 
     arg_keys = []
     for arg in arglist:
@@ -62,7 +57,7 @@ def key_and_push_args(context, arglist, targets=None):
             assert is_self, err_msg_fmt.format(context, arg.context)
         else:
             # if not a DistArrayProxy, key it and push it to engines
-            arg_keys.extend(context._key_and_push(arg, targets=targets))
+            arg_keys.extend(context._key_and_push(arg))
     return arg_keys
 
 
@@ -85,15 +80,15 @@ def local(fn):
 
     def inner(*args, **kwargs):
 
-        targets = kwargs.pop('targets', None)
-        if targets is None:
-            targets = _global_view.targets
+        subcontext = kwargs.pop('context', None)
+        if subcontext is None:
+            subcontext = context
 
         # generate keys for each parameter
         # push to engines if not a DistArrayProxy
-        arg_keys = key_and_push_args(context, args, targets=targets)
+        arg_keys = key_and_push_args(subcontext, args)
         kwarg_names = kwargs.keys()
-        kwarg_keys = key_and_push_args(context, kwargs.values(), targets=targets)
+        kwarg_keys = key_and_push_args(subcontext, kwargs.values())
 
         # build up a python statement as a string
         args_fmt = ','.join(['{}'] * len(arg_keys))
@@ -105,7 +100,7 @@ def local(fn):
         statement = statement_fmt.format(*replacement_values)
 
         # execute it locally and return the result as a DistArrayProxy
-        context._execute(statement, targets=targets)
-        return DistArrayProxy(result_key, context)
+        subcontext._execute(statement)
+        return DistArrayProxy(result_key, subcontext)
 
     return inner

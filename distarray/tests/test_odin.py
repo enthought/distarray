@@ -156,9 +156,13 @@ class TestLocal(unittest.TestCase):
         assert_allclose(dq, 2 * np.pi + 50 + 99)
 
     def test_restricted_targets(self):
-        targets = [1, 3]
-        de = local_add_num(self.da, 11, targets=targets)
-        assert_allclose(de, 2 * np.pi + 11)
+        from distarray.client import DistArrayContext
+        targets = [0, 2]
+        subcontext = DistArrayContext(odin._global_view, targets=targets)
+        da = subcontext.empty((1024, 1024))
+        da.fill(11)
+        de = local_add_num(da, 10, context=subcontext)
+        assert_allclose(de, 11 + 10, context=subcontext)
 
 
 if __name__ == '__main__':
