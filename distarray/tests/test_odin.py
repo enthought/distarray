@@ -155,7 +155,7 @@ class TestLocal(unittest.TestCase):
         dq = call_local(self.da)
         assert_allclose(dq, 2 * np.pi + 50 + 99)
 
-    def test_restricted_targets(self):
+    def test_subcontext(self):
         from distarray.client import DistArrayContext
         targets = [0, 2]
         subcontext = DistArrayContext(odin._global_view, targets=targets)
