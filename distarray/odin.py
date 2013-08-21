@@ -77,7 +77,10 @@ def local(fn):
     -------
     fn : function wrapped to run locally on engines
     """
-    func_key = _global_context._key_and_push(fn)[0]
+    # we want @local functions to be able to call each other, so push
+    # their `__name__` as their key
+    func_key = fn.__name__
+    _global_context._push({func_key: fn})
     result_key = _global_context._generate_key()
 
     def inner(*args, **kwargs):
