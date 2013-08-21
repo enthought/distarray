@@ -98,16 +98,28 @@ class DistArrayContext(object):
             for target in targets:
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
-
+        
+        def get_rank():
+            from distarray.mpi.mpibase import COMM_PRIVATE
+            return COMM_PRIVATE.Get_rank()
+        
+        # get a mapping of IPython engine ID to MPI rank
+        rank_map = self.view.apply_async(get_rank).get_dict()
+        self.ranks = [ rank_map[engine] for engine in self.targets ]
+        
+        # create on *every engine* a list of MPI ranks that correspond to my IPython targets
         self._targets_key = self._generate_key()
-        self.view.push({self._targets_key:self.targets}, targets=self.targets, block=True)
+        self.view.push({self._targets_key: self.ranks}, block=True)
 
         self.view.execute('import distarray', block=True)
 
+        # create a new communicator with the subset of engines
+        # note that MPI_Comm_create must be called on all engines,
+        # not just those involved in the new communicator.
         self._comm_key = self._generate_key()
         self.view.execute(
             '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, self._targets_key),
-            targets=self.targets, block=True
+            block=True
         )
         
         # self.random = RandomModule(self)
