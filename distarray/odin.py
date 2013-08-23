@@ -14,7 +14,7 @@ context = DistArrayContext(view)
 
 
 def flatten(lst):
-    """ Given a list of lists, return a flattened list.
+    """Given a list of lists, return a flattened list.
 
     Only flattens one level.  For example,
 
@@ -31,7 +31,7 @@ def flatten(lst):
 
 
 def key_and_push_args(context, arglist):
-    """ For each arg in arglist, get or generate a key (UUID).
+    """For each arg in arglist, get or generate a key (UUID).
 
     For DistArrayProxy objects, just get the existing key.  For
     everything else, generate a key and push the value to the engines
@@ -60,7 +60,7 @@ def key_and_push_args(context, arglist):
 
 
 def local(fn):
-    """ Decorator indicating a function is run locally on engines.
+    """Decorator indicating a function is run locally on engines.
 
     Parameters
     ----------
