@@ -11,6 +11,7 @@ import unittest
 import numpy as np
 
 from distarray import odin
+from distarray.client import DistArrayContext
 
 
 @odin.local
@@ -156,14 +157,60 @@ class TestLocal(unittest.TestCase):
         assert_allclose(dq, 2 * np.pi + 50 + 99)
 
     def test_subcontext(self):
-        from distarray.client import DistArrayContext
         targets = [0, 2]
         subcontext = DistArrayContext(odin._global_view, targets=targets)
         da = subcontext.empty((1024, 1024))
         da.fill(11)
-        de = local_add_num(da, 10, context=subcontext)
-        assert_allclose(de, 11 + 10, context=subcontext)
+        de = local_add_num(da, 10)
+        assert_allclose(de, 11 + 10)
 
+
+class TestUtils(unittest.TestCase):
+
+    def test_flatten(self):
+        self.assertEqual(odin.flatten(zip([1, 2, 3], [4, 5, 6])),
+                                      [1, 4, 2, 5, 3, 6])
+
+    def test_all_equal_false(self):
+        self.assertFalse(odin.all_equal([1, 2, 3, 4, 5]))
+
+    def test_all_equal_true(self):
+        self.assertTrue(odin.all_equal([7, 7, 7, 7, 7]))
+
+    def test_all_equal_contexts(self):
+        subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
+        db = subcontext.empty((100,))
+        dc = subcontext.ones((100,))
+        contexts = (subcontext, db.context, dc.context)
+        self.assertTrue(odin.all_equal(contexts))
+
+
+class TestDetermineContext(unittest.TestCase):
+
+    def test_global_context(self):
+        da = odin.context.empty((100,))
+        db = odin.context.empty((100,))
+        self.assertEqual(odin.determine_context((da, db)), odin.context)
+
+    def test_subcontext(self):
+        subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
+        da = subcontext.empty((100,))
+        db = subcontext.empty((100,))
+        self.assertEqual(odin.determine_context((da, db)), subcontext)
+
+    def test_no_proxies(self):
+        self.assertEqual(odin.determine_context((11, 12, 'abc')), odin.context)
+
+    def test_mixed_types(self):
+        subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
+        da = subcontext.empty((100,))
+        self.assertEqual(odin.determine_context((da, 12, 'abc')), da.context)
+
+    def test_mixed_contexts(self):
+        subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
+        da = odin.context.empty((100,))
+        db = subcontext.empty((100,))
+        self.assertRaises(ValueError, odin.determine_context, (da, db))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
