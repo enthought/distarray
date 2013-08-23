@@ -49,6 +49,23 @@ def init_base_comm(comm):
 
 
 def init_dist(dist, ndim):
+    """Return a tuple containing dist-type for each dim.
+
+    Parameters
+    ----------
+    dist : str, list, tuple, or dict
+    ndim : int
+
+    Returns
+    -------
+    tuple of str
+        Contains string distribution type for each dim.
+
+    Examples
+    --------
+    >>> init_dist({0: 'b', 3: 'c'}, 4)
+    ('b', None, None, 'c')
+    """
     if isinstance(dist, str):
         return ndim*(dist,)
     elif isinstance(dist, (list, tuple)):
@@ -60,6 +77,22 @@ def init_dist(dist, ndim):
 
 
 def init_distdims(dist, ndim):
+    """Return a tuple containing indices of distributed dimensions.
+
+    Parameters
+    ----------
+    dist : tuple of str as returned from `init_dist`
+    ndim : int
+
+    Returns
+    -------
+    tuple of int
+
+    Examples
+    --------
+    >>> init_distdims(('b', None, None, 'c'), 4)
+    (0, 3)
+    """
     reduced_dist = [d for d in dist if d is not None]
     ndistdim = len(reduced_dist)
     if ndistdim > ndim:
@@ -69,6 +102,24 @@ def init_distdims(dist, ndim):
 
 
 def init_map_classes(dist):
+    """Given a tuple of `str` dist types, return a tuple of map classes.
+
+    Parameters
+    ----------
+    dist : tuple of str as returned from `init_dist`
+
+    Returns
+    -------
+    tuple of classes
+        For example,
+        'b' -> distarray.core.maps_fast.BlockMap
+        'c' -> distarray.core.maps_fast.CyclicMap
+
+    Examples
+    --------
+    >>> init_map_classes(('b', None, None, 'c'))
+    (distarray.core.maps_fast.BlockMap, distarray.core.maps_fast.CyclicMap)
+    """
     reduced_dist = [d for d in dist if d is not None]
     map_classes = [maps.get_map_class(d) for d in reduced_dist]
     return tuple(map_classes)
