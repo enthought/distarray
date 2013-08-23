@@ -73,7 +73,7 @@ def init_dist(dist, ndim):
     elif isinstance(dist, dict):
         return tuple([dist.get(i) for i in range(ndim)])
     else:
-        DistError("dist must be a string, tuple/list or dict") 
+        DistError("dist must be a string, tuple/list or dict")
 
 
 def init_distdims(dist, ndim):
@@ -188,9 +188,9 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     ndistdim = len(distdims)
-    map_classes = init_map_classes(dist)   
+    map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
-    local_shape, maps = init_local_shape_and_maps(shape, 
+    local_shape, maps = init_local_shape_and_maps(shape,
         grid_shape, distdims, map_classes)
     return local_shape
 
@@ -202,7 +202,7 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     ndistdim = len(distdims)
-    map_classes = init_map_classes(dist)   
+    map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
     return grid_shape
 
