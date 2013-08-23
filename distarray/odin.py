@@ -4,7 +4,7 @@ ODIN: ODin Isn't Numpy
 
 from IPython.parallel import Client
 from distarray.client import DistArrayContext, DistArrayProxy
-from operator import add
+from itertools import chain
 
 
 # Set up a global DistArrayContext on import
@@ -25,13 +25,21 @@ def flatten(lst):
     >>> flatten([[1, 2], [3, 4, 5], [[5], [6], [7]]])
     [1, 2, 3, 4, 5, [5], [6], [7]]
     """
-    if len(lst) == 0:
-        return []
+    return list(chain.from_iterable(lst))
+
+
+def all_equal(lst):
+    """Return True if all elements in `lst` are equal.
+
+    Also returns True if list is empty.
+    """
+    if len(lst) == 0 or len(lst) == 1:
+        return True  # vacuously True
     else:
-        return list(reduce(add, lst))
+        return all([element == lst[0] for element in lst[1:]])
 
 
-def key_and_push_args(context, arglist):
+def key_and_push_args(subcontext, arglist):
     """ For each arg in arglist, get or generate a key (UUID).
 
     For DistArrayProxy objects, just get the existing key.  For
@@ -39,7 +47,7 @@ def key_and_push_args(context, arglist):
 
     Parameters
     ----------
-    context : DistArrayContext
+    subcontext : DistArrayContext
     arglist : List of objects to key and/or push
 
     Returns
@@ -52,13 +60,42 @@ def key_and_push_args(context, arglist):
         if isinstance(arg, DistArrayProxy):
             # if a DistArrayProxy, use its existing key
             arg_keys.append(arg.key)
-            is_self = (context == arg.context)
-            err_msg_fmt = "distarray context mismatch: {} {}"
-            assert is_self, err_msg_fmt.format(context, arg.context)
+            is_same_context = (subcontext == arg.context)
+            err_msg_fmt = "DistArrayProxy context mismatch: {} {}"
+            assert is_same_context, err_msg_fmt.format(subcontext, arg.context)
         else:
             # if not a DistArrayProxy, key it and push it to engines
-            arg_keys.extend(context._key_and_push(arg))
+            arg_keys.extend(subcontext._key_and_push(arg))
     return arg_keys
+
+
+def determine_context(args):
+    """Determine the DistArrayContext for a function.
+
+    Parameters
+    ----------
+    args : iterable
+        List of objects to inspect for context.  Objects that aren't of
+        type DistArrayProxy are skipped.
+
+    Returns
+    -------
+    DistArrayContext
+        If all provided DistArrayProxy objects have the same context.
+
+    Raises
+    ------
+    ValueError
+        Raised if all DistArrayProxy objects don't have the same context.
+    """
+    contexts = [arg.context for arg in args if isinstance(arg, DistArrayProxy)]
+    if len(contexts) == 0:
+        return context  # use the module-provided context
+    elif not all_equal(contexts):
+        errmsg = "All DistArrayProxy objects must be defined in the same context: {}"
+        raise ValueError(errmsg.format(contexts))
+    else:
+        return contexts[0]
 
 
 def local(fn):
@@ -80,9 +117,7 @@ def local(fn):
 
     def inner(*args, **kwargs):
 
-        subcontext = kwargs.pop('context', None)
-        if subcontext is None:
-            subcontext = context
+        subcontext = determine_context(flatten((args, kwargs.values())))
 
         # generate keys for each parameter
         # push to engines if not a DistArrayProxy
