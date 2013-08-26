@@ -52,11 +52,23 @@ class TestDistArrayProxy(unittest.TestCase):
         dap[20:40] = vals
         np.testing.assert_allclose(np.array(dap[20:40]), vals)
 
+    def test_slice_set_to_scalar_block_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'b'})
+        val = 55
+        dap[20:40] = val
+        np.testing.assert_allclose(np.array(dap[20:40]), val)
+
     def test_slice_cyclic_dist(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
         vals = np.random.random(20)
         dap[20:40] = vals
         np.testing.assert_allclose(np.array(dap[20:40]), vals)
+
+    def test_slice_set_to_scalar_cyclic_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        val = 55
+        dap[20:40] = val
+        np.testing.assert_allclose(np.array(dap[20:40]), val)
 
 
 if __name__ == '__main__':

@@ -318,6 +318,11 @@ class DistArrayProxy(object):
     def __setitem__(self, index, value):
         if isinstance(index, slice):
             indices = xrange(*index.indices(self.size))
+            if np.isscalar(value):
+                value = itertools.repeat(value)
+            else:
+                if len(value) != len(indices):
+                    raise ValueError("`value` must be same length as slice")
             for i, v in itertools.izip(indices, value):
                 self[i] = v
         elif isinstance(index, int):
