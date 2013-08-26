@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 from IPython.parallel import Client
 from distarray.client import DistArrayContext
 
@@ -28,14 +27,14 @@ class TestDistArrayProxy(unittest.TestCase):
         self.dv = self.client[:]
         self.dac = DistArrayContext(self.dv)
 
-        self.dap = self.dac.fromndarray(np.arange(100))
+    def test_set_and_getitem_(self):
+        dap = self.dac.empty((100,))
 
-    def test_getitem(self):
-        self.assertEqual(self.dap[55], 55)
+        for val in xrange(100):
+            dap[val] = val
 
-    def test_setitem(self):
-        self.dap[35] = 9999
-        print self.dap[35]
+        for val in xrange(100):
+            self.assertEqual(dap[val], val)
 
 
 if __name__ == '__main__':
