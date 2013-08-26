@@ -212,5 +212,6 @@ class TestDetermineContext(unittest.TestCase):
         db = subcontext.empty((100,))
         self.assertRaises(ValueError, odin.determine_context, (da, db))
 
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
