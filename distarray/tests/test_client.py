@@ -27,8 +27,8 @@ class TestDistArrayProxy(unittest.TestCase):
         self.dv = self.client[:]
         self.dac = DistArrayContext(self.dv)
 
-    def test_set_and_getitem_(self):
-        dap = self.dac.empty((100,))
+    def test_set_and_getitem_block_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'b'})
 
         for val in xrange(100):
             dap[val] = val
@@ -36,6 +36,14 @@ class TestDistArrayProxy(unittest.TestCase):
         for val in xrange(100):
             self.assertEqual(dap[val], val)
 
+    def test_set_and_getitem_cyclic_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+
+        for val in xrange(100):
+            dap[val] = val
+
+        for val in xrange(100):
+            self.assertEqual(dap[val], val)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
