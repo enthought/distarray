@@ -70,6 +70,10 @@ class TestDistArrayProxy(unittest.TestCase):
         dap[20:40] = val
         np.testing.assert_allclose(np.array(dap[20:40]), val)
 
+    def test_slice_error(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        self.assertRaises(ValueError, dap.__setitem__, slice(20, 40), (11, 12))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
