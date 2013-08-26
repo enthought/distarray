@@ -301,19 +301,32 @@ class DistArrayProxy(object):
         return s
 
     def __getitem__(self, index):
-        tuple_index = (index,)
-        result_key = self.context._generate_key()
-        self.context._execute('%s = %s.__getitem__(%s)' % (result_key,
-                                                           self.key,
-                                                           tuple_index))
-        results = self.context._pull(result_key)
-        result_iter = itertools.dropwhile(lambda r: r is None, results)
-        return result_iter.next()  # return first non-None value
+        if isinstance(index, slice):
+            return [self[i] for i in xrange(*index.indices(self.size))]
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            result_key = self.context._generate_key()
+            self.context._execute('%s = %s.__getitem__(%s)' % (result_key,
+                                                               self.key,
+                                                               tuple_index))
+            results = self.context._pull(result_key)
+            result_iter = itertools.dropwhile(lambda r: r is None, results)
+            return result_iter.next()  # return first non-None value
+        else:
+            raise TypeError("Invalid index type.")
 
     def __setitem__(self, index, value):
-        tuple_index = (index,)
-        self.context._execute('%s.__setitem__(%s, %s)' % (self.key,
-                                                          tuple_index, value))
+        if isinstance(index, slice):
+            indices = xrange(*index.indices(self.size))
+            for i, v in itertools.izip(indices, value):
+                self[i] = v
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            self.context._execute('%s.__setitem__(%s, %s)' % (self.key,
+                                                              tuple_index,
+                                                              value))
+        else:
+            raise TypeError("Invalid index type.")
 
     @property
     def shape(self):
