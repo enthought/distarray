@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 from IPython.parallel import Client
 from distarray.client import DistArrayContext
 
@@ -44,6 +45,19 @@ class TestDistArrayProxy(unittest.TestCase):
 
         for val in xrange(100):
             self.assertEqual(dap[val], val)
+
+    def test_slice_block_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'b'})
+        vals = np.random.random(20)
+        dap[20:40] = vals
+        np.testing.assert_allclose(np.array(dap[20:40]), vals)
+
+    def test_slice_cyclic_dist(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        vals = np.random.random(20)
+        dap[20:40] = vals
+        np.testing.assert_allclose(np.array(dap[20:40]), vals)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
