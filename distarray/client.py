@@ -15,6 +15,7 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
+import itertools
 
 
 #----------------------------------------------------------------------------
@@ -298,6 +299,21 @@ class DistArrayProxy(object):
         s = '<DistArrayProxy(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
         return s
+
+    def __getitem__(self, index):
+        tuple_index = (index,)
+        result_key = self.context._generate_key()
+        self.context._execute('%s = %s.__getitem__(%s)' % (result_key,
+                                                           self.key,
+                                                           tuple_index))
+        results = self.context._pull(result_key)
+        result_iter = itertools.dropwhile(lambda r: r is None, results)
+        return result_iter.next()
+
+    def __setitem__(self, index, value):
+        tuple_index = (index,)
+        self.context._execute('%s.__setitem__(%s, %s)' % (self.key,
+                                                          tuple_index, value))
 
     @property
     def shape(self):
