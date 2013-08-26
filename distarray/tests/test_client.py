@@ -33,6 +33,10 @@ class TestDistArrayProxy(unittest.TestCase):
     def test_getitem(self):
         self.assertEqual(self.dap[55], 55)
 
+    def test_setitem(self):
+        self.dap[35] = 9999
+        print self.dap[35]
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
