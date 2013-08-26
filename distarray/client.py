@@ -308,7 +308,7 @@ class DistArrayProxy(object):
                                                            tuple_index))
         results = self.context._pull(result_key)
         result_iter = itertools.dropwhile(lambda r: r is None, results)
-        return result_iter.next()
+        return result_iter.next()  # return first non-None value
 
     def __setitem__(self, index, value):
         tuple_index = (index,)
