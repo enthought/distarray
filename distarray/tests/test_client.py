@@ -70,9 +70,17 @@ class TestDistArrayProxy(unittest.TestCase):
         dap[20:40] = val
         np.testing.assert_allclose(np.array(dap[20:40]), val)
 
-    def test_slice_error(self):
+    def test_slice_size_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
         self.assertRaises(ValueError, dap.__setitem__, slice(20, 40), (11, 12))
+
+    def test_get_index_error(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        self.assertRaises(Exception, dap.__getitem__, 111)
+
+    def test_set_index_error(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        self.assertRaises(Exception, dap.__setitem__, 111, 55)
 
 
 if __name__ == '__main__':
