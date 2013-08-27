@@ -17,6 +17,8 @@ import uuid
 import numpy as np
 import itertools
 
+from IPython.parallel.error import CompositeError
+
 
 #----------------------------------------------------------------------------
 # Code
@@ -306,9 +308,14 @@ class DistArrayProxy(object):
         elif isinstance(index, int):
             tuple_index = (index,)
             result_key = self.context._generate_key()
-            self.context._execute('%s = %s.__getitem__(%s)' % (result_key,
-                                                               self.key,
-                                                               tuple_index))
+            try:
+                statement = '%s = %s.__getitem__(%s)'
+                self.context._execute(statement % (result_key, self.key,
+                                                   tuple_index))
+            except CompositeError:
+                # stop iteration cleanly
+                raise IndexError()
+
             results = self.context._pull(result_key)
             result_iter = itertools.dropwhile(lambda r: r is None, results)
             return result_iter.next()  # return first non-None value
