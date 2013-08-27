@@ -1,3 +1,10 @@
+"""
+Tests for distarray.client
+
+Many of these tests require a 4-engine cluster to be running locally.
+"""
+
+
 import unittest
 import numpy as np
 from IPython.parallel import Client
@@ -90,6 +97,13 @@ class TestDistArrayProxy(unittest.TestCase):
         for val in dap:
             self.assertEqual(val, i)
             i += 1
+
+    def test_owner_rank(self):
+        dap = self.dac.empty((100,), dist={0: 'b'})
+        self.assertEqual(dap.owner_rank(10), 0)
+        self.assertEqual(dap.owner_rank(30), 1)
+        self.assertEqual(dap.owner_rank(60), 2)
+        self.assertEqual(dap.owner_rank(80), 3)
 
 
 if __name__ == '__main__':

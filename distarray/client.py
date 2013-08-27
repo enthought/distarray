@@ -312,6 +312,13 @@ class DistArrayProxy(object):
             (self.shape, self.context.targets)
         return s
 
+    def owner_rank(self, index):
+        key = self.context._generate_key()
+        statement = '%s = %s.owner_rank(%s)'
+        self.context._execute0(statement % (key, self.key, index))
+        result = self.context._pull0(key)
+        return result
+
     def __getitem__(self, index):
         if isinstance(index, slice):
             return [self[i] for i in xrange(*index.indices(self.size))]
