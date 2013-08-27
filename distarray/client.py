@@ -312,9 +312,12 @@ class DistArrayProxy(object):
                 statement = '%s = %s.__getitem__(%s)'
                 self.context._execute(statement % (result_key, self.key,
                                                    tuple_index))
-            except CompositeError:
-                # stop iteration cleanly
-                raise IndexError()
+            except CompositeError as err:
+                # if there's only one error, raise it
+                if len(err.args) == 1:
+                    raise eval(err.args[0])
+                else:
+                    raise
 
             results = self.context._pull(result_key)
             result_iter = itertools.dropwhile(lambda r: r is None, results)
@@ -334,9 +337,16 @@ class DistArrayProxy(object):
                 self[i] = v
         elif isinstance(index, int):
             tuple_index = (index,)
-            self.context._execute('%s.__setitem__(%s, %s)' % (self.key,
-                                                              tuple_index,
-                                                              value))
+            try:
+                statement = '%s.__setitem__(%s, %s)'
+                self.context._execute(statement % (self.key, tuple_index,
+                                                   value))
+            except CompositeError as err:
+                # if there's only one error, raise it
+                if len(err.args) == 1:
+                    raise eval(err.args[0])
+                else:
+                    raise
         else:
             raise TypeError("Invalid index type.")
 
