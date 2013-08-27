@@ -24,6 +24,16 @@ from IPython.parallel.error import CompositeError
 # Code
 #----------------------------------------------------------------------------
 
+def handle_composite_error(err):
+    """If there's only one error, raise it.  Else, re-raise the
+    CompositeError.
+    """
+    if len(err.args) == 1:
+        raise eval(err.args[0])
+    else:
+        raise
+
+
 class RandomModule(object):
 
     def __init__(self, context):
@@ -313,11 +323,7 @@ class DistArrayProxy(object):
                 self.context._execute(statement % (result_key, self.key,
                                                    tuple_index))
             except CompositeError as err:
-                # if there's only one error, raise it
-                if len(err.args) == 1:
-                    raise eval(err.args[0])
-                else:
-                    raise
+                handle_composite_error(err)
 
             results = self.context._pull(result_key)
             result_iter = itertools.dropwhile(lambda r: r is None, results)
@@ -329,6 +335,7 @@ class DistArrayProxy(object):
         if isinstance(index, slice):
             indices = xrange(*index.indices(self.size))
             if np.isscalar(value):
+                # broadcast scalar value
                 value = itertools.repeat(value)
             else:
                 if len(value) != len(indices):
@@ -342,11 +349,7 @@ class DistArrayProxy(object):
                 self.context._execute(statement % (self.key, tuple_index,
                                                    value))
             except CompositeError as err:
-                # if there's only one error, raise it
-                if len(err.args) == 1:
-                    raise eval(err.args[0])
-                else:
-                    raise
+                handle_composite_error(err)
         else:
             raise TypeError("Invalid index type.")
 
