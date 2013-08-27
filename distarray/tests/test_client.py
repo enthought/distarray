@@ -76,11 +76,20 @@ class TestDistArrayProxy(unittest.TestCase):
 
     def test_get_index_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        self.assertRaises(Exception, dap.__getitem__, 111)
+        self.assertRaises(IndexError, dap.__getitem__, 111)
 
     def test_set_index_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        self.assertRaises(Exception, dap.__setitem__, 111, 55)
+        self.assertRaises(IndexError, dap.__setitem__, 111, 55)
+
+    def test_iteration(self):
+        dap = self.dac.empty((100,), dist={0: 'c'})
+        vals = range(100)
+        dap[:] = vals
+        i = 0
+        for val in dap:
+            self.assertEqual(val, i)
+            i += 1
 
 
 if __name__ == '__main__':
