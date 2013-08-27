@@ -24,15 +24,6 @@ from IPython.parallel.error import CompositeError
 # Code
 #----------------------------------------------------------------------------
 
-def handle_composite_error(err):
-    """If there's only one error, raise it.  Else, re-raise the
-    CompositeError.
-    """
-    if len(err.args) == 1:
-        raise eval(err.args[0])
-    else:
-        raise
-
 
 class RandomModule(object):
 
@@ -147,14 +138,20 @@ class DistArrayContext(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.execute(lines,targets=targets,block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.push(d,targets=targets,block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.pull(k,targets=targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
@@ -319,6 +316,12 @@ class DistArrayProxy(object):
         result = self.context._pull0(key)
         return result
 
+    def owner_target(self, index):
+        rank = self.owner_rank(index)
+        #target_index = self.context.ranks.index(rank)
+        #return self.context.targets[target_index]
+        return rank  # FIXME: WRONG!!
+
     def __getitem__(self, index):
         if isinstance(index, slice):
             return [self[i] for i in xrange(*index.indices(self.size))]
@@ -326,15 +329,15 @@ class DistArrayProxy(object):
             tuple_index = (index,)
             result_key = self.context._generate_key()
             try:
+                target = self.owner_target(index)
                 statement = '%s = %s.__getitem__(%s)'
                 self.context._execute(statement % (result_key, self.key,
-                                                   tuple_index))
-            except CompositeError as err:
-                handle_composite_error(err)
+                                                   tuple_index),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError()
 
-            results = self.context._pull(result_key)
-            result_iter = itertools.dropwhile(lambda r: r is None, results)
-            return result_iter.next()  # return first non-None value
+            return self.context._pull(result_key, targets=target)
         else:
             raise TypeError("Invalid index type.")
 
@@ -352,11 +355,13 @@ class DistArrayProxy(object):
         elif isinstance(index, int):
             tuple_index = (index,)
             try:
+                target = self.owner_target(index)
                 statement = '%s.__setitem__(%s, %s)'
                 self.context._execute(statement % (self.key, tuple_index,
-                                                   value))
-            except CompositeError as err:
-                handle_composite_error(err)
+                                                   value),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError
         else:
             raise TypeError("Invalid index type.")
 
