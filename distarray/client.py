@@ -15,11 +15,15 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
+import itertools
+
+from IPython.parallel.error import CompositeError
 
 
 #----------------------------------------------------------------------------
 # Code
 #----------------------------------------------------------------------------
+
 
 class RandomModule(object):
 
@@ -134,14 +138,20 @@ class DistArrayContext(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.execute(lines,targets=targets,block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.push(d,targets=targets,block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.pull(k,targets=targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
@@ -298,6 +308,62 @@ class DistArrayProxy(object):
         s = '<DistArrayProxy(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
         return s
+
+    def owner_rank(self, index):
+        key = self.context._generate_key()
+        statement = '%s = %s.owner_rank(%s)'
+        self.context._execute0(statement % (key, self.key, index))
+        result = self.context._pull0(key)
+        return result
+
+    def owner_target(self, index):
+        rank = self.owner_rank(index)
+        #target_index = self.context.ranks.index(rank)
+        #return self.context.targets[target_index]
+        return rank  # FIXME: WRONG!!
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self[i] for i in xrange(*index.indices(self.size))]
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            result_key = self.context._generate_key()
+            try:
+                target = self.owner_target(index)
+                statement = '%s = %s.__getitem__(%s)'
+                self.context._execute(statement % (result_key, self.key,
+                                                   tuple_index),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError()
+
+            return self.context._pull(result_key, targets=target)
+        else:
+            raise TypeError("Invalid index type.")
+
+    def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            indices = xrange(*index.indices(self.size))
+            if np.isscalar(value):
+                # broadcast scalar value
+                value = itertools.repeat(value)
+            else:
+                if len(value) != len(indices):
+                    raise ValueError("`value` must be same length as slice")
+            for i, v in itertools.izip(indices, value):
+                self[i] = v
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            try:
+                target = self.owner_target(index)
+                statement = '%s.__setitem__(%s, %s)'
+                self.context._execute(statement % (self.key, tuple_index,
+                                                   value),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError
+        else:
+            raise TypeError("Invalid index type.")
 
     @property
     def shape(self):
