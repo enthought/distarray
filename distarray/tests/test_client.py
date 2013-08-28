@@ -17,3 +17,11 @@ class TestClient(unittest.TestCase):
         '''Can we create a context with a subset of engines?'''
         dac = DistArrayContext(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
+
+    def testCreateDACwithSubView(self):
+        '''Context's view must encompass all ranks in the MPI communicator.'''
+        subview = self.client[:1]
+        if not set(subview.targets) < set(self.dv.targets):
+            raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
+        with self.assertRaises(ValueError):
+            dac = DistArrayContext(subview)

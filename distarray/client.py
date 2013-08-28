@@ -102,10 +102,20 @@ class DistArrayContext(object):
         def get_rank():
             from distarray.mpi.mpibase import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
-        
+
         # get a mapping of IPython engine ID to MPI rank
         rank_map = self.view.apply_async(get_rank).get_dict()
         self.ranks = [ rank_map[engine] for engine in self.targets ]
+
+        # self.view's engines must encompass all ranks in the MPI communicator,
+        # i.e., everything in rank_map.values().
+        def get_size():
+            from distarray.mpi.mpibase import COMM_PRIVATE
+            return COMM_PRIVATE.Get_size()
+
+        comm_size = self.view.apply_async(get_size).get()[0]
+        if set(rank_map.values()) != set(range(comm_size)):
+            raise ValueError('Engines in view must encompass all MPI ranks.')
         
         # create on *every engine* a list of MPI ranks that correspond to my IPython targets
         self._targets_key = self._generate_key()
