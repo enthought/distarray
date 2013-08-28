@@ -136,6 +136,20 @@ def local(fn):
 
         # execute it locally and return the result as a DistArrayProxy
         subcontext._execute(statement)
-        return DistArrayProxy(result_key, subcontext)
+
+        type_key = subcontext._generate_key()
+        type_statement = "{} = str(type({}))".format(type_key, result_key)
+        subcontext._execute0(type_statement)
+        result_type_str = subcontext._pull0(type_key)
+
+        if result_type_str == "<type 'NoneType'>":
+            result = None
+        elif result_type_str == "<class 'distarray.core.densedistarray.DenseDistArray'>":
+            result = DistArrayProxy(result_key, subcontext)
+        else:
+            msg = ("@local not yet implemented for return types other "
+                   "than DistArray and NoneType")
+            raise TypeError(msg)
+        return result
 
     return inner
