@@ -2,9 +2,10 @@
 ODIN: ODin Isn't Numpy
 """
 
+from itertools import chain
+
 from IPython.parallel import Client
 from distarray.client import DistArrayContext, DistArrayProxy
-from itertools import chain
 
 
 # Set up a global DistArrayContext on import
@@ -92,7 +93,8 @@ def determine_context(args):
     if len(contexts) == 0:
         return context  # use the module-provided context
     elif not all_equal(contexts):
-        errmsg = "All DistArrayProxy objects must be defined in the same context: {}"
+        errmsg = ("All DistArrayProxy objects must be defined "
+                  "in the same context: {}")
         raise ValueError(errmsg.format(contexts))
     else:
         return contexts[0]
