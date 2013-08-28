@@ -100,6 +100,41 @@ def determine_context(args):
         return contexts[0]
 
 
+def process_return_value(subcontext, result_key):
+    """Figure out what to return on the Client.
+
+    Parameters
+    ----------
+    key : string
+        Key corresponding to wrapped function's return value.
+
+    Returns
+    -------
+    A DistArrayProxy (if locally it's a DistArray), a None (if locally
+    it's a None).
+
+    Raises
+    ------
+    TypeError for any other type besides those handled above
+
+    """
+    type_key = subcontext._generate_key()
+    type_statement = "{} = str(type({}))".format(type_key, result_key)
+    subcontext._execute0(type_statement)
+    result_type_str = subcontext._pull0(type_key)
+
+    if result_type_str == "<type 'NoneType'>":
+        result = None
+    elif result_type_str == "<class 'distarray.core.densedistarray.DenseDistArray'>":
+        result = DistArrayProxy(result_key, subcontext)
+    else:
+        msg = ("@local not yet implemented for return types other "
+               "than DistArray and NoneType")
+        raise TypeError(msg)
+
+    return result
+
+
 def local(fn):
     """ Decorator indicating a function is run locally on engines.
 
@@ -139,19 +174,6 @@ def local(fn):
         # execute it locally and return the result as a DistArrayProxy
         subcontext._execute(statement)
 
-        type_key = subcontext._generate_key()
-        type_statement = "{} = str(type({}))".format(type_key, result_key)
-        subcontext._execute0(type_statement)
-        result_type_str = subcontext._pull0(type_key)
-
-        if result_type_str == "<type 'NoneType'>":
-            result = None
-        elif result_type_str == "<class 'distarray.core.densedistarray.DenseDistArray'>":
-            result = DistArrayProxy(result_key, subcontext)
-        else:
-            msg = ("@local not yet implemented for return types other "
-                   "than DistArray and NoneType")
-            raise TypeError(msg)
-        return result
+        return process_return_value(subcontext, result_key)
 
     return inner
