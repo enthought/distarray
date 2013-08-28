@@ -92,7 +92,7 @@ class TestLocal(unittest.TestCase):
         db = local_sin(self.da)
         assert_allclose(db, 0)
 
-    def test_local_add(self):
+    def test_local_add50(self):
         dc = local_add50(self.da)
         assert_allclose(dc, 2 * np.pi + 50)
 
