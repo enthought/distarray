@@ -171,7 +171,7 @@ def local(fn):
                               flatten(zip(kwarg_names, kwarg_keys)))
         statement = statement_fmt.format(*replacement_values)
 
-        # execute it locally and return the result as a DistArrayProxy
+        # execute it locally
         subcontext._execute(statement)
 
         return process_return_value(subcontext, result_key)
