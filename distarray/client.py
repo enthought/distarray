@@ -15,11 +15,24 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
+import itertools
+
+from IPython.parallel.error import CompositeError
 
 
 #----------------------------------------------------------------------------
 # Code
 #----------------------------------------------------------------------------
+
+def handle_composite_error(err):
+    """If there's only one error, raise it.  Else, re-raise the
+    CompositeError.
+    """
+    if len(err.args) == 1:
+        raise eval(err.args[0])
+    else:
+        raise
+
 
 class RandomModule(object):
 
@@ -298,6 +311,47 @@ class DistArrayProxy(object):
         s = '<DistArrayProxy(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
         return s
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self[i] for i in xrange(*index.indices(self.size))]
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            result_key = self.context._generate_key()
+            try:
+                statement = '%s = %s.__getitem__(%s)'
+                self.context._execute(statement % (result_key, self.key,
+                                                   tuple_index))
+            except CompositeError as err:
+                handle_composite_error(err)
+
+            results = self.context._pull(result_key)
+            result_iter = itertools.dropwhile(lambda r: r is None, results)
+            return result_iter.next()  # return first non-None value
+        else:
+            raise TypeError("Invalid index type.")
+
+    def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            indices = xrange(*index.indices(self.size))
+            if np.isscalar(value):
+                # broadcast scalar value
+                value = itertools.repeat(value)
+            else:
+                if len(value) != len(indices):
+                    raise ValueError("`value` must be same length as slice")
+            for i, v in itertools.izip(indices, value):
+                self[i] = v
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            try:
+                statement = '%s.__setitem__(%s, %s)'
+                self.context._execute(statement % (self.key, tuple_index,
+                                                   value))
+            except CompositeError as err:
+                handle_composite_error(err)
+        else:
+            raise TypeError("Invalid index type.")
 
     @property
     def shape(self):
