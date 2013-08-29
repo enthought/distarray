@@ -561,7 +561,8 @@ class DenseDistArray(BaseDistArray):
             local_inds = self.global_to_local(*key)
             return self.local_array[local_inds]
         else:
-            raise IndexError("nonlocal indexing not implemented yet")
+            return None
+            #raise IndexError("nonlocal indexing not implemented yet")
     
     def __setitem__(self, key, value):
         self._check_key(key)
@@ -570,7 +571,8 @@ class DenseDistArray(BaseDistArray):
             local_inds = self.global_to_local(*key)
             self.local_array[local_inds] = value
         else:
-            raise IndexError("nonlocal indexing not implemented yet")
+            pass
+            #raise IndexError("nonlocal indexing not implemented yet")
     
     def sync(self):
         print "hi"
