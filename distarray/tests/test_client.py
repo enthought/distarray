@@ -7,6 +7,8 @@ class TestClient(unittest.TestCase):
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
+        if len(self.dv.targets) < 4:
+            raise unittest.SkipTest('Must set up a cluster with at least 4 engines running.')
 
     def testCreateDAC(self):
         '''Can we create a plain vanilla context?'''
@@ -21,7 +23,11 @@ class TestClient(unittest.TestCase):
     def testCreateDACwithSubView(self):
         '''Context's view must encompass all ranks in the MPI communicator.'''
         subview = self.client[:1]
-        if not set(subview.targets) < set(self.dv.targets):
-            raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
         with self.assertRaises(ValueError):
             dac = DistArrayContext(subview)
+
+    def testCreateDACwithTargetsRanks(self):
+        '''Is the ranks attribute of a Context object contiguous?'''
+        targets = [2,3]
+        dac = DistArrayContext(self.dv, targets=targets)
+        self.assertEqual(set(dac.ranks), set(range(len(targets))))
