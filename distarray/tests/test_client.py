@@ -27,7 +27,8 @@ class TestClient(unittest.TestCase):
             dac = DistArrayContext(subview)
 
     def testCreateDACwithTargetsRanks(self):
-        '''Is the ranks attribute of a Context object contiguous?'''
-        targets = [2,3]
+        '''Check that the target <=> rank mapping is consistent.'''
+        targets = [3,2]
         dac = DistArrayContext(self.dv, targets=targets)
-        self.assertEqual(set(dac.ranks), set(range(len(targets))))
+        self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
+        self.assertEqual(set(range(len(dac.targets))), set(dac.target_to_rank.values()))

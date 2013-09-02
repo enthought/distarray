@@ -115,12 +115,11 @@ class DistArrayContext(object):
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
-        rank_map = self.view.pull(rank, targets=self.targets).get_dict()
-        self.ranks = [ rank_map[engine] for engine in self.targets ]
+        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
 
-        # ensure that self.ranks is contiguous block of ranks,
-        # 0..len(self.targets)-1
-        assert set(range(len(self.targets))) == set(self.ranks)
+        # ensure consistency
+        assert set(self.targets) == set(self.target_to_rank.keys())
+        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
 
     def _make_intracomm(self):
         def get_rank():
@@ -141,17 +140,12 @@ class DistArrayContext(object):
         if set(rank_map.values()) != set(range(comm_size)):
             raise ValueError('Engines in view must encompass all MPI ranks.')
         
-        # create on *every engine* a list of MPI ranks that correspond to my
-        # IPython targets
-        targets_key = self._generate_key()
-        self.view.push({targets_key: ranks}, block=True)
-
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
         self._comm_key = self._generate_key()
         self.view.execute(
-            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, targets_key),
+            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
