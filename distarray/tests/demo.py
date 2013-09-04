@@ -30,7 +30,7 @@ def global_sum(da):
 
 
 if __name__ == '__main__':
-    arr_len = 128
+    arr_len = 40
 
     print
     raw_input("Basic creation:")
