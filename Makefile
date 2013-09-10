@@ -5,7 +5,7 @@ PYTHON = python
 MPI4PY_INCLUDE = ${shell ${PYTHON} -c 'import mpi4py; print( mpi4py.get_include() )'}
 
 
-src: distarray/core/maps_fast.c distarray/mpi/tests/helloworld.c distarray/fft/py_fftw.c
+src: distarray/core/maps_fast.c distarray/mpi/tests/helloworld.c
 
 srcclean:
 	-${RM} distarray/core/maps_fast.c
