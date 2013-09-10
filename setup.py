@@ -86,7 +86,6 @@ def find_packages():
 
 def main():
     setup(packages = find_packages(),
-          package_data = {'distarray' : ['include/*.pxi']},
           headers = find_headers(),
           ext_modules = find_ext_modules(),
           executables = find_executables(),
