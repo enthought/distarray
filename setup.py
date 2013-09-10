@@ -19,7 +19,8 @@ from mpidistutils import config, build, build_ext
 from mpidistutils import build_exe, install_exe, clean_exe
 import mpi4py
 
-#--------- -------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
 # Metadata
 #----------------------------------------------------------------------------
 
@@ -39,6 +40,7 @@ metadata = {
 #----------------------------------------------------------------------------
 
 def find_ext_modules():
+
     maps = Extension(
         name='distarray.core.maps_fast',
         sources=['distarray/core/maps_fast.c']
@@ -47,21 +49,24 @@ def find_ext_modules():
     mpi_test = Extension(
         name='distarray.mpi.tests.helloworld',
         sources=['distarray/mpi/tests/helloworld.c'],
-        include_dirs = [mpi4py.get_include()]
+        include_dirs=[mpi4py.get_include()]
     )
-    
+
     allext = [maps, mpi_test]
     return allext
+
 
 def find_headers():
     # allheaders = ['mpi/ext/libmpi.h']
     return []
 
+
 def find_executables():
     return []
 
+
 def find_packages():
-    packages= [
+    packages = [
         'distarray',
         'distarray.tests',
         'distarray.core',
@@ -93,6 +98,7 @@ def main():
                       'install_exe' : install_exe,
                       },
           **metadata)
+
 
 if __name__ == '__main__':
     # hack distutils.sysconfig to eliminate debug flags
