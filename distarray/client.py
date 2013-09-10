@@ -64,27 +64,6 @@ class RandomModule(object):
         return DistArrayProxy(new_key, self.context)
 
 
-class FFTModule(object):
-
-    def __init__(self, context):
-        self.context = context
-        self.context._execute('import distarray.fft')
-
-    def fft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.fft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-    def ifft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.ifft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-
 class DistArrayContext(object):
 
     def __init__(self, view, targets=None):
@@ -105,7 +84,6 @@ class DistArrayContext(object):
         self._set_engine_rank_mapping()
 
         # self.random = RandomModule(self)
-        # self.fft = FFTModule(self)
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
