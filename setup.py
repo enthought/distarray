@@ -14,11 +14,10 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 from distutils.core import setup
-from mpidistutils import Distribution, Extension, Executable
+from mpidistutils import Distribution, Extension
 from mpidistutils import config, build, build_ext
 from mpidistutils import build_exe, install_exe, clean_exe
 import mpi4py
-import numpy
 
 #--------- -------------------------------------------------------------------
 # Metadata
@@ -34,16 +33,12 @@ metadata = {
     'author_email'     : 'ellisonbg@gmail.com',
     }
 
-# See if FFTW_DIR is set 
-import os
 
 #----------------------------------------------------------------------------
 # Extension modules
 #----------------------------------------------------------------------------
 
 def find_ext_modules():
-    import sys
-    
     maps = Extension(
         name='distarray.core.maps_fast',
         sources=['distarray/core/maps_fast.c']
