@@ -6,6 +6,7 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 
+
 def mag_phase(F):
     """Return magnitude and phase components of spectrum F."""
 
@@ -23,8 +24,8 @@ def plot_spectrum(F, amplify=1000):
 try:
     # Read in original image, convert to floating point for further
     # manipulation; imread returns a MxNx4 RGBA image.  Since the
-    # image is grayscale, just extrac the 1st channel
-    im = plt.imread('data/moonlanding.png').astype(float)[:,:,0]
+    # image is grayscale, just extract the 1st channel
+    im = plt.imread('moon.png').astype(float)[:,:,0]
 except:
     print "Could not open image."
     sys.exit(-1)
