@@ -1,5 +1,5 @@
 import unittest
-from distarray.core import maps_fast as maps
+from distarray.core import maps
 
 class TestMapBase(unittest.TestCase):
     
