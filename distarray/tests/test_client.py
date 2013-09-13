@@ -46,50 +46,38 @@ class TestDistArrayProxy(unittest.TestCase):
         for val in xrange(100):
             self.assertEqual(dap[val], val)
 
-    def test_slice_block_dist(self):
+    def test_slice_in_getitem_raises_valueerror(self):
+        dap = self.dac.empty((100,), dist={0: 'b'})
+        with self.assertRaises(NotImplementedError):
+            dap[20:40]
+
+    def test_slice_in_setitem_raises_valueerror(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
         vals = np.random.random(20)
-        dap[20:40] = vals
-        np.testing.assert_allclose(np.array(dap[20:40]), vals)
+        with self.assertRaises(NotImplementedError):
+            dap[20:40] = vals
 
-    def test_slice_set_to_scalar_block_dist(self):
-        dap = self.dac.empty((100,), dist={0: 'b'})
-        val = 55
-        dap[20:40] = val
-        np.testing.assert_allclose(np.array(dap[20:40]), val)
-
-    def test_slice_cyclic_dist(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
-        vals = np.random.random(20)
-        dap[20:40] = vals
-        np.testing.assert_allclose(np.array(dap[20:40]), vals)
-
-    def test_slice_set_to_scalar_cyclic_dist(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
-        val = 55
-        dap[20:40] = val
-        np.testing.assert_allclose(np.array(dap[20:40]), val)
-
+    @unittest.skip('Slice assignment not yet implemented.')
     def test_slice_size_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        self.assertRaises(ValueError, dap.__setitem__, slice(20, 40), (11, 12))
+        with self.assertRaises(NotImplementedError):
+            dap[20:40] = (11, 12)
 
     def test_get_index_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        self.assertRaises(IndexError, dap.__getitem__, 111)
+        with self.assertRaises(IndexError):
+            dap[111]
 
     def test_set_index_error(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        self.assertRaises(IndexError, dap.__setitem__, 111, 55)
+        with self.assertRaises(IndexError):
+            dap[111] = 55
 
     def test_iteration(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
-        vals = range(100)
-        dap[:] = vals
-        i = 0
+        dap.fill(10)
         for val in dap:
-            self.assertEqual(val, i)
-            i += 1
+            self.assertEqual(val, 10)
 
 
 if __name__ == '__main__':

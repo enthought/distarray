@@ -314,7 +314,7 @@ class DistArrayProxy(object):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return [self[i] for i in xrange(*index.indices(self.size))]
+            raise NotImplementedError("Slicing a proxy object not yet implemented.")
         elif isinstance(index, int):
             tuple_index = (index,)
             result_key = self.context._generate_key()
@@ -333,15 +333,7 @@ class DistArrayProxy(object):
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            indices = xrange(*index.indices(self.size))
-            if np.isscalar(value):
-                # broadcast scalar value
-                value = itertools.repeat(value)
-            else:
-                if len(value) != len(indices):
-                    raise ValueError("`value` must be same length as slice")
-            for i, v in itertools.izip(indices, value):
-                self[i] = v
+            raise NotImplementedError("Setting to a slice not yet implemented.")
         elif isinstance(index, int):
             tuple_index = (index,)
             try:
