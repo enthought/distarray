@@ -168,8 +168,8 @@ class TestLocal(unittest.TestCase):
         subcontext = DistArrayContext(odin._global_view, targets=targets)
         da = subcontext.empty((1024, 1024))
         da.fill(11)
-        de = local_add_num(da, 10)
-        assert_allclose(de, 11 + 10)
+        with self.assertRaises(ValueError):
+            local_add_num(da, 10)
 
     def test_barrier(self):
         call_barrier(self.da)
@@ -178,8 +178,8 @@ class TestLocal(unittest.TestCase):
         targets = [0, 2]
         subcontext = DistArrayContext(odin._global_view, targets=targets)
         da = subcontext.empty((1024, 1024))
-        da.fill(11)
-        call_barrier(da)
+        with self.assertRaises(ValueError):
+            call_barrier(da)
 
 class TestUtils(unittest.TestCase):
 
@@ -206,27 +206,27 @@ class TestDetermineContext(unittest.TestCase):
     def test_global_context(self):
         da = odin.context.empty((100,))
         db = odin.context.empty((100,))
-        self.assertEqual(odin.determine_context((da, db)), odin.context)
+        self.assertEqual(odin.determine_context(odin.context, (da, db)), odin.context)
 
     def test_subcontext(self):
         subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
         da = subcontext.empty((100,))
         db = subcontext.empty((100,))
-        self.assertEqual(odin.determine_context((da, db)), subcontext)
+        self.assertEqual(odin.determine_context(subcontext, (da, db)), subcontext)
 
     def test_no_proxies(self):
-        self.assertEqual(odin.determine_context((11, 12, 'abc')), odin.context)
+        self.assertEqual(odin.determine_context(odin.context, (11, 12, 'abc')), odin.context)
 
     def test_mixed_types(self):
         subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
         da = subcontext.empty((100,))
-        self.assertEqual(odin.determine_context((da, 12, 'abc')), da.context)
+        self.assertEqual(odin.determine_context(subcontext, (da, 12, 'abc')), da.context)
 
     def test_mixed_contexts(self):
         subcontext = DistArrayContext(odin._global_view, targets=[0, 3])
         da = odin.context.empty((100,))
         db = subcontext.empty((100,))
-        self.assertRaises(ValueError, odin.determine_context, (da, db))
+        self.assertRaises(ValueError, odin.determine_context, odin.context, (da, db))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
