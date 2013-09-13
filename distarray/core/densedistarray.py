@@ -807,7 +807,7 @@ def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
 
 def empty_like(arr, dtype=None):
     if isinstance(arr, DenseDistArray):
-	if dtype==None:
+        if dtype==None:
             return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
         else:
             return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)

@@ -4237,7 +4237,7 @@ static PyObject * __Pyx_CyFunction_Call(PyObject *func, PyObject *arg, PyObject 
 }
 #else
 static PyObject * __Pyx_CyFunction_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-	return PyCFunction_Call(func, arg, kw);
+    return PyCFunction_Call(func, arg, kw);
 }
 #endif
 static PyTypeObject __pyx_CyFunctionType_type = {
