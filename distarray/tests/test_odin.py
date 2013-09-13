@@ -40,6 +40,13 @@ def local_add_num(da, num):
 
 
 @odin.local
+def call_barrier(da):
+    from mpi4py import MPI
+    MPI.COMM_WORLD.Barrier()
+    return da
+
+
+@odin.local
 def local_add_nums(da, num1, num2, num3):
     return da + num1 + num2 + num3
 
@@ -164,6 +171,15 @@ class TestLocal(unittest.TestCase):
         de = local_add_num(da, 10)
         assert_allclose(de, 11 + 10)
 
+    def test_barrier(self):
+        call_barrier(self.da)
+
+    def test_barrier_with_subcontext(self):
+        targets = [0, 2]
+        subcontext = DistArrayContext(odin._global_view, targets=targets)
+        da = subcontext.empty((1024, 1024))
+        da.fill(11)
+        call_barrier(da)
 
 class TestUtils(unittest.TestCase):
 
