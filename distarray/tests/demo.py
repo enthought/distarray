@@ -1,15 +1,18 @@
-import numpy as np
+import numpy
 import distarray
 from distarray import odin
 from pprint import pprint
 
-np.set_printoptions(precision=2, linewidth=1000)
+numpy.set_printoptions(precision=2, linewidth=1000)
+
+with odin.context.view.sync_imports():
+    import numpy
 
 
 @odin.local
 def local_sin(da):
     """A simple @local function."""
-    return np.sin(da)
+    return numpy.sin(da)
 
 
 @odin.local
@@ -25,12 +28,13 @@ def global_sum(da):
     local_sum = da.local_array.sum()
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
 
-    new_arr = np.array([global_sum])
+    new_arr = numpy.array([global_sum])
     new_distarray = distarray.DistArray((1,), buf=new_arr)
     return new_distarray
 
 
 if __name__ == '__main__':
+
     arr_len = 40
 
     print
