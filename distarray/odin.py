@@ -36,7 +36,7 @@ def all_equal(lst):
     if len(lst) == 0 or len(lst) == 1:
         return True  # vacuously True
     else:
-        return all([element == lst[0] for element in lst[1:]])
+        return all(element == lst[0] for element in lst[1:])
 
 
 def key_and_push_args(subcontext, arglist):
@@ -69,11 +69,14 @@ def key_and_push_args(subcontext, arglist):
     return arg_keys
 
 
-def determine_context(args):
+def determine_context(definition_context, args):
     """Determine the DistArrayContext for a function.
 
     Parameters
     ----------
+    definition_context: DistArrayContext object
+        The Context in which the function was defined.
+
     args : iterable
         List of objects to inspect for context.  Objects that aren't of
         type DistArrayProxy are skipped.
@@ -88,15 +91,12 @@ def determine_context(args):
     ValueError
         Raised if all DistArrayProxy objects don't have the same context.
     """
-    contexts = [arg.context for arg in args if isinstance(arg, DistArrayProxy)]
-    if len(contexts) == 0:
-        return context  # use the module-provided context
-    elif not all_equal(contexts):
-        errmsg = "All DistArrayProxy objects must be defined in the same context: {}"
+    contexts = [definition_context] + [arg.context for arg in args if isinstance(arg, DistArrayProxy)]
+    if not all_equal(contexts):
+        errmsg = "All DistArrayProxy objects must be defined with the same context used for the function: {}"
         raise ValueError(errmsg.format(contexts))
     else:
         return contexts[0]
-
 
 def local(fn):
     """ Decorator indicating a function is run locally on engines.
@@ -117,7 +117,7 @@ def local(fn):
 
     def inner(*args, **kwargs):
 
-        subcontext = determine_context(flatten((args, kwargs.values())))
+        subcontext = determine_context(_global_context, flatten((args, kwargs.values())))
 
         # generate keys for each parameter
         # push to engines if not a DistArrayProxy
