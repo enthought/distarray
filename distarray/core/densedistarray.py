@@ -137,8 +137,23 @@ class DenseDistArray(BaseDistArray):
         BaseDistArray.__del__(self)
     
     #----------------------------------------------------------------------------
-    # Misc methods
+    # Distributed Array Protocol
     #---------------------------------------------------------------------------- 
+
+    def __distarray__(self):
+        metadata = {"disttype": None,
+                    "periodic": None,
+                    "datasize": None,
+                    "gridrank": None,
+                    "gridsize": None,
+                    "indices": None,
+                    "blocksize": None,
+                    "padding": None
+                   }
+
+        distbuffer = {"buffer": self.local_array,
+                      "dimdata": (metadata,)}
+        return distbuffer
     
     #----------------------------------------------------------------------------
     # Methods used at initialization
