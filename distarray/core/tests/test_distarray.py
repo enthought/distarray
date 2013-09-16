@@ -174,7 +174,7 @@ class TestLocalInd(unittest.TestCase):
                 self.assertEquals(da.shape,(8,8))
                 self.assertEquals(da.grid_shape,(4,))
                 self.assertEquals(da.map_classes, (maps.CyclicMap,))
-                result = utils.outer_zip(4*(0,)+4*(1,),range(8))
+                result = utils.outer_zip(4*(0,)+4*(1,),list(range(8)))
                 calc_result = [[da.global_to_local(row,col) for col in range(da.shape[1])] for row in range(da.shape[0])]
                 self.assertEquals(result,calc_result)
                 comm.Free()
@@ -186,7 +186,7 @@ class TestGlobalInd(unittest.TestCase):
     """
     
     def round_trip(self, da):
-        for indices in utils.multi_for( [xrange(s) for s in da.shape] ):
+        for indices in utils.multi_for( [range(s) for s in da.shape] ):
             li = da.global_to_local(*indices)
             owner_rank = da.owner_rank(*indices)
             gi = da.local_to_global(owner_rank,*li)

@@ -1,8 +1,11 @@
+from __future__ import print_function
 #!/usr/bin/env python
 
 import re
 import sys, os, fnmatch
 from optparse import OptionParser
+import six
+
 
 def all_files(root, patterns='*', single_level=False, yield_folders=False):
     patterns = patterns.split(';')
@@ -18,9 +21,9 @@ def all_files(root, patterns='*', single_level=False, yield_folders=False):
         if single_level:
             break
 
+
 def xsys(cmd):
     os.system(cmd)
-
 
 
 class Maker(object):
@@ -44,25 +47,25 @@ class Maker(object):
         self.namespace['x'] = xsys
         
     def _debug(self):
-        for k, v in self.targets.iteritems():
-            print k, v
+        for k, v in six.iteritems(self.targets):
+            print(k, v)
         
     def _loadfile(self):
-        execfile(self.filename, globals(), self.namespace)
+        exec(compile(open(self.filename).read(), self.filename, 'exec'), globals(), self.namespace)
         
     def target(self, t):
-        print '[make.py] Registering target: ', t.__name__
+        print('[make.py] Registering target: ', t.__name__)
         self.targets[t.__name__] = t
         self.config[t.__name__] = {}
         return t
 
     def build(self, target_name):
-        print '[make.py] Building target: ', target_name
+        print('[make.py] Building target: ', target_name)
         t = self.targets.get(target_name)
         if t is not None:
             t(self.config)
         else:
-            print "[make.py] Error: target %s not found" % target_name
+            print("[make.py] Error: target %s not found" % target_name)
 
     def run(self):
         parser = OptionParser()
@@ -70,6 +73,7 @@ class Maker(object):
         for a in args:
             self.build(a)
             
+
 if __name__ == '__main__':
     cwd = os.getcwd()
     try_file = os.path.join(cwd, 'makefile.py')
@@ -77,4 +81,4 @@ if __name__ == '__main__':
         m = Maker(try_file)
         m.run()
     else:
-        print "[make.py] Error: no makefile.ipy could be found in the current working dir."
+        print("[make.py] Error: no makefile.ipy could be found in the current working dir.")

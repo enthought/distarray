@@ -1,3 +1,4 @@
+from __future__ import print_function
 # encoding: utf-8
 
 __docformat__ = "restructuredtext en"
@@ -13,6 +14,7 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
+import six
 import sys
 import math
 
@@ -237,7 +239,7 @@ class DenseDistArray(BaseDistArray):
                 try:
                     import pylab
                 except ImportError:
-                    print "Matplotlib is not installed so the dist_matrix cannot be plotted"
+                    print("Matplotlib is not installed so the dist_matrix cannot be plotted")
                 else:
                     pylab.ion()
                     pylab.matshow(dm)
@@ -573,7 +575,7 @@ class DenseDistArray(BaseDistArray):
             raise IndexError("nonlocal indexing not implemented yet")
     
     def sync(self):
-        print "hi"
+        print("hi")
     
     def __contains__(self, item):
         return item in self.local_array
@@ -846,7 +848,7 @@ class GlobalIterator(object):
         return self
     
     def next(self):
-        local_inds, value = self.nditerator.next()
+        local_inds, value = six.advance_iterator(self.nditerator)
         global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
         return global_inds, value
 

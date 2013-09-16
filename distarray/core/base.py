@@ -33,6 +33,7 @@ from distarray.core.construct import (
     find_local_shape,
     find_grid_shape
 )
+from functools import reduce
 
 #----------------------------------------------------------------------------
 # Exports

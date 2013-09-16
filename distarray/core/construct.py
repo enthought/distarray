@@ -22,6 +22,7 @@ from distarray.mpi.error import *
 from distarray.core import maps
 from distarray.core.error import *
 from distarray import utils
+from functools import reduce
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------

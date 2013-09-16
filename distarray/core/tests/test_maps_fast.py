@@ -36,16 +36,16 @@ class TestBlockMap(unittest.TestCase):
         """
         m = maps.BlockMap(16,4)
         p = [m.local_index(i) for i in range(16)]
-        self.assertEquals(4*range(4),p)
+        self.assertEquals(4*list(range(4)),p)
         m = maps.BlockMap(17,4)
         p = [m.local_index(i) for i in range(17)]
-        self.assertEquals(3*range(5)+[0,1],p)
+        self.assertEquals(3*list(range(5))+[0,1],p)
         m = maps.BlockMap(15,4)
         p = [m.local_index(i) for i in range(15)]
-        self.assertEquals(3*range(4)+[0,1,2],p)
+        self.assertEquals(3*list(range(4))+[0,1,2],p)
         m = maps.BlockMap(10,2)
         p = [m.local_index(i) for i in range(10)]
-        self.assertEquals(2*range(5),p)
+        self.assertEquals(2*list(range(5)),p)
         
 class TestCyclicMap(unittest.TestCase):
      
@@ -55,13 +55,13 @@ class TestCyclicMap(unittest.TestCase):
         """
         m = maps.CyclicMap(16,4)
         owners = [m.owner(e) for e in range(16)]
-        self.assertEquals(4*range(4),owners)
+        self.assertEquals(4*list(range(4)),owners)
         m = maps.CyclicMap(17,4)
         owners = [m.owner(e) for e in range(17)]
-        self.assertEquals(4*range(4)+[0],owners)
+        self.assertEquals(4*list(range(4))+[0],owners)
         m = maps.CyclicMap(15,4)
         owners = [m.owner(e) for e in range(15)]
-        self.assertEquals(3*range(4)+[0,1,2],owners)
+        self.assertEquals(3*list(range(4))+[0,1,2],owners)
     
     def test_local_index(self):
         """
@@ -78,7 +78,7 @@ class TestCyclicMap(unittest.TestCase):
         self.assertEquals(4*[0]+4*[1]+4*[2]+3*[3],p)
         m = maps.BlockMap(10,2)
         p = [m.local_index(i) for i in range(10)]
-        self.assertEquals(2*range(5),p)
+        self.assertEquals(2*list(range(5)),p)
 
 class TestRegistry(unittest.TestCase):
     

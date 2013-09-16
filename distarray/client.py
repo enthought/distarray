@@ -129,7 +129,7 @@ class DistArrayContext(object):
 
     def _generate_key(self):
         uid = uuid.uuid4()
-        return '__distarray_%s' % uid.get_hex()
+        return '__distarray_%s' % uid.hex
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
