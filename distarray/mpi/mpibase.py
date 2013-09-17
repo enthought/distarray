@@ -20,7 +20,7 @@ def create_comm_of_size(size=4):
     if size > comm_size:
         raise InvalidCommSizeError("requested size (%i) is bigger than the comm size (%i)" % (size, comm_size))
     else:
-        subgroup = group.Incl(range(size))
+        subgroup = group.Incl(list(range(size)))
         newcomm = COMM_PRIVATE.Create(subgroup)
         return newcomm
 

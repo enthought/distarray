@@ -139,18 +139,17 @@ def _find_mpi_compiler(envvars, executables, path=None):
 
 # --------------------------------------------------------
 
-from ConfigParser import ConfigParser
-from ConfigParser import Error as ConfigParserError
+from six.moves import configparser
 
 def _config_parser(section, filenames, raw=False, vars=None):
     """
     Returns a dictionary of options obtained by parsing configuration
     files.
     """
-    parser = ConfigParser()
+    parser = configparser.ConfigParser()
     try:
         parser.read(filenames.split(','))
-    except ConfigParserError:
+    except configparser.Error:
         log.error("error: parsing configuration file/s '%s'", filenames)
         return None
     if not parser.has_section(section):
@@ -850,7 +849,7 @@ class build_exe(_build_ext):
         # OS/2 has an 8 character module (extension) limit :-(
         if os.name == "os2":
             exe_path[len(exe_path) - 1] = exe_path[len(exe_path) - 1][:8]
-        return apply(os.path.join, exe_path) + sysconfig.get_config_var('EXE')
+        return os.path.join(*exe_path) + sysconfig.get_config_var('EXE')
 
     def get_ext_filename (self, ext_name):
         return self.get_exe_filename(ext_name)
