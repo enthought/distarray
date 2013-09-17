@@ -592,7 +592,7 @@ class DenseDistArray(BaseDistArray):
         if packed_ind > np.prod(self.shape)-1 or packed_ind < 0:
             raise ValueError("Invalid index, must be 0 <= x <= number of elements.")
         strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
-        return tuple(packed_ind/strides_array % self.shape)
+        return tuple(packed_ind//strides_array % self.shape)
         
     
     #----------------------------------------------------------------------------
