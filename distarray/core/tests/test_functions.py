@@ -21,18 +21,18 @@ class TestFunctions(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 a = densedistarray.DistArray((16,16), dtype='int64', comm=comm)
                 b = densedistarray.DistArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(densedistarray.arecompatible(a,b), True)
+                self.assertEqual(densedistarray.arecompatible(a,b), True)
                 a = densedistarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
                 b = densedistarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
-                self.assertEquals(densedistarray.arecompatible(a,b), False)                
+                self.assertEqual(densedistarray.arecompatible(a,b), False)                
                 comm.Free()
     
     def test_fromfunction(self):
@@ -45,17 +45,17 @@ class TestFunctions(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 a = densedistarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(a.shape, (16,16))
-                self.assertEquals(a.dtype, np.dtype('int64'))
+                self.assertEqual(a.shape, (16,16))
+                self.assertEqual(a.dtype, np.dtype('int64'))
                 for global_inds, value in densedistarray.ndenumerate(a):
-                    self.assertEquals(1.0, value)
+                    self.assertEqual(1.0, value)
                 comm.Free()
     
     def test_fromfunction_complicated(self):
@@ -68,20 +68,18 @@ class TestFunctions(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 a = densedistarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(a.shape, (16,16))
-                self.assertEquals(a.dtype, np.dtype('int64'))
+                self.assertEqual(a.shape, (16,16))
+                self.assertEqual(a.dtype, np.dtype('int64'))
                 for global_inds, value in densedistarray.ndenumerate(a):
-                    self.assertEquals(sum(global_inds), value)
+                    self.assertEqual(sum(global_inds), value)
                 comm.Free()
-
-
 
 
 if __name__ == '__main__':

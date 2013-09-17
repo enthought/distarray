@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-from numpy.testing.utils import assert_array_equal, assert_array_almost_equal
 
 from distarray.core.error import *
 from distarray.mpi.error import *
@@ -11,6 +10,7 @@ from distarray.mpi.mpibase import (
     create_comm_with_list)
 from distarray.core import maps, densedistarray
 from distarray import utils
+
 
 class TestInit(unittest.TestCase):
     """
@@ -24,30 +24,30 @@ class TestInit(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((16,16), grid_shape=(4,),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(da.shape, (16,16))
-                self.assertEquals(da.dist, ('b',None))
-                self.assertEquals(da.grid_shape, (4,))
-                self.assertEquals(da.base_comm, comm)
-                self.assertEquals(da.comm_size, 4)
-                self.assert_(da.comm_rank in range(4))
-                self.assertEquals(da.ndistdim, 1)
-                self.assertEquals(da.distdims, (0,))
-                self.assertEquals(da.map_classes, (maps.BlockMap,))
-                self.assertEquals(da.comm.Get_topo(), (list(da.grid_shape),[0],[da.comm_rank]))
-                self.assertEquals(len(da.maps), 1)
-                self.assertEquals(da.maps[0].local_shape, 4)
-                self.assertEquals(da.maps[0].shape, 16)
-                self.assertEquals(da.maps[0].grid_shape, 4)
-                self.assertEquals(da.local_shape, (4,16))
-                self.assertEquals(da.local_array.shape, da.local_shape)
-                self.assertEquals(da.local_array.dtype, da.dtype)
+                self.assertEqual(da.shape, (16,16))
+                self.assertEqual(da.dist, ('b',None))
+                self.assertEqual(da.grid_shape, (4,))
+                self.assertEqual(da.base_comm, comm)
+                self.assertEqual(da.comm_size, 4)
+                self.assertTrue(da.comm_rank in range(4))
+                self.assertEqual(da.ndistdim, 1)
+                self.assertEqual(da.distdims, (0,))
+                self.assertEqual(da.map_classes, (maps.BlockMap,))
+                self.assertEqual(da.comm.Get_topo(), (list(da.grid_shape),[0],[da.comm_rank]))
+                self.assertEqual(len(da.maps), 1)
+                self.assertEqual(da.maps[0].local_shape, 4)
+                self.assertEqual(da.maps[0].shape, 16)
+                self.assertEqual(da.maps[0].grid_shape, 4)
+                self.assertEqual(da.local_shape, (4,16))
+                self.assertEqual(da.local_array.shape, da.local_shape)
+                self.assertEqual(da.local_array.dtype, da.dtype)
                 comm.Free()
     
     
@@ -58,12 +58,12 @@ class TestInit(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((16,16), grid_shape=(4,), comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 da.get_localarray()
                 la = np.random.random(da.local_shape)
@@ -80,22 +80,22 @@ class TestInit(unittest.TestCase):
         try:
             comm = create_comm_of_size(12)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((20,20), dist='b', comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(da.grid_shape, (3,4))
+                self.assertEqual(da.grid_shape, (3,4))
                 da = densedistarray.DistArray((2*10,6*10), dist='b', comm=comm)
-                self.assertEquals(da.grid_shape, (2,6))
+                self.assertEqual(da.grid_shape, (2,6))
                 da = densedistarray.DistArray((6*10,2*10), dist='b', comm=comm)
-                self.assertEquals(da.grid_shape, (6,2))
+                self.assertEqual(da.grid_shape, (6,2))
                 da = densedistarray.DistArray((100,10,300), dist=('b',None,'c'), comm=comm)
-                self.assertEquals(da.grid_shape, (2,6))
+                self.assertEqual(da.grid_shape, (2,6))
                 da = densedistarray.DistArray((100,50,300), dist='b', comm=comm)
-                self.assertEquals(da.grid_shape, (2,2,3))                  
+                self.assertEqual(da.grid_shape, (2,2,3))                  
                 comm.Free()
 
 
@@ -111,12 +111,12 @@ class TestDistMatrix(unittest.TestCase):
         try:
             comm = create_comm_of_size(12)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((10,10), dist=('c','c'), comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 if False:
                     if comm.Get_rank()==0:
@@ -141,19 +141,19 @@ class TestLocalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((4,4),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(da.shape,(4,4))
-                self.assertEquals(da.grid_shape,(4,))
+                self.assertEqual(da.shape,(4,4))
+                self.assertEqual(da.grid_shape,(4,))
                 row_result = [(0,0),(0,1),(0,2),(0,3)]
                 for row in range(da.shape[0]):
                     calc_row_result = [da.global_to_local(row,col) for col in range(da.shape[1])]
-                    self.assertEquals(row_result, calc_row_result)
+                    self.assertEqual(row_result, calc_row_result)
                 comm.Free()
     
     
@@ -164,19 +164,19 @@ class TestLocalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((8,8),dist={0:'c'},comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
-                self.assertEquals(da.shape,(8,8))
-                self.assertEquals(da.grid_shape,(4,))
-                self.assertEquals(da.map_classes, (maps.CyclicMap,))
+                self.assertEqual(da.shape,(8,8))
+                self.assertEqual(da.grid_shape,(4,))
+                self.assertEqual(da.map_classes, (maps.CyclicMap,))
                 result = utils.outer_zip(4*(0,)+4*(1,),list(range(8)))
                 calc_result = [[da.global_to_local(row,col) for col in range(da.shape[1])] for row in range(da.shape[0])]
-                self.assertEquals(result,calc_result)
+                self.assertEqual(result,calc_result)
                 comm.Free()
 
 
@@ -190,7 +190,7 @@ class TestGlobalInd(unittest.TestCase):
             li = da.global_to_local(*indices)
             owner_rank = da.owner_rank(*indices)
             gi = da.local_to_global(owner_rank,*li)
-            self.assertEquals(gi,indices)
+            self.assertEqual(gi,indices)
     
     
     def test_block(self):
@@ -200,12 +200,12 @@ class TestGlobalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((4,4),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -218,12 +218,12 @@ class TestGlobalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((8,8),dist=('c',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -236,12 +236,12 @@ class TestGlobalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 da = densedistarray.DistArray((10,100,20),dist=('b','c',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -251,20 +251,20 @@ class TestGlobalInd(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:        
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 answers = [(0,3),(4,7),(8,11),(12,15)]
                 limits = a.global_limits(0)
-                self.assertEquals(limits, answers[a.comm_rank])
+                self.assertEqual(limits, answers[a.comm_rank])
                 answers = 4*[(0,15)]
                 limits = a.global_limits(1)
-                self.assertEquals(limits, answers[a.comm_rank])
+                self.assertEqual(limits, answers[a.comm_rank])
                 self.assertRaises(DistError, b.global_limits, 0)
                 comm.Free()        
 
@@ -275,21 +275,21 @@ class TestIndexing(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:        
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 for global_inds, value in densedistarray.ndenumerate(a):
                     a[global_inds] = 0.0
                 for global_inds, value in densedistarray.ndenumerate(a):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in densedistarray.ndenumerate(a):
-                    self.assertEquals(b[global_inds],a[global_inds])
-                    self.assertEquals(a[global_inds],0.0)                
+                    self.assertEqual(b[global_inds],a[global_inds])
+                    self.assertEqual(a[global_inds],0.0)                
                 comm.Free()
     
     def test_indexing1(self):
@@ -297,37 +297,37 @@ class TestIndexing(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:        
             try:
                 a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
                 b = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 for global_inds, value in densedistarray.ndenumerate(a):
                     a[global_inds] = 0.0
                 for global_inds, value in densedistarray.ndenumerate(a):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in densedistarray.ndenumerate(a):
-                    self.assertEquals(b[global_inds],a[global_inds])
-                    self.assertEquals(a[global_inds],0.0)                
+                    self.assertEqual(b[global_inds],a[global_inds])
+                    self.assertEqual(a[global_inds],0.0)                
                 comm.Free()    
     
     def test_pack_unpack_index(self):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:        
             try:
                 a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 for global_inds, value in densedistarray.ndenumerate(a):
                     packed_ind = a.pack_index(global_inds)
-                    self.assertEquals(global_inds, a.unpack_index(packed_ind))
+                    self.assertEqual(global_inds, a.unpack_index(packed_ind))
                 comm.Free()        
     
 
@@ -340,16 +340,16 @@ class TestDistArrayMethods(unittest.TestCase):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
-            pass
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
-                pass
+                raise unittest.SkipTest("Skipped due to Null Comm")
             else:
                 new_a = a.asdist_like(b)
-                self.assertEquals(id(a),id(new_a))
+                self.assertEqual(id(a),id(new_a))
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=(None,'b'),comm=comm)
                 self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
