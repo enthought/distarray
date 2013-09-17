@@ -5,7 +5,7 @@ from distarray.core.error import *
 from distarray.mpi.error import *
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import (
-    MPI, 
+    MPI,
     create_comm_of_size,
     create_comm_with_list)
 from distarray.core import maps, densedistarray
@@ -16,7 +16,7 @@ class TestInit(unittest.TestCase):
     """
     Is the __init__ method working properly?
     """
-    
+
     def test_basic(self):
         """
         Test basic DistArray creation.
@@ -49,8 +49,8 @@ class TestInit(unittest.TestCase):
                 self.assertEqual(da.local_array.shape, da.local_shape)
                 self.assertEqual(da.local_array.dtype, da.dtype)
                 comm.Free()
-    
-    
+
+
     def test_localarray(self):
         """
         Can the local_array be set and get?
@@ -71,8 +71,8 @@ class TestInit(unittest.TestCase):
                 da.set_localarray(la)
                 new_la = da.get_localarray()
                 comm.Free()
-    
-    
+
+
     def test_grid_shape(self):
         """
         Test various ways of setting the grid_shape.
@@ -95,7 +95,7 @@ class TestInit(unittest.TestCase):
                 da = densedistarray.DistArray((100,10,300), dist=('b',None,'c'), comm=comm)
                 self.assertEqual(da.grid_shape, (2,6))
                 da = densedistarray.DistArray((100,50,300), dist='b', comm=comm)
-                self.assertEqual(da.grid_shape, (2,2,3))                  
+                self.assertEqual(da.grid_shape, (2,2,3))
                 comm.Free()
 
 
@@ -124,7 +124,7 @@ class TestDistMatrix(unittest.TestCase):
                         pylab.ion()
                         pylab.matshow(a)
                         pylab.colorbar()
-                        pylab.draw() 
+                        pylab.draw()
                         pylab.show()
                 comm.Free()
 
@@ -133,7 +133,7 @@ class TestLocalInd(unittest.TestCase):
     """
     Test the computation of local indices.
     """
-    
+
     def test_block(self):
         """
         Can we compute local incides for a BlockMap?
@@ -155,8 +155,7 @@ class TestLocalInd(unittest.TestCase):
                     calc_row_result = [da.global_to_local(row,col) for col in range(da.shape[1])]
                     self.assertEqual(row_result, calc_row_result)
                 comm.Free()
-    
-    
+
     def test_cyclic(self):
         """
         Can we compute local incides for a CyclicMap?
@@ -184,15 +183,14 @@ class TestGlobalInd(unittest.TestCase):
     """
     Test the computation of global indices.
     """
-    
+
     def round_trip(self, da):
         for indices in utils.multi_for( [range(s) for s in da.shape] ):
             li = da.global_to_local(*indices)
             owner_rank = da.owner_rank(*indices)
             gi = da.local_to_global(owner_rank,*li)
             self.assertEqual(gi,indices)
-    
-    
+
     def test_block(self):
         """
         Can we go from global to local indices and back for BlockMap?
@@ -209,8 +207,7 @@ class TestGlobalInd(unittest.TestCase):
             else:
                 self.round_trip(da)
                 comm.Free()
-    
-    
+
     def test_cyclic(self):
         """
         Can we go from global to local indices and back for CyclicMap?
@@ -227,8 +224,7 @@ class TestGlobalInd(unittest.TestCase):
             else:
                 self.round_trip(da)
                 comm.Free()
-    
-    
+
     def test_crazy(self):
         """
         Can we go from global to local indices and back for a complex case?
@@ -252,7 +248,7 @@ class TestGlobalInd(unittest.TestCase):
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
-        else:        
+        else:
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=('c',None),comm=comm)
@@ -266,17 +262,17 @@ class TestGlobalInd(unittest.TestCase):
                 limits = a.global_limits(1)
                 self.assertEqual(limits, answers[a.comm_rank])
                 self.assertRaises(DistError, b.global_limits, 0)
-                comm.Free()        
+                comm.Free()
 
 class TestIndexing(unittest.TestCase):
-    
+
     def test_indexing0(self):
         """Can we get and set local elements for a simple dist?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
-        else:        
+        else:
             try:
                 a = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
                 b = densedistarray.DistArray((16,16), dist=('b',None),comm=comm)
@@ -289,16 +285,16 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in densedistarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
+                    self.assertEqual(a[global_inds],0.0)
                 comm.Free()
-    
+
     def test_indexing1(self):
         """Can we get and set local elements for a complex dist?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
-        else:        
+        else:
             try:
                 a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
                 b = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
@@ -311,15 +307,15 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in densedistarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
-                comm.Free()    
-    
+                    self.assertEqual(a[global_inds],0.0)
+                comm.Free()
+
     def test_pack_unpack_index(self):
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
-        else:        
+        else:
             try:
                 a = densedistarray.DistArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
@@ -328,11 +324,11 @@ class TestIndexing(unittest.TestCase):
                 for global_inds, value in densedistarray.ndenumerate(a):
                     packed_ind = a.pack_index(global_inds)
                     self.assertEqual(global_inds, a.unpack_index(packed_ind))
-                comm.Free()        
-    
+                comm.Free()
+
 
 class TestDistArrayMethods(unittest.TestCase):
-    
+
     def test_asdist_like(self):
         """
         Test asdist_like for success and failure.

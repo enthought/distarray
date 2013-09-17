@@ -6,14 +6,14 @@ from distarray.core.error import *
 from distarray.mpi.error import *
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import (
-    MPI, 
+    MPI,
     create_comm_of_size,
     create_comm_with_list)
 from distarray.core import maps, densedistarray
 
 
 class TestFunctions(unittest.TestCase):
-    
+
     def test_arecompatible(self):
         """
         Test if two DistArrays are compatible.
@@ -32,16 +32,16 @@ class TestFunctions(unittest.TestCase):
                 self.assertEqual(densedistarray.arecompatible(a,b), True)
                 a = densedistarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
                 b = densedistarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
-                self.assertEqual(densedistarray.arecompatible(a,b), False)                
+                self.assertEqual(densedistarray.arecompatible(a,b), False)
                 comm.Free()
-    
+
     def test_fromfunction(self):
         """
         Can we build an array using fromfunction and a trivial function.
         """
         def f(*global_inds):
             return 1.0
-        
+
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -57,14 +57,14 @@ class TestFunctions(unittest.TestCase):
                 for global_inds, value in densedistarray.ndenumerate(a):
                     self.assertEqual(1.0, value)
                 comm.Free()
-    
+
     def test_fromfunction_complicated(self):
         """
         Can we build an array using fromfunction and a nontrivial function.
         """
         def f(*global_inds):
             return sum(global_inds)
-        
+
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
