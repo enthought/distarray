@@ -841,7 +841,7 @@ def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
 
 
-class GlobalIterator(object):
+class GlobalIterator(six.Iterator):
     
     def __init__(self, arr):
         self.arr = arr
@@ -850,7 +850,7 @@ class GlobalIterator(object):
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
         global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
         return global_inds, value
