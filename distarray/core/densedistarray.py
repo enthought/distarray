@@ -27,6 +27,9 @@ from distarray.core.base import BaseDistArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
 
+if six.PY3:
+    buffer = memoryview
+
 
 #----------------------------------------------------------------------------
 # Exports
