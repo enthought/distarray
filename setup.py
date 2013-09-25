@@ -14,13 +14,13 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 from distutils.core import setup
-from mpidistutils import Distribution, Extension, Executable
+from mpidistutils import Distribution, Extension
 from mpidistutils import config, build, build_ext
 from mpidistutils import build_exe, install_exe, clean_exe
 import mpi4py
-import numpy
 
-#--------- -------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
 # Metadata
 #----------------------------------------------------------------------------
 
@@ -34,17 +34,13 @@ metadata = {
     'author_email'     : 'ellisonbg@gmail.com',
     }
 
-# See if FFTW_DIR is set 
-import os
-fftw_dir = os.getenv("FFTW_DIR")
 
 #----------------------------------------------------------------------------
 # Extension modules
 #----------------------------------------------------------------------------
 
 def find_ext_modules():
-    import sys
-    
+
     maps = Extension(
         name='distarray.core.maps_fast',
         sources=['distarray/core/maps_fast.c']
@@ -53,35 +49,24 @@ def find_ext_modules():
     mpi_test = Extension(
         name='distarray.mpi.tests.helloworld',
         sources=['distarray/mpi/tests/helloworld.c'],
-        include_dirs = [mpi4py.get_include()]
+        include_dirs=[mpi4py.get_include()]
     )
-    
+
     allext = [maps, mpi_test]
-    if not fftw_dir is None:
-        py_fftw = Extension(
-            name = 'distarray.fft.py_fftw',
-            library_dirs = [fftw_dir+"/lib"],
-            include_dirs = [
-                fftw_dir+"/include", 
-                mpi4py.get_include(),
-                numpy.get_include()],
-            libraries = ['fftw3_mpi', 'fftw3', 'fftw3f_mpi','fftw3f'],
-            sources = ['distarray/fft/py_fftw.c'],
-        )
-        allext.append(py_fftw)
-        print "FFTW found, including distarray.fft"
-    
     return allext
+
 
 def find_headers():
     # allheaders = ['mpi/ext/libmpi.h']
     return []
 
+
 def find_executables():
     return []
 
+
 def find_packages():
-    packages= [
+    packages = [
         'distarray',
         'distarray.tests',
         'distarray.core',
@@ -89,17 +74,8 @@ def find_packages():
         'distarray.mpi',
         'distarray.mpi.tests',
         'distarray.random',
-        'distarray.random.tests',
-        'distarray.linalg',
-        'distarray.linalg.tests'
+        'distarray.random.tests'
     ]
-    
-    if not fftw_dir is None:
-        packages.extend([
-            'distarray.fft',
-            'distarray.fft.tests'
-        ])
-
     return packages
 
 
@@ -110,7 +86,6 @@ def find_packages():
 
 def main():
     setup(packages = find_packages(),
-          package_data = {'distarray' : ['include/*.pxi']},
           headers = find_headers(),
           ext_modules = find_ext_modules(),
           executables = find_executables(),
@@ -123,6 +98,7 @@ def main():
                       'install_exe' : install_exe,
                       },
           **metadata)
+
 
 if __name__ == '__main__':
     # hack distutils.sysconfig to eliminate debug flags
