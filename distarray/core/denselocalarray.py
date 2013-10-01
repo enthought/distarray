@@ -1121,7 +1121,7 @@ def _are_shapes_bcast(shape, target_shape):
     return True
 
 
-class DistArrayUnaryOperation(object):
+class LocalArrayUnaryOperation(object):
     
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1149,7 +1149,7 @@ class DistArrayUnaryOperation(object):
         return "LocalArray version of " + str(self.func)
 
 
-class DistArrayBinaryOperation(object):
+class LocalArrayBinaryOperation(object):
     
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1185,49 +1185,49 @@ class DistArrayBinaryOperation(object):
         return "LocalArray version of " + str(self.func)
 
 
-add = DistArrayBinaryOperation(np.add)
-subtract = DistArrayBinaryOperation(np.subtract)
-multiply = DistArrayBinaryOperation(np.multiply)
-divide = DistArrayBinaryOperation(np.divide)
-true_divide = DistArrayBinaryOperation(np.true_divide)
-floor_divide = DistArrayBinaryOperation(np.floor_divide)
-power = DistArrayBinaryOperation(np.power)
-remainder = DistArrayBinaryOperation(np.remainder)
-fmod = DistArrayBinaryOperation(np.fmod)
-arctan2 = DistArrayBinaryOperation(np.arctan2)
-hypot = DistArrayBinaryOperation(np.hypot)
-bitwise_and = DistArrayBinaryOperation(np.bitwise_and)
-bitwise_or = DistArrayBinaryOperation(np.bitwise_or)
-bitwise_xor = DistArrayBinaryOperation(np.bitwise_xor)
-left_shift = DistArrayBinaryOperation(np.left_shift)
-right_shift = DistArrayBinaryOperation(np.right_shift)
+add = LocalArrayBinaryOperation(np.add)
+subtract = LocalArrayBinaryOperation(np.subtract)
+multiply = LocalArrayBinaryOperation(np.multiply)
+divide = LocalArrayBinaryOperation(np.divide)
+true_divide = LocalArrayBinaryOperation(np.true_divide)
+floor_divide = LocalArrayBinaryOperation(np.floor_divide)
+power = LocalArrayBinaryOperation(np.power)
+remainder = LocalArrayBinaryOperation(np.remainder)
+fmod = LocalArrayBinaryOperation(np.fmod)
+arctan2 = LocalArrayBinaryOperation(np.arctan2)
+hypot = LocalArrayBinaryOperation(np.hypot)
+bitwise_and = LocalArrayBinaryOperation(np.bitwise_and)
+bitwise_or = LocalArrayBinaryOperation(np.bitwise_or)
+bitwise_xor = LocalArrayBinaryOperation(np.bitwise_xor)
+left_shift = LocalArrayBinaryOperation(np.left_shift)
+right_shift = LocalArrayBinaryOperation(np.right_shift)
 
 
-negative = DistArrayUnaryOperation(np.negative)
-absolute = DistArrayUnaryOperation(np.absolute)
-rint = DistArrayUnaryOperation(np.rint)
-sign = DistArrayUnaryOperation(np.sign)
-conjugate = DistArrayUnaryOperation(np.conjugate)
-exp = DistArrayUnaryOperation(np.exp)
-log = DistArrayUnaryOperation(np.log)
-expm1 = DistArrayUnaryOperation(np.expm1)
-log1p = DistArrayUnaryOperation(np.log1p)
-log10 = DistArrayUnaryOperation(np.log10)
-sqrt = DistArrayUnaryOperation(np.sqrt)
-square = DistArrayUnaryOperation(np.square)
-reciprocal = DistArrayUnaryOperation(np.reciprocal)
-sin = DistArrayUnaryOperation(np.sin)
-cos = DistArrayUnaryOperation(np.cos)
-tan = DistArrayUnaryOperation(np.tan)
-arcsin = DistArrayUnaryOperation(np.arcsin)
-arccos = DistArrayUnaryOperation(np.arccos)
-arctan = DistArrayUnaryOperation(np.arctan)
-sinh = DistArrayUnaryOperation(np.sinh)
-cosh = DistArrayUnaryOperation(np.cosh)
-tanh = DistArrayUnaryOperation(np.tanh)
-arcsinh = DistArrayUnaryOperation(np.arcsinh)
-arccosh = DistArrayUnaryOperation(np.arccosh)
-arctanh = DistArrayUnaryOperation(np.arctanh)
-invert = DistArrayUnaryOperation(np.invert)
+negative = LocalArrayUnaryOperation(np.negative)
+absolute = LocalArrayUnaryOperation(np.absolute)
+rint = LocalArrayUnaryOperation(np.rint)
+sign = LocalArrayUnaryOperation(np.sign)
+conjugate = LocalArrayUnaryOperation(np.conjugate)
+exp = LocalArrayUnaryOperation(np.exp)
+log = LocalArrayUnaryOperation(np.log)
+expm1 = LocalArrayUnaryOperation(np.expm1)
+log1p = LocalArrayUnaryOperation(np.log1p)
+log10 = LocalArrayUnaryOperation(np.log10)
+sqrt = LocalArrayUnaryOperation(np.sqrt)
+square = LocalArrayUnaryOperation(np.square)
+reciprocal = LocalArrayUnaryOperation(np.reciprocal)
+sin = LocalArrayUnaryOperation(np.sin)
+cos = LocalArrayUnaryOperation(np.cos)
+tan = LocalArrayUnaryOperation(np.tan)
+arcsin = LocalArrayUnaryOperation(np.arcsin)
+arccos = LocalArrayUnaryOperation(np.arccos)
+arctan = LocalArrayUnaryOperation(np.arctan)
+sinh = LocalArrayUnaryOperation(np.sinh)
+cosh = LocalArrayUnaryOperation(np.cosh)
+tanh = LocalArrayUnaryOperation(np.tanh)
+arcsinh = LocalArrayUnaryOperation(np.arcsinh)
+arccosh = LocalArrayUnaryOperation(np.arccosh)
+arctanh = LocalArrayUnaryOperation(np.arctanh)
+invert = LocalArrayUnaryOperation(np.invert)
 
 
