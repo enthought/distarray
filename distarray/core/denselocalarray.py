@@ -457,7 +457,7 @@ class DenseLocalArray(BaseLocalArray):
     def conj(self, out=None):
         _raise_nie()
     
-    congugate = conj
+    conjugate = conj
     
     def round(self, decimals=0, out=None):
         _raise_nie()
