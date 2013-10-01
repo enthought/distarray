@@ -34,7 +34,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.rand(%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def normal(self, loc=0.0, scale=1.0, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(loc, scale, size, dist, grid_shape)
@@ -43,7 +43,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.normal(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def randint(self, low, high=None, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(low, high, size, dist, grid_shape)
@@ -52,7 +52,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.randint(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def randn(self, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(size, dist, grid_shape)
@@ -61,10 +61,10 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.randn(%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
 
-class DistArrayContext(object):
+class Context(object):
 
     def __init__(self, view, targets=None):
         self.view = view
@@ -161,7 +161,7 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.zeros(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -170,7 +170,7 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.ones(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -179,7 +179,7 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.empty(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def fromndarray(self, arr):
         keys = self._key_and_push(arr.shape, arr.dtype)
@@ -188,9 +188,9 @@ class DistArrayContext(object):
         self.view.scatter(arr_key, arr, targets=self.targets, block=True)
         subs = (new_key,) + keys + (arr_key,)
         self._execute(
-            '%s = distarray.DistArray(%s,dtype=%s,buf=%s)' % subs
+            '%s = distarray.LocalArray(%s,dtype=%s,buf=%s)' % subs
         )
-        return DistArrayProxy(new_key, self)
+        return DistArray(new_key, self)
 
     fromarray = fromndarray
 
@@ -201,7 +201,7 @@ class DistArrayContext(object):
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
         self._execute('%s = distarray.fromfunction(%s,%s,**%s)' % subs)
-        return DistArrayProxy(new_key, self)
+        return DistArray(new_key, self)
 
     def negative(self, a): return unary_proxy(self, a, 'negative')
     def absolute(self, a): return unary_proxy(self, a, 'absolute')
@@ -249,16 +249,16 @@ class DistArrayContext(object):
 
 
 def unary_proxy(context, a, meth_name):
-    assert isinstance(a, DistArrayProxy), 'this method only works on DistArrayProxy'
+    assert isinstance(a, DistArray), 'this method only works on DistArray'
     assert context==a.context, "distarray context mismatch: " % (context, a.context)
     context = a.context
     new_key = context._generate_key()
     context._execute('%s = distarray.%s(%s)' % (new_key, meth_name, a.key))
-    return DistArrayProxy(new_key, context)
+    return DistArray(new_key, context)
 
 def binary_proxy(context, a, b, meth_name):
-    is_a_dap = isinstance(a, DistArrayProxy)
-    is_b_dap = isinstance(b, DistArrayProxy)
+    is_a_dap = isinstance(a, DistArray)
+    is_b_dap = isinstance(b, DistArray)
     if is_a_dap and is_b_dap:
         assert b.context==a.context, "distarray context mismatch: " % (b.context, a.context)
         assert context==a.context, "distarray context mismatch: " % (context, a.context)        
@@ -273,13 +273,13 @@ def binary_proxy(context, a, b, meth_name):
         a_key = context._key_and_push(a)[0]
         b_key = b.key
     else:
-        raise TypeError('only DistArrayProxy or scalars are accepted')
+        raise TypeError('only DistArray or scalars are accepted')
     new_key = context._generate_key()
     context._execute('%s = distarray.%s(%s,%s)' % (new_key, meth_name, a_key, b_key))
-    return DistArrayProxy(new_key, context)
+    return DistArray(new_key, context)
 
 
-class DistArrayProxy(object):
+class DistArray(object):
 
     __array_priority__ = 20.0
 
@@ -297,7 +297,7 @@ class DistArrayProxy(object):
         return result
 
     def __repr__(self):
-        s = '<DistArrayProxy(shape=%r, targets=%r)>' % \
+        s = '<DistArray(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
         return s
 

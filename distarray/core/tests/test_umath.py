@@ -11,14 +11,14 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps, densedistarray
+from distarray.core import maps, denselocalarray
 
 
 class TestUnaryUFunc(unittest.TestCase):
     
     def test_basic(self):
         """
-        See if unary ufunc works for a DistArray.
+        See if unary ufunc works for a LocalArray.
         """
         try:
             comm = create_comm_of_size(4)
@@ -26,26 +26,26 @@ class TestUnaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
                 a.fill(1)
-                b = densedistarray.negative(a)
+                b = denselocalarray.negative(a)
                 self.assert_(np.all(a.local_array==-b.local_array))
-                b = densedistarray.empty_like(a)
-                b = densedistarray.negative(a, b)
+                b = denselocalarray.empty_like(a)
+                b = denselocalarray.negative(a, b)
                 self.assert_(np.all(a.local_array==-b.local_array))
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, densedistarray.negative, b, a)
+                a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = denselocalarray.LocalArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, denselocalarray.negative, b, a)
 
 
 class TestBinaryUFunc(unittest.TestCase):
     
     def test_basic(self):
         """
-        See if binary ufunc works for a DistArray.
+        See if binary ufunc works for a LocalArray.
         """
         try:
             comm = create_comm_of_size(4)
@@ -53,25 +53,25 @@ class TestBinaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
                 a.fill(1)
                 b.fill(1)
-                c = densedistarray.add(a, b)
+                c = denselocalarray.add(a, b)
                 self.assert_(np.all(c.local_array==2))
-                c = densedistarray.empty_like(a)
-                c = densedistarray.add(a, b, c)
+                c = denselocalarray.empty_like(a)
+                c = denselocalarray.add(a, b, c)
                 self.assert_(np.all(c.local_array==2))
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b)
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                c = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
-                self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b, c)
+                a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = denselocalarray.LocalArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b)
+                a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
+                c = denselocalarray.LocalArray((20,20), dtype='int32', comm=comm)
+                self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b, c)
 
 
 if __name__ == '__main__':

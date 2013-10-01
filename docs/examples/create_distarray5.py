@@ -1,6 +1,6 @@
 import distarray as ipda
 
-a = ipda.DistArray((8,64), dist=('b','b'))
+a = ipda.LocalArray((8,64), dist=('b','b'))
 a.plot_dist_matrix()
 
 

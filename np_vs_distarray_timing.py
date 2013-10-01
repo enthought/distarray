@@ -8,13 +8,13 @@ from __future__ import print_function
 import numpy as np
 import os
 from IPython.parallel import Client
-from distarray.client import DistArrayContext
+from distarray.client import Context
 from timeit import timeit
 
 
 c = Client()
 dv = c[:]
-dac = DistArrayContext(dv)
+dac = Context(dv)
 
 
 def run_timings():

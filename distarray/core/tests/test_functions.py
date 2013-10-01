@@ -9,7 +9,7 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps, densedistarray
+from distarray.core import maps, denselocalarray
 
 
 class TestFunctions(unittest.TestCase):
@@ -24,15 +24,15 @@ class TestFunctions(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int64', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='float32', comm=comm)
+                a = denselocalarray.LocalArray((16,16), dtype='int64', comm=comm)
+                b = denselocalarray.LocalArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
                 pass
             else:
-                self.assertEquals(densedistarray.arecompatible(a,b), True)
-                a = densedistarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
-                self.assertEquals(densedistarray.arecompatible(a,b), False)                
+                self.assertEquals(denselocalarray.arecompatible(a,b), True)
+                a = denselocalarray.LocalArray((16,16), dtype='int64', dist='c', comm=comm)
+                b = denselocalarray.LocalArray((16,16), dtype='float32', dist='b', comm=comm)
+                self.assertEquals(denselocalarray.arecompatible(a,b), False)
                 comm.Free()
     
     def test_fromfunction(self):
@@ -48,13 +48,13 @@ class TestFunctions(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
+                a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
                 pass
             else:
                 self.assertEquals(a.shape, (16,16))
                 self.assertEquals(a.dtype, np.dtype('int64'))
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEquals(1.0, value)
                 comm.Free()
     
@@ -71,13 +71,13 @@ class TestFunctions(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
+                a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
                 pass
             else:
                 self.assertEquals(a.shape, (16,16))
                 self.assertEquals(a.dtype, np.dtype('int64'))
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEquals(sum(global_inds), value)
                 comm.Free()
 
