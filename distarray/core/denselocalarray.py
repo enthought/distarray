@@ -304,9 +304,6 @@ class DenseLocalArray(BaseLocalArray):
                 self.grid_shape, self.base_comm, buf=self.data)
         return new_da
     
-    def __distarray__(self, dtype=None):
-        return self
-    
     def __array__(self, dtype=None):
         if dtype is None:
             return self.local_array
