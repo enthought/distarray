@@ -1094,7 +1094,7 @@ finfo = np.finfo
 #----------------------------------------------------------------------------
 
 
-# Functions for manpulating shapes according to the broadcast rules.
+# Functions for manipulating shapes according to the broadcast rules.
 
 def _expand_shape(s, length, element=1):
     add = length - len(s)
