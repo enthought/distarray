@@ -56,7 +56,7 @@ class BaseDistArray(object):
         """Create a distributed memory array on a set of processors.
         """
         if comm==MPI.COMM_NULL:
-            raise NullCommError("cannot create a DistArray with COMM_NULL")
+            raise NullCommError("cannot create a LocalArray with COMM_NULL")
         self.shape = shape
         self.ndim = len(shape)
         self.dtype = np.dtype(dtype)

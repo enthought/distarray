@@ -44,7 +44,7 @@ def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):
         comm_size = base_comm.Get_size()
         local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape, comm_size=comm_size)
         local_result = np.random.beta(a, b, size=local_shape)
-        return densedistarray.DistArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
+        return densedistarray.LocalArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
 
 
 def normal(loc=0.0, scale=1.0, size=None, dist={0:'b'}, grid_shape=None, comm=None):
@@ -55,7 +55,7 @@ def normal(loc=0.0, scale=1.0, size=None, dist={0:'b'}, grid_shape=None, comm=No
         comm_size = base_comm.Get_size()
         local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape, comm_size=comm_size)
         local_result = np.random.normal(loc, scale, size=local_shape)
-        return densedistarray.DistArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
+        return densedistarray.LocalArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
 
 
 def rand(size=None, dist={0:'b'}, grid_shape=None, comm=None):
@@ -66,7 +66,7 @@ def rand(size=None, dist={0:'b'}, grid_shape=None, comm=None):
         comm_size = base_comm.Get_size()
         local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape, comm_size=comm_size)
         local_result = np.random.rand(*local_shape)
-        return densedistarray.DistArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
+        return densedistarray.LocalArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
 
 
 def randint(low, high=None, size=None, dist={0:'b'}, grid_shape=None, comm=None):
@@ -77,7 +77,7 @@ def randint(low, high=None, size=None, dist={0:'b'}, grid_shape=None, comm=None)
         comm_size = base_comm.Get_size()
         local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape, comm_size=comm_size)
         local_result = np.random.randint(low, high, size=local_shape)
-        return densedistarray.DistArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
+        return densedistarray.LocalArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
 
 
 def randn(size=None, dist={0:'b'}, grid_shape=None, comm=None):
@@ -88,4 +88,4 @@ def randn(size=None, dist={0:'b'}, grid_shape=None, comm=None):
         comm_size = base_comm.Get_size()
         local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape, comm_size=comm_size)
         local_result = np.random.randn(*local_shape)
-        return densedistarray.DistArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)
+        return densedistarray.LocalArray(size, local_result.dtype, dist, grid_shape, comm, buf=local_result)

@@ -24,14 +24,14 @@ class TestFunctions(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int64', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='float32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int64', comm=comm)
+                b = densedistarray.LocalArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
                 pass
             else:
                 self.assertEquals(densedistarray.arecompatible(a,b), True)
-                a = densedistarray.DistArray((16,16), dtype='int64', dist='c', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='float32', dist='b', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int64', dist='c', comm=comm)
+                b = densedistarray.LocalArray((16,16), dtype='float32', dist='b', comm=comm)
                 self.assertEquals(densedistarray.arecompatible(a,b), False)                
                 comm.Free()
     

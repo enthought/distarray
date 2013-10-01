@@ -188,7 +188,7 @@ class Context(object):
         self.view.scatter(arr_key, arr, targets=self.targets, block=True)
         subs = (new_key,) + keys + (arr_key,)
         self._execute(
-            '%s = distarray.DistArray(%s,dtype=%s,buf=%s)' % subs
+            '%s = distarray.LocalArray(%s,dtype=%s,buf=%s)' % subs
         )
         return DistArrayProxy(new_key, self)
 

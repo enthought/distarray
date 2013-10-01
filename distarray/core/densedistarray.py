@@ -32,7 +32,7 @@ from distarray.utils import _raise_nie
 
 
 __all__ = [
-    'DistArray',
+    'LocalArray',
     'empty',
     'empty_like',
     'zeros',
@@ -103,7 +103,7 @@ __all__ = [
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Base DistArray class
+# Base LocalArray class
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -263,13 +263,13 @@ class DenseDistArray(BaseDistArray):
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = DistArray(self.shape, dtype=newdtype, dist=self.dist,
+            new_da = LocalArray(self.shape, dtype=newdtype, dist=self.dist,
                 grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
             return new_da
     
     def copy(self):
         local_copy = self.local_array.copy()
-        new_da = DistArray(self.shape, dtype=self.dtype, dist=self.dist,
+        new_da = LocalArray(self.shape, dtype=self.dtype, dist=self.dist,
             grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
     
     def local_view(self, dtype=None):
@@ -280,10 +280,10 @@ class DenseDistArray(BaseDistArray):
             
     def view(self, dtype=None):
         if dtype is None:
-            new_da = DistArray(self.shape, self.dtype, self.dist,
+            new_da = LocalArray(self.shape, self.dtype, self.dist,
                 self.grid_shape, self.base_comm, buf=self.data)
         else:
-            new_da = DistArray(self.shape, dtype, self.dist,
+            new_da = LocalArray(self.shape, dtype, self.dist,
                 self.grid_shape, self.base_comm, buf=self.data)
         return new_da
     
@@ -300,14 +300,14 @@ class DenseDistArray(BaseDistArray):
     
     def __array_wrap__(self, obj, context=None):
         """
-        Return a DistArray based on obj.
+        Return a LocalArray based on obj.
         
-        This method constructs a new DistArray object using (shape, dist,
+        This method constructs a new LocalArray object using (shape, dist,
         grid_shape and base_comm) from self and dtype, buffer from obj.
         
         This is used to construct return arrays for ufuncs.
         """
-        return DistArray(self.shape, obj.dtype, self.dist, self.grid_shape, 
+        return LocalArray(self.shape, obj.dtype, self.dist, self.grid_shape,
             self.base_comm, buf=obj)
     
     
@@ -344,7 +344,7 @@ class DenseDistArray(BaseDistArray):
      
     def asdist(self, shape, dist={0:'b'}, grid_shape=None):
         pass
-        # new_da = DistArray(shape, self.dtype, dist, grid_shape, self.base_comm)
+        # new_da = LocalArray(shape, self.dtype, dist, grid_shape, self.base_comm)
         # base_comm = self.base_comm
         # local_array = self.local_array
         # new_local_array = da.local_array
@@ -752,22 +752,22 @@ class DenseDistArray(BaseDistArray):
         return invert(self)
 
 
-DistArray = DenseDistArray
+LocalArray = DenseDistArray
 
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Functions that are friends of DistArray
+# Functions that are friends of LocalArray
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the DistArray object in this module, and the 
-# DistArray object needs to use these functions.  There are 3 options for
+# functions need accees to the LocalArray object in this module, and the
+# LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
 #     * Put everything in one file
-#     * Put the functions needed by DistArray in distarray, others elsewhere
-#     * Make a subclass of DistArray that has methods that use the functions
+#     * Put the functions needed by LocalArray in distarray, others elsewhere
+#     * Make a subclass of LocalArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -783,7 +783,7 @@ DistArray = DenseDistArray
 # 4.1 Creating arrays 
 #----------------------------------------------------------------------------
 
-# Here is DistArray.__init__ for reference
+# Here is LocalArray.__init__ for reference
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
 
@@ -802,7 +802,7 @@ def arange(start, stop=None, step=1, dtype=None, dist={0:'b'},
 
 
 def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
-    return DistArray(shape, dtype, dist, grid_shape, comm)
+    return LocalArray(shape, dtype, dist, grid_shape, comm)
 
 
 def empty_like(arr, dtype=None):
@@ -819,7 +819,7 @@ def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_zeros = np.zeros(local_shape, dtype=dtype)
-    return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_zeros)
+    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_zeros)
 
 
 def zeros_like(arr):
@@ -833,7 +833,7 @@ def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_ones = np.ones(local_shape, dtype=dtype)
-    return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
+    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
 
 
 class GlobalIterator(object):
@@ -866,9 +866,9 @@ def fromfunction(function, shape, **kwargs):
 
 def fromlocalarray_like(local_arr, like_arr):
     """
-    Create a new DistArray using a given local array (+its dtype).
+    Create a new LocalArray using a given local array (+its dtype).
     """
-    return DistArray(like_arr.shape, local_arr.dtype, like_arr.dist, like_arr.grid_shape, 
+    return LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist, like_arr.grid_shape,
         like_arr.base_comm, buf=local_arr)
 
 
@@ -1083,13 +1083,13 @@ finfo = np.finfo
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the DistArray object in this module, and the 
-# DistArray object needs to use these functions.  There are 3 options for
+# functions need accees to the LocalArray object in this module, and the
+# LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
 #     * Put everything in one file
-#     * Put the functions needed by DistArray in distarray, others elsewhere
-#     * Make a subclass of DistArray that has methods that use the functions
+#     * Put the functions needed by LocalArray in distarray, others elsewhere
+#     * Make a subclass of LocalArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -1139,14 +1139,14 @@ class DistArrayUnaryOperation(object):
         elif y_isdda:
             if x1_isdda:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("return DistArray not compatible with DistArray argument" % y)
+                    raise IncompatibleArrayError("return LocalArray not compatible with LocalArray argument" % y)
             local_result = self.func(x1, y.local_array)
             return y
         else:
             raise TypeError("invalid return type for unary ufunc")
     
     def __str__(self):
-        return "DistArray version of " + str(self.func)
+        return "LocalArray version of " + str(self.func)
 
 
 class DistArrayBinaryOperation(object):
@@ -1182,7 +1182,7 @@ class DistArrayBinaryOperation(object):
             raise TypeError("invalid return type for unary ufunc")
     
     def __str__(self):
-        return "DistArray version of " + str(self.func)
+        return "LocalArray version of " + str(self.func)
 
 
 add = DistArrayBinaryOperation(np.add)

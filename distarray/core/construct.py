@@ -25,21 +25,21 @@ from distarray import utils
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Stateless functions for initializing various aspects of DistArray objects
+# Stateless functions for initializing various aspects of LocalArray objects
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
 # These are functions rather than methods because they need to be both
 # stateless and free of side-effects.  It is possible that they could be
 # called multiple times and in multiple different contexts in the course
-# of a DistArray object's lifetime (for example upon a reshape or redist).
+# of a LocalArray object's lifetime (for example upon a reshape or redist).
 # The simplest and most robust way of insuring this is to get rid of 'self'
 # (which holds all state) and make them standalone functions.
 
 
 def init_base_comm(comm):
     if comm==MPI.COMM_NULL:
-        raise MPICommError("Cannot create a DistArray with a MPI COMM_NULL")
+        raise MPICommError("Cannot create a LocalArray with a MPI COMM_NULL")
     elif comm is None:
         return mpibase.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):

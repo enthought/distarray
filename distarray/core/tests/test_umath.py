@@ -18,7 +18,7 @@ class TestUnaryUFunc(unittest.TestCase):
     
     def test_basic(self):
         """
-        See if unary ufunc works for a DistArray.
+        See if unary ufunc works for a LocalArray.
         """
         try:
             comm = create_comm_of_size(4)
@@ -26,7 +26,7 @@ class TestUnaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
@@ -36,8 +36,8 @@ class TestUnaryUFunc(unittest.TestCase):
                 b = densedistarray.empty_like(a)
                 b = densedistarray.negative(a, b)
                 self.assert_(np.all(a.local_array==-b.local_array))
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.LocalArray((20,20), dtype='int32', comm=comm)
                 self.assertRaises(IncompatibleArrayError, densedistarray.negative, b, a)
 
 
@@ -45,7 +45,7 @@ class TestBinaryUFunc(unittest.TestCase):
     
     def test_basic(self):
         """
-        See if binary ufunc works for a DistArray.
+        See if binary ufunc works for a LocalArray.
         """
         try:
             comm = create_comm_of_size(4)
@@ -53,8 +53,8 @@ class TestBinaryUFunc(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
                 pass
             else:
@@ -65,12 +65,12 @@ class TestBinaryUFunc(unittest.TestCase):
                 c = densedistarray.empty_like(a)
                 c = densedistarray.add(a, b, c)
                 self.assert_(np.all(c.local_array==2))
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.LocalArray((20,20), dtype='int32', comm=comm)
                 self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b)
-                a = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                b = densedistarray.DistArray((16,16), dtype='int32', comm=comm)
-                c = densedistarray.DistArray((20,20), dtype='int32', comm=comm)
+                a = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
+                b = densedistarray.LocalArray((16,16), dtype='int32', comm=comm)
+                c = densedistarray.LocalArray((20,20), dtype='int32', comm=comm)
                 self.assertRaises(IncompatibleArrayError, densedistarray.add, a, b, c)
 
 
