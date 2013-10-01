@@ -9,7 +9,7 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps, densedistarray
+from distarray.core import maps, denselocalarray
 from distarray import utils
 
 class TestInit(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestInit(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((16,16), grid_shape=(4,),comm=comm)
+                da = denselocalarray.LocalArray((16,16), grid_shape=(4,),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -61,7 +61,7 @@ class TestInit(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((16,16), grid_shape=(4,), comm=comm)
+                da = denselocalarray.LocalArray((16,16), grid_shape=(4,), comm=comm)
             except NullCommError:
                 pass
             else:
@@ -83,18 +83,18 @@ class TestInit(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((20,20), dist='b', comm=comm)
+                da = denselocalarray.LocalArray((20,20), dist='b', comm=comm)
             except NullCommError:
                 pass
             else:
                 self.assertEquals(da.grid_shape, (3,4))
-                da = densedistarray.LocalArray((2*10,6*10), dist='b', comm=comm)
+                da = denselocalarray.LocalArray((2*10,6*10), dist='b', comm=comm)
                 self.assertEquals(da.grid_shape, (2,6))
-                da = densedistarray.LocalArray((6*10,2*10), dist='b', comm=comm)
+                da = denselocalarray.LocalArray((6*10,2*10), dist='b', comm=comm)
                 self.assertEquals(da.grid_shape, (6,2))
-                da = densedistarray.LocalArray((100,10,300), dist=('b',None,'c'), comm=comm)
+                da = denselocalarray.LocalArray((100,10,300), dist=('b',None,'c'), comm=comm)
                 self.assertEquals(da.grid_shape, (2,6))
-                da = densedistarray.LocalArray((100,50,300), dist='b', comm=comm)
+                da = denselocalarray.LocalArray((100,50,300), dist='b', comm=comm)
                 self.assertEquals(da.grid_shape, (2,2,3))                  
                 comm.Free()
 
@@ -114,7 +114,7 @@ class TestDistMatrix(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((10,10), dist=('c','c'), comm=comm)
+                da = denselocalarray.LocalArray((10,10), dist=('c','c'), comm=comm)
             except NullCommError:
                 pass
             else:
@@ -144,7 +144,7 @@ class TestLocalInd(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((4,4),comm=comm)
+                da = denselocalarray.LocalArray((4,4),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -167,7 +167,7 @@ class TestLocalInd(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((8,8),dist={0:'c'},comm=comm)
+                da = denselocalarray.LocalArray((8,8),dist={0:'c'},comm=comm)
             except NullCommError:
                 pass
             else:
@@ -203,7 +203,7 @@ class TestGlobalInd(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((4,4),comm=comm)
+                da = denselocalarray.LocalArray((4,4),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -221,7 +221,7 @@ class TestGlobalInd(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((8,8),dist=('c',None),comm=comm)
+                da = denselocalarray.LocalArray((8,8),dist=('c',None),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -239,7 +239,7 @@ class TestGlobalInd(unittest.TestCase):
             pass
         else:
             try:
-                da = densedistarray.LocalArray((10,100,20),dist=('b','c',None),comm=comm)
+                da = denselocalarray.LocalArray((10,100,20),dist=('b','c',None),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -254,8 +254,8 @@ class TestGlobalInd(unittest.TestCase):
             pass
         else:        
             try:
-                a = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = densedistarray.LocalArray((16,16), dist=('c',None),comm=comm)
+                a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                b = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -278,16 +278,16 @@ class TestIndexing(unittest.TestCase):
             pass
         else:        
             try:
-                a = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                b = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
                 pass
             else:
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     a[global_inds] = 0.0
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     b[global_inds] = a[global_inds]
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEquals(b[global_inds],a[global_inds])
                     self.assertEquals(a[global_inds],0.0)                
                 comm.Free()
@@ -300,16 +300,16 @@ class TestIndexing(unittest.TestCase):
             pass
         else:        
             try:
-                a = densedistarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
-                b = densedistarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
+                a = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
+                b = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
                 pass
             else:
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     a[global_inds] = 0.0
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     b[global_inds] = a[global_inds]
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEquals(b[global_inds],a[global_inds])
                     self.assertEquals(a[global_inds],0.0)                
                 comm.Free()    
@@ -321,11 +321,11 @@ class TestIndexing(unittest.TestCase):
             pass
         else:        
             try:
-                a = densedistarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
+                a = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
                 pass
             else:
-                for global_inds, value in densedistarray.ndenumerate(a):
+                for global_inds, value in denselocalarray.ndenumerate(a):
                     packed_ind = a.pack_index(global_inds)
                     self.assertEquals(global_inds, a.unpack_index(packed_ind))
                 comm.Free()        
@@ -343,15 +343,15 @@ class TestDistArrayMethods(unittest.TestCase):
             pass
         else:
             try:
-                a = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                b = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
                 pass
             else:
                 new_a = a.asdist_like(b)
                 self.assertEquals(id(a),id(new_a))
-                a = densedistarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = densedistarray.LocalArray((16,16), dist=(None,'b'),comm=comm)
+                a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
+                b = denselocalarray.LocalArray((16,16), dist=(None,'b'),comm=comm)
                 self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
                 comm.Free()
 

@@ -1083,7 +1083,7 @@ finfo = np.finfo
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the LocalArray object in this module, and the
+# functions need access to the LocalArray object in this module, and the
 # LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
