@@ -21,7 +21,7 @@ import numpy as np
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
 from distarray.core.error import *
-from distarray.core.base import BaseDistArray, arecompatible
+from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
 
@@ -118,7 +118,7 @@ def mpi_type_for_ndarray(a):
     return mpi_dtypes[a.dtype]
 
 
-class DenseLocalArray(BaseDistArray):
+class DenseLocalArray(BaseLocalArray):
     """Distribute memory Python arrays."""
     
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
@@ -126,13 +126,13 @@ class DenseLocalArray(BaseDistArray):
         """
         Create a distributed memory array on a set of processors.
         """
-        BaseDistArray.__init__(self, shape, dtype, dist, grid_shape, comm, buf, offset)
+        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm, buf, offset)
         
         # At this point, everything is setup, but the memory has not been allocated.
         self._allocate(buf, offset)
     
     def __del__(self):
-        BaseDistArray.__del__(self)
+        BaseLocalArray.__del__(self)
     
     #----------------------------------------------------------------------------
     # Misc methods

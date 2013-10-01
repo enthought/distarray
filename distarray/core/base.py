@@ -38,7 +38,7 @@ from distarray.core.construct import (
 # Exports
 #----------------------------------------------------------------------------
 
-__all__ = ['BaseDistArray',
+__all__ = ['BaseLocalArray',
     'arecompatible']
 
 #----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ __all__ = ['BaseDistArray',
 #----------------------------------------------------------------------------
 
 
-class BaseDistArray(object):
+class BaseLocalArray(object):
     """Distribute memory Python arrays."""
     
     __array_priority__ = 20.0
