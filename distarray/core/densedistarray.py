@@ -118,7 +118,7 @@ def mpi_type_for_ndarray(a):
     return mpi_dtypes[a.dtype]
 
 
-class DenseDistArray(BaseDistArray):
+class DenseLocalArray(BaseDistArray):
     """Distribute memory Python arrays."""
     
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
@@ -752,7 +752,7 @@ class DenseDistArray(BaseDistArray):
         return invert(self)
 
 
-LocalArray = DenseDistArray
+LocalArray = DenseLocalArray
 
 
 #----------------------------------------------------------------------------
@@ -806,13 +806,13 @@ def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
 
 
 def empty_like(arr, dtype=None):
-    if isinstance(arr, DenseDistArray):
+    if isinstance(arr, DenseLocalArray):
 	if dtype==None:
             return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
         else:
             return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseDistArray or subclass is expected")
+        raise TypeError("a DenseLocalArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
@@ -823,10 +823,10 @@ def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
 
 
 def zeros_like(arr):
-    if isinstance(arr, DenseDistArray):
+    if isinstance(arr, DenseLocalArray):
         return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseDistArray or subclass is expected")
+        raise TypeError("a DenseLocalArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
@@ -1130,8 +1130,8 @@ class DistArrayUnaryOperation(object):
         
     def __call__(self, x1, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseDistArray)
-        y_isdda = isinstance(y, DenseDistArray)
+        x1_isdda = isinstance(x1, DenseLocalArray)
+        y_isdda = isinstance(y, DenseLocalArray)
         assert x1_isdda or isscalar(x1), "invalid type for unary ufunc"
         assert y is None or y_isdda, "invalid return array type"
         if y is None:
@@ -1158,9 +1158,9 @@ class DistArrayBinaryOperation(object):
     
     def __call__(self, x1, x2, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseDistArray)
-        x2_isdda = isinstance(x2, DenseDistArray)
-        y_isdda = isinstance(y, DenseDistArray)
+        x1_isdda = isinstance(x1, DenseLocalArray)
+        x2_isdda = isinstance(x2, DenseLocalArray)
+        y_isdda = isinstance(y, DenseLocalArray)
         assert x1_isdda or isscalar(x1), "invalid type for binary ufunc"
         assert x2_isdda or isscalar(x2), "invalid type for binary ufunc"
         assert y is None or y_isdda
