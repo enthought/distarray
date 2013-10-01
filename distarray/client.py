@@ -64,7 +64,7 @@ class RandomModule(object):
         return DistArrayProxy(new_key, self.context)
 
 
-class DistArrayContext(object):
+class Context(object):
 
     def __init__(self, view, targets=None):
         self.view = view
