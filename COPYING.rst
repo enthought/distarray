@@ -33,18 +33,18 @@ About the IPython Development Team
 The IPython Development Team is the set of all contributors to the IPython project.
 This includes all of the IPython subprojects. Here is a list of the contributors:
 
-	* Matthieu Brucher
-	* Ondrej Certik
-	* Laurent Dufrechou
-	* Robert Kern
-	* Brian E. Granger
-	* Fernando Perez (project leader)
-	* Benjamin Ragan-Kelley
-	* Ville M. Vainio
-	* Gael Varoququx
-	* Stefan van der Walt
-	* Tech-X Corporation
-	* Barry Wark
+    * Matthieu Brucher
+    * Ondrej Certik
+    * Laurent Dufrechou
+    * Robert Kern
+    * Brian E. Granger
+    * Fernando Perez (project leader)
+    * Benjamin Ragan-Kelley
+    * Ville M. Vainio
+    * Gael Varoququx
+    * Stefan van der Walt
+    * Tech-X Corporation
+    * Barry Wark
 
 If your name is missing, please add it.
 

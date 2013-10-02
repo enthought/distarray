@@ -5,18 +5,18 @@ ODIN: ODin Isn't Numpy
 from itertools import chain
 
 from IPython.parallel import Client
-from distarray.client import DistArrayContext, DistArrayProxy
+from distarray.client import Context, DistArray
 
 
-# Set up a global DistArrayContext on import
+# Set up a global Context on import
 _global_client = Client()
 _global_view = _global_client[:]
-_global_context = DistArrayContext(_global_view)
+_global_context = Context(_global_view)
 context = _global_context
 
 
 def flatten(lst):
-    """ Given a list of lists, return a flattened list.
+    """Given a list of lists, return a flattened list.
 
     Only flattens one level.  For example,
 
@@ -41,14 +41,14 @@ def all_equal(lst):
 
 
 def key_and_push_args(subcontext, arglist):
-    """ For each arg in arglist, get or generate a key (UUID).
+    """For each arg in arglist, get or generate a key (UUID).
 
-    For DistArrayProxy objects, just get the existing key.  For
+    For DistArray objects, just get the existing key.  For
     everything else, generate a key and push the value to the engines
 
     Parameters
     ----------
-    subcontext : DistArrayContext
+    subcontext : Context
     arglist : List of objects to key and/or push
 
     Returns
@@ -58,43 +58,43 @@ def key_and_push_args(subcontext, arglist):
 
     arg_keys = []
     for arg in arglist:
-        if isinstance(arg, DistArrayProxy):
-            # if a DistArrayProxy, use its existing key
+        if isinstance(arg, DistArray):
+            # if a DistArray, use its existing key
             arg_keys.append(arg.key)
             is_same_context = (subcontext == arg.context)
-            err_msg_fmt = "DistArrayProxy context mismatch: {} {}"
+            err_msg_fmt = "DistArray context mismatch: {} {}"
             assert is_same_context, err_msg_fmt.format(subcontext, arg.context)
         else:
-            # if not a DistArrayProxy, key it and push it to engines
+            # if not a DistArray, key it and push it to engines
             arg_keys.extend(subcontext._key_and_push(arg))
     return arg_keys
 
 
 def determine_context(definition_context, args):
-    """Determine the DistArrayContext for a function.
+    """Determine the Context for a function.
 
     Parameters
     ----------
-    definition_context: DistArrayContext object
+    definition_context: Context object
         The Context in which the function was defined.
 
     args : iterable
         List of objects to inspect for context.  Objects that aren't of
-        type DistArrayProxy are skipped.
+        type DistArray are skipped.
 
     Returns
     -------
-    DistArrayContext
-        If all provided DistArrayProxy objects have the same context.
+    Context
+        If all provided DistArray objects have the same context.
 
     Raises
     ------
     ValueError
-        Raised if all DistArrayProxy objects don't have the same context.
+        Raised if all DistArray objects don't have the same context.
     """
-    contexts = [definition_context] + [arg.context for arg in args if isinstance(arg, DistArrayProxy)]
+    contexts = [definition_context] + [arg.context for arg in args if isinstance(arg, DistArray)]
     if not all_equal(contexts):
-        errmsg = "All DistArrayProxy objects must be defined with the same context used for the function: {}"
+        errmsg = "All DistArray objects must be defined with the same context used for the function: {}"
         raise ValueError(errmsg.format(contexts))
     else:
         return contexts[0]
@@ -110,7 +110,7 @@ def process_return_value(subcontext, result_key):
 
     Returns
     -------
-    A DistArrayProxy (if locally it's a DistArray), a None (if locally
+    A DistArray (if locally it's a DistArray), a None (if locally
     it's a None).
 
     Raises
@@ -123,20 +123,21 @@ def process_return_value(subcontext, result_key):
     subcontext._execute0(type_statement)
     result_type_str = subcontext._pull0(type_key)
 
-    if result_type_str == "<type 'NoneType'>":
+    if (result_type_str == "<type 'NoneType'>" or  # Python 2
+            result_type_str == "<class 'NoneType'>"):  # Python 3
         result = None
-    elif result_type_str == "<class 'distarray.core.densedistarray.DenseDistArray'>":
-        result = DistArrayProxy(result_key, subcontext)
+    elif result_type_str == "<class 'distarray.core.denselocalarray.DenseLocalArray'>":
+        result = DistArray(result_key, subcontext)
     else:
-        msg = ("@local not yet implemented for return types other "
-               "than DistArray and NoneType")
+        msg = ("Type is {}.  @local is not yet implemented for return types"
+                "other than DistArray and NoneType").format(result_type_str)
         raise TypeError(msg)
 
     return result
 
 
 def local(fn):
-    """ Decorator indicating a function is run locally on engines.
+    """Decorator indicating a function is run locally on engines.
 
     Parameters
     ----------
@@ -157,7 +158,7 @@ def local(fn):
         subcontext = determine_context(_global_context, flatten((args, kwargs.values())))
 
         # generate keys for each parameter
-        # push to engines if not a DistArrayProxy
+        # push to engines if not a DistArray
         arg_keys = key_and_push_args(subcontext, args)
         kwarg_names = kwargs.keys()
         kwarg_keys = key_and_push_args(subcontext, kwargs.values())

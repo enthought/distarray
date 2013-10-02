@@ -1,3 +1,4 @@
+from __future__ import print_function
 # encoding: utf-8
 
 __docformat__ = "restructuredtext en"
@@ -13,6 +14,7 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
+import six
 import sys
 import math
 
@@ -21,9 +23,12 @@ import numpy as np
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
 from distarray.core.error import *
-from distarray.core.base import BaseDistArray, arecompatible
+from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
+
+if six.PY3:
+    buffer = memoryview
 
 
 #----------------------------------------------------------------------------
@@ -32,7 +37,7 @@ from distarray.utils import _raise_nie
 
 
 __all__ = [
-    'DistArray',
+    'LocalArray',
     'empty',
     'empty_like',
     'zeros',
@@ -101,9 +106,10 @@ __all__ = [
     'arctanh',
     'invert']
 
+
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Base DistArray class
+# Base LocalArray class
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -118,7 +124,7 @@ def mpi_type_for_ndarray(a):
     return mpi_dtypes[a.dtype]
 
 
-class DenseDistArray(BaseDistArray):
+class DenseLocalArray(BaseLocalArray):
     """Distribute memory Python arrays."""
     
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
@@ -126,17 +132,32 @@ class DenseDistArray(BaseDistArray):
         """
         Create a distributed memory array on a set of processors.
         """
-        BaseDistArray.__init__(self, shape, dtype, dist, grid_shape, comm, buf, offset)
+        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm, buf, offset)
         
         # At this point, everything is setup, but the memory has not been allocated.
         self._allocate(buf, offset)
     
     def __del__(self):
-        BaseDistArray.__del__(self)
+        BaseLocalArray.__del__(self)
     
     #----------------------------------------------------------------------------
-    # Misc methods
+    # Distributed Array Protocol
     #---------------------------------------------------------------------------- 
+
+    def __distarray__(self):
+        metadata = {"disttype": None,
+                    "periodic": None,
+                    "datasize": None,
+                    "gridrank": None,
+                    "gridsize": None,
+                    "indices": None,
+                    "blocksize": None,
+                    "padding": None
+                   }
+
+        distbuffer = {"buffer": self.local_array,
+                      "dimdata": (metadata,)}
+        return distbuffer
     
     #----------------------------------------------------------------------------
     # Methods used at initialization
@@ -237,7 +258,7 @@ class DenseDistArray(BaseDistArray):
                 try:
                     import pylab
                 except ImportError:
-                    print "Matplotlib is not installed so the dist_matrix cannot be plotted"
+                    print("Matplotlib is not installed so the dist_matrix cannot be plotted")
                 else:
                     pylab.ion()
                     pylab.matshow(dm)
@@ -263,13 +284,13 @@ class DenseDistArray(BaseDistArray):
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = DistArray(self.shape, dtype=newdtype, dist=self.dist,
+            new_da = LocalArray(self.shape, dtype=newdtype, dist=self.dist,
                 grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
             return new_da
     
     def copy(self):
         local_copy = self.local_array.copy()
-        new_da = DistArray(self.shape, dtype=self.dtype, dist=self.dist,
+        new_da = LocalArray(self.shape, dtype=self.dtype, dist=self.dist,
             grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
     
     def local_view(self, dtype=None):
@@ -280,15 +301,12 @@ class DenseDistArray(BaseDistArray):
             
     def view(self, dtype=None):
         if dtype is None:
-            new_da = DistArray(self.shape, self.dtype, self.dist,
+            new_da = LocalArray(self.shape, self.dtype, self.dist,
                 self.grid_shape, self.base_comm, buf=self.data)
         else:
-            new_da = DistArray(self.shape, dtype, self.dist,
+            new_da = LocalArray(self.shape, dtype, self.dist,
                 self.grid_shape, self.base_comm, buf=self.data)
         return new_da
-    
-    def __distarray__(self, dtype=None):
-        return self
     
     def __array__(self, dtype=None):
         if dtype is None:
@@ -300,14 +318,14 @@ class DenseDistArray(BaseDistArray):
     
     def __array_wrap__(self, obj, context=None):
         """
-        Return a DistArray based on obj.
+        Return a LocalArray based on obj.
         
-        This method constructs a new DistArray object using (shape, dist,
+        This method constructs a new LocalArray object using (shape, dist,
         grid_shape and base_comm) from self and dtype, buffer from obj.
         
         This is used to construct return arrays for ufuncs.
         """
-        return DistArray(self.shape, obj.dtype, self.dist, self.grid_shape, 
+        return LocalArray(self.shape, obj.dtype, self.dist, self.grid_shape,
             self.base_comm, buf=obj)
     
     
@@ -344,7 +362,7 @@ class DenseDistArray(BaseDistArray):
      
     def asdist(self, shape, dist={0:'b'}, grid_shape=None):
         pass
-        # new_da = DistArray(shape, self.dtype, dist, grid_shape, self.base_comm)
+        # new_da = LocalArray(shape, self.dtype, dist, grid_shape, self.base_comm)
         # base_comm = self.base_comm
         # local_array = self.local_array
         # new_local_array = da.local_array
@@ -457,7 +475,7 @@ class DenseDistArray(BaseDistArray):
     def conj(self, out=None):
         _raise_nie()
     
-    congugate = conj
+    conjugate = conj
     
     def round(self, decimals=0, out=None):
         _raise_nie()
@@ -573,7 +591,7 @@ class DenseDistArray(BaseDistArray):
             raise IndexError("nonlocal indexing not implemented")
     
     def sync(self):
-        print "hi"
+        print("hi")
     
     def __contains__(self, item):
         return item in self.local_array
@@ -587,7 +605,7 @@ class DenseDistArray(BaseDistArray):
         if packed_ind > np.prod(self.shape)-1 or packed_ind < 0:
             raise ValueError("Invalid index, must be 0 <= x <= number of elements.")
         strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
-        return tuple(packed_ind/strides_array % self.shape)
+        return tuple(packed_ind//strides_array % self.shape)
         
     
     #----------------------------------------------------------------------------
@@ -752,22 +770,22 @@ class DenseDistArray(BaseDistArray):
         return invert(self)
 
 
-DistArray = DenseDistArray
+LocalArray = DenseLocalArray
 
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Functions that are friends of DistArray
+# Functions that are friends of LocalArray
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the DistArray object in this module, and the 
-# DistArray object needs to use these functions.  There are 3 options for
+# functions need accees to the LocalArray object in this module, and the
+# LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
 #     * Put everything in one file
-#     * Put the functions needed by DistArray in distarray, others elsewhere
-#     * Make a subclass of DistArray that has methods that use the functions
+#     * Put the functions needed by LocalArray in distarray, others elsewhere
+#     * Make a subclass of LocalArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -783,7 +801,7 @@ DistArray = DenseDistArray
 # 4.1 Creating arrays 
 #----------------------------------------------------------------------------
 
-# Here is DistArray.__init__ for reference
+# Here is LocalArray.__init__ for reference
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
 
@@ -802,41 +820,41 @@ def arange(start, stop=None, step=1, dtype=None, dist={0:'b'},
 
 
 def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
-    return DistArray(shape, dtype, dist, grid_shape, comm)
+    return LocalArray(shape, dtype, dist, grid_shape, comm)
 
 
 def empty_like(arr, dtype=None):
-    if isinstance(arr, DenseDistArray):
-	if dtype==None:
+    if isinstance(arr, DenseLocalArray):
+        if dtype==None:
             return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
         else:
             return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseDistArray or subclass is expected")
+        raise TypeError("a DenseLocalArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_zeros = np.zeros(local_shape, dtype=dtype)
-    return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_zeros)
+    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_zeros)
 
 
 def zeros_like(arr):
-    if isinstance(arr, DenseDistArray):
+    if isinstance(arr, DenseLocalArray):
         return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseDistArray or subclass is expected")
+        raise TypeError("a DenseLocalArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_ones = np.ones(local_shape, dtype=dtype)
-    return DistArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
+    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
 
 
-class GlobalIterator(object):
+class GlobalIterator(six.Iterator):
     
     def __init__(self, arr):
         self.arr = arr
@@ -845,8 +863,8 @@ class GlobalIterator(object):
     def __iter__(self):
         return self
     
-    def next(self):
-        local_inds, value = self.nditerator.next()
+    def __next__(self):
+        local_inds, value = six.advance_iterator(self.nditerator)
         global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
         return global_inds, value
 
@@ -866,9 +884,9 @@ def fromfunction(function, shape, **kwargs):
 
 def fromlocalarray_like(local_arr, like_arr):
     """
-    Create a new DistArray using a given local array (+its dtype).
+    Create a new LocalArray using a given local array (+its dtype).
     """
-    return DistArray(like_arr.shape, local_arr.dtype, like_arr.dist, like_arr.grid_shape, 
+    return LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist, like_arr.grid_shape,
         like_arr.base_comm, buf=local_arr)
 
 
@@ -1083,18 +1101,18 @@ finfo = np.finfo
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the DistArray object in this module, and the 
-# DistArray object needs to use these functions.  There are 3 options for
+# functions need access to the LocalArray object in this module, and the
+# LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
 #     * Put everything in one file
-#     * Put the functions needed by DistArray in distarray, others elsewhere
-#     * Make a subclass of DistArray that has methods that use the functions
+#     * Put the functions needed by LocalArray in distarray, others elsewhere
+#     * Make a subclass of LocalArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
 
-# Functions for manpulating shapes according to the broadcast rules.
+# Functions for manipulating shapes according to the broadcast rules.
 
 def _expand_shape(s, length, element=1):
     add = length - len(s)
@@ -1121,7 +1139,7 @@ def _are_shapes_bcast(shape, target_shape):
     return True
 
 
-class DistArrayUnaryOperation(object):
+class LocalArrayUnaryOperation(object):
     
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1130,8 +1148,8 @@ class DistArrayUnaryOperation(object):
         
     def __call__(self, x1, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseDistArray)
-        y_isdda = isinstance(y, DenseDistArray)
+        x1_isdda = isinstance(x1, DenseLocalArray)
+        y_isdda = isinstance(y, DenseLocalArray)
         assert x1_isdda or isscalar(x1), "invalid type for unary ufunc"
         assert y is None or y_isdda, "invalid return array type"
         if y is None:
@@ -1139,17 +1157,17 @@ class DistArrayUnaryOperation(object):
         elif y_isdda:
             if x1_isdda:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("return DistArray not compatible with DistArray argument" % y)
+                    raise IncompatibleArrayError("return LocalArray not compatible with LocalArray argument" % y)
             local_result = self.func(x1, y.local_array)
             return y
         else:
             raise TypeError("invalid return type for unary ufunc")
     
     def __str__(self):
-        return "DistArray version of " + str(self.func)
+        return "LocalArray version of " + str(self.func)
 
 
-class DistArrayBinaryOperation(object):
+class LocalArrayBinaryOperation(object):
     
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1158,9 +1176,9 @@ class DistArrayBinaryOperation(object):
     
     def __call__(self, x1, x2, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseDistArray)
-        x2_isdda = isinstance(x2, DenseDistArray)
-        y_isdda = isinstance(y, DenseDistArray)
+        x1_isdda = isinstance(x1, DenseLocalArray)
+        x2_isdda = isinstance(x2, DenseLocalArray)
+        y_isdda = isinstance(y, DenseLocalArray)
         assert x1_isdda or isscalar(x1), "invalid type for binary ufunc"
         assert x2_isdda or isscalar(x2), "invalid type for binary ufunc"
         assert y is None or y_isdda
@@ -1182,52 +1200,52 @@ class DistArrayBinaryOperation(object):
             raise TypeError("invalid return type for unary ufunc")
     
     def __str__(self):
-        return "DistArray version of " + str(self.func)
+        return "LocalArray version of " + str(self.func)
 
 
-add = DistArrayBinaryOperation(np.add)
-subtract = DistArrayBinaryOperation(np.subtract)
-multiply = DistArrayBinaryOperation(np.multiply)
-divide = DistArrayBinaryOperation(np.divide)
-true_divide = DistArrayBinaryOperation(np.true_divide)
-floor_divide = DistArrayBinaryOperation(np.floor_divide)
-power = DistArrayBinaryOperation(np.power)
-remainder = DistArrayBinaryOperation(np.remainder)
-fmod = DistArrayBinaryOperation(np.fmod)
-arctan2 = DistArrayBinaryOperation(np.arctan2)
-hypot = DistArrayBinaryOperation(np.hypot)
-bitwise_and = DistArrayBinaryOperation(np.bitwise_and)
-bitwise_or = DistArrayBinaryOperation(np.bitwise_or)
-bitwise_xor = DistArrayBinaryOperation(np.bitwise_xor)
-left_shift = DistArrayBinaryOperation(np.left_shift)
-right_shift = DistArrayBinaryOperation(np.right_shift)
+add = LocalArrayBinaryOperation(np.add)
+subtract = LocalArrayBinaryOperation(np.subtract)
+multiply = LocalArrayBinaryOperation(np.multiply)
+divide = LocalArrayBinaryOperation(np.divide)
+true_divide = LocalArrayBinaryOperation(np.true_divide)
+floor_divide = LocalArrayBinaryOperation(np.floor_divide)
+power = LocalArrayBinaryOperation(np.power)
+remainder = LocalArrayBinaryOperation(np.remainder)
+fmod = LocalArrayBinaryOperation(np.fmod)
+arctan2 = LocalArrayBinaryOperation(np.arctan2)
+hypot = LocalArrayBinaryOperation(np.hypot)
+bitwise_and = LocalArrayBinaryOperation(np.bitwise_and)
+bitwise_or = LocalArrayBinaryOperation(np.bitwise_or)
+bitwise_xor = LocalArrayBinaryOperation(np.bitwise_xor)
+left_shift = LocalArrayBinaryOperation(np.left_shift)
+right_shift = LocalArrayBinaryOperation(np.right_shift)
 
 
-negative = DistArrayUnaryOperation(np.negative)
-absolute = DistArrayUnaryOperation(np.absolute)
-rint = DistArrayUnaryOperation(np.rint)
-sign = DistArrayUnaryOperation(np.sign)
-conjugate = DistArrayUnaryOperation(np.conjugate)
-exp = DistArrayUnaryOperation(np.exp)
-log = DistArrayUnaryOperation(np.log)
-expm1 = DistArrayUnaryOperation(np.expm1)
-log1p = DistArrayUnaryOperation(np.log1p)
-log10 = DistArrayUnaryOperation(np.log10)
-sqrt = DistArrayUnaryOperation(np.sqrt)
-square = DistArrayUnaryOperation(np.square)
-reciprocal = DistArrayUnaryOperation(np.reciprocal)
-sin = DistArrayUnaryOperation(np.sin)
-cos = DistArrayUnaryOperation(np.cos)
-tan = DistArrayUnaryOperation(np.tan)
-arcsin = DistArrayUnaryOperation(np.arcsin)
-arccos = DistArrayUnaryOperation(np.arccos)
-arctan = DistArrayUnaryOperation(np.arctan)
-sinh = DistArrayUnaryOperation(np.sinh)
-cosh = DistArrayUnaryOperation(np.cosh)
-tanh = DistArrayUnaryOperation(np.tanh)
-arcsinh = DistArrayUnaryOperation(np.arcsinh)
-arccosh = DistArrayUnaryOperation(np.arccosh)
-arctanh = DistArrayUnaryOperation(np.arctanh)
-invert = DistArrayUnaryOperation(np.invert)
+negative = LocalArrayUnaryOperation(np.negative)
+absolute = LocalArrayUnaryOperation(np.absolute)
+rint = LocalArrayUnaryOperation(np.rint)
+sign = LocalArrayUnaryOperation(np.sign)
+conjugate = LocalArrayUnaryOperation(np.conjugate)
+exp = LocalArrayUnaryOperation(np.exp)
+log = LocalArrayUnaryOperation(np.log)
+expm1 = LocalArrayUnaryOperation(np.expm1)
+log1p = LocalArrayUnaryOperation(np.log1p)
+log10 = LocalArrayUnaryOperation(np.log10)
+sqrt = LocalArrayUnaryOperation(np.sqrt)
+square = LocalArrayUnaryOperation(np.square)
+reciprocal = LocalArrayUnaryOperation(np.reciprocal)
+sin = LocalArrayUnaryOperation(np.sin)
+cos = LocalArrayUnaryOperation(np.cos)
+tan = LocalArrayUnaryOperation(np.tan)
+arcsin = LocalArrayUnaryOperation(np.arcsin)
+arccos = LocalArrayUnaryOperation(np.arccos)
+arctan = LocalArrayUnaryOperation(np.arctan)
+sinh = LocalArrayUnaryOperation(np.sinh)
+cosh = LocalArrayUnaryOperation(np.cosh)
+tanh = LocalArrayUnaryOperation(np.tanh)
+arcsinh = LocalArrayUnaryOperation(np.arcsinh)
+arccosh = LocalArrayUnaryOperation(np.arccosh)
+arctanh = LocalArrayUnaryOperation(np.arctanh)
+invert = LocalArrayUnaryOperation(np.invert)
 
 

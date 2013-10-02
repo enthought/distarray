@@ -4,14 +4,14 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
-
 import unittest
 import numpy as np
+from six.moves import range
 from IPython.parallel import Client
-from distarray.client import DistArrayContext
+from distarray.client import Context
 
 
-class TestDistArrayContext(unittest.TestCase):
+class TestContext(unittest.TestCase):
 
     def setUp(self):
         self.client = Client()
@@ -19,54 +19,55 @@ class TestDistArrayContext(unittest.TestCase):
         if len(self.dv.targets) < 4:
             raise unittest.SkipTest('Must set up a cluster with at least 4 engines running.')
 
-    def test_create_DAC(self):
+    def test_create_Context(self):
         '''Can we create a plain vanilla context?'''
-        dac = DistArrayContext(self.dv)
+        dac = Context(self.dv)
         self.assertIs(dac.view, self.dv)
 
-    def test_create_DAC_with_targets(self):
+    def test_create_Context_with_targets(self):
         '''Can we create a context with a subset of engines?'''
-        dac = DistArrayContext(self.dv, targets=[0, 1])
+        dac = Context(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
 
-    def test_create_DAC_with_sub_view(self):
+    def test_create_Context_with_sub_view(self):
         '''Context's view must encompass all ranks in the MPI communicator.'''
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
             raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
         with self.assertRaises(ValueError):
-            DistArrayContext(subview)
+            Context(subview)
 
-    def test_create_DAC_with_targets_ranks(self):
+    def test_create_Context_with_targets_ranks(self):
         '''Check that the target <=> rank mapping is consistent.'''
         targets = [3,2]
-        dac = DistArrayContext(self.dv, targets=targets)
+        dac = Context(self.dv, targets=targets)
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
         self.assertEqual(set(range(len(dac.targets))), set(dac.target_to_rank.values()))
 
-class TestDistArrayProxy(unittest.TestCase):
+
+class TestDistArray(unittest.TestCase):
 
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
-        self.dac = DistArrayContext(self.dv)
+        self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
 
-        for val in xrange(100):
+        for val in range(100):
             dap[val] = val
 
-        for val in xrange(100):
+        for val in range(100):
             self.assertEqual(dap[val], val)
 
     def test_set_and_getitem_cyclic_dist(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
 
-        for val in xrange(100):
+        for val in range(100):
             dap[val] = val
 
-        for val in xrange(100):
+        for val in range(100):
             self.assertEqual(dap[val], val)
 
     def test_slice_in_getitem_raises_valueerror(self):
