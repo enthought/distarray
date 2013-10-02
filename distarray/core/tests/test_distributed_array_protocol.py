@@ -11,12 +11,12 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         except InvalidCommSizeError:
             raise unittest.SkipTest('Must run with comm size > 4.')
         else:
-            self.arr = da.DistArray((16,16),
-                                    grid_shape=(4,),
-                                    comm=comm, buf=None, offset=0)
+            self.arr = da.LocalArray((16,16),
+                                     grid_shape=(4,),
+                                     comm=comm, buf=None, offset=0)
 
-    def testFoo(self):
-        self.assertIsInstance(self.arr, da.DistArray)
+    def test_export(self):
+        self.assertIsInstance(self.arr, da.LocalArray)
 
 
 if __name__ == '__main__':
