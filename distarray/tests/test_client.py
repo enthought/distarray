@@ -4,7 +4,6 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
-
 import unittest
 import numpy as np
 from IPython.parallel import Client
