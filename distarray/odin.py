@@ -123,7 +123,8 @@ def process_return_value(subcontext, result_key):
     subcontext._execute0(type_statement)
     result_type_str = subcontext._pull0(type_key)
 
-    if result_type_str == "<type 'NoneType'>":
+    if (result_type_str == "<type 'NoneType'>" or  # Python 2
+            result_type_str == "<class 'NoneType'>"):  # Python 3
         result = None
     elif result_type_str == "<class 'distarray.core.denselocalarray.DenseLocalArray'>":
         result = DistArray(result_key, subcontext)
