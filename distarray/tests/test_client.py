@@ -11,7 +11,7 @@ from IPython.parallel import Client
 from distarray.client import Context
 
 
-class TestDistArrayContext(unittest.TestCase):
+class TestContext(unittest.TestCase):
 
     def setUp(self):
         self.client = Client()
@@ -19,17 +19,17 @@ class TestDistArrayContext(unittest.TestCase):
         if len(self.dv.targets) < 4:
             raise unittest.SkipTest('Must set up a cluster with at least 4 engines running.')
 
-    def test_create_DAC(self):
+    def test_create_Context(self):
         '''Can we create a plain vanilla context?'''
         dac = Context(self.dv)
         self.assertIs(dac.view, self.dv)
 
-    def test_create_DAC_with_targets(self):
+    def test_create_Context_with_targets(self):
         '''Can we create a context with a subset of engines?'''
         dac = Context(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
 
-    def test_create_DAC_with_sub_view(self):
+    def test_create_Context_with_sub_view(self):
         '''Context's view must encompass all ranks in the MPI communicator.'''
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
@@ -37,7 +37,7 @@ class TestDistArrayContext(unittest.TestCase):
         with self.assertRaises(ValueError):
             Context(subview)
 
-    def test_create_DAC_with_targets_ranks(self):
+    def test_create_Context_with_targets_ranks(self):
         '''Check that the target <=> rank mapping is consistent.'''
         targets = [3,2]
         dac = Context(self.dv, targets=targets)
@@ -45,12 +45,12 @@ class TestDistArrayContext(unittest.TestCase):
         self.assertEqual(set(range(len(dac.targets))), set(dac.target_to_rank.values()))
 
 
-class TestDistArrayProxy(unittest.TestCase):
+class TestDistArray(unittest.TestCase):
 
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
-        self.dac = DistArrayContext(self.dv)
+        self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
