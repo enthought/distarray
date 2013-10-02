@@ -8,7 +8,7 @@ Many of these tests require a 4-engine cluster to be running locally.
 import unittest
 import numpy as np
 from IPython.parallel import Client
-from distarray.client import DistArrayContext
+from distarray.client import Context
 
 
 class TestDistArrayContext(unittest.TestCase):
@@ -21,12 +21,12 @@ class TestDistArrayContext(unittest.TestCase):
 
     def test_create_DAC(self):
         '''Can we create a plain vanilla context?'''
-        dac = DistArrayContext(self.dv)
+        dac = Context(self.dv)
         self.assertIs(dac.view, self.dv)
 
     def test_create_DAC_with_targets(self):
         '''Can we create a context with a subset of engines?'''
-        dac = DistArrayContext(self.dv, targets=[0, 1])
+        dac = Context(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
 
     def test_create_DAC_with_sub_view(self):
@@ -35,12 +35,12 @@ class TestDistArrayContext(unittest.TestCase):
         if not set(subview.targets) < set(self.dv.targets):
             raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
         with self.assertRaises(ValueError):
-            DistArrayContext(subview)
+            Context(subview)
 
     def test_create_DAC_with_targets_ranks(self):
         '''Check that the target <=> rank mapping is consistent.'''
         targets = [3,2]
-        dac = DistArrayContext(self.dv, targets=targets)
+        dac = Context(self.dv, targets=targets)
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
         self.assertEqual(set(range(len(dac.targets))), set(dac.target_to_rank.values()))
 

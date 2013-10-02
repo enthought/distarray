@@ -38,7 +38,7 @@ from distarray.core.construct import (
 # Exports
 #----------------------------------------------------------------------------
 
-__all__ = ['BaseDistArray',
+__all__ = ['BaseLocalArray',
     'arecompatible']
 
 #----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ __all__ = ['BaseDistArray',
 #----------------------------------------------------------------------------
 
 
-class BaseDistArray(object):
+class BaseLocalArray(object):
     """Distribute memory Python arrays."""
     
     __array_priority__ = 20.0
@@ -56,7 +56,7 @@ class BaseDistArray(object):
         """Create a distributed memory array on a set of processors.
         """
         if comm==MPI.COMM_NULL:
-            raise NullCommError("cannot create a DistArray with COMM_NULL")
+            raise NullCommError("cannot create a LocalArray with COMM_NULL")
         self.shape = shape
         self.ndim = len(shape)
         self.dtype = np.dtype(dtype)

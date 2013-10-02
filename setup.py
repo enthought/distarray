@@ -42,8 +42,8 @@ metadata = {
 def find_ext_modules():
 
     maps = Extension(
-        name='distarray.core.maps_fast',
-        sources=['distarray/core/maps_fast.c']
+        name='distarray.core.maps',
+        sources=['distarray/core/maps.c']
     )
     # This extension shows how to call mpi4py's C layer using Cython
     mpi_test = Extension(
