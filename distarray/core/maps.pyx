@@ -19,7 +19,7 @@ cdef class Map:
     def __init__(self, shape, grid_shape):
         self.shape = shape
         self.grid_shape = grid_shape
-        self.local_shape = self.shape/self.grid_shape
+        self.local_shape = self.shape//self.grid_shape
         if self.shape%self.grid_shape > 0:
             self.local_shape += 1
 
@@ -45,7 +45,7 @@ cdef class Map:
 cdef class BlockMap(Map):
 
     cdef int owner_c(self, int i):
-        return i/self.local_shape
+        return i//self.local_shape
 
     cdef int local_index_c(self, int i):
         return i%self.local_shape
@@ -60,7 +60,7 @@ cdef class CyclicMap(Map):
         return i%self.grid_shape
 
     cdef int local_index_c(self, int i):
-        return i/self.grid_shape
+        return i//self.grid_shape
 
     cdef int global_index_c(self, int owner, int p):
         return owner + p*self.grid_shape

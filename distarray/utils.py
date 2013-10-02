@@ -79,7 +79,7 @@ def mirror_sort(seq, ref_seq):
     [0, 4, 1, 3, 2]
     """
     assert len(seq)==len(ref_seq), "Sequences must have the same length"
-    shift = zip(list(range(len(ref_seq))),ref_seq)
+    shift = list(zip(range(len(ref_seq)),ref_seq))
     shift.sort(key=lambda x:x[1])
     shift = [s[0] for s in shift]
     newseq = len(ref_seq)*[0]
