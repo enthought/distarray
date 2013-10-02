@@ -52,10 +52,10 @@ if __name__ == '__main__':
     pprint(dap_b.get_localarrays())
     pprint(dap_c.get_localarrays())
 
-    print
-    raw_input("__getitem__ with slicing:")
-    print dap_b[19:34:2]
-    print dap_c[19:34:2]
+#    print
+#    raw_input("__getitem__ with slicing:")
+#    print dap_b[19:34:2]
+#    print dap_c[19:34:2]
 
     print
     raw_input("@local functions:")
