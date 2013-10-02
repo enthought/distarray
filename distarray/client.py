@@ -82,8 +82,10 @@ class Context(object):
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
 
-        with self.view.sync_imports():
-            import distarray
+        # FIXME: IPython bug?  This doens't work under Python 3
+        #with self.view.sync_imports():
+        #    import distarray
+        self.view.execute("import distarray")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
