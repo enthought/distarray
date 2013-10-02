@@ -15,11 +15,15 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
+import itertools
+
+from IPython.parallel.error import CompositeError
 
 
 #----------------------------------------------------------------------------
 # Code
 #----------------------------------------------------------------------------
+
 
 class RandomModule(object):
 
@@ -34,7 +38,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.rand(%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def normal(self, loc=0.0, scale=1.0, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(loc, scale, size, dist, grid_shape)
@@ -43,7 +47,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.normal(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def randint(self, low, high=None, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(low, high, size, dist, grid_shape)
@@ -52,7 +56,7 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.randint(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
     def randn(self, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(size, dist, grid_shape)
@@ -61,36 +65,15 @@ class RandomModule(object):
         self.context._execute(
             '%s = distarray.random.randn(%s,%s,%s,%s)' % subs
         )
-        return DistArrayProxy(new_key, self.context)
+        return DistArray(new_key, self.context)
 
 
-class FFTModule(object):
+class Context(object):
 
-    def __init__(self, context):
-        self.context = context
-        self.context._execute('import distarray.fft')
+    def __init__(self, view, targets=None):
+        self.view = view
 
-    def fft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.fft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-    def ifft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.ifft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-
-class DistArrayContext(object):
-
-    def __init__(self, mec, targets=None):
-        self.mec = mec
-
-        all_targets = self.mec.get_ids()
+        all_targets = self.view.targets
         if targets is None:
             self.targets = all_targets
         else:
@@ -99,46 +82,88 @@ class DistArrayContext(object):
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
 
-        self._targets_key = self._generate_key()
-        self.mec.push({self._targets_key:self.targets}, targets=self.targets, block=True)
+        with self.view.sync_imports():
+            import distarray
 
-        self.mec.execute('import distarray')
+        self._make_intracomm()
+        self._set_engine_rank_mapping()
 
-        self._comm_key = self._generate_key()
-        self.mec.execute(
-            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, self._targets_key),
-            targets=self.targets, block=True
-        )
+        # self.random = RandomModule(self)
+
+    def _set_engine_rank_mapping(self):
+        # The MPI intracomm referred to by self._comm_key may have a different
+        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
+        # self.ranks to this mapping.
+        rank = self._generate_key()
+        self.view.execute(
+                '%s = %s.Get_rank()' % (rank, self._comm_key),
+                block=True, targets=self.targets)
+        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+
+        # ensure consistency
+        assert set(self.targets) == set(self.target_to_rank.keys())
+        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+
+    def _make_intracomm(self):
+        def get_rank():
+            from distarray.mpi.mpibase import COMM_PRIVATE
+            return COMM_PRIVATE.Get_rank()
+
+        # get a mapping of IPython engine ID to MPI rank
+        rank_map = self.view.apply_async(get_rank).get_dict()
+        ranks = [ rank_map[engine] for engine in self.targets ]
+
+        # self.view's engines must encompass all ranks in the MPI communicator,
+        # i.e., everything in rank_map.values().
+        def get_size():
+            from distarray.mpi.mpibase import COMM_PRIVATE
+            return COMM_PRIVATE.Get_size()
+
+        comm_size = self.view.apply_async(get_size).get()[0]
+        if set(rank_map.values()) != set(range(comm_size)):
+            raise ValueError('Engines in view must encompass all MPI ranks.')
         
-        self.random = RandomModule(self)
-        self.fft = FFTModule(self)
+        # create a new communicator with the subset of engines note that
+        # MPI_Comm_create must be called on all engines, not just those
+        # involved in the new communicator.
+        self._comm_key = self._generate_key()
+        self.view.execute(
+            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, ranks),
+            block=True
+        )
 
     def _generate_key(self):
         uid = uuid.uuid4()
-        return '__distarray_%s' % uid.get_hex()
+        return '__distarray_%s' % uid.hex
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.mec.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.execute(lines,targets=targets,block=True)
 
-    def _push(self, d):
-        return self.mec.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.push(d,targets=targets,block=True)
 
-    def _pull(self, k):
-        return self.mec.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.pull(k,targets=targets,block=True)
 
     def _execute0(self, lines):
-        return self.mec.execute(lines,targets=self.targets[0],block=True)
+        return self.view.execute(lines,targets=self.targets[0],block=True)
 
     def _push0(self, d):
-        return self.mec.push(d,targets=self.targets[0],block=True)
+        return self.view.push(d,targets=self.targets[0],block=True)
 
     def _pull0(self, k):
-        return self.mec.pull(k,targets=self.targets[0],block=True)[0]
+        return self.view.pull(k,targets=self.targets[0],block=True)
 
     def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -147,7 +172,7 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.zeros(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -156,7 +181,7 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.ones(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
@@ -165,29 +190,29 @@ class DistArrayContext(object):
         self._execute(
             '%s = distarray.empty(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArrayProxy(da_key, self)
+        return DistArray(da_key, self)
 
     def fromndarray(self, arr):
         keys = self._key_and_push(arr.shape, arr.dtype)
         arr_key = self._generate_key()
         new_key = self._generate_key()
-        self.mec.scatter(arr_key, arr, targets=self.targets, block=True)
+        self.view.scatter(arr_key, arr, targets=self.targets, block=True)
         subs = (new_key,) + keys + (arr_key,)
         self._execute(
-            '%s = distarray.DistArray(%s,dtype=%s,buf=%s)' % subs
+            '%s = distarray.LocalArray(%s,dtype=%s,buf=%s)' % subs
         )
-        return DistArrayProxy(new_key, self)
+        return DistArray(new_key, self)
 
     fromarray = fromndarray
 
     def fromfunction(self, function, shape, **kwargs):
         func_key = self._generate_key()
-        self.mec.push_function({func_key:function},targets=self.targets,block=True)
+        self.view.push_function({func_key:function},targets=self.targets,block=True)
         keys = self._key_and_push(shape, kwargs)
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
         self._execute('%s = distarray.fromfunction(%s,%s,**%s)' % subs)
-        return DistArrayProxy(new_key, self)
+        return DistArray(new_key, self)
 
     def negative(self, a): return unary_proxy(self, a, 'negative')
     def absolute(self, a): return unary_proxy(self, a, 'absolute')
@@ -235,16 +260,16 @@ class DistArrayContext(object):
 
 
 def unary_proxy(context, a, meth_name):
-    assert isinstance(a, DistArrayProxy), 'this method only works on DistArrayProxy'
+    assert isinstance(a, DistArray), 'this method only works on DistArray'
     assert context==a.context, "distarray context mismatch: " % (context, a.context)
     context = a.context
     new_key = context._generate_key()
     context._execute('%s = distarray.%s(%s)' % (new_key, meth_name, a.key))
-    return DistArrayProxy(new_key, context)
+    return DistArray(new_key, context)
 
 def binary_proxy(context, a, b, meth_name):
-    is_a_dap = isinstance(a, DistArrayProxy)
-    is_b_dap = isinstance(b, DistArrayProxy)
+    is_a_dap = isinstance(a, DistArray)
+    is_b_dap = isinstance(b, DistArray)
     if is_a_dap and is_b_dap:
         assert b.context==a.context, "distarray context mismatch: " % (b.context, a.context)
         assert context==a.context, "distarray context mismatch: " % (context, a.context)        
@@ -259,13 +284,13 @@ def binary_proxy(context, a, b, meth_name):
         a_key = context._key_and_push(a)[0]
         b_key = b.key
     else:
-        raise TypeError('only DistArrayProxy or scalars are accepted')
+        raise TypeError('only DistArray or scalars are accepted')
     new_key = context._generate_key()
     context._execute('%s = distarray.%s(%s,%s)' % (new_key, meth_name, a_key, b_key))
-    return DistArrayProxy(new_key, context)
+    return DistArray(new_key, context)
 
 
-class DistArrayProxy(object):
+class DistArray(object):
 
     __array_priority__ = 20.0
 
@@ -283,9 +308,57 @@ class DistArrayProxy(object):
         return result
 
     def __repr__(self):
-        s = '<DistArrayProxy(shape=%r, targets=%r)>' % \
+        s = '<DistArray(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
         return s
+
+    def owner_rank(self, index):
+        key = self.context._generate_key()
+        statement = '%s = %s.owner_rank(%s)'
+        self.context._execute0(statement % (key, self.key, index))
+        result = self.context._pull0(key)
+        return result
+
+    def owner_target(self, index):
+        rank = self.owner_rank(index)
+        #target_index = self.context.ranks.index(rank)
+        #return self.context.targets[target_index]
+        return rank  # FIXME: WRONG!!
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            raise NotImplementedError("Slicing a proxy object not yet implemented.")
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            result_key = self.context._generate_key()
+            try:
+                target = self.owner_target(index)
+                statement = '%s = %s.__getitem__(%s)'
+                self.context._execute(statement % (result_key, self.key,
+                                                   tuple_index),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError()
+
+            return self.context._pull(result_key, targets=target)
+        else:
+            raise TypeError("Invalid index type.")
+
+    def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            raise NotImplementedError("Setting to a slice not yet implemented.")
+        elif isinstance(index, int):
+            tuple_index = (index,)
+            try:
+                target = self.owner_target(index)
+                statement = '%s.__setitem__(%s, %s)'
+                self.context._execute(statement % (self.key, tuple_index,
+                                                   value),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError
+        else:
+            raise TypeError("Invalid index type.")
 
     @property
     def shape(self):
@@ -325,7 +398,7 @@ class DistArrayProxy(object):
         subs = (local_name, self.key, local_shape, self.key)
         self.context._execute('%s = %s.local_view(); %s = %s.shape' % subs)
         shape = self.context._pull0(local_shape)
-        arr = self.context.mec.gather(
+        arr = self.context.view.gather(
             local_name,targets=self.context.targets,block=True)
         arr.shape = shape
         return arr

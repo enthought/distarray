@@ -19,27 +19,28 @@ import numpy as np
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
 from distarray.mpi.error import *
-from distarray.core import maps_fast as maps
+from distarray.core import maps
 from distarray.core.error import *
 from distarray import utils
+from functools import reduce
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Stateless functions for initializing various aspects of DistArray objects
+# Stateless functions for initializing various aspects of LocalArray objects
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
 # These are functions rather than methods because they need to be both
 # stateless and free of side-effects.  It is possible that they could be
 # called multiple times and in multiple different contexts in the course
-# of a DistArray object's lifetime (for example upon a reshape or redist).
+# of a LocalArray object's lifetime (for example upon a reshape or redist).
 # The simplest and most robust way of insuring this is to get rid of 'self'
 # (which holds all state) and make them standalone functions.
 
 
 def init_base_comm(comm):
     if comm==MPI.COMM_NULL:
-        raise MPICommError("Cannot create a DistArray with a MPI COMM_NULL")
+        raise MPICommError("Cannot create a LocalArray with a MPI COMM_NULL")
     elif comm is None:
         return mpibase.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):
@@ -49,6 +50,23 @@ def init_base_comm(comm):
 
 
 def init_dist(dist, ndim):
+    """Return a tuple containing dist-type for each dim.
+
+    Parameters
+    ----------
+    dist : str, list, tuple, or dict
+    ndim : int
+
+    Returns
+    -------
+    tuple of str
+        Contains string distribution type for each dim.
+
+    Examples
+    --------
+    >>> init_dist({0: 'b', 3: 'c'}, 4)
+    ('b', None, None, 'c')
+    """
     if isinstance(dist, str):
         return ndim*(dist,)
     elif isinstance(dist, (list, tuple)):
@@ -56,10 +74,26 @@ def init_dist(dist, ndim):
     elif isinstance(dist, dict):
         return tuple([dist.get(i) for i in range(ndim)])
     else:
-        DistError("dist must be a string, tuple/list or dict") 
+        DistError("dist must be a string, tuple/list or dict")
 
 
 def init_distdims(dist, ndim):
+    """Return a tuple containing indices of distributed dimensions.
+
+    Parameters
+    ----------
+    dist : tuple of str as returned from `init_dist`
+    ndim : int
+
+    Returns
+    -------
+    tuple of int
+
+    Examples
+    --------
+    >>> init_distdims(('b', None, None, 'c'), 4)
+    (0, 3)
+    """
     reduced_dist = [d for d in dist if d is not None]
     ndistdim = len(reduced_dist)
     if ndistdim > ndim:
@@ -69,6 +103,24 @@ def init_distdims(dist, ndim):
 
 
 def init_map_classes(dist):
+    """Given a tuple of `str` dist types, return a tuple of map classes.
+
+    Parameters
+    ----------
+    dist : tuple of str as returned from `init_dist`
+
+    Returns
+    -------
+    tuple of classes
+        For example,
+        'b' -> distarray.core.maps_fast.BlockMap
+        'c' -> distarray.core.maps_fast.CyclicMap
+
+    Examples
+    --------
+    >>> init_map_classes(('b', None, None, 'c'))
+    (distarray.core.maps_fast.BlockMap, distarray.core.maps_fast.CyclicMap)
+    """
     reduced_dist = [d for d in dist if d is not None]
     map_classes = [maps.get_map_class(d) for d in reduced_dist]
     return tuple(map_classes)
@@ -137,9 +189,9 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     ndistdim = len(distdims)
-    map_classes = init_map_classes(dist)   
+    map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
-    local_shape, maps = init_local_shape_and_maps(shape, 
+    local_shape, maps = init_local_shape_and_maps(shape,
         grid_shape, distdims, map_classes)
     return local_shape
 
@@ -151,7 +203,7 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     ndistdim = len(distdims)
-    map_classes = init_map_classes(dist)   
+    map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
     return grid_shape
 
