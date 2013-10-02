@@ -9,7 +9,7 @@ from distarray.mpi.mpibase import (
     MPI, 
     create_comm_of_size,
     create_comm_with_list)
-from distarray.core import maps_fast as maps, densedistarray
+from distarray.core import maps, densedistarray
 
 
 class TestFunctions(unittest.TestCase):
