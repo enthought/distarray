@@ -82,7 +82,8 @@ class Context(object):
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
 
-        self.view.execute('import distarray', block=True)
+        with self.view.sync_imports():
+            import distarray
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
