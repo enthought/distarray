@@ -29,7 +29,7 @@ def global_sum(da):
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    new_distarray = distarray.DistArray((1,), buf=new_arr)
+    new_distarray = distarray.LocalArray((1,), buf=new_arr)
     return new_distarray
 
 
