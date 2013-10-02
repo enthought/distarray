@@ -24,15 +24,6 @@ from IPython.parallel.error import CompositeError
 # Code
 #----------------------------------------------------------------------------
 
-def handle_composite_error(err):
-    """If there's only one error, raise it.  Else, re-raise the
-    CompositeError.
-    """
-    if len(err.args) == 1:
-        raise eval(err.args[0])
-    else:
-        raise
-
 
 class RandomModule(object):
 
@@ -77,27 +68,6 @@ class RandomModule(object):
         return DistArrayProxy(new_key, self.context)
 
 
-class FFTModule(object):
-
-    def __init__(self, context):
-        self.context = context
-        self.context._execute('import distarray.fft')
-
-    def fft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.fft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-    def ifft2(self, a):
-        assert isinstance(a, DistArrayProxy), 'must be a DistArrayProxy'
-        new_key = self.context._generate_key()
-        subs = (new_key, a.key)
-        self.context._execute('%s = distarray.fft.ifft2(%s)' % subs)
-        return DistArrayProxy(new_key, self.context)
-
-
 class DistArrayContext(object):
 
     def __init__(self, view, targets=None):
@@ -111,14 +81,36 @@ class DistArrayContext(object):
             for target in targets:
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
-        
+
+        self.view.execute('import distarray', block=True)
+
+        self._make_intracomm()
+        self._set_engine_rank_mapping()
+
+        # self.random = RandomModule(self)
+
+    def _set_engine_rank_mapping(self):
+        # The MPI intracomm referred to by self._comm_key may have a different
+        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
+        # self.ranks to this mapping.
+        rank = self._generate_key()
+        self.view.execute(
+                '%s = %s.Get_rank()' % (rank, self._comm_key),
+                block=True, targets=self.targets)
+        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+
+        # ensure consistency
+        assert set(self.targets) == set(self.target_to_rank.keys())
+        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+
+    def _make_intracomm(self):
         def get_rank():
             from distarray.mpi.mpibase import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
 
         # get a mapping of IPython engine ID to MPI rank
         rank_map = self.view.apply_async(get_rank).get_dict()
-        self.ranks = [ rank_map[engine] for engine in self.targets ]
+        ranks = [ rank_map[engine] for engine in self.targets ]
 
         # self.view's engines must encompass all ranks in the MPI communicator,
         # i.e., everything in rank_map.values().
@@ -130,23 +122,14 @@ class DistArrayContext(object):
         if set(rank_map.values()) != set(range(comm_size)):
             raise ValueError('Engines in view must encompass all MPI ranks.')
         
-        # create on *every engine* a list of MPI ranks that correspond to my IPython targets
-        self._targets_key = self._generate_key()
-        self.view.push({self._targets_key: self.ranks}, block=True)
-
-        self.view.execute('import distarray', block=True)
-
-        # create a new communicator with the subset of engines
-        # note that MPI_Comm_create must be called on all engines,
-        # not just those involved in the new communicator.
+        # create a new communicator with the subset of engines note that
+        # MPI_Comm_create must be called on all engines, not just those
+        # involved in the new communicator.
         self._comm_key = self._generate_key()
         self.view.execute(
-            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, self._targets_key),
+            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
-        
-        # self.random = RandomModule(self)
-        # self.fft = FFTModule(self)
 
     def _generate_key(self):
         uid = uuid.uuid4()
@@ -157,14 +140,20 @@ class DistArrayContext(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.execute(lines,targets=targets,block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.push(d,targets=targets,block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        if targets is None:
+            targets = self.targets
+        return self.view.pull(k,targets=targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
@@ -322,44 +311,51 @@ class DistArrayProxy(object):
             (self.shape, self.context.targets)
         return s
 
+    def owner_rank(self, index):
+        key = self.context._generate_key()
+        statement = '%s = %s.owner_rank(%s)'
+        self.context._execute0(statement % (key, self.key, index))
+        result = self.context._pull0(key)
+        return result
+
+    def owner_target(self, index):
+        rank = self.owner_rank(index)
+        #target_index = self.context.ranks.index(rank)
+        #return self.context.targets[target_index]
+        return rank  # FIXME: WRONG!!
+
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return [self[i] for i in xrange(*index.indices(self.size))]
+            raise NotImplementedError("Slicing a proxy object not yet implemented.")
         elif isinstance(index, int):
             tuple_index = (index,)
             result_key = self.context._generate_key()
             try:
+                target = self.owner_target(index)
                 statement = '%s = %s.__getitem__(%s)'
                 self.context._execute(statement % (result_key, self.key,
-                                                   tuple_index))
-            except CompositeError as err:
-                handle_composite_error(err)
+                                                   tuple_index),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError()
 
-            results = self.context._pull(result_key)
-            result_iter = itertools.dropwhile(lambda r: r is None, results)
-            return result_iter.next()  # return first non-None value
+            return self.context._pull(result_key, targets=target)
         else:
             raise TypeError("Invalid index type.")
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            indices = xrange(*index.indices(self.size))
-            if np.isscalar(value):
-                # broadcast scalar value
-                value = itertools.repeat(value)
-            else:
-                if len(value) != len(indices):
-                    raise ValueError("`value` must be same length as slice")
-            for i, v in itertools.izip(indices, value):
-                self[i] = v
+            raise NotImplementedError("Setting to a slice not yet implemented.")
         elif isinstance(index, int):
             tuple_index = (index,)
             try:
+                target = self.owner_target(index)
                 statement = '%s.__setitem__(%s, %s)'
                 self.context._execute(statement % (self.key, tuple_index,
-                                                   value))
-            except CompositeError as err:
-                handle_composite_error(err)
+                                                   value),
+                                      targets=target)
+            except Exception as err:
+                raise IndexError
         else:
             raise TypeError("Invalid index type.")
 
