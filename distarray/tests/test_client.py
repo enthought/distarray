@@ -6,10 +6,9 @@ Many of these tests require a 4-engine cluster to be running locally.
 
 import unittest
 import numpy as np
+from six.moves import range
 from IPython.parallel import Client
 from distarray.client import Context
-
-from six.moves import range as xrange
 
 
 class TestContext(unittest.TestCase):
@@ -56,19 +55,19 @@ class TestDistArray(unittest.TestCase):
     def test_set_and_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
 
-        for val in xrange(100):
+        for val in range(100):
             dap[val] = val
 
-        for val in xrange(100):
+        for val in range(100):
             self.assertEqual(dap[val], val)
 
     def test_set_and_getitem_cyclic_dist(self):
         dap = self.dac.empty((100,), dist={0: 'c'})
 
-        for val in xrange(100):
+        for val in range(100):
             dap[val] = val
 
-        for val in xrange(100):
+        for val in range(100):
             self.assertEqual(dap[val], val)
 
     def test_slice_in_getitem_raises_valueerror(self):

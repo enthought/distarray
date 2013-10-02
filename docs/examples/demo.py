@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     print
     raw_input("__setitem__:")
-    for x in xrange(arr_len):
+    for x in range(arr_len):
         dap_b[x] = x
         dap_c[x] = x
     pprint(dap_b.get_localarrays())
