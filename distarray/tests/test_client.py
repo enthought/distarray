@@ -9,6 +9,8 @@ import numpy as np
 from IPython.parallel import Client
 from distarray.client import Context
 
+from six.moves import range as xrange
+
 
 class TestContext(unittest.TestCase):
 
