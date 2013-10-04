@@ -3,9 +3,16 @@ python:
     - "2.7"
     - "3.3"
 before_install:
+    - "sudo apt-get install libzmq-dev"
+    - "sudo apt-get install libzmq1"
     - "sudo apt-get install libopenmpi-dev"
     - "sudo apt-get install openmpi-bin"
 install:
-    - "pip install numpy pyzmq ipython mpi4py six"
+    - "pip install numpy --use-mirrors"
+    - "pip install pyzmq --use-mirrors"
+    - "pip install pyzmq --use-mirrors"
+    - "pip install ipython --use-mirrors"
+    - "pip install mpi4py --use-mirrors"
+    - "pip install six --use-mirrors"
 before_script: "python distarray/tests/run_ipcluster.py"
 script: nosetests
