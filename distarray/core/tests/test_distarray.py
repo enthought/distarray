@@ -264,6 +264,7 @@ class TestGlobalInd(unittest.TestCase):
                 self.assertRaises(DistError, b.global_limits, 0)
                 comm.Free()
 
+
 class TestIndexing(unittest.TestCase):
 
     def test_indexing0(self):
