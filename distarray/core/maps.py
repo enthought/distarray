@@ -11,6 +11,7 @@ __docformat__ = "restructuredtext en"
 
 import inspect
 
+
 class InvalidMapCode(Exception):
     pass
 
@@ -45,6 +46,7 @@ class BlockMap(Map):
     def global_index(self, owner, p):
         return owner*self.local_shape + p
 
+
 class CyclicMap(Map):
     
     def owner(self, i):
@@ -55,6 +57,7 @@ class CyclicMap(Map):
         
     def global_index(self, owner, p):
         return owner + p*self.grid_shape
+
 
 class BlockCyclicMap(Map):
     pass
@@ -81,9 +84,9 @@ class MapRegistry(object):
                 if issubclass(code, Map):
                     return code
                 else:
-                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
             else:
-                raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+                raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
         else:
             return m
             
