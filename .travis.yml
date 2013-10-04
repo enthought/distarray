@@ -4,6 +4,7 @@ python:
     - "3.3"
 before_install:
     - "sudo apt-get install libopenmpi-dev"
+    - "which mpicc"
 install:
     - "pip install ipython --use-mirrors"
     - "pip install mpi4py --use-mirrors"
