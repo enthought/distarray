@@ -8,6 +8,9 @@ develop:
 install:
 	${PYTHON} setup.py install
 
+test:
+	nosetests
+
 clean:
 	${PYTHON} setup.py clean --all
 	-${RM} `find . -name '*.py[co]'`
