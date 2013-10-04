@@ -140,7 +140,7 @@ def init_grid_shape(shape, grid_shape, distdims, comm_size):
     ngriddim = reduce(lambda x,y: x*y, grid_shape)
     if ngriddim != comm_size:
         raise InvalidGridShapeError("grid_shape is incompatible with the number of processors")
-    return grid_shape
+    return tuple(int(s) for s in grid_shape)
 
 
 def optimize_grid_shape(shape, grid_shape, distdims, comm_size):
