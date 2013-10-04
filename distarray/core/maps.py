@@ -25,13 +25,13 @@ class Map(object):
             self.local_shape += 1
     
     def owner(self, i):
-        raise NotImplemented("implement in sublcass")
+        raise NotImplemented("implement in subclass")
         
     def local_index(self, i):
-        raise NotImplemented("implement in sublcass")
+        raise NotImplemented("implement in subclass")
         
     def global_index(self, owner, p):
-        raise NotImplemented("implement in sublcass")
+        raise NotImplemented("implement in subclass")
 
 
 class BlockMap(Map):
