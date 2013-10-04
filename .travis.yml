@@ -2,8 +2,9 @@ language: python
 python:
     - "2.7"
     - "3.3"
+before-install:
+    - "sudo apt-get install libopenmpi-dev"
 install:
-    - "pip install numpy --use-mirrors"
     - "pip install ipython --use-mirrors"
     - "pip install mpi4py --use-mirrors"
 script: nosetests
