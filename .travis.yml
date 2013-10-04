@@ -10,4 +10,5 @@ install:
     - "pip install ipython --use-mirrors"
     - "pip install mpi4py --use-mirrors"
     - "pip install six --use-mirrors"
+before_script: "python distarray/tests/run_ipcluster.py"
 script: nosetests
