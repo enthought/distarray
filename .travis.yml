@@ -7,9 +7,10 @@ before_install:
     - "sudo apt-get install openmpi-bin"
 install:
     - "pip install numpy --use-mirrors"
-    - 'pip install pyzmq --install-option="--zmq=bundled"'
+    - 'pip install pyzmq --install-option="--zmq=bundled" --use-mirrors'
     - "pip install ipython --use-mirrors"
     - "pip install mpi4py --use-mirrors"
     - "pip install six --use-mirrors"
 before_script: "python distarray/tests/run_ipcluster.py"
-script: nosetests
+script:
+    - "nosetests -v"
