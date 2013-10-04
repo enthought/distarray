@@ -3,10 +3,10 @@ python:
     - "2.7"
     - "3.3"
 before_install:
-    - "sudo apt-get install mpe-source"
     - "sudo apt-get install libopenmpi-dev"
     - "sudo apt-get install openmpi-bin"
 install:
     - "pip install ipython --use-mirrors"
     - "pip install mpi4py --use-mirrors"
+    - "pip install six --use-mirrors"
 script: nosetests
