@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/enthought/distarray
+.. image:: https://travis-ci.org/enthought/distarray.png
    :target: https://travis-ci.org/enthought/distarray
 
 IPython Distributed Arrays
