@@ -14,5 +14,6 @@ install:
     - python setup.py install
 before_script:
     - python distarray/tests/run_ipcluster.py
+    - sleep 30
 script:
     - nosetests -v

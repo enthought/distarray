@@ -14,8 +14,6 @@ def run_ipcluster(n=4):
     engines = "--engines=MPIEngineSetLauncher"
     rval = Popen([cmd, 'start', '-n', str(n), engines, str('&')],
                  stdout=PIPE, stderr=PIPE)
-    time.sleep(30)  # FIXME: this is a hack; how do we know when engines have
-                    # been started successfully?
 
 
 if __name__ == '__main__':
