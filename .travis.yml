@@ -18,7 +18,5 @@ script:
     - cd distarray/core/tests
     - mpiexec -n 4 nosetests
     - sleep 15  # wait for ipcluster
-    - cd ../../tests
-    - python exercise_odin.py
-    - cd ../..
+    - cd ../../..
     - nosetests -v
