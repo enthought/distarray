@@ -16,7 +16,9 @@ before_script:
     - python distarray/tests/run_ipcluster.py
 script:
     - cd distarray/core/tests
-    - mpiexec -n 4 nosetests -v
-    - cd ../../..
-    - sleep 15  # wait for ipcluster
+    - mpiexec -n 4 nosetests
+    - cd ../../tests
+    - python exercise_odin.py
+    - cd ../..
+    - sleep 10  # wait for ipcluster
     - nosetests -v
