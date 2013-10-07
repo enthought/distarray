@@ -166,7 +166,9 @@ def local(fn):
         # build up a python statement as a string
         args_fmt = ','.join(['{}'] * len(arg_keys))
         kwargs_fmt = ','.join(['{}={}'] * len(kwarg_keys))
-        fnargs_fmt = ','.join([args_fmt, kwargs_fmt])
+        # remove empty strings before joining
+        fmts = (fmt for fmt in (args_fmt, kwargs_fmt) if fmt)
+        fnargs_fmt = ','.join(fmts)
         statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
         replacement_values = ([result_key, func_key] + arg_keys +
                               flatten(zip(kwarg_names, kwarg_keys)))
