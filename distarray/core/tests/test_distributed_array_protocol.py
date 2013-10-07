@@ -15,8 +15,14 @@ class TestDistributedArrayProtocol(unittest.TestCase):
                                      grid_shape=(4,),
                                      comm=comm, buf=None, offset=0)
 
-    def test_export(self):
-        self.assertIsInstance(self.arr, da.LocalArray)
+    def test_has_export(self):
+        self.assertTrue(hasattr(self.arr, '__distarray__'))
+
+    def test_well_formedness(self):
+        required_keys = set(("buffer", "dimdata"))
+        export = self.arr.__distarray__()
+        exported_keys = set(export.keys())
+        self.assertEqual(required_keys, exported_keys)
 
 
 if __name__ == '__main__':
