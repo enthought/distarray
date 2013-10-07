@@ -3,6 +3,7 @@ ODIN: ODin Isn't Numpy
 """
 
 from itertools import chain
+from functools import wraps
 
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
@@ -153,6 +154,7 @@ def local(fn):
     _global_context._push({func_key: fn})
     result_key = _global_context._generate_key()
 
+    @wraps(fn)
     def inner(*args, **kwargs):
 
         subcontext = determine_context(_global_context, flatten((args, kwargs.values())))
