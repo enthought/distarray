@@ -187,7 +187,7 @@ class TestLocal(unittest.TestCase):
 
     def test_parameterless(self):
         rval = parameterless()
-        self.assertTrue(dp is None)
+        self.assertTrue(rval is None)
 
 
 class TestUtils(unittest.TestCase):
