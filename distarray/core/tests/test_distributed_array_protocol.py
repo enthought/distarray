@@ -41,7 +41,7 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         required_keys = {"disttype", "periodic", "datasize", "gridrank",
                 "gridsize", "indices", "blocksize", "padding"}
         for dimdict in dimdata:
-            self.assertEqual(required_keys, dimdict.keys())
+            self.assertEqual(required_keys, set(dimdict.keys()))
 
     def test_export_dimdata_values(self):
         export_data = self.larr.__distarray__()
