@@ -145,19 +145,33 @@ class DenseLocalArray(BaseLocalArray):
     # Distributed Array Protocol
     #---------------------------------------------------------------------------- 
 
-    def __distarray__(self):
-        dimdict = {"disttype": None,
-                   "periodic": None,
-                   "datasize": None,
-                   "gridrank": None,
-                   "gridsize": None,
-                   "indices": None,
-                   "blocksize": None,
-                   "padding": None
+    def dimdict(self, dim):
+        """Given a dimension number `dim`, return a `dimdict`.
+
+        Where `dimdict` is the metadata datastructure provided for each
+        dimension by the Distributed Array Protocol.
+        """
+        if dim in self.distdims:
+            idx = self.distdims.index(dim)
+            gridrank = self.cart_coords[idx]
+            gridsize = self.grid_shape[idx]
+        else:
+            gridrank = 0
+            gridsize = 1
+
+        dimdict = {"disttype": self.dist[dim],
+                   "periodic": False,
+                   "datasize": self.shape[dim],
+                   "gridrank": self.comm_rank,
+                   "gridsize": gridsize,
+                   "indices": slice(*self.global_limits(dim)),
+                   "blocksize": 1,
+                   "padding": (0, 0)
                   }
+        return dimdict
 
-        dimdata = tuple(dimdict.copy() for _ in self.shape)
-
+    def __distarray__(self):
+        dimdata = tuple(self.dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
                       "dimdata": dimdata}
         return distbuffer

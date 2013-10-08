@@ -29,11 +29,20 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         export_data = self.larr.__distarray__()
         memoryview(export_data['buffer'])
 
-    def test_export_dimdata(self):
+    def test_export_dimdata_len(self):
         """Test if there is a `dimdict` for every dimension."""
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
         self.assertEqual(len(dimdata), self.larr.ndim)
+
+    def test_export_dimdata_keys(self):
+        export_data = self.larr.__distarray__()
+        dimdata = export_data['dimdata']
+        required_keys = {"disttype", "periodic", "datasize", "gridrank",
+                "gridsize", "indices", "blocksize", "padding"}
+        for dimdict in dimdata:
+            self.assertEqual(required_keys, dimdict.keys())
+
 
     @unittest.skip("Import not yet implemented.")
     def test_round_trip(self):
