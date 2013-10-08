@@ -29,9 +29,10 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         export_data = self.larr.__distarray__()
         memoryview(export_data['buffer'])
 
+    @unittest.skip("Import not yet implemented.")
     def test_round_trip(self):
-        new_larr = da.localarray(self.larr)
-        self.assertEqual(new_larr.local_array, self.larr.local_array)
+        new_larr = da.fromdap(self.larr)
+        self.assertIs(new_larr.local_array, self.larr.local_array)
 
 
 if __name__ == '__main__':
