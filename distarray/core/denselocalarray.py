@@ -156,8 +156,10 @@ class DenseLocalArray(BaseLocalArray):
                    "padding": None
                   }
 
+        dimdata = tuple(dimdict.copy() for _ in self.shape)
+
         distbuffer = {"buffer": self.local_array,
-                      "dimdata": (dimdict,)}
+                      "dimdata": dimdata}
         return distbuffer
     
     #----------------------------------------------------------------------------

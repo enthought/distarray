@@ -29,6 +29,12 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         export_data = self.larr.__distarray__()
         memoryview(export_data['buffer'])
 
+    def test_export_dimdata(self):
+        """Test if there is a `dimdict` for every dimension."""
+        export_data = self.larr.__distarray__()
+        dimdata = export_data['dimdata']
+        self.assertEqual(len(dimdata), self.larr.ndim)
+
     @unittest.skip("Import not yet implemented.")
     def test_round_trip(self):
         new_larr = da.fromdap(self.larr)
