@@ -24,6 +24,11 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         exported_keys = set(export_data.keys())
         self.assertEqual(required_keys, exported_keys)
 
+    def test_export_buffer(self):
+        """See if we actually export a buffer."""
+        export_data = self.larr.__distarray__()
+        memoryview(export_data['buffer'])
+
     def test_round_trip(self):
         new_larr = da.localarray(self.larr)
         self.assertEqual(new_larr.local_array, self.larr.local_array)
