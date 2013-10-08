@@ -11,18 +11,22 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         except InvalidCommSizeError:
             raise unittest.SkipTest('Must run with comm size > 4.')
         else:
-            self.arr = da.LocalArray((16,16),
+            self.larr = da.LocalArray((16,16),
                                      grid_shape=(4,),
                                      comm=comm, buf=None, offset=0)
 
     def test_has_export(self):
-        self.assertTrue(hasattr(self.arr, '__distarray__'))
+        self.assertTrue(hasattr(self.larr, '__distarray__'))
 
-    def test_well_formedness(self):
+    def test_export_well_formedness(self):
         required_keys = set(("buffer", "dimdata"))
-        export = self.arr.__distarray__()
+        export = self.larr.__distarray__()
         exported_keys = set(export.keys())
         self.assertEqual(required_keys, exported_keys)
+
+    def test_round_trip(self):
+        new_larr = da.localarray(self.larr)
+        self.assertEqual(new_larr.local_array, self.larr.local_array)
 
 
 if __name__ == '__main__':

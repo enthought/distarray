@@ -104,7 +104,8 @@ __all__ = [
     'arcsinh',
     'arccosh',
     'arctanh',
-    'invert']
+    'invert',
+    'localarray']
 
 
 #----------------------------------------------------------------------------
@@ -126,7 +127,7 @@ def mpi_type_for_ndarray(a):
 
 class DenseLocalArray(BaseLocalArray):
     """Distribute memory Python arrays."""
-    
+
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
                  comm=None, buf=None, offset=0):
         """
@@ -145,18 +146,18 @@ class DenseLocalArray(BaseLocalArray):
     #---------------------------------------------------------------------------- 
 
     def __distarray__(self):
-        metadata = {"disttype": None,
-                    "periodic": None,
-                    "datasize": None,
-                    "gridrank": None,
-                    "gridsize": None,
-                    "indices": None,
-                    "blocksize": None,
-                    "padding": None
-                   }
+        dimdict = {"disttype": None,
+                   "periodic": None,
+                   "datasize": None,
+                   "gridrank": None,
+                   "gridsize": None,
+                   "indices": None,
+                   "blocksize": None,
+                   "padding": None
+                  }
 
         distbuffer = {"buffer": self.local_array,
-                      "dimdata": (metadata,)}
+                      "dimdata": (dimdict,)}
         return distbuffer
     
     #----------------------------------------------------------------------------
@@ -779,7 +780,7 @@ LocalArray = DenseLocalArray
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the LocalArray object in this module, and the
+# functions need access to the LocalArray object in this module, and the
 # LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
@@ -806,11 +807,11 @@ LocalArray = DenseLocalArray
 #              comm=None, buf=None, offset=0):
 
 
-def distarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
+def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
     _raise_nie()
 
     
-def asdistarray(object, dtype=None, order=None):
+def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
     
