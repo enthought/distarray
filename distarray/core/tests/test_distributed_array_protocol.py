@@ -18,10 +18,10 @@ class TestDistributedArrayProtocol(unittest.TestCase):
     def test_has_export(self):
         self.assertTrue(hasattr(self.larr, '__distarray__'))
 
-    def test_export_well_formedness(self):
+    def test_export_keys(self):
         required_keys = set(("buffer", "dimdata"))
-        export = self.larr.__distarray__()
-        exported_keys = set(export.keys())
+        export_data = self.larr.__distarray__()
+        exported_keys = set(export_data.keys())
         self.assertEqual(required_keys, exported_keys)
 
     def test_round_trip(self):
