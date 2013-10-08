@@ -162,7 +162,7 @@ class DenseLocalArray(BaseLocalArray):
         dimdict = {"disttype": self.dist[dim],
                    "periodic": False,
                    "datasize": self.shape[dim],
-                   "gridrank": self.comm_rank,
+                   "gridrank": gridrank,
                    "gridsize": gridsize,
                    "indices": slice(*self.global_limits(dim)),
                    "blocksize": 1,
