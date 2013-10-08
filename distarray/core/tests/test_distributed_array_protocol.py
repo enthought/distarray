@@ -43,6 +43,20 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         for dimdict in dimdata:
             self.assertEqual(required_keys, dimdict.keys())
 
+    def test_export_dimdata_values(self):
+        export_data = self.larr.__distarray__()
+        dimdata = export_data['dimdata']
+        valid_disttypes = {None, 'b', 'c', 'bc', 'bp', 'u'}
+        for dd in dimdata:
+            self.assertIn(dd['disttype'], valid_disttypes)
+            self.assertIsInstance(dd['periodic'], bool)
+            self.assertIsInstance(dd['datasize'], int)
+            self.assertIsInstance(dd['gridrank'], int)
+            self.assertIsInstance(dd['gridsize'], int)
+            self.assertIsInstance(dd['indices'], slice)
+            self.assertIsInstance(dd['blocksize'], int)
+            self.assertEqual(len(dd['padding']), 2)
+
 
     @unittest.skip("Import not yet implemented.")
     def test_round_trip(self):
