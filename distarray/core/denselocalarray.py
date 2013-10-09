@@ -142,7 +142,7 @@ class DenseLocalArray(BaseLocalArray):
     # Distributed Array Protocol
     #---------------------------------------------------------------------------- 
 
-    def dimdict(self, dim):
+    def _dimdict(self, dim):
         """Given a dimension number `dim`, return a `dimdict`.
 
         Where `dimdict` is the metadata datastructure provided for each
@@ -168,11 +168,17 @@ class DenseLocalArray(BaseLocalArray):
         return dimdict
 
     def __distarray__(self):
-        dimdata = tuple(self.dimdict(dim) for dim in range(self.ndim))
+        """Returns the data structure required by the DAP.
+
+        DAP = Distributed Array Protocol
+
+        https://github.com/enthought/distributed-array-protocol
+        """
+        dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
                       "dimdata": dimdata}
         return distbuffer
-    
+
     #----------------------------------------------------------------------------
     # Methods used at initialization
     #----------------------------------------------------------------------------   
