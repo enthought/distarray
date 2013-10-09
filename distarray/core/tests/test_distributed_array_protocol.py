@@ -1,7 +1,7 @@
 import unittest
 import distarray as da
 from distarray.mpi.mpibase import create_comm_of_size, InvalidCommSizeError
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_array_equal
 
 
 class TestDistributedArrayProtocol(unittest.TestCase):
@@ -76,11 +76,13 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         self.assertEqual(larr.local_shape, self.larr.local_shape)
         self.assertEqual(larr.local_array.shape, self.larr.local_array.shape)
         self.assertEqual(larr.local_array.dtype, self.larr.local_array.dtype)
-        assert_almost_equal(larr.local_array, self.larr.local_array)
+        assert_array_equal(larr.local_array, self.larr.local_array)
 
     def test_round_trip_identity(self):
         larr = da.fromdap(self.larr, comm=self.comm)
-        self.assertIs(larr.local_array.data, self.larr.local_array.data)
+        larr.local_array[0,0] = 99
+        assert_array_equal(larr.local_array, self.larr.local_array)
+        #self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
 
 if __name__ == '__main__':
