@@ -58,7 +58,7 @@ class TestDistributedArrayProtocol(unittest.TestCase):
             self.assertIsInstance(dd['blocksize'], int)
             self.assertEqual(len(dd['padding']), 2)
 
-    def test_round_trip(self):
+    def test_round_trip_equality(self):
         larr = da.fromdap(self.larr, comm=self.comm)
         self.assertEqual(larr.shape, self.larr.shape)
         self.assertEqual(larr.dist, self.larr.dist)
@@ -77,6 +77,9 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         self.assertEqual(larr.local_array.shape, self.larr.local_array.shape)
         self.assertEqual(larr.local_array.dtype, self.larr.local_array.dtype)
         assert_almost_equal(larr.local_array, self.larr.local_array)
+
+    def test_round_trip_identity(self):
+        larr = da.fromdap(self.larr, comm=self.comm)
         self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
 
