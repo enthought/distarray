@@ -846,7 +846,7 @@ def fromdap(obj, comm=None):
         No copy is made.
     """
     distbuffer = obj.__distarray__()
-    buf = np.array(distbuffer['buffer'])
+    buf = np.asarray(distbuffer['buffer'])
     dimdata = distbuffer['dimdata']
     base_comm = init_base_comm(comm)
 
