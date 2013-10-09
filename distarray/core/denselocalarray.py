@@ -102,7 +102,7 @@ __all__ = [
     'arccosh',
     'arctanh',
     'invert',
-    'localarray']
+    'fromdap']
 
 
 #----------------------------------------------------------------------------
@@ -824,6 +824,40 @@ LocalArray = DenseLocalArray
 # Here is LocalArray.__init__ for reference
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
+
+
+def fromdap(obj, comm=None):
+    """Make a LocalArray from an `obj` with a `__distarray__` method.
+
+    An object that supports the Distributed Array Protocol will have
+    a `__distarray__` method that returns the data structure
+    described here:
+
+    https://github.com/enthought/distributed-array-protocol
+
+    Parameters
+    ----------
+    obj : an object with a `__distarray__` method
+
+    Returns
+    -------
+    la : LocalArray
+        A LocalArray encapsulating the buffer of the original data.
+        No copy is made.
+    """
+    distbuffer = obj.__distarray__()
+    buf = np.array(distbuffer['buffer'])
+    dimdata = distbuffer['dimdata']
+    base_comm = init_base_comm(comm)
+
+    dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
+            if dd['disttype']}
+
+    shape = tuple(dd['datasize'] for dd in dimdata)
+    grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
+
+    return LocalArray(shape=shape, dtype=buf.dtype, dist=dist,
+                      grid_shape=grid_shape, comm=base_comm, buf=buf)
 
 
 def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
