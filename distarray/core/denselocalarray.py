@@ -1267,5 +1267,3 @@ arcsinh = LocalArrayUnaryOperation(np.arcsinh)
 arccosh = LocalArrayUnaryOperation(np.arccosh)
 arctanh = LocalArrayUnaryOperation(np.arctanh)
 invert = LocalArrayUnaryOperation(np.invert)
-
-
