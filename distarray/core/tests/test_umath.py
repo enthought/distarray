@@ -28,7 +28,7 @@ class TestUnaryUFunc(unittest.TestCase):
             try:
                 a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 a.fill(1)
                 b = denselocalarray.negative(a)
@@ -56,7 +56,7 @@ class TestBinaryUFunc(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
                 b = denselocalarray.LocalArray((16,16), dtype='int32', comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 a.fill(1)
                 b.fill(1)
