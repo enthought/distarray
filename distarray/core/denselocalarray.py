@@ -27,9 +27,6 @@ from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
 
-if six.PY3:
-    buffer = memoryview
-
 
 #----------------------------------------------------------------------------
 # Exports
@@ -187,7 +184,7 @@ class DenseLocalArray(BaseLocalArray):
             self.data = self.local_array.data
         else:
             try:
-                buf = buffer(buf)
+                buf = memoryview(buf)
             except TypeError:
                 raise TypeError("the object is not or can't be made into a buffer")
             try:
@@ -208,7 +205,7 @@ class DenseLocalArray(BaseLocalArray):
         a = np.asarray(a, dtype=self.dtype, order='C')
         if a.shape != self.local_shape:
             raise ValueError("incompatible local array shape")
-        b = buffer(a)
+        b = memoryview(a)
         self.local_array = np.frombuffer(b,dtype=self.dtype)
         self.local_array.shape = self.local_shape
     
