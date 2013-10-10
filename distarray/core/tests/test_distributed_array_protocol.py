@@ -9,11 +9,15 @@ from distarray.utils import comm_null_passes
 class BaseDAPCase(object):
     """Base class for Distributed Array Protocol test cases."""
 
+    def get_comm_size(self):
+        return 4
+
     def setUp(self):
         try:
-            self.comm = create_comm_of_size(4)
+            self.comm = create_comm_of_size(self.get_comm_size())
         except InvalidCommSizeError:
-            raise unittest.SkipTest('Must run with comm size > 4.')
+            msg = "Must run with comm size >= {}."
+            raise unittest.SkipTest(msg.format(self.get_comm_size()))
         else:
             if self.comm != MPI.COMM_NULL:
                 self.larr = self.get_array()
@@ -125,8 +129,29 @@ class TestDAPTwoDistDims(BaseDAPCase, unittest.TestCase):
                              comm=self.comm)
 
 
+class TestDAPThreeBlockDims(BaseDAPCase, unittest.TestCase):
+
+    def get_array(self):
+        return da.LocalArray((53,77,99),
+                             dist={0: 'b', 1: 'b', 2: 'b'},
+                             grid_shape=(2, 2, 3),
+                             comm=self.comm)
+
+    def get_comm_size(self):
+        return 12
+
+
+class TestDAPThreeMixedDims(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((53,77,99),
+                             dist={0: 'b', 1: None, 2: 'b'},
+                             grid_shape=(2, 2),
+                             comm=self.comm)
+
+
 @unittest.skip("DAP not yet supported for cyclic distribution.")
 class TestDAPCyclicDim(BaseDAPCase, unittest.TestCase):
+
     def get_array(self):
         return da.LocalArray((53,77),
                              dist={0: 'c', 1: 'b'},
