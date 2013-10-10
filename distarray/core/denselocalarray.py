@@ -194,8 +194,7 @@ class DenseLocalArray(BaseLocalArray):
             except TypeError:
                 raise TypeError("the object is not or can't be made into a buffer")
             try:
-                self.local_array = np.frombuffer(buf, dtype=self.dtype, count=self.local_size, offset=offset)
-                self.local_array.shape = self.local_shape
+                self.local_array = np.asarray(buf, dtype=self.dtype)
                 self.data = self.local_array.data
             except ValueError:
                 raise ValueError("the buffer is smaller than needed for this array")
@@ -208,12 +207,11 @@ class DenseLocalArray(BaseLocalArray):
         return self.local_view()
     
     def set_localarray(self, a):
-        a = np.asarray(a, dtype=self.dtype, order='C')
-        if a.shape != self.local_shape:
+        arr = np.asarray(a, dtype=self.dtype, order='C')
+        if arr.shape == self.local_shape:
+            self.local_array = arr
+        else:
             raise ValueError("incompatible local array shape")
-        b = memoryview(a)
-        self.local_array = np.frombuffer(b,dtype=self.dtype)
-        self.local_array.shape = self.local_shape
     
     def owner_rank(self, *indices):
         owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in range(self.ndistdim)]
