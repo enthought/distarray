@@ -174,6 +174,14 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
         """
+        implemented_disttypes = {None, 'b'}
+        implemented = all(disttype in implemented_disttypes for disttype in
+                          self.dist)
+        if not implemented:
+            msg = ("The Distributed Array Protocol has only been "
+                   "implemented for the following disttypes: {}")
+            raise NotImplementedError(msg.format(implemented_disttypes))
+
         dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
                       "dimdata": dimdata}
