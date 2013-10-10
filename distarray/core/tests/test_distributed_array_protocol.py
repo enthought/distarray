@@ -6,7 +6,8 @@ from distarray.mpi.mpibase import (MPI, create_comm_of_size,
 from distarray.utils import comm_null_passes
 
 
-class TestDistributedArrayProtocol(unittest.TestCase):
+class BaseDAPCase(object):
+    """Base class for Distributed Array Protocol test cases."""
 
     def setUp(self):
         try:
@@ -15,9 +16,7 @@ class TestDistributedArrayProtocol(unittest.TestCase):
             raise unittest.SkipTest('Must run with comm size > 4.')
         else:
             if self.comm != MPI.COMM_NULL:
-                self.larr = da.LocalArray((16,16),
-                                         grid_shape=(4,),
-                                         comm=self.comm, buf=None, offset=0)
+                self.larr = self.get_array()
 
     @comm_null_passes
     def test_has_export(self):
@@ -94,6 +93,36 @@ class TestDistributedArrayProtocol(unittest.TestCase):
         larr.local_array[0,0] = 99
         assert_array_equal(larr.local_array, self.larr.local_array)
         #self.assertIs(larr.local_array.data, self.larr.local_array.data)
+
+
+class TestDAPBasic(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
+                             buf=None, offset=0)
+
+
+class TestDAPExplicitNone0(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((16,16),
+                             dist={0: 'b', 1: None},
+                             grid_shape=(4,),
+                             comm=self.comm)
+
+
+class TestDAPExplicitNone1(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((30,60),
+                             dist={0: None, 1: 'b'},
+                             grid_shape=(4,),
+                             comm=self.comm)
+
+
+class TestDAPTwoDistDims(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((53,77),
+                             dist={0: 'b', 1: 'b'},
+                             grid_shape=(2, 2),
+                             comm=self.comm)
 
 
 if __name__ == '__main__':
