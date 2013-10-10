@@ -151,7 +151,6 @@ class TestDAPThreeMixedDims(BaseDAPCase, unittest.TestCase):
 
 @unittest.skip("DAP not yet supported for cyclic distribution.")
 class TestDAPCyclicDim(BaseDAPCase, unittest.TestCase):
-
     def get_array(self):
         return da.LocalArray((53,77),
                              dist={0: 'c', 1: 'b'},
