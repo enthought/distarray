@@ -111,6 +111,8 @@ __all__ = [
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
+DAP_DISTTYPES = {None, 'b'}
+
 mpi_dtypes = {
     np.dtype('f') : MPI.FLOAT,
     np.dtype('d') : MPI.DOUBLE,
@@ -174,13 +176,11 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
         """
-        implemented_disttypes = {None, 'b'}
-        implemented = all(disttype in implemented_disttypes for disttype in
-                          self.dist)
+        implemented = all(disttype in DAP_DISTTYPES for disttype in self.dist)
         if not implemented:
             msg = ("The Distributed Array Protocol has only been "
                    "implemented for the following disttypes: {}")
-            raise NotImplementedError(msg.format(implemented_disttypes))
+            raise NotImplementedError(msg.format(DAP_DISTTYPES))
 
         dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
@@ -854,13 +854,19 @@ def fromdap(obj, comm=None):
     distbuffer = obj.__distarray__()
     buf = np.asarray(distbuffer['buffer'])
     dimdata = distbuffer['dimdata']
-    base_comm = init_base_comm(comm)
 
     dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
             if dd['disttype']}
 
+    implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
+    if not implemented:
+        msg = ("The Distributed Array Protocol has only been "
+               "implemented for the following disttypes: {}")
+        raise NotImplementedError(msg.format(DAP_DISTTYPES))
+
     shape = tuple(dd['datasize'] for dd in dimdata)
     grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
+    base_comm = init_base_comm(comm)
 
     return LocalArray(shape=shape, dtype=buf.dtype, dist=dist,
                       grid_shape=grid_shape, comm=base_comm, buf=buf)
