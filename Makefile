@@ -9,6 +9,8 @@ install:
 	${PYTHON} setup.py install
 
 test:
+	mpiexec -n 12 nosetests -w distarray/core/tests
+	mpiexec -n 4 nosetests -w distarray/random/tests
 	nosetests
 
 clean:
