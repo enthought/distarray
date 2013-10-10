@@ -1,4 +1,7 @@
 from math import sqrt
+from functools import wraps
+from distarray.mpi.mpibase import MPI
+
 
 def divisors(n):
     i = 2
@@ -100,3 +103,15 @@ def outer_zip(seqa, seqb):
 
 def _raise_nie():
     raise NotImplementedError("This has not yet been implemented for distributed arrays")
+
+def comm_null_passes(fn):
+    """Decorator. If `self.comm` is COMM_NULL, pass."""
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        if self.comm == MPI.COMM_NULL:
+            pass
+        else:
+            return fn(self, *args, **kwargs)
+
+    return wrapper
