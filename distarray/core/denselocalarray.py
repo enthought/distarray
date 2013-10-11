@@ -896,7 +896,7 @@ def empty_like(arr, dtype=None):
         else:
             return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseLocalArray or subclass is expected")
+        raise TypeError("A DenseLocalArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
@@ -910,7 +910,7 @@ def zeros_like(arr):
     if isinstance(arr, DenseLocalArray):
         return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
     else:
-        raise TypeError("a DenseLocalArray or subclass is expected")
+        raise TypeError("A DenseLocalArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
@@ -1216,18 +1216,18 @@ class LocalArrayUnaryOperation(object):
         # What types of input are allowed?
         x1_isdda = isinstance(x1, DenseLocalArray)
         y_isdda = isinstance(y, DenseLocalArray)
-        assert x1_isdda or isscalar(x1), "invalid type for unary ufunc"
-        assert y is None or y_isdda, "invalid return array type"
+        assert x1_isdda or isscalar(x1), "Invalid type for unary ufunc"
+        assert y is None or y_isdda, "Invalid return array type"
         if y is None:
             return self.func(x1)
         elif y_isdda:
             if x1_isdda:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("return LocalArray not compatible with LocalArray argument" % y)
+                    raise IncompatibleArrayError("Return LocalArray not compatible with LocalArray argument" % y)
             local_result = self.func(x1, y.local_array)
             return y
         else:
-            raise TypeError("invalid return type for unary ufunc")
+            raise TypeError("Invalid return type for unary ufunc")
 
     def __str__(self):
         return "LocalArray version of " + str(self.func)
@@ -1245,25 +1245,25 @@ class LocalArrayBinaryOperation(object):
         x1_isdda = isinstance(x1, DenseLocalArray)
         x2_isdda = isinstance(x2, DenseLocalArray)
         y_isdda = isinstance(y, DenseLocalArray)
-        assert x1_isdda or isscalar(x1), "invalid type for binary ufunc"
-        assert x2_isdda or isscalar(x2), "invalid type for binary ufunc"
+        assert x1_isdda or isscalar(x1), "Invalid type for binary ufunc"
+        assert x2_isdda or isscalar(x2), "Invalid type for binary ufunc"
         assert y is None or y_isdda
         if y is None:
                 if x1_isdda and x2_isdda:
                     if not arecompatible(x1, x2):
-                        raise IncompatibleArrayError("incompatible DistArrays")
+                        raise IncompatibleArrayError("Incompatible DistArrays")
                 return self.func(x1, x2)
         elif y_isdda:
             if x1_isdda:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible DistArrays")
             if x2_isdda:
                 if not arecompatible(x2, y):
-                    raise IncompatibleArrayError("incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible DistArrays")
             local_result = self.func(x1, x2, y.local_array)
             return y
         else:
-            raise TypeError("invalid return type for unary ufunc")
+            raise TypeError("Invalid return type for unary ufunc")
 
     def __str__(self):
         return "LocalArray version of " + str(self.func)
