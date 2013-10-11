@@ -337,7 +337,7 @@ class DenseLocalArray(BaseLocalArray):
     def __array__(self, dtype=None):
         if dtype is None:
             return self.local_array
-        elif np.dtype(dtype)==self.dtype:
+        elif np.dtype(dtype) == self.dtype:
             return self.local_array
         else:
             return self.local_array.astype(dtype)
