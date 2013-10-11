@@ -10,10 +10,7 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import inspect
-
-
-class InvalidMapCode(Exception):
-    pass
+from distarray.core.error import InvalidMapCodeError
 
 
 class Map(object):
@@ -84,9 +81,11 @@ class MapRegistry(object):
                 if issubclass(code, Map):
                     return code
                 else:
-                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                    msg = "Not a Map subclass or a valid map code: %s." % code
+                    raise InvalidMapCodeError(msg)
             else:
-                raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                msg = "Not a Map subclass or a valid map code: %s." % code
+                raise InvalidMapCodeError(msg)
         else:
             return m
 
