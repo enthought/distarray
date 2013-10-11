@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import distarray.core as dc
 
+from numpy.testing import assert_array_equal
 from distarray import utils
 from distarray.mpi.mpibase import create_comm_of_size
 from distarray.core import maps, denselocalarray
@@ -361,12 +362,16 @@ class TestLocalArrayUnaryOperations(unittest.TestCase):
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
-                a = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                x = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                                         dtype='uint8')
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
                                          dtype='uint8')
             except NullCommError:
                 pass
             else:
-                op(a)
+                result0 = op(x)
+                op(x, y=y)
+                assert_array_equal(result0.local_array, y.local_array)
                 comm.Free()
 
 ops = (dc.negative, dc.absolute, dc.rint, dc.sign, dc.conjugate, dc.exp,
