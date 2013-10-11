@@ -351,6 +351,36 @@ class TestDistArrayMethods(unittest.TestCase):
                 comm.Free()
 
 
+class TestLocalArrayUnaryOperations(unittest.TestCase):
+
+    def check_op(self, op):
+        """Check unary operation for success"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                a = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                                         dtype='uint8')
+            except NullCommError:
+                pass
+            else:
+                op(a)
+                comm.Free()
+
+ops = (dc.negative, dc.absolute, dc.rint, dc.sign, dc.conjugate, dc.exp,
+       dc.log, dc.expm1, dc.log1p, dc.log10, dc.sqrt, dc.square, dc.reciprocal,
+       dc.sin, dc.cos, dc.tan, dc.arcsin, dc.arccos, dc.arctan, dc.sinh,
+       dc.cosh, dc.tanh, dc.arcsinh, dc.arccosh, dc.arctanh, dc.invert)
+
+# Add a test method for all of the above ops
+for op in ops:
+    fn_name = "test_" + op.__name__
+    fn_value = lambda self: self.check_op(op)
+    setattr(TestLocalArrayUnaryOperations, fn_name, fn_value)
+
+
 if __name__ == '__main__':
     try:
         unittest.main()
