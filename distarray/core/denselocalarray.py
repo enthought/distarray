@@ -1224,7 +1224,7 @@ class LocalArrayUnaryOperation(object):
             if x1_isdda:
                 if not arecompatible(x1, y):
                     raise IncompatibleArrayError("Return LocalArray not compatible with LocalArray argument" % y)
-            local_result = self.func(x1, y.local_array)
+            self.func(x1, y.local_array)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
@@ -1260,7 +1260,7 @@ class LocalArrayBinaryOperation(object):
             if x2_isdda:
                 if not arecompatible(x2, y):
                     raise IncompatibleArrayError("Incompatible DistArrays")
-            local_result = self.func(x1, x2, y.local_array)
+            self.func(x1, x2, y.local_array)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
