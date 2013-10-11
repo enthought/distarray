@@ -23,13 +23,13 @@ class Map(object):
             self.local_shape += 1
 
     def owner(self, i):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
     def local_index(self, i):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
     def global_index(self, owner, p):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
 
 class BlockMap(Map):
@@ -72,7 +72,7 @@ class MapRegistry(object):
             else:
                 raise TypeError("Must register a Map subclass.")
         else:
-            raise TypeError("Must register a class")
+            raise TypeError("Must register a class.")
 
     def get_map_class(self, code):
         m = self.maps.get(code)
