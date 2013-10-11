@@ -119,7 +119,7 @@ class TestDistMatrix(unittest.TestCase):
                     if comm.Get_rank()==0:
                         import pylab
                         pylab.ion()
-                        pylab.matshow(a)
+                        pylab.matshow(da)
                         pylab.colorbar()
                         pylab.draw()
                         pylab.show()
