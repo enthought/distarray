@@ -1,12 +1,13 @@
 import unittest
 import numpy as np
+import distarray.core as dc
 
+from distarray import utils
+from distarray.mpi.mpibase import create_comm_of_size
+from distarray.core import maps, denselocalarray
 from distarray.core.error import (DistError, IncompatibleArrayError,
                                   NullCommError)
 from distarray.mpi.error import InvalidCommSizeError
-from distarray.mpi.mpibase import create_comm_of_size
-from distarray.core import maps, denselocalarray
-from distarray import utils
 
 
 class TestInit(unittest.TestCase):
