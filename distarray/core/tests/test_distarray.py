@@ -326,7 +326,7 @@ class TestIndexing(unittest.TestCase):
                 comm.Free()
 
 
-class TestDistArrayMethods(unittest.TestCase):
+class TestLocalArrayMethods(unittest.TestCase):
 
     def test_asdist_like(self):
         """
