@@ -352,6 +352,14 @@ class TestLocalArrayMethods(unittest.TestCase):
                 comm.Free()
 
 
+def add_tests(cls, ops):
+    """Add a test method for all of the `ops`"""
+    for op in ops:
+        fn_name = "test_" + op.__name__
+        fn_value = lambda self: self.check_op(op)
+        setattr(cls, fn_name, fn_value)
+
+
 class TestLocalArrayUnaryOperations(unittest.TestCase):
 
     def check_op(self, op):
@@ -374,16 +382,46 @@ class TestLocalArrayUnaryOperations(unittest.TestCase):
                 assert_array_equal(result0.local_array, y.local_array)
                 comm.Free()
 
-ops = (dc.negative, dc.absolute, dc.rint, dc.sign, dc.conjugate, dc.exp,
-       dc.log, dc.expm1, dc.log1p, dc.log10, dc.sqrt, dc.square, dc.reciprocal,
-       dc.sin, dc.cos, dc.tan, dc.arcsin, dc.arccos, dc.arctan, dc.sinh,
-       dc.cosh, dc.tanh, dc.arcsinh, dc.arccosh, dc.arctanh, dc.invert)
+uops = (dc.negative, dc.absolute, dc.rint, dc.sign, dc.conjugate, dc.exp,
+        dc.log, dc.expm1, dc.log1p, dc.log10, dc.sqrt, dc.square,
+        dc.reciprocal, dc.sin, dc.cos, dc.tan, dc.arcsin, dc.arccos, dc.arctan,
+        dc.sinh, dc.cosh, dc.tanh, dc.arcsinh, dc.arccosh, dc.arctanh,
+        dc.invert)
 
-# Add a test method for all of the above ops
-for op in ops:
-    fn_name = "test_" + op.__name__
-    fn_value = lambda self: self.check_op(op)
-    setattr(TestLocalArrayUnaryOperations, fn_name, fn_value)
+add_tests(TestLocalArrayUnaryOperations, uops)
+
+
+class TestLocalArrayBinaryOperations(unittest.TestCase):
+
+    def check_op(self, op):
+        """Check binary operation for success"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                x1 = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                                          dtype='uint8')
+                x2 = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                                          dtype='uint8')
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
+                                         dtype='uint8')
+            except NullCommError:
+                pass
+            else:
+                result0 = op(x1, x2)
+                op(x1, x2, y=y)
+                assert_array_equal(result0.local_array, y.local_array)
+                comm.Free()
+
+
+bops = (dc.add, dc.subtract, dc.multiply, dc.divide, dc.true_divide,
+        dc.floor_divide, dc.mod, dc.power, dc.remainder, dc.fmod, dc.arctan2,
+        dc.hypot, dc.bitwise_and, dc.bitwise_or, dc.bitwise_xor, dc.left_shift,
+        dc.right_shift)
+
+add_tests(TestLocalArrayBinaryOperations, bops)
 
 
 if __name__ == '__main__':
