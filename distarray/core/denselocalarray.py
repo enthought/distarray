@@ -691,10 +691,10 @@ class DenseLocalArray(BaseLocalArray):
         return self._binary_op_from_ufunc(other, bitwise_and, '__rand__')
 
     def __or__(self, other):
-        return self._binary_op_from_ufunc(other, binary_or, '__ror__')
+        return self._binary_op_from_ufunc(other, bitwise_or, '__ror__')
 
     def __xor__(self, other):
-        return self._binary_op_from_ufunc(other, binary_xor, '__rxor__')
+        return self._binary_op_from_ufunc(other, bitwise_xor, '__rxor__')
 
     # Binary - right versions
 
@@ -1275,6 +1275,7 @@ multiply = LocalArrayBinaryOperation(np.multiply)
 divide = LocalArrayBinaryOperation(np.divide)
 true_divide = LocalArrayBinaryOperation(np.true_divide)
 floor_divide = LocalArrayBinaryOperation(np.floor_divide)
+mod = LocalArrayBinaryOperation(np.mod)
 power = LocalArrayBinaryOperation(np.power)
 remainder = LocalArrayBinaryOperation(np.remainder)
 fmod = LocalArrayBinaryOperation(np.fmod)
