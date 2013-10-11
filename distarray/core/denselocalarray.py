@@ -617,7 +617,7 @@ class DenseLocalArray(BaseLocalArray):
             raise NotImplementedError("Nonlocal indexing not yet implemented.")
 
     def sync(self):
-        print("hi")
+        raise NotImplementedError("`sync` not yet implemented.")
 
     def __contains__(self, item):
         return item in self.local_array
