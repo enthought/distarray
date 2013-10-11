@@ -13,14 +13,9 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.mpi import (
-    MPI,
-    create_comm_of_size,
-    create_comm_with_list)
-
+from distarray.mpi import MPI, create_comm_of_size
 from distarray.mpi.error import InvalidCommSizeError, MPICommError
 
-import numpy as np
 
 #----------------------------------------------------------------------------
 # Exports

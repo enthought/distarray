@@ -15,9 +15,6 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
-import itertools
-
-from IPython.parallel.error import CompositeError
 
 
 #----------------------------------------------------------------------------

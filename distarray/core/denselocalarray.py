@@ -15,12 +15,10 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import six
-import sys
 import math
 
 import numpy as np
 
-from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
 from distarray.core.error import (InvalidDimensionError, DistError,
                                   DistMatrixError, IncompatibleArrayError)

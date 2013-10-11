@@ -13,12 +13,8 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-import sys
-import math
-
 import numpy as np
 
-from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
 from distarray.core.error import NullCommError
 from distarray.core.construct import (
@@ -27,11 +23,8 @@ from distarray.core.construct import (
     init_distdims,
     init_map_classes,
     init_grid_shape,
-    optimize_grid_shape,
     init_comm,
     init_local_shape_and_maps,
-    find_local_shape,
-    find_grid_shape
 )
 from functools import reduce
 

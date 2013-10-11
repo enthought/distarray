@@ -1,5 +1,4 @@
 import six
-import time
 from subprocess import Popen, PIPE
 
 
