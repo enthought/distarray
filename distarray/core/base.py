@@ -20,7 +20,7 @@ import numpy as np
 
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
-from distarray.core.error import *
+from distarray.core.error import NullCommError
 from distarray.core.construct import (
     init_base_comm,
     init_dist,

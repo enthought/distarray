@@ -1,8 +1,8 @@
 import unittest
 import distarray as da
 from numpy.testing import assert_array_equal
-from distarray.mpi.mpibase import (MPI, create_comm_of_size,
-                                   InvalidCommSizeError)
+from distarray.mpi.mpibase import MPI, create_comm_of_size
+from distarray.mpi.error import InvalidCommSizeError
 from distarray.utils import comm_null_passes
 
 

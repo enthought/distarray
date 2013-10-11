@@ -18,8 +18,7 @@ from distarray.mpi import (
     create_comm_of_size,
     create_comm_with_list)
 
-from distarray.core.error import *
-from distarray.mpi.error import *
+from distarray.mpi.error import InvalidCommSizeError, MPICommError
 
 import numpy as np
 

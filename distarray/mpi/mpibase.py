@@ -1,6 +1,6 @@
 from mpi4py import MPI
+from distarray.mpi.error import InvalidCommSizeError, InvalidRankError
 
-from distarray.mpi.error import *
 
 __all__ = [
     'COMM_PRIVATE',

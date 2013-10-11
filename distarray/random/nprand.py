@@ -15,7 +15,6 @@ __docformat__ = "restructuredtext en"
 
 from distarray.core import denselocalarray
 from distarray.core.construct import find_local_shape, init_base_comm
-from distarray.core.error import *
 from distarray.mpi import mpibase
 
 import numpy as np

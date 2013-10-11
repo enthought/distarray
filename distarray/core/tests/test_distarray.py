@@ -1,13 +1,12 @@
 import unittest
 import numpy as np
 
-from distarray.core.error import *
-from distarray.mpi.error import *
+from distarray.core.error import (DistError, IncompatibleArrayError,
+                                  NullCommError)
+from distarray.mpi.error import InvalidCommSizeError
 from distarray.mpi import mpibase
-from distarray.mpi.mpibase import (
-    MPI,
-    create_comm_of_size,
-    create_comm_with_list)
+from distarray.mpi.mpibase import (MPI, create_comm_of_size,
+                                   create_comm_with_list)
 from distarray.core import maps, denselocalarray
 from distarray import utils
 

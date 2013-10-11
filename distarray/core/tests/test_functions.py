@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 from numpy.testing.utils import assert_array_equal, assert_array_almost_equal
 
-from distarray.core.error import *
-from distarray.mpi.error import *
+from distarray.mpi.error import InvalidCommSizeError
+from distarray.core.error import NullCommError
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import (
     MPI,

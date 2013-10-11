@@ -22,7 +22,8 @@ import numpy as np
 
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
-from distarray.core.error import *
+from distarray.core.error import (InvalidDimensionError, DistError,
+                                  DistMatrixError, IncompatibleArrayError)
 from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
