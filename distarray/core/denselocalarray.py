@@ -199,12 +199,12 @@ class DenseLocalArray(BaseLocalArray):
             try:
                 buf = memoryview(buf)
             except TypeError:
-                raise TypeError("the object is not or can't be made into a buffer")
+                raise TypeError("The object is not or can't be made into a buffer")
             try:
                 self.local_array = np.asarray(buf, dtype=self.dtype)
                 self.data = self.local_array.data
             except ValueError:
-                raise ValueError("the buffer is smaller than needed for this array")
+                raise ValueError("The buffer is smaller than needed for this array")
 
     #----------------------------------------------------------------------------
     # Methods related to distributed indexing
@@ -218,7 +218,7 @@ class DenseLocalArray(BaseLocalArray):
         if arr.shape == self.local_shape:
             self.local_array = arr
         else:
-            raise ValueError("incompatible local array shape")
+            raise ValueError("Incompatible local array shape")
 
     def owner_rank(self, *indices):
         owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in range(self.ndistdim)]
@@ -593,10 +593,10 @@ class DenseLocalArray(BaseLocalArray):
 
     def _check_key(self, key):
         if not isinstance(key, tuple):
-            raise TypeError("index must be a sequence")
+            raise TypeError("Index must be a sequence")
         for i in key:
             if not isinstance(i, int):
-                raise TypeError("index must be a sequence of ints")
+                raise TypeError("Index must be a sequence of ints")
 
     def __getitem__(self, key):
         self._check_key(key)
@@ -605,7 +605,7 @@ class DenseLocalArray(BaseLocalArray):
             local_inds = self.global_to_local(*key)
             return self.local_array[local_inds]
         else:
-            raise NotImplementedError("nonlocal indexing not yet implemented.")
+            raise NotImplementedError("Nonlocal indexing not yet implemented.")
 
     def __setitem__(self, key, value):
         self._check_key(key)
@@ -614,7 +614,7 @@ class DenseLocalArray(BaseLocalArray):
             local_inds = self.global_to_local(*key)
             self.local_array[local_inds] = value
         else:
-            raise NotImplementedError("nonlocal indexing not yet implemented.")
+            raise NotImplementedError("Nonlocal indexing not yet implemented.")
 
     def sync(self):
         print("hi")
