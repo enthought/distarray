@@ -336,7 +336,7 @@ class DistArray(object):
                 self.context._execute(statement % (result_key, self.key,
                                                    tuple_index),
                                       targets=target)
-            except Exception as err:
+            except Exception:
                 raise IndexError()
 
             return self.context._pull(result_key, targets=target)
@@ -354,7 +354,7 @@ class DistArray(object):
                 self.context._execute(statement % (self.key, tuple_index,
                                                    value),
                                       targets=target)
-            except Exception as err:
+            except Exception:
                 raise IndexError
         else:
             raise TypeError("Invalid index type.")

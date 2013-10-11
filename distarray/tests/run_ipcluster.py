@@ -17,8 +17,8 @@ def run_ipcluster(n=4):
         raise NotImplementedError("Not run with Python 2 *or* 3?")
 
     engines = "--engines=MPIEngineSetLauncher"
-    rval = Popen([cmd, 'start', '-n', str(n), engines, str('&')],
-                 stdout=PIPE, stderr=PIPE)
+    Popen([cmd, 'start', '-n', str(n), engines, str('&')],
+           stdout=PIPE, stderr=PIPE)
 
 
 if __name__ == '__main__':

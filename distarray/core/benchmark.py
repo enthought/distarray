@@ -28,7 +28,6 @@ __all__ = [
 
 def benchmark_function(f, *args, **kwargs):
     comm_size = MPI.COMM_WORLD.Get_size()
-    comm_rank = MPI.COMM_WORLD.Get_rank()
 
     sizes = []
     times = []
