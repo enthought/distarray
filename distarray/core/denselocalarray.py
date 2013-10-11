@@ -65,6 +65,7 @@ __all__ = [
     'divide',
     'true_divide',
     'floor_divide',
+    'mod',
     'power',
     'remainder',
     'fmod',
