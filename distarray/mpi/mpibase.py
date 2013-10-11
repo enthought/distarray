@@ -38,6 +38,4 @@ def create_comm_with_list(nodes):
             raise InvalidRankError("rank is not valid: %r" % i)
     subgroup = group.Incl(nodes)
     newcomm = COMM_PRIVATE.Create(subgroup)
-    return newcomm    
-    
-    
+    return newcomm

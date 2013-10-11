@@ -124,7 +124,7 @@ class Context(object):
         comm_size = self.view.apply_async(get_size).get()[0]
         if set(rank_map.values()) != set(range(comm_size)):
             raise ValueError('Engines in view must encompass all MPI ranks.')
-        
+
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
@@ -274,15 +274,15 @@ def binary_proxy(context, a, b, meth_name):
     is_b_dap = isinstance(b, DistArray)
     if is_a_dap and is_b_dap:
         assert b.context==a.context, "distarray context mismatch: " % (b.context, a.context)
-        assert context==a.context, "distarray context mismatch: " % (context, a.context)        
+        assert context==a.context, "distarray context mismatch: " % (context, a.context)
         a_key = a.key
         b_key = b.key
     elif is_a_dap and np.isscalar(b):
-        assert context==a.context, "distarray context mismatch: " % (context, a.context)        
+        assert context==a.context, "distarray context mismatch: " % (context, a.context)
         a_key = a.key
         b_key = context._key_and_push(b)[0]
     elif is_b_dap and np.isscalar(a):
-        assert context==b.context, "distarray context mismatch: " % (context, b.context)        
+        assert context==b.context, "distarray context mismatch: " % (context, b.context)
         a_key = context._key_and_push(a)[0]
         b_key = b.key
     else:
@@ -471,105 +471,102 @@ class DistArray(object):
                 rop = getattr(other, rop_str)
                 return rop(self)
         return func(self, other)
-    
+
     def _rbinary_op_from_ufunc(self, other, func, lop_str):
         if hasattr(other, '__array_priority__') and hasattr(other, lop_str):
             if other.__array_priority__ > self.__array_priority__:
                 lop = getattr(other, lop_str)
                 return lop(self)
         return func(other, self)
-    
+
     def __add__(self, other):
         return self._binary_op_from_ufunc(other, self.context.add, '__radd__')
-    
+
     def __sub__(self, other):
         return self._binary_op_from_ufunc(other, self.context.subtract, '__rsub__')
-    
+
     def __mul__(self, other):
         return self._binary_op_from_ufunc(other, self.context.multiply, '__rmul__')
-    
+
     def __div__(self, other):
         return self._binary_op_from_ufunc(other, self.context.divide, '__rdiv__')
-    
+
     def __truediv__(self, other):
         return self._binary_op_from_ufunc(other, self.context.true_divide, '__rtruediv__')
-    
+
     def __floordiv__(self, other):
         return self._binary_op_from_ufunc(other, self.context.floor_divide, '__rfloordiv__')
-    
+
     def __mod__(self, other):
         return self._binary_op_from_ufunc(other, self.context.mod, '__rdiv__')
-    
+
     def __pow__(self, other, modulo=None):
         return self._binary_op_from_ufunc(other, self.context.power, '__rpower__')
-    
+
     def __lshift__(self, other):
         return self._binary_op_from_ufunc(other, self.context.left_shift, '__rlshift__')
-    
+
     def __rshift__(self, other):
         return self._binary_op_from_ufunc(other, self.context.right_shift, '__rrshift__')
-    
+
     def __and__(self, other):
         return self._binary_op_from_ufunc(other, self.context.bitwise_and, '__rand__')
-    
+
     def __or__(self, other):
         return self._binary_op_from_ufunc(other, self.context.binary_or, '__ror__')
-    
+
     def __xor__(self, other):
         return self._binary_op_from_ufunc(other, self.context.binary_xor, '__rxor__')
-        
+
     # Binary - right versions
-    
+
     def __radd__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.add, '__add__')
-    
+
     def __rsub__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.subtract, '__sub__')
-    
+
     def __rmul__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.multiply, '__mul__')
-    
+
     def __rdiv__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.divide, '__div__')
-    
+
     def __rtruediv__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.true_divide, '__truediv__')
-    
+
     def __rfloordiv__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.floor_divide, '__floordiv__')
-    
+
     def __rmod__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.mod, '__mod__')
-    
+
     def __rpow__(self, other, modulo=None):
         return self._rbinary_op_from_ufunc(other, self.context.power, '__pow__')
-    
+
     def __rlshift__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.left_shift, '__lshift__')
-    
+
     def __rrshift__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.right_shift, '__rshift__')
-    
+
     def __rand__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.bitwise_and, '__and__')
-    
+
     def __ror__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.bitwise_or, '__or__')
-    
+
     def __rxor__(self, other):
         return self._rbinary_op_from_ufunc(other, self.context.bitwise_xor, '__xor__')
 
     def __neg__(self):
         return self.context.negative(self)
-    
+
     def __pos__(self):
         return self
-    
+
     def __abs__(self):
         return self.context.abs(self)
-    
+
     def __invert__(self):
         return self.context.invert(self)
-
-
-

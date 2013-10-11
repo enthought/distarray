@@ -41,10 +41,10 @@ def divisors_minmax(n, dmin, dmax):
         if n % i == 0:
             yield i
         i += 1
-        
+
 def list_or_tuple(seq):
     return isinstance(seq, (list, tuple))
-        
+
 def flatten(seq, to_expand=list_or_tuple):
     """Flatten a nested sequence."""
     for item in seq:
@@ -66,7 +66,7 @@ def mult_partitions(n, s):
 
 def mult_partitions_recurs(n, s, pd=1):
     if s == 1:
-        return [n]        
+        return [n]
     divs = divisors_minmax(n, pd, int(sqrt(n)))
     fs = []
     for d in divs:

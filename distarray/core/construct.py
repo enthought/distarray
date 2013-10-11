@@ -207,4 +207,3 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
     return grid_shape
-

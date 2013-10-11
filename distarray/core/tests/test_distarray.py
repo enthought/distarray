@@ -94,7 +94,7 @@ class TestInit(unittest.TestCase):
                 da = denselocalarray.LocalArray((100,10,300), dist=('b',None,'c'), comm=comm)
                 self.assertEqual(da.grid_shape, (2,6))
                 da = denselocalarray.LocalArray((100,50,300), dist='b', comm=comm)
-                self.assertEqual(da.grid_shape, (2,2,3))                  
+                self.assertEqual(da.grid_shape, (2,2,3))
                 comm.Free()
 
 
@@ -285,7 +285,7 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
+                    self.assertEqual(a[global_inds],0.0)
                 comm.Free()
 
     def test_indexing1(self):
@@ -307,9 +307,9 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
-                comm.Free()    
-    
+                    self.assertEqual(a[global_inds],0.0)
+                comm.Free()
+
     def test_pack_unpack_index(self):
         try:
             comm = create_comm_of_size(4)
