@@ -363,7 +363,11 @@ def add_checkers(cls, ops):
 class TestLocalArrayUnaryOperations(unittest.TestCase):
 
     def check_op(self, op):
-        """Check unary operation for success"""
+        """Check unary operation for success.
+
+        Check the one- and two-arg ufunc versions as well as the method
+        version attached to a LocalArray.
+        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -377,9 +381,11 @@ class TestLocalArrayUnaryOperations(unittest.TestCase):
             except NullCommError:
                 pass
             else:
-                result0 = op(x)
-                op(x, y=y)
+                result0 = op(x)  # standard form
+                op(x, y=y)  # two-arg form
+                result1 = eval("x." + op.__name__ + "()")  # method form
                 assert_array_equal(result0.local_array, y.local_array)
+                assert_array_equal(result0.local_array, result_1.local_array)
                 comm.Free()
 
 uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
@@ -392,7 +398,11 @@ add_checkers(TestLocalArrayUnaryOperations, uops)
 class TestLocalArrayBinaryOperations(unittest.TestCase):
 
     def check_op(self, op):
-        """Check binary operation for success"""
+        """Check binary operation for success.
+
+        Check the two- and three-arg ufunc versions as well as the
+        method version attached to a LocalArray.
+        """
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -408,9 +418,11 @@ class TestLocalArrayBinaryOperations(unittest.TestCase):
             except NullCommError:
                 pass
             else:
-                result0 = op(x1, x2)
-                op(x1, x2, y=y)
+                result0 = op(x1, x2)  # standard form
+                op(x1, x2, y=y) # three-arg form
+                result1 = eval("x1." + op.__name__ + "(x2)")  # method form
                 assert_array_equal(result0.local_array, y.local_array)
+                assert_array_equal(result0.local_array, result1.local_array)
                 comm.Free()
 
 
