@@ -1270,48 +1270,23 @@ class LocalArrayBinaryOperation(object):
         return "LocalArray version of " + str(self.func)
 
 
-add = LocalArrayBinaryOperation(np.add)
-subtract = LocalArrayBinaryOperation(np.subtract)
-multiply = LocalArrayBinaryOperation(np.multiply)
-divide = LocalArrayBinaryOperation(np.divide)
-true_divide = LocalArrayBinaryOperation(np.true_divide)
-floor_divide = LocalArrayBinaryOperation(np.floor_divide)
-mod = LocalArrayBinaryOperation(np.mod)
-power = LocalArrayBinaryOperation(np.power)
-remainder = LocalArrayBinaryOperation(np.remainder)
-fmod = LocalArrayBinaryOperation(np.fmod)
-arctan2 = LocalArrayBinaryOperation(np.arctan2)
-hypot = LocalArrayBinaryOperation(np.hypot)
-bitwise_and = LocalArrayBinaryOperation(np.bitwise_and)
-bitwise_or = LocalArrayBinaryOperation(np.bitwise_or)
-bitwise_xor = LocalArrayBinaryOperation(np.bitwise_xor)
-left_shift = LocalArrayBinaryOperation(np.left_shift)
-right_shift = LocalArrayBinaryOperation(np.right_shift)
+# numpy unary operations to wrap
+uops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
+        'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert', 'log',
+        'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign', 'sin',
+        'sinh', 'sqrt', 'square', 'tan', 'tanh')
 
+# numpy binary operations to wrap
+bops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor', 'divide',
+        'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod', 'multiply',
+        'power', 'remainder', 'right_shift', 'subtract', 'true_divide')
 
-negative = LocalArrayUnaryOperation(np.negative)
-absolute = LocalArrayUnaryOperation(np.absolute)
-rint = LocalArrayUnaryOperation(np.rint)
-sign = LocalArrayUnaryOperation(np.sign)
-conjugate = LocalArrayUnaryOperation(np.conjugate)
-exp = LocalArrayUnaryOperation(np.exp)
-log = LocalArrayUnaryOperation(np.log)
-expm1 = LocalArrayUnaryOperation(np.expm1)
-log1p = LocalArrayUnaryOperation(np.log1p)
-log10 = LocalArrayUnaryOperation(np.log10)
-sqrt = LocalArrayUnaryOperation(np.sqrt)
-square = LocalArrayUnaryOperation(np.square)
-reciprocal = LocalArrayUnaryOperation(np.reciprocal)
-sin = LocalArrayUnaryOperation(np.sin)
-cos = LocalArrayUnaryOperation(np.cos)
-tan = LocalArrayUnaryOperation(np.tan)
-arcsin = LocalArrayUnaryOperation(np.arcsin)
-arccos = LocalArrayUnaryOperation(np.arccos)
-arctan = LocalArrayUnaryOperation(np.arctan)
-sinh = LocalArrayUnaryOperation(np.sinh)
-cosh = LocalArrayUnaryOperation(np.cosh)
-tanh = LocalArrayUnaryOperation(np.tanh)
-arcsinh = LocalArrayUnaryOperation(np.arcsinh)
-arccosh = LocalArrayUnaryOperation(np.arccosh)
-arctanh = LocalArrayUnaryOperation(np.arctanh)
-invert = LocalArrayUnaryOperation(np.invert)
+def add_operations(wrapper, ops):
+    for op in ops:
+        fn_name = "np." + op
+        fn_value = wrapper(eval(fn_name))
+        names = globals()
+        names[op] = fn_value
+
+add_operations(LocalArrayUnaryOperation, uops)
+add_operations(LocalArrayBinaryOperation, bops)
