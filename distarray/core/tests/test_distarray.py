@@ -352,7 +352,7 @@ class TestLocalArrayMethods(unittest.TestCase):
                 comm.Free()
 
 
-def add_tests(cls, ops):
+def add_checkers(cls, ops):
     """Add a test method for all of the `ops`"""
     for op in ops:
         fn_name = "test_" + op.__name__
@@ -382,13 +382,11 @@ class TestLocalArrayUnaryOperations(unittest.TestCase):
                 assert_array_equal(result0.local_array, y.local_array)
                 comm.Free()
 
-uops = (dc.negative, dc.absolute, dc.rint, dc.sign, dc.conjugate, dc.exp,
-        dc.log, dc.expm1, dc.log1p, dc.log10, dc.sqrt, dc.square,
-        dc.reciprocal, dc.sin, dc.cos, dc.tan, dc.arcsin, dc.arccos, dc.arctan,
-        dc.sinh, dc.cosh, dc.tanh, dc.arcsinh, dc.arccosh, dc.arctanh,
-        dc.invert)
-
-add_tests(TestLocalArrayUnaryOperations, uops)
+uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
+        dc.arctanh, dc.conjugate, dc.cos, dc.cosh, dc.exp, dc.expm1, dc.invert,
+        dc.log, dc.log10, dc.log1p, dc.negative, dc.reciprocal, dc.rint,
+        dc.sign, dc.sin, dc.sinh, dc.sqrt, dc.square, dc.tan, dc.tanh)
+add_checkers(TestLocalArrayUnaryOperations, uops)
 
 
 class TestLocalArrayBinaryOperations(unittest.TestCase):
@@ -416,12 +414,11 @@ class TestLocalArrayBinaryOperations(unittest.TestCase):
                 comm.Free()
 
 
-bops = (dc.add, dc.subtract, dc.multiply, dc.divide, dc.true_divide,
-        dc.floor_divide, dc.mod, dc.power, dc.remainder, dc.fmod, dc.arctan2,
-        dc.hypot, dc.bitwise_and, dc.bitwise_or, dc.bitwise_xor, dc.left_shift,
-        dc.right_shift)
-
-add_tests(TestLocalArrayBinaryOperations, bops)
+bops = (dc.add, dc.arctan2, dc.bitwise_and, dc.bitwise_or, dc.bitwise_xor,
+        dc.divide, dc.floor_divide, dc.fmod, dc.hypot, dc.left_shift, dc.mod,
+        dc.multiply, dc.power, dc.remainder, dc.right_shift, dc.subtract,
+        dc.true_divide)
+add_checkers(TestLocalArrayBinaryOperations, bops)
 
 
 if __name__ == '__main__':
