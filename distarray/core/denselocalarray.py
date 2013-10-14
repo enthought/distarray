@@ -111,7 +111,7 @@ __all__ = [
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
-DAP_DISTTYPES = {None, 'b'}
+DAP_DISTTYPES = {None, 'b', 'c'}
 
 mpi_dtypes = {
     np.dtype('f') : MPI.FLOAT,
@@ -122,6 +122,12 @@ mpi_dtypes = {
 
 def mpi_type_for_ndarray(a):
     return mpi_dtypes[a.dtype]
+
+
+def _raise_dap_nie():
+    msg = ("The Distributed Array Protocol has only been "
+           "implemented for the following disttypes: {}")
+    raise NotImplementedError(msg.format(DAP_DISTTYPES))
 
 
 class DenseLocalArray(BaseLocalArray):
@@ -158,13 +164,25 @@ class DenseLocalArray(BaseLocalArray):
             gridrank = 0
             gridsize = 1
 
-        dimdict = {"disttype": self.dist[dim],
-                   "periodic": False,
-                   "datasize": self.shape[dim],
+        disttype = self.dist[dim]
+        start, stop = self.global_limits(dim)
+        datasize = self.shape[dim]
+
+        if disttype in {None, 'b'}:
+            step = 1
+        elif disttype == 'c':
+            stop = datasize
+            step = gridsize
+        else:
+            _raise_dap_nie()
+
+        dimdict = {"disttype": disttype,
+                   "datasize": datasize,
                    "gridrank": gridrank,
                    "gridsize": gridsize,
-                   "indices": slice(*self.global_limits(dim)),
+                   "indices": slice(start, stop, step),
                    "blocksize": 1,
+                   "periodic": False,
                    "padding": (0, 0)
                   }
         return dimdict
@@ -176,12 +194,6 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
         """
-        implemented = all(disttype in DAP_DISTTYPES for disttype in self.dist)
-        if not implemented:
-            msg = ("The Distributed Array Protocol has only been "
-                   "implemented for the following disttypes: {}")
-            raise NotImplementedError(msg.format(DAP_DISTTYPES))
-
         dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
                       "dimdata": dimdata}
@@ -256,8 +268,6 @@ class DenseLocalArray(BaseLocalArray):
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
-        if self.dist[dim] == 'c' or self.dist[dim] == 'bc':
-            raise DistError("global_limits only works with block distributed dimensions")
         lower_local = self.ndim*[0,]
         lower_global = self.local_to_global(self.comm_rank, *lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
@@ -861,9 +871,7 @@ def fromdap(obj, comm=None):
 
     implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
     if not implemented:
-        msg = ("The Distributed Array Protocol has only been "
-               "implemented for the following disttypes: {}")
-        raise NotImplementedError(msg.format(DAP_DISTTYPES))
+        _raise_dap_nie()
 
     shape = tuple(dd['datasize'] for dd in dimdata)
     grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
