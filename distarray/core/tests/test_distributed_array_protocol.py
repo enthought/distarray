@@ -105,6 +105,19 @@ class TestDAPBasic(BaseDAPCase, unittest.TestCase):
                              buf=None, offset=0)
 
 
+class TestDAPUint(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((16,16), dtype='uint8', grid_shape=(4,),
+                             comm=self.comm, buf=None, offset=0)
+
+
+class TestDAPComplex(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((16,16), dtype='complex128', grid_shape=(4,),
+                             comm=self.comm, buf=None, offset=0)
+
+
+
 class TestDAPExplicitNone0(BaseDAPCase, unittest.TestCase):
     def get_array(self):
         return da.LocalArray((16,16),
@@ -141,6 +154,14 @@ class TestDAPThreeBlockDims(BaseDAPCase, unittest.TestCase):
         return 12
 
 
+class TestDAPCyclicDim(BaseDAPCase, unittest.TestCase):
+    def get_array(self):
+        return da.LocalArray((53,77),
+                             dist={0: 'c'},
+                             grid_shape=(4,),
+                             comm=self.comm)
+
+
 class TestDAPCyclicBlock(BaseDAPCase, unittest.TestCase):
     def get_array(self):
         return da.LocalArray((53,77),
@@ -151,17 +172,9 @@ class TestDAPCyclicBlock(BaseDAPCase, unittest.TestCase):
 
 class TestDAPThreeMixedDims(BaseDAPCase, unittest.TestCase):
     def get_array(self):
-        return da.LocalArray((53,77,99),
+        return da.LocalArray((53,77,99), dtype='float64',
                              dist={0: 'b', 1: None, 2: 'c'},
                              grid_shape=(2, 2),
-                             comm=self.comm)
-
-
-class TestDAPCyclicDim(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((53,77),
-                             dist={0: 'c'},
-                             grid_shape=(4,),
                              comm=self.comm)
 
 
