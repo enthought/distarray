@@ -1,9 +1,13 @@
 import unittest
+import numpy as np
 import distarray as da
 from numpy.testing import assert_array_equal
 from distarray.mpi.mpibase import MPI, create_comm_of_size
 from distarray.mpi.error import InvalidCommSizeError
 from distarray.utils import comm_null_passes
+
+
+VALID_DISTTYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
 
 
 class BaseDAPCase(object):
@@ -59,9 +63,8 @@ class BaseDAPCase(object):
     def test_export_dimdata_values(self):
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
-        valid_disttypes = {None, 'b', 'c', 'bc', 'bp', 'u'}
         for dd in dimdata:
-            self.assertIn(dd['disttype'], valid_disttypes)
+            self.assertIn(dd['disttype'], VALID_DISTTYPES)
             self.assertIsInstance(dd['periodic'], bool)
             self.assertIsInstance(dd['datasize'], int)
             self.assertIsInstance(dd['gridrank'], int)
@@ -94,7 +97,8 @@ class BaseDAPCase(object):
     @comm_null_passes
     def test_round_trip_identity(self):
         larr = da.fromdap(self.larr, comm=self.comm)
-        larr.local_array[0,0] = 99
+        idx = (0,) * larr.local_array.ndim
+        larr.local_array[idx] = 99
         assert_array_equal(larr.local_array, self.larr.local_array)
         #self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
