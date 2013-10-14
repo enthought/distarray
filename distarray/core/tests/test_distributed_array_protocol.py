@@ -178,6 +178,34 @@ class TestDAPThreeMixedDims(BaseDAPCase, unittest.TestCase):
                              comm=self.comm)
 
 
+class TestDAPLopsided(BaseDAPCase, unittest.TestCase):
+
+    def get_comm_size(self):
+        return 2
+
+    def get_array(self):
+        if self.comm.Get_rank() == 0:
+            arr = np.arange(20)
+        elif self.comm.Get_rank() == 1:
+            arr = np.arange(30)
+
+        return da.LocalArray((50,), dtype='float64',
+                             dist={0: 'b', 1: None},
+                             grid_shape=(2,), comm=self.comm, buf=arr)
+
+    @comm_null_passes
+    def test_values(self):
+        if self.comm.Get_rank() == 0:
+            assert_array_equal(np.arange(20), self.larr.local_array)
+        elif self.comm.Get_rank() == 1:
+            assert_array_equal(np.arange(30), self.larr.local_array)
+
+        larr = da.fromdap(self.larr, comm=self.comm)
+        if self.comm.Get_rank() == 0:
+            assert_array_equal(np.arange(20), larr.local_array)
+        elif self.comm.Get_rank() == 1:
+            assert_array_equal(np.arange(30), larr.local_array)
+
 if __name__ == '__main__':
     try:
         unittest.main()
