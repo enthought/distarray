@@ -241,8 +241,8 @@ class TestGlobalInd(unittest.TestCase):
                 self.round_trip(da)
                 comm.Free()
 
-    def test_global_limits(self):
-        """Find the boundaries of a block distribution or no distribution"""
+    def test_global_limits_block(self):
+        """Find the boundaries of a block distribution"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -250,7 +250,6 @@ class TestGlobalInd(unittest.TestCase):
         else:
             try:
                 a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -260,7 +259,26 @@ class TestGlobalInd(unittest.TestCase):
                 answers = 4*[(0,15)]
                 limits = a.global_limits(1)
                 self.assertEqual(limits, answers[a.comm_rank])
-                self.assertRaises(DistError, b.global_limits, 0)
+                comm.Free()
+
+    def test_global_limits_cyclic(self):
+        """Find the boundaries of a cyclic distribution"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                a = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
+            except NullCommError:
+                pass
+            else:
+                answers = [(0,12),(1,13),(2,14),(3,15)]
+                limits = a.global_limits(0)
+                self.assertEqual(limits, answers[a.comm_rank])
+                answers = 4*[(0,15)]
+                limits = a.global_limits(1)
+                self.assertEqual(limits, answers[a.comm_rank])
                 comm.Free()
 
 
