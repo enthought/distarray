@@ -51,6 +51,9 @@ class TestDistArray(unittest.TestCase):
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
+        if len(self.dv.targets) < 4:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
         self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
