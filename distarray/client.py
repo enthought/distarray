@@ -76,7 +76,7 @@ class Context(object):
         else:
             self.targets = []
             for target in targets:
-                assert target in all_targets, "engine with id %r not registered" % target
+                assert target in all_targets, "Engine with id %r not registered" % target
                 self.targets.append(target)
 
         # FIXME: IPython bug #4296: This doesn't work under Python 3
@@ -259,7 +259,7 @@ class Context(object):
 
 
 def unary_proxy(context, a, meth_name):
-    assert isinstance(a, DistArray), 'this method only works on DistArray'
+    assert isinstance(a, DistArray), "This method only works on DistArrays"
     assert context==a.context, "distarray context mismatch: " % (context, a.context)
     context = a.context
     new_key = context._generate_key()
