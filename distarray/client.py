@@ -326,7 +326,8 @@ class DistArray(object):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            raise NotImplementedError("Slicing a proxy object not yet implemented.")
+            errmsg = "Slicing a proxy object not yet implemented."
+            raise NotImplementedError(errmsg)
         elif isinstance(index, int):
             tuple_index = (index,)
             result_key = self.context._generate_key()
@@ -345,7 +346,8 @@ class DistArray(object):
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            raise NotImplementedError("Setting to a slice not yet implemented.")
+            errmsg = "Setting to a slice not yet implemented."
+            raise NotImplementedError(errmsg)
         elif isinstance(index, int):
             tuple_index = (index,)
             try:
