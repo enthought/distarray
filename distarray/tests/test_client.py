@@ -17,7 +17,8 @@ class TestContext(unittest.TestCase):
         self.client = Client()
         self.dv = self.client[:]
         if len(self.dv.targets) < 4:
-            raise unittest.SkipTest('Must set up a cluster with at least 4 engines running.')
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
 
     def test_create_Context(self):
         '''Can we create a plain vanilla context?'''
