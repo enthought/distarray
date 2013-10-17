@@ -16,10 +16,62 @@ __docformat__ = "restructuredtext en"
 import uuid
 import numpy as np
 
+from IPython.parallel import RemoteError
+
 
 #----------------------------------------------------------------------------
 # Code
 #----------------------------------------------------------------------------
+
+def isonlyone(iterable):
+    """Is only one of the elements in `iterable` non-None?"""
+    test = (x is not None for x in iterable)
+    if sum(test) == 1:
+        return True
+    else:
+        return False
+
+
+def process_return_value(subcontext, result_key):
+    """Figure out what to return on the Client.
+
+    Parameters
+    ----------
+    key : string
+        Key corresponding to wrapped function's return value.
+
+    Returns
+    -------
+    A DistArray (if locally it's a DistArray), a None (if locally
+    it's a None).
+
+    Raises
+    ------
+    TypeError for any other type besides those handled above
+
+    """
+    type_key = subcontext._generate_key()
+    type_statement = "{} = str(type({}))".format(type_key, result_key)
+    subcontext._execute(type_statement)
+    result_type_str = subcontext._pull(type_key)
+
+    def isnonetype(typestring):
+        return (typestring == "<type 'NoneType'>" or
+                typestring == "<class 'NoneType'>")
+
+    def islocalarray(typestring):
+        return typestring == "<class 'distarray.core.denselocalarray.DenseLocalArray'>"
+
+    if all(islocalarray(r) for r in result_type_str):
+        result = DistArray(result_key, subcontext)
+    elif all(isnonetype(r) for r in result_type_str):
+        result = None
+    else:
+        result = subcontext._pull(result_key)
+        if isonlyone(result):
+            result = [x for x in result if x is not None][0]
+
+    return result
 
 
 class RandomModule(object):
@@ -325,39 +377,45 @@ class DistArray(object):
         return rank  # FIXME: WRONG!!
 
     def __getitem__(self, index):
-        if isinstance(index, slice):
-            errmsg = "Slicing a proxy object not yet implemented."
-            raise NotImplementedError(errmsg)
-        elif isinstance(index, int):
+
+        if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
+            return self.__getitem__(tuple_index)
+
+        elif isinstance(index, tuple):
             result_key = self.context._generate_key()
             try:
-                target = self.owner_target(index)
-                statement = '%s = %s.__getitem__(%s)'
-                self.context._execute(statement % (result_key, self.key,
-                                                   tuple_index),
-                                      targets=target)
-            except Exception:
-                raise IndexError()
+                fmt = '%s = %s.__getitem__(%s)'
+                statement = fmt % (result_key, self.key, index)
+                self.context._execute(statement)
+                return process_return_value(self.context, result_key)
 
-            return self.context._pull(result_key, targets=target)
+            except RemoteError as e:
+                if e.args[0] == 'IndexError':
+                    raise IndexError(e.args[1])
+                else:
+                    raise
+
         else:
             raise TypeError("Invalid index type.")
 
     def __setitem__(self, index, value):
-        if isinstance(index, slice):
-            errmsg = "Setting to a slice not yet implemented."
-            raise NotImplementedError(errmsg)
-        elif isinstance(index, int):
+
+        if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
+            return self.__setitem__(tuple_index, value)
+
+        elif isinstance(index, tuple):
             try:
-                target = self.owner_target(index)
                 statement = '%s.__setitem__(%s, %s)'
-                self.context._execute(statement % (self.key, tuple_index,
-                                                   value),
-                                      targets=target)
-            except Exception:
-                raise IndexError
+                self.context._execute(statement % (self.key, index,
+                                                   value))
+            except RemoteError as e:
+                if e.args[0] == 'IndexError':
+                    raise IndexError(e.args[1])
+                else:
+                    raise
+
         else:
             raise TypeError("Invalid index type.")
 

@@ -234,11 +234,16 @@ class DenseLocalArray(BaseLocalArray):
             raise ValueError("Incompatible local array shape")
 
     def owner_rank(self, *indices):
-        owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in range(self.ndistdim)]
+        owners = []
+        for i, distdim in enumerate(self.distdims):
+            owners.append(self.maps[i].owner(indices[distdim]))
+        #owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in
+        #          range(self.ndistdim)]
         return self.comm.Get_cart_rank(owners)
 
     def owner_coords(self, *indices):
-        owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in range(self.ndistdim)]
+        owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in
+                  range(self.ndistdim)]
         return owners
 
     def rank_to_coords(self, rank):
@@ -602,30 +607,27 @@ class DenseLocalArray(BaseLocalArray):
     def __len__(self):
         return self.shape[0]
 
-    def _check_key(self, key):
-        if not isinstance(key, tuple):
-            raise TypeError("Index must be a sequence")
-        for i in key:
-            if not isinstance(i, int):
-                raise TypeError("Index must be a sequence of ints")
+    def _sanitize_indices(self, indices):
+        if isinstance(indices, int) or isinstance(indices, slice):
+            return (indices,)
+        elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+            return indices
+        else:
+            raise TypeError("Index must be a sequence of ints and slices")
 
-    def __getitem__(self, key):
-        self._check_key(key)
-        owner_rank = self.owner_rank(*key)
+    def __getitem__(self, global_inds):
+        global_inds = self._sanitize_indices(global_inds)
+        owner_rank = self.owner_rank(*global_inds)
         if self.comm_rank == owner_rank:
-            local_inds = self.global_to_local(*key)
+            local_inds = self.global_to_local(*global_inds)
             return self.local_array[local_inds]
-        else:
-            raise NotImplementedError("Nonlocal indexing not yet implemented.")
 
-    def __setitem__(self, key, value):
-        self._check_key(key)
-        owner_rank = self.owner_rank(*key)
+    def __setitem__(self, global_inds, value):
+        global_inds = self._sanitize_indices(global_inds)
+        owner_rank = self.owner_rank(*global_inds)
         if self.comm_rank == owner_rank:
-            local_inds = self.global_to_local(*key)
+            local_inds = self.global_to_local(*global_inds)
             self.local_array[local_inds] = value
-        else:
-            raise NotImplementedError("Nonlocal indexing not yet implemented.")
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
