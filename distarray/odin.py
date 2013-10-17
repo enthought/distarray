@@ -93,7 +93,8 @@ def determine_context(definition_context, args):
     ValueError
         Raised if all DistArray objects don't have the same context.
     """
-    contexts = [definition_context] + [arg.context for arg in args if isinstance(arg, DistArray)]
+    contexts = [definition_context] + [arg.context for arg in args if
+                                       isinstance(arg, DistArray)]
     if not all_equal(contexts):
         errmsg = "All DistArray objects must be defined with the same context used for the function: {}"
         raise ValueError(errmsg.format(contexts))
