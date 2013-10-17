@@ -42,13 +42,10 @@ def process_return_value(subcontext, result_key):
 
     Returns
     -------
-    A DistArray (if locally it's a DistArray), a None (if locally
-    it's a None).
-
-    Raises
-    ------
-    TypeError for any other type besides those handled above
-
+    A DistArray (if locally all values are DistArray), a None (if
+    locally all values are None), or else, pull the result back to the
+    client and return it.  If all but one of the pulled values is None,
+    return that non-None value only.
     """
     type_key = subcontext._generate_key()
     type_statement = "{} = str(type({}))".format(type_key, result_key)
