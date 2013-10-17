@@ -34,7 +34,8 @@ class TestContext(unittest.TestCase):
         '''Context's view must encompass all ranks in the MPI communicator.'''
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
-            raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
+            msg = 'Must set up a cluster with at least 2 engines running.'
+            raise unittest.SkipTest(msg)
         with self.assertRaises(ValueError):
             Context(subview)
 
