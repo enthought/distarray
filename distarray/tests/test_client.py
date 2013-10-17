@@ -67,6 +67,20 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
+    def test_set_and_getitem_nd_block_dist(self):
+        size = 10
+        dap = self.dac.empty((size, size), dist={0: 'b', 1: 'b'})
+
+        for row in range(size):
+            for col in range(size):
+                val = size*row + col
+                dap[row, col] = val
+
+        for row in range(size):
+            for col in range(size):
+                val = size*row + col
+                self.assertEqual(dap[row, col], val)
+
     def test_set_and_getitem_cyclic_dist(self):
         size=10
         dap = self.dac.empty((size,), dist={0: 'c'})
