@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 from six.moves import range
 from IPython.parallel import Client
-from distarray.client import Context
+from distarray.client import Context, DistArray
 
 
 class TestContext(unittest.TestCase):
@@ -91,11 +91,12 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
-    def test_slice_in_getitem_raises_valueerror(self):
+    @unittest.skip
+    def test_slice_in_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
-        with self.assertRaises(NotImplementedError):
-            dap[20:40]
+        self.assertIsInstance(dap[20:40], DistArray)
 
+    @unittest.skip
     def test_slice_in_setitem_raises_valueerror(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
         vals = np.random.random(20)
