@@ -18,8 +18,8 @@ class Map(object):
     def __init__(self, shape, grid_shape):
         self.shape = shape
         self.grid_shape = grid_shape
-        self.local_shape = self.shape//self.grid_shape
-        if self.shape%self.grid_shape > 0:
+        self.local_shape = self.shape // self.grid_shape
+        if self.shape % self.grid_shape > 0:
             self.local_shape += 1
 
     def owner(self, i):
@@ -35,25 +35,25 @@ class Map(object):
 class BlockMap(Map):
 
     def owner(self, i):
-        return i//self.local_shape
+        return i // self.local_shape
 
     def local_index(self, i):
-        return i%self.local_shape
+        return i % self.local_shape
 
     def global_index(self, owner, p):
-        return owner*self.local_shape + p
+        return owner * self.local_shape + p
 
 
 class CyclicMap(Map):
 
     def owner(self, i):
-        return i%self.grid_shape
+        return i % self.grid_shape
 
     def local_index(self, i):
-        return i//self.grid_shape
+        return i // self.grid_shape
 
     def global_index(self, owner, p):
-        return owner + p*self.grid_shape
+        return owner + p * self.grid_shape
 
 
 class BlockCyclicMap(Map):
