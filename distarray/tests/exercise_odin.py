@@ -90,6 +90,7 @@ def call_local(da):
 
 @odin.local
 def parameterless():
+    """This is a parameterless function."""
     return None
 
 
@@ -188,6 +189,12 @@ class TestLocal(unittest.TestCase):
     def test_parameterless(self):
         rval = parameterless()
         self.assertTrue(rval is None)
+
+    def test_function_metadata(self):
+        name = "parameterless"
+        docstring = """This is a parameterless function."""
+        self.assertEqual(parameterless.__name__, name)
+        self.assertEqual(parameterless.__doc__, docstring)
 
 
 class TestUtils(unittest.TestCase):
