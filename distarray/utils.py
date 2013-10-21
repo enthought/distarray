@@ -1,4 +1,7 @@
 from math import sqrt
+from functools import wraps
+from distarray.mpi.mpibase import MPI
+
 
 def divisors(n):
     i = 2
@@ -38,10 +41,10 @@ def divisors_minmax(n, dmin, dmax):
         if n % i == 0:
             yield i
         i += 1
-        
+
 def list_or_tuple(seq):
     return isinstance(seq, (list, tuple))
-        
+
 def flatten(seq, to_expand=list_or_tuple):
     """Flatten a nested sequence."""
     for item in seq:
@@ -63,7 +66,7 @@ def mult_partitions(n, s):
 
 def mult_partitions_recurs(n, s, pd=1):
     if s == 1:
-        return [n]        
+        return [n]
     divs = divisors_minmax(n, pd, int(sqrt(n)))
     fs = []
     for d in divs:
@@ -100,3 +103,15 @@ def outer_zip(seqa, seqb):
 
 def _raise_nie():
     raise NotImplementedError("This has not yet been implemented for distributed arrays")
+
+def comm_null_passes(fn):
+    """Decorator. If `self.comm` is COMM_NULL, pass."""
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        if self.comm == MPI.COMM_NULL:
+            pass
+        else:
+            return fn(self, *args, **kwargs)
+
+    return wrapper

@@ -20,7 +20,7 @@ class TestNDEnumerate(unittest.TestCase):
                                                dist=('c', 'b', None),
                                                comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     a[global_inds] = 0.0

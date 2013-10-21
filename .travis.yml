@@ -15,7 +15,6 @@ install:
 before_script:
     - python distarray/tests/run_ipcluster.py
 script:
-    - cd $TRAVIS_BUILD_DIR/distarray/core/tests && mpiexec -n 4 nosetests
-    - cd $TRAVIS_BUILD_DIR/distarray/random/tests && mpiexec -n 4 nosetests
-    - sleep 15  # wait for ipcluster
-    - cd $TRAVIS_BUILD_DIR && nosetests -v
+    - mpiexec -n 12 nosetests -w distarray/core/tests
+    - mpiexec -n 4 nosetests -w distarray/random/tests
+    - sleep 15 && nosetests -v  # wait for ipcluster

@@ -13,12 +13,10 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
+import numpy as np
 from distarray.core import denselocalarray
 from distarray.core.construct import find_local_shape, init_base_comm
-from distarray.core.error import *
-from distarray.mpi import mpibase
 
-import numpy as np
 
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
