@@ -36,4 +36,3 @@ class InvalidRankError(MPIDistArrayError):
 
 class MPICommError(MPIDistArrayError):
     pass
-

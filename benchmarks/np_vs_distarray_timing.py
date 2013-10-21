@@ -6,7 +6,6 @@ To run this file, you need to start a cluster with the following command:
 from __future__ import print_function
 
 import numpy as np
-import os
 from IPython.parallel import Client
 from distarray.client import Context
 from timeit import timeit

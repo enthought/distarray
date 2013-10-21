@@ -18,9 +18,10 @@ import numpy as np
 
 from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
-from distarray.mpi.error import *
 from distarray.core import maps
-from distarray.core.error import *
+from distarray.core.error import (DistError, InvalidGridShapeError,
+                                  GridShapeError, NullCommError,
+                                  InvalidBaseCommError)
 from distarray import utils
 from functools import reduce
 
@@ -40,7 +41,7 @@ from functools import reduce
 
 def init_base_comm(comm):
     if comm==MPI.COMM_NULL:
-        raise MPICommError("Cannot create a LocalArray with a MPI COMM_NULL")
+        raise NullCommError("Cannot create a LocalArray with COMM_NULL")
     elif comm is None:
         return mpibase.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):
@@ -188,7 +189,6 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
-    ndistdim = len(distdims)
     map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
     local_shape, maps = init_local_shape_and_maps(shape,
@@ -202,8 +202,5 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
-    ndistdim = len(distdims)
-    map_classes = init_map_classes(dist)
     grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
     return grid_shape
-

@@ -1,15 +1,10 @@
 import unittest
 import numpy as np
-from numpy.testing.utils import assert_array_equal, assert_array_almost_equal
 
-from distarray.core.error import *
-from distarray.mpi.error import *
-from distarray.mpi import mpibase
-from distarray.mpi.mpibase import (
-    MPI,
-    create_comm_of_size,
-    create_comm_with_list)
-from distarray.core import maps, denselocalarray
+from distarray.mpi.error import InvalidCommSizeError
+from distarray.core.error import NullCommError
+from distarray.mpi.mpibase import create_comm_of_size
+from distarray.core import denselocalarray
 
 
 class TestFunctions(unittest.TestCase):
@@ -27,7 +22,7 @@ class TestFunctions(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dtype='int64', comm=comm)
                 b = denselocalarray.LocalArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(denselocalarray.arecompatible(a,b), True)
                 a = denselocalarray.LocalArray((16,16), dtype='int64', dist='c', comm=comm)
@@ -50,7 +45,7 @@ class TestFunctions(unittest.TestCase):
             try:
                 a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(a.shape, (16,16))
                 self.assertEqual(a.dtype, np.dtype('int64'))
@@ -73,7 +68,7 @@ class TestFunctions(unittest.TestCase):
             try:
                 a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(a.shape, (16,16))
                 self.assertEqual(a.dtype, np.dtype('int64'))
