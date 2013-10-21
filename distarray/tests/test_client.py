@@ -53,21 +53,23 @@ class TestDistArray(unittest.TestCase):
         self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
-        dap = self.dac.empty((100,), dist={0: 'b'})
+        size = 10
+        dap = self.dac.empty((size,), dist={0: 'b'})
 
-        for val in range(100):
+        for val in range(size):
             dap[val] = val
 
-        for val in range(100):
+        for val in range(size):
             self.assertEqual(dap[val], val)
 
     def test_set_and_getitem_cyclic_dist(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        size=10
+        dap = self.dac.empty((size,), dist={0: 'c'})
 
-        for val in range(100):
+        for val in range(size):
             dap[val] = val
 
-        for val in range(100):
+        for val in range(size):
             self.assertEqual(dap[val], val)
 
     def test_slice_in_getitem_raises_valueerror(self):
@@ -98,7 +100,8 @@ class TestDistArray(unittest.TestCase):
             dap[111] = 55
 
     def test_iteration(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        size = 10
+        dap = self.dac.empty((size,), dist={0: 'c'})
         dap.fill(10)
         for val in dap:
             self.assertEqual(val, 10)

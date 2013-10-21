@@ -11,10 +11,12 @@ __docformat__ = "restructuredtext en"
 
 import inspect
 
-from distarray.core.error import InvalidMapCode
+
+class InvalidMapCode(Exception):
+    pass
 
 
-cdef class Map:
+class Map(object):
 
     def __init__(self, shape, grid_shape):
         self.shape = shape
@@ -23,50 +25,41 @@ cdef class Map:
         if self.shape%self.grid_shape > 0:
             self.local_shape += 1
 
-    cdef int owner_c(self, int i):
-        raise NotImplementedError("this method needs to be implemented in a subclass")
-
-    cdef int local_index_c(self, int i):
-        raise NotImplementedError("this method needs to be implemented in a subclass")
-
-    cdef int global_index_c(self, int owner, int p):
-        raise NotImplementedError("this method needs to be implemented in a subclass")
-
     def owner(self, i):
-        return self.owner_c(i)
+        raise NotImplemented("implement in subclass")
 
     def local_index(self, i):
-        return self.local_index_c(i)
+        raise NotImplemented("implement in subclass")
 
     def global_index(self, owner, p):
-        return self.global_index_c(owner, p)
+        raise NotImplemented("implement in subclass")
 
 
-cdef class BlockMap(Map):
+class BlockMap(Map):
 
-    cdef int owner_c(self, int i):
+    def owner(self, i):
         return i//self.local_shape
 
-    cdef int local_index_c(self, int i):
+    def local_index(self, i):
         return i%self.local_shape
 
-    cdef int global_index_c(self, int owner, int p):
+    def global_index(self, owner, p):
         return owner*self.local_shape + p
 
 
-cdef class CyclicMap(Map):
+class CyclicMap(Map):
 
-    cdef int owner_c(self, int i):
+    def owner(self, i):
         return i%self.grid_shape
 
-    cdef int local_index_c(self, int i):
+    def local_index(self, i):
         return i//self.grid_shape
 
-    cdef int global_index_c(self, int owner, int p):
+    def global_index(self, owner, p):
         return owner + p*self.grid_shape
 
 
-cdef class BlockCyclicMap(Map):
+class BlockCyclicMap(Map):
     pass
 
 
@@ -91,9 +84,9 @@ class MapRegistry(object):
                 if issubclass(code, Map):
                     return code
                 else:
-                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
             else:
-                raise InvalidMapCode("Not a Map subclass or a valid map code: %s"%code)
+                raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
         else:
             return m
 
@@ -105,3 +98,17 @@ get_map_class = _map_registry.get_map_class
 register_map('b', BlockMap)
 register_map('c', CyclicMap)
 register_map('bc', BlockCyclicMap)
+
+# bp1 = BlockMap(16, 2)
+# bp2 = CyclicMap(16, 2)
+#
+# import numpy
+# result = numpy.empty((16,16),dtype='int32')
+#
+# grid = numpy.arange(4, dtype='int32')
+# grid.shape=(2,2)
+#
+# for i in range(16):
+#     for j in range(16):
+#         # print bp1.owner(i), bp2.owner(j)
+#         result[i,j] = grid[bp1.owner(i), bp2.owner(j)]
