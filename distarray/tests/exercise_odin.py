@@ -88,6 +88,11 @@ def call_local(da):
     return dc
 
 
+@odin.local
+def parameterless():
+    return None
+
+
 class TestLocal(unittest.TestCase):
 
     def setUp(self):
@@ -179,6 +184,11 @@ class TestLocal(unittest.TestCase):
         da = subcontext.empty((1024, 1024))
         with self.assertRaises(ValueError):
             call_barrier(da)
+
+    def test_parameterless(self):
+        rval = parameterless()
+        self.assertTrue(rval is None)
+
 
 class TestUtils(unittest.TestCase):
 
