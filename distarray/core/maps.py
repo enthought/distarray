@@ -67,7 +67,7 @@ class BlockCyclicMap(Map):
         return (i // self.block_size) % self.grid_shape
 
     def local_index(self, i):
-        local_block_number = i // (self.block_size * self.grid_size)
+        local_block_number = i // (self.block_size * self.grid_shape)
         offset = i % self.block_size
         return local_block_number * self.block_size + offset
 
