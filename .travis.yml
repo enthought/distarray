@@ -10,6 +10,7 @@ before_install:
     - pip install ipython --use-mirrors
     - pip install mpi4py --use-mirrors
     - pip install six --use-mirrors
+    - pip freeze
     # - pip install 'numpy==1.7.1' --use-mirrors
     # - pip install 'pyzmq==13.0.2' --install-option="--zmq=bundled" --use-mirrors
     # - pip install 'ipython==1.1.0' --use-mirrors
