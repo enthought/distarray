@@ -10,10 +10,7 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import inspect
-
-
-class InvalidMapCode(Exception):
-    pass
+from distarray.core.error import InvalidMapCodeError
 
 
 class Map(object):
@@ -21,46 +18,64 @@ class Map(object):
     def __init__(self, shape, grid_shape):
         self.shape = shape
         self.grid_shape = grid_shape
-        self.local_shape = self.shape//self.grid_shape
-        if self.shape%self.grid_shape > 0:
+        self.local_shape = self.shape // self.grid_shape
+        if self.shape % self.grid_shape > 0:
             self.local_shape += 1
 
     def owner(self, i):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
     def local_index(self, i):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
     def global_index(self, owner, p):
-        raise NotImplemented("implement in subclass")
+        raise NotImplemented("Implement in subclass.")
 
 
 class BlockMap(Map):
 
     def owner(self, i):
-        return i//self.local_shape
+        return i // self.local_shape
 
     def local_index(self, i):
-        return i%self.local_shape
+        return i % self.local_shape
 
     def global_index(self, owner, p):
-        return owner*self.local_shape + p
+        return owner * self.local_shape + p
 
 
 class CyclicMap(Map):
 
     def owner(self, i):
-        return i%self.grid_shape
+        return i % self.grid_shape
 
     def local_index(self, i):
-        return i//self.grid_shape
+        return i // self.grid_shape
 
     def global_index(self, owner, p):
-        return owner + p*self.grid_shape
+        return owner + p * self.grid_shape
 
 
 class BlockCyclicMap(Map):
-    pass
+    # http://netlib.org/scalapack/slug/node76.html
+
+    def __init__(self, shape, grid_shape, block_size):
+        super(BlockCyclicMap, self).__init__(shape, grid_shape)
+        self.block_size = block_size
+
+    def owner(self, i):
+        return (i // self.block_size) % self.grid_shape
+
+    def local_index(self, i):
+        local_block_number = i // (self.block_size * self.grid_shape)
+        offset = i % self.block_size
+        return local_block_number * self.block_size + offset
+
+    def global_index(self, owner, p):
+        local_block_number = p // self.block_size
+        offset = p % self.block_size
+        return ((local_block_number*self.grid_shape + owner) *
+                self.block_size + offset)
 
 
 class MapRegistry(object):
@@ -75,7 +90,7 @@ class MapRegistry(object):
             else:
                 raise TypeError("Must register a Map subclass.")
         else:
-            raise TypeError("Must register a class")
+            raise TypeError("Must register a class.")
 
     def get_map_class(self, code):
         m = self.maps.get(code)
@@ -84,9 +99,11 @@ class MapRegistry(object):
                 if issubclass(code, Map):
                     return code
                 else:
-                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                    msg = "Not a Map subclass or a valid map code: %s." % code
+                    raise InvalidMapCodeError(msg)
             else:
-                raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                msg = "Not a Map subclass or a valid map code: %s." % code
+                raise InvalidMapCodeError(msg)
         else:
             return m
 

@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 from six.moves import range
 from IPython.parallel import Client
-from distarray.client import Context
+from distarray.client import Context, DistArray
 
 
 class TestContext(unittest.TestCase):
@@ -17,7 +17,8 @@ class TestContext(unittest.TestCase):
         self.client = Client()
         self.dv = self.client[:]
         if len(self.dv.targets) < 4:
-            raise unittest.SkipTest('Must set up a cluster with at least 4 engines running.')
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
 
     def test_create_Context(self):
         '''Can we create a plain vanilla context?'''
@@ -33,7 +34,8 @@ class TestContext(unittest.TestCase):
         '''Context's view must encompass all ranks in the MPI communicator.'''
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
-            raise unittest.SkipTest('Must set up a cluster with at least 2 engines running.')
+            msg = 'Must set up a cluster with at least 2 engines running.'
+            raise unittest.SkipTest(msg)
         with self.assertRaises(ValueError):
             Context(subview)
 
@@ -50,6 +52,9 @@ class TestDistArray(unittest.TestCase):
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
+        if len(self.dv.targets) < 4:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
         self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
@@ -62,6 +67,20 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
+    def test_set_and_getitem_nd_block_dist(self):
+        size = 10
+        dap = self.dac.empty((size, size), dist={0: 'b', 1: 'b'})
+
+        for row in range(size):
+            for col in range(size):
+                val = size*row + col
+                dap[row, col] = val
+
+        for row in range(size):
+            for col in range(size):
+                val = size*row + col
+                self.assertEqual(dap[row, col], val)
+
     def test_set_and_getitem_cyclic_dist(self):
         size=10
         dap = self.dac.empty((size,), dist={0: 'c'})
@@ -72,11 +91,12 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
-    def test_slice_in_getitem_raises_valueerror(self):
+    @unittest.skip
+    def test_slice_in_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
-        with self.assertRaises(NotImplementedError):
-            dap[20:40]
+        self.assertIsInstance(dap[20:40], DistArray)
 
+    @unittest.skip
     def test_slice_in_setitem_raises_valueerror(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
         vals = np.random.random(20)

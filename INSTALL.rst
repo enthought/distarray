@@ -18,3 +18,4 @@ This package has the following dependencies:
     * NumPy
     * Mpi4Py
     * IPython
+    * six

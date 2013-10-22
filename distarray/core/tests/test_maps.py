@@ -84,6 +84,117 @@ class TestCyclicMap(unittest.TestCase):
         self.assertEqual(2*list(range(5)),p)
 
 
+class TestBlockCyclicMap(unittest.TestCase):
+
+    def test_owner(self):
+        """
+        Test the owner method of CyclicMap.
+        """
+        size = 20
+        grid = 5
+        block = 2
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        owners = [bcm.owner(e) for e in range(size)]
+        expected = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4] * 2
+        self.assertEqual(expected,owners)
+
+    def test_compare_bcm_bm_owner(self):
+        """Test Block-Cyclic against Block map."""
+        size = 17
+        grid = 3
+        block = (size // grid) + 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        bm = maps.BlockMap(size,grid)
+        bcm_owners = [bcm.owner(e) for e in range(size)]
+        bm_owners = [bm.owner(e) for e in range(size)]
+        self.assertEqual(bcm_owners,bm_owners)
+
+    def test_compare_bcm_cm_owner(self):
+        """Test Block-Cyclic against Cyclic map."""
+        size = 23
+        grid = 7
+        block = 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        cm = maps.CyclicMap(size,grid)
+        bcm_owners = [bcm.owner(e) for e in range(size)]
+        cm_owners = [cm.owner(e) for e in range(size)]
+        self.assertEqual(bcm_owners,cm_owners)
+
+    def test_local_index(self):
+        """
+        Test the local_index method of BlockCyclicMap.
+        """
+        size = 20
+        grid = 5
+        block = 2
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        lindices = [bcm.local_index(i) for i in range(size)]
+        expected = ([0, 1] * grid) + ([2, 3] * grid)
+        self.assertEqual(lindices, expected)
+
+    def test_compare_bcm_bm_local_index(self):
+        """Test Block-Cyclic against Block map."""
+        size = 17
+        grid = 3
+        block = (size // grid) + 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        bm = maps.BlockMap(size,grid)
+        bcm_lindices = [bcm.local_index(e) for e in range(size)]
+        bm_lindices = [bm.local_index(e) for e in range(size)]
+        self.assertEqual(bcm_lindices,bm_lindices)
+
+    def test_compare_bcm_cm_local_index(self):
+        """Test Block-Cyclic against Cyclic map."""
+        size = 23
+        grid = 7
+        block = 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        cm = maps.CyclicMap(size,grid)
+        bcm_lindices = [bcm.local_index(e) for e in range(size)]
+        cm_lindices = [cm.local_index(e) for e in range(size)]
+        self.assertEqual(bcm_lindices,cm_lindices)
+
+    def test_global_index(self):
+        """
+        Test the local_index method of BlockCyclicMap.
+        """
+        size = 20
+        grid = 5
+        block = 2
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        gindices = [bcm.global_index(o, p) for o in range(grid) for p in
+                    range(size//grid)]
+        expected = [0, 1, 10, 11, 2, 3, 12, 13, 4, 5, 14, 15, 6,
+                    7, 16, 17, 8, 9, 18, 19]
+        self.assertEqual(gindices, expected)
+
+    def test_compare_bcm_bm_global_index(self):
+        """Test Block-Cyclic against Block map."""
+        size = 17
+        grid = 3
+        block = (size // grid) + 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        bm = maps.BlockMap(size,grid)
+        bcm_gindices = [bcm.global_index(o, p) for o in range(grid) for p in
+                        range(size//grid)]
+        bm_gindices = [bm.global_index(o, p) for o in range(grid) for p in
+                       range(size//grid)]
+        self.assertEqual(bcm_gindices,bm_gindices)
+
+    def test_compare_bcm_cm_global_index(self):
+        """Test Block-Cyclic against Cyclic map."""
+        size = 23
+        grid = 7
+        block = 1
+        bcm = maps.BlockCyclicMap(size,grid,block)
+        cm = maps.CyclicMap(size,grid)
+        bcm_gindices = [bcm.global_index(o, p) for o in range(grid) for p in
+                        range(size//grid)]
+        cm_gindices = [cm.global_index(o, p) for o in range(grid) for p in
+                       range(size//grid)]
+        self.assertEqual(bcm_gindices,cm_gindices)
+
+
 class TestRegistry(unittest.TestCase):
 
     def test_get_class(self):
