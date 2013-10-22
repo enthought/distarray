@@ -146,3 +146,27 @@ def sanitize_indices(indices):
         return 'view', indices
     else:
         raise TypeError("Index must be a sequence of ints and slices")
+
+
+def slice_intersection(s1, s2):
+    """Compute a slice that represents the intersection of two slices.
+
+    Currently only implemented for steps of size 1.
+
+    Parameters
+    ----------
+    s1, s2 : slice objects
+
+    Returns
+    -------
+    slice object
+    """
+    valid_steps = {None, 1}
+    if (s1.step in valid_steps) and (s2.step in valid_steps):
+        step = 1
+        stop = min(s1.stop, s2.stop)
+        start = max(s1.start, s2.start)
+        return slice(start, stop, step)
+    else:
+        msg = "Slice intersection only implemented for step=1."
+        raise NotImplementedError(msg)
