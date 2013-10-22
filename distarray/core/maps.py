@@ -57,7 +57,25 @@ class CyclicMap(Map):
 
 
 class BlockCyclicMap(Map):
-    pass
+    # http://netlib.org/scalapack/slug/node76.html
+
+    def __init__(self, shape, grid_shape, block_size):
+        super(BlockCyclicMap, self).__init__(shape, grid_shape)
+        self.block_size = block_size
+
+    def owner(self, i):
+        return (i // self.block_size) % self.grid_shape
+
+    def local_index(self, i):
+        local_block_number = i // (self.block_size * self.grid_size)
+        offset = i % self.block_size
+        return local_block_number * self.block_size + offset
+
+    def global_index(self, owner, p):
+        local_block_number = p // self.block_size
+        offset = p % self.block_size
+        return ((local_block_number*self.grid_shape + owner) *
+                self.block_size + offset)
 
 
 class MapRegistry(object):
