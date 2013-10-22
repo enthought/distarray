@@ -13,9 +13,8 @@ before_install:
 install:
     - python setup.py install
 before_script:
-    - python distarray/tests/run_ipcluster.py
+    - (cd $TRAVIS_BUILD_DIR && make setup_cluster)
 script:
-    - (cd $TRAVIS_BUILD_DIR/distarray/core/tests && mpiexec -n 12 nosetests -i 'paralleltest_\w+')
-    - (cd $TRAVIS_BUILD_DIR/distarray/random/tests && mpiexec -n 4 nosetests -i 'paralleltest_\w+')
-    - sleep 15  # wait for ipcluster
-    - (cd $TRAVIS_BUILD_DIR && nosetests -v)
+    - (cd $TRAVIS_BUILD_DIR && make test)
+after_script:
+    - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
