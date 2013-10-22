@@ -5,11 +5,16 @@ python:
 before_install:
     - sudo apt-get install libopenmpi-dev
     - sudo apt-get install openmpi-bin
-    - pip install 'numpy==1.7.1' --use-mirrors
-    - pip install 'pyzmq==13.0.2' --install-option="--zmq=bundled" --use-mirrors
-    - pip install 'ipython==1.1.0' --use-mirrors
-    - pip install 'mpi4py==1.3' --use-mirrors
-    - pip install 'six==1.4.1' --use-mirrors
+    - pip install numpy --use-mirrors
+    - pip install pyzmq --install-option="--zmq=bundled" --use-mirrors
+    - pip install ipython --use-mirrors
+    - pip install mpi4py --use-mirrors
+    - pip install six --use-mirrors
+    # - pip install 'numpy==1.7.1' --use-mirrors
+    # - pip install 'pyzmq==13.0.2' --install-option="--zmq=bundled" --use-mirrors
+    # - pip install 'ipython==1.1.0' --use-mirrors
+    # - pip install 'mpi4py==1.3' --use-mirrors
+    # - pip install 'six==1.4.1' --use-mirrors
 install:
     - python setup.py install
 before_script:
