@@ -17,17 +17,6 @@ _global_context = Context(_global_view)
 context = _global_context
 
 
-def all_equal(lst):
-    """Return True if all elements in `lst` are equal.
-
-    Also returns True if list is empty.
-    """
-    if len(lst) == 0 or len(lst) == 1:
-        return True  # vacuously True
-    else:
-        return all(element == lst[0] for element in lst[1:])
-
-
 def key_and_push_args(subcontext, arglist):
     """For each arg in arglist, get or generate a key (UUID).
 

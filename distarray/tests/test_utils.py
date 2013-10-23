@@ -57,5 +57,18 @@ class TestSliceIntersection(unittest.TestCase):
         assert_array_equal(arr[slc], arr[slice(11, 10)])
 
 
+class TestAllEqual(unittest.TestCase):
+
+    def test_all_equal_false(self):
+        self.assertFalse(utils.all_equal([1, 2, 3, 4, 5]))
+
+    def test_all_equal_true(self):
+        self.assertTrue(utils.all_equal([7, 7, 7, 7, 7]))
+
+    def test_all_equal_vacuously_true(self):
+        self.assertTrue(utils.all_equal([]))
+        self.assertTrue(utils.all_equal([99]))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

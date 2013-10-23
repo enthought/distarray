@@ -197,26 +197,6 @@ class TestLocal(unittest.TestCase):
         self.assertEqual(parameterless.__doc__, docstring)
 
 
-class TestUtils(unittest.TestCase):
-
-    def test_flatten(self):
-        self.assertEqual(odin.flatten(zip([1, 2, 3], [4, 5, 6])),
-                                      [1, 4, 2, 5, 3, 6])
-
-    def test_all_equal_false(self):
-        self.assertFalse(odin.all_equal([1, 2, 3, 4, 5]))
-
-    def test_all_equal_true(self):
-        self.assertTrue(odin.all_equal([7, 7, 7, 7, 7]))
-
-    def test_all_equal_contexts(self):
-        subcontext = Context(odin._global_view, targets=[0, 3])
-        db = subcontext.empty((100,))
-        dc = subcontext.ones((100,))
-        contexts = (subcontext, db.context, dc.context)
-        self.assertTrue(odin.all_equal(contexts))
-
-
 class TestDetermineContext(unittest.TestCase):
 
     def test_global_context(self):

@@ -1,6 +1,7 @@
 from math import sqrt
 from functools import wraps
 from distarray.mpi.mpibase import MPI
+from six import next
 
 
 def divisors(n):
@@ -188,3 +189,19 @@ def isonlyone(iterable):
         return True
     else:
         return False
+
+
+def all_equal(iterable):
+    """Return True if all elements in `iterable` are equal.
+
+    Also returns True if iterable is empty.
+    """
+    iterator = iter(iterable)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return True  # vacuously True
+
+    return all(element == first for element in iterator)
+
+
