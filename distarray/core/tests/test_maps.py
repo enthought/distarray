@@ -2,20 +2,6 @@ import unittest
 from distarray.core import maps
 
 
-class TestMapBase(unittest.TestCase):
-
-    def test_init(self):
-        """
-        Test the __init__ method of the base Map class.
-        """
-        m = maps.Map(16,4)
-        self.assertEqual(m.local_shape,4)
-        m = maps.Map(17,4)
-        self.assertEqual(m.local_shape,5)
-        m = maps.Map(15,4)
-        self.assertEqual(m.local_shape,4)
-
-
 class TestBlockMap(unittest.TestCase):
 
     def test_owner(self):
