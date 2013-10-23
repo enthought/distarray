@@ -15,8 +15,9 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import numpy as np
+from six import next
 
-from distarray.utils import isonlyone
+from distarray.utils import has_exactly_one
 from IPython.parallel import RemoteError
 
 
@@ -44,21 +45,21 @@ def process_return_value(subcontext, result_key):
     subcontext._execute(type_statement)
     result_type_str = subcontext._pull(type_key)
 
-    def isnonetype(typestring):
+    def is_NoneType(typestring):
         return (typestring == "<type 'NoneType'>" or
                 typestring == "<class 'NoneType'>")
 
-    def islocalarray(typestring):
+    def is_LocalArray(typestring):
         return typestring == "<class 'distarray.core.denselocalarray.DenseLocalArray'>"
 
-    if all(islocalarray(r) for r in result_type_str):
+    if all(is_LocalArray(r) for r in result_type_str):
         result = DistArray(result_key, subcontext)
-    elif all(isnonetype(r) for r in result_type_str):
+    elif all(is_NoneType(r) for r in result_type_str):
         result = None
     else:
         result = subcontext._pull(result_key)
-        if isonlyone(result):
-            result = [x for x in result if x is not None][0]
+        if has_exactly_one(result):
+            result = next(x for x in result if x is not None)
 
     return result
 

@@ -70,5 +70,19 @@ class TestAllEqual(unittest.TestCase):
         self.assertTrue(utils.all_equal([99]))
 
 
+class TestHasExactlyOne(unittest.TestCase):
+
+    def test_has_exactly_one_true(self):
+        iterable = [None, None, None, 55, None]
+        self.assertTrue(utils.has_exactly_one(iterable))
+
+    def test_has_exactly_one_all_none(self):
+        iterable = [None, None, None, None, None]
+        self.assertFalse(utils.has_exactly_one(iterable))
+
+    def test_has_exactly_one_multi_non_none(self):
+        iterable = [None, 5, 'abc', None, None]
+        self.assertFalse(utils.has_exactly_one(iterable))
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
