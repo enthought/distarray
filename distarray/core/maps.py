@@ -10,58 +10,48 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import inspect
+from abc import ABCMeta, abstractproperty, abstractmethod
 from distarray.core.error import InvalidMapCodeError
 
 
-class Map(object):
+class ILocalMap:
 
-    def __init__(self, shape, grid_shape):
-        self.shape = shape
-        self.grid_shape = grid_shape
-        self.local_shape = self.shape // self.grid_shape
-        if self.shape % self.grid_shape > 0:
-            self.local_shape += 1
+    __metaclass__ = ABCMeta
 
+    @abstractproperty
+    def local_shape(self):
+        pass
+
+    @abstractmethod
     def owner(self, i):
-        raise NotImplemented("Implement in subclass.")
+        pass
 
+    @abstractmethod
     def local_index(self, i):
-        raise NotImplemented("Implement in subclass.")
+        pass
 
+    @abstractmethod
     def global_index(self, owner, p):
-        raise NotImplemented("Implement in subclass.")
+        pass
 
 
-class BlockMap(Map):
-
-    def owner(self, i):
-        return i // self.local_shape
-
-    def local_index(self, i):
-        return i % self.local_shape
-
-    def global_index(self, owner, p):
-        return owner * self.local_shape + p
+def regular_local_shape(shape, grid_shape):
+    local_shape = shape // grid_shape
+    if shape % grid_shape > 0:
+        local_shape += 1
+    return local_shape
 
 
-class CyclicMap(Map):
-
-    def owner(self, i):
-        return i % self.grid_shape
-
-    def local_index(self, i):
-        return i // self.grid_shape
-
-    def global_index(self, owner, p):
-        return owner + p * self.grid_shape
-
-
-class BlockCyclicMap(Map):
-    # http://netlib.org/scalapack/slug/node76.html
+class BlockCyclicMap(ILocalMap):
 
     def __init__(self, shape, grid_shape, block_size):
-        super(BlockCyclicMap, self).__init__(shape, grid_shape)
+        self.shape = shape
+        self.grid_shape = grid_shape
         self.block_size = block_size
+
+    @property
+    def local_shape(self):
+        return regular_local_shape(self.shape, self.grid_shape)
 
     def owner(self, i):
         return (i // self.block_size) % self.grid_shape
@@ -78,6 +68,19 @@ class BlockCyclicMap(Map):
                 self.block_size + offset)
 
 
+class BlockMap(BlockCyclicMap):
+
+    def __init__(self, shape, grid_shape):
+        super(BlockMap, self).__init__(shape, grid_shape,
+                block_size=regular_local_shape(shape, grid_shape))
+
+
+class CyclicMap(BlockCyclicMap):
+
+    def __init__(self, shape, grid_shape):
+        super(CyclicMap, self).__init__(shape, grid_shape, block_size=1)
+
+
 class MapRegistry(object):
 
     def __init__(self):
@@ -85,7 +88,7 @@ class MapRegistry(object):
 
     def register_map(self, code, m):
         if inspect.isclass(m):
-            if issubclass(m, Map):
+            if issubclass(m, ILocalMap):
                 self.maps[code] = m
             else:
                 raise TypeError("Must register a Map subclass.")
@@ -96,13 +99,13 @@ class MapRegistry(object):
         m = self.maps.get(code)
         if m is None:
             if inspect.isclass(code):
-                if issubclass(code, Map):
+                if issubclass(code, ILocalMap):
                     return code
                 else:
-                    msg = "Not a Map subclass or a valid map code: %s." % code
+                    msg = "Not an ILocalMap subclass or a valid map code: %s." % code
                     raise InvalidMapCodeError(msg)
             else:
-                msg = "Not a Map subclass or a valid map code: %s." % code
+                msg = "Not a ILocalMap subclass or a valid map code: %s." % code
                 raise InvalidMapCodeError(msg)
         else:
             return m
