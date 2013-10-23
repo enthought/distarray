@@ -7,6 +7,7 @@ from functools import wraps
 from six.moves import zip
 
 from IPython.parallel import Client
+from distarray.utils import all_equal
 from distarray.client import Context, DistArray, process_return_value
 
 
@@ -116,7 +117,7 @@ def local(fn):
         statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
         replacement_values = chain([result_key, func_key],
                                    arg_keys,
-                                   chain(zip(kwarg_names, kwarg_keys)))
+                                   *zip(kwarg_names, kwarg_keys))
         statement = statement_fmt.format(*replacement_values)
 
         # execute it locally
