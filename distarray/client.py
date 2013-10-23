@@ -16,21 +16,13 @@ __docformat__ = "restructuredtext en"
 import uuid
 import numpy as np
 
+from distarray.utils import isonlyone
 from IPython.parallel import RemoteError
 
 
 #----------------------------------------------------------------------------
 # Code
 #----------------------------------------------------------------------------
-
-def isonlyone(iterable):
-    """Is only one of the elements in `iterable` non-None?"""
-    test = (x is not None for x in iterable)
-    if sum(test) == 1:
-        return True
-    else:
-        return False
-
 
 def process_return_value(subcontext, result_key):
     """Figure out what to return on the Client.

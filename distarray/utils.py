@@ -179,3 +179,12 @@ def slice_intersection(s1, s2):
     else:
         msg = "Slice intersection only implemented for step=1."
         raise NotImplementedError(msg)
+
+
+def isonlyone(iterable):
+    """Is only one of the elements in `iterable` non-None?"""
+    test = (x is not None for x in iterable)
+    if sum(test) == 1:
+        return True
+    else:
+        return False
