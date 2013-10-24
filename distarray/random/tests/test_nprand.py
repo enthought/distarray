@@ -37,44 +37,46 @@ class TestBasic(unittest.TestCase):
         except InvalidCommSizeError:
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
 
-    def tearDown(self):
-        self.comm.Free()
-
     def test_beta(self):
         try:
             la = da.beta(2, 5, size=(16, 16), grid_shape=(4,), comm=self.comm)
-            self.shape_asserts(la)
         except NullCommError:
-            raise unittest.SkipTest("Skipped due to Null Comm")
+            pass
+        else:
+            self.shape_asserts(la)
 
     def test_normal(self):
         try:
             la = da.normal(size=(16, 16), grid_shape=(4,), comm=self.comm)
-            self.shape_asserts(la)
         except NullCommError:
-            raise unittest.SkipTest("Skipped due to Null Comm")
+            pass
+        else:
+            self.shape_asserts(la)
 
     def test_rand(self):
         try:
             la = da.rand(size=(16, 16), grid_shape=(4,), comm=self.comm)
-            self.shape_asserts(la)
         except NullCommError:
-            raise unittest.SkipTest("Skipped due to Null Comm")
+            pass
+        else:
+            self.shape_asserts(la)
 
     def test_randint(self):
         try:
             la = da.randint(0, 10, size=(16, 16), grid_shape=(4,),
                             comm=self.comm)
-            self.shape_asserts(la)
         except NullCommError:
-            raise unittest.SkipTest("Skipped due to Null Comm")
+            pass
+        else:
+            self.shape_asserts(la)
 
     def test_randn(self):
         try:
             la = da.randn((16, 16), grid_shape=(4,), comm=self.comm)
-            self.shape_asserts(la)
         except NullCommError:
-            raise unittest.SkipTest("Skipped due to Null Comm")
+            pass
+        else:
+            self.shape_asserts(la)
 
 
 if __name__ == '__main__':

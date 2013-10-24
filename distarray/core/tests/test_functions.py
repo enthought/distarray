@@ -27,7 +27,7 @@ class TestFunctions(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dtype='int64', comm=comm)
                 b = denselocalarray.LocalArray((16,16), dtype='float32', comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(denselocalarray.arecompatible(a,b), True)
                 a = denselocalarray.LocalArray((16,16), dtype='int64', dist='c', comm=comm)
@@ -50,7 +50,7 @@ class TestFunctions(unittest.TestCase):
             try:
                 a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(a.shape, (16,16))
                 self.assertEqual(a.dtype, np.dtype('int64'))
@@ -73,7 +73,7 @@ class TestFunctions(unittest.TestCase):
             try:
                 a = denselocalarray.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(a.shape, (16,16))
                 self.assertEqual(a.dtype, np.dtype('int64'))

@@ -29,7 +29,7 @@ class TestInit(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((16,16), grid_shape=(4,),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(da.shape, (16,16))
                 self.assertEqual(da.dist, ('b',None))
@@ -63,7 +63,7 @@ class TestInit(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((16,16), grid_shape=(4,), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 da.get_localarray()
                 la = np.random.random(da.local_shape)
@@ -85,7 +85,7 @@ class TestInit(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((20,20), dist='b', comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(da.grid_shape, (3,4))
                 da = denselocalarray.LocalArray((2*10,6*10), dist='b', comm=comm)
@@ -116,7 +116,7 @@ class TestDistMatrix(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((10,10), dist=('c','c'), comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 if False:
                     if comm.Get_rank()==0:
@@ -146,7 +146,7 @@ class TestLocalInd(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((4,4),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(da.shape,(4,4))
                 self.assertEqual(da.grid_shape,(4,))
@@ -168,7 +168,7 @@ class TestLocalInd(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((8,8),dist={0:'c'},comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.assertEqual(da.shape,(8,8))
                 self.assertEqual(da.grid_shape,(4,))
@@ -203,7 +203,7 @@ class TestGlobalInd(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((4,4),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -220,7 +220,7 @@ class TestGlobalInd(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((8,8),dist=('c',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -237,7 +237,7 @@ class TestGlobalInd(unittest.TestCase):
             try:
                 da = denselocalarray.LocalArray((10,100,20),dist=('b','c',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 self.round_trip(da)
                 comm.Free()
@@ -253,7 +253,7 @@ class TestGlobalInd(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
                 b = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 answers = [(0,3),(4,7),(8,11),(12,15)]
                 limits = a.global_limits(0)
@@ -278,7 +278,7 @@ class TestIndexing(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
                 b = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     a[global_inds] = 0.0
@@ -300,7 +300,7 @@ class TestIndexing(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
                 b = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     a[global_inds] = 0.0
@@ -320,7 +320,7 @@ class TestIndexing(unittest.TestCase):
             try:
                 a = denselocalarray.LocalArray((16,16,2), dist=('c','b',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     packed_ind = a.pack_index(global_inds)
@@ -343,7 +343,7 @@ class TestDistArrayMethods(unittest.TestCase):
                 a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
                 b = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
             except NullCommError:
-                raise unittest.SkipTest("Skipped due to Null Comm")
+                pass
             else:
                 new_a = a.asdist_like(b)
                 self.assertEqual(id(a),id(new_a))
