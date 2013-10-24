@@ -101,8 +101,7 @@ __all__ = [
     'arcsinh',
     'arccosh',
     'arctanh',
-    'invert',
-    'fromdap']
+    'invert']
 
 
 #----------------------------------------------------------------------------
@@ -145,6 +144,67 @@ class DenseLocalArray(BaseLocalArray):
 
     def __del__(self):
         BaseLocalArray.__del__(self)
+
+    @classmethod
+    def from_dap(cls, dimdata, buf=None, comm=None):
+        """Make a LocalArray from a `dimdata` tuple.
+
+        Parameters
+        ----------
+        dimdata : tuple of dictionaries
+            A dict for each dimension, with the data described here:
+            https://github.com/enthought/distributed-array-protocol
+        buf : buffer object, optional
+            If provided, encapsulate the buffer given.  If not provided,
+            allocate an empty array.
+
+        Returns
+        -------
+        la : LocalArray
+            A LocalArray encapsulating `buf`, or else an empty
+            (uninitialized) LocalArray.
+        """
+
+        dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
+                if dd['disttype']}
+
+        implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
+        if not implemented:
+            _raise_dap_nie()
+
+        shape = tuple(dd['datasize'] for dd in dimdata)
+        grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
+        base_comm = init_base_comm(comm)
+
+        return cls(shape=shape, dtype=buf.dtype, dist=dist,
+                   grid_shape=grid_shape, comm=base_comm, buf=buf)
+
+    @classmethod
+    def from_distarray(cls, obj, comm=None):
+        """Make a LocalArray from an `obj` with a `__distarray__` method.
+
+        An object that supports the Distributed Array Protocol will have
+        a `__distarray__` method that returns the data structure
+        described here:
+
+        https://github.com/enthought/distributed-array-protocol
+
+        Parameters
+        ----------
+        obj : an object with a `__distarray__` method
+
+        Returns
+        -------
+        la : LocalArray
+            A LocalArray encapsulating the buffer of the original data.
+            No copy is made.
+        """
+        distbuffer = obj.__distarray__()
+        buf = np.asarray(distbuffer['buffer'])
+        dimdata = distbuffer['dimdata']
+
+        return cls.from_dap(dimdata=dimdata, buf=buf, comm=comm)
+
 
     #----------------------------------------------------------------------------
     # Distributed Array Protocol
@@ -367,8 +427,8 @@ class DenseLocalArray(BaseLocalArray):
         
         This is used to construct return arrays for ufuncs.
         """
-        return LocalArray(self.shape, obj.dtype, self.dist, self.grid_shape,
-            self.base_comm, buf=obj)
+        return self.__class__(self.shape, obj.dtype, self.dist,
+                              self.grid_shape, self.base_comm, buf=obj)
 
 
     def fill(self, scalar):
@@ -843,44 +903,6 @@ LocalArray = DenseLocalArray
 # Here is LocalArray.__init__ for reference
 # def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
 #              comm=None, buf=None, offset=0):
-
-
-def fromdap(obj, comm=None):
-    """Make a LocalArray from an `obj` with a `__distarray__` method.
-
-    An object that supports the Distributed Array Protocol will have
-    a `__distarray__` method that returns the data structure
-    described here:
-
-    https://github.com/enthought/distributed-array-protocol
-
-    Parameters
-    ----------
-    obj : an object with a `__distarray__` method
-
-    Returns
-    -------
-    la : LocalArray
-        A LocalArray encapsulating the buffer of the original data.
-        No copy is made.
-    """
-    distbuffer = obj.__distarray__()
-    buf = np.asarray(distbuffer['buffer'])
-    dimdata = distbuffer['dimdata']
-
-    dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
-            if dd['disttype']}
-
-    implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
-    if not implemented:
-        _raise_dap_nie()
-
-    shape = tuple(dd['datasize'] for dd in dimdata)
-    grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
-    base_comm = init_base_comm(comm)
-
-    return LocalArray(shape=shape, dtype=buf.dtype, dist=dist,
-                      grid_shape=grid_shape, comm=base_comm, buf=buf)
 
 
 def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):

@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import distarray as da
 from numpy.testing import assert_array_equal
+from distarray import LocalArray
 from distarray.mpi.mpibase import MPI, create_comm_of_size
 from distarray.mpi.error import InvalidCommSizeError
 from distarray.utils import comm_null_passes
@@ -75,7 +76,7 @@ class BaseDAPCase(object):
 
     @comm_null_passes
     def test_round_trip_equality(self):
-        larr = da.fromdap(self.larr, comm=self.comm)
+        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
         self.assertEqual(larr.shape, self.larr.shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
@@ -96,7 +97,7 @@ class BaseDAPCase(object):
 
     @comm_null_passes
     def test_round_trip_identity(self):
-        larr = da.fromdap(self.larr, comm=self.comm)
+        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
         idx = (0,) * larr.local_array.ndim
         larr.local_array[idx] = 99
         assert_array_equal(larr.local_array, self.larr.local_array)
@@ -204,7 +205,7 @@ class TestDAPLopsided(BaseDAPCase, unittest.TestCase):
         elif self.comm.Get_rank() == 1:
             assert_array_equal(np.arange(30), self.larr.local_array)
 
-        larr = da.fromdap(self.larr, comm=self.comm)
+        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
         if self.comm.Get_rank() == 0:
             assert_array_equal(np.arange(20), larr.local_array)
         elif self.comm.Get_rank() == 1:
