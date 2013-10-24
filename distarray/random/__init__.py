@@ -15,6 +15,3 @@ __docformat__ = "restructuredtext en"
 
 from distarray.random import nprand
 from distarray.random.nprand import *
-
-__all__ = []
-__all__ += nprand.__all__

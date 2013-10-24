@@ -10,57 +10,75 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import inspect
+from abc import ABCMeta, abstractproperty, abstractmethod
+from distarray.core.error import InvalidMapCodeError
 
 
-class InvalidMapCode(Exception):
-    pass
+class ILocalMap:
+
+    __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def local_shape(self):
+        pass
+
+    @abstractmethod
+    def owner(self, i):
+        pass
+
+    @abstractmethod
+    def local_index(self, i):
+        pass
+
+    @abstractmethod
+    def global_index(self, owner, p):
+        pass
 
 
-class Map(object):
+def regular_local_shape(shape, grid_shape):
+    local_shape = shape // grid_shape
+    if shape % grid_shape > 0:
+        local_shape += 1
+    return local_shape
 
-    def __init__(self, shape, grid_shape):
+
+class BlockCyclicMap(ILocalMap):
+
+    def __init__(self, shape, grid_shape, block_size):
         self.shape = shape
         self.grid_shape = grid_shape
-        self.local_shape = self.shape//self.grid_shape
-        if self.shape%self.grid_shape > 0:
-            self.local_shape += 1
+        self.block_size = block_size
+
+    @property
+    def local_shape(self):
+        return regular_local_shape(self.shape, self.grid_shape)
 
     def owner(self, i):
-        raise NotImplemented("implement in subclass")
+        return (i // self.block_size) % self.grid_shape
 
     def local_index(self, i):
-        raise NotImplemented("implement in subclass")
+        local_block_number = i // (self.block_size * self.grid_shape)
+        offset = i % self.block_size
+        return local_block_number * self.block_size + offset
 
     def global_index(self, owner, p):
-        raise NotImplemented("implement in subclass")
+        local_block_number = p // self.block_size
+        offset = p % self.block_size
+        return ((local_block_number*self.grid_shape + owner) *
+                self.block_size + offset)
 
 
-class BlockMap(Map):
+class BlockMap(BlockCyclicMap):
 
-    def owner(self, i):
-        return i//self.local_shape
-
-    def local_index(self, i):
-        return i%self.local_shape
-
-    def global_index(self, owner, p):
-        return owner*self.local_shape + p
+    def __init__(self, shape, grid_shape):
+        super(BlockMap, self).__init__(shape, grid_shape,
+                block_size=regular_local_shape(shape, grid_shape))
 
 
-class CyclicMap(Map):
+class CyclicMap(BlockCyclicMap):
 
-    def owner(self, i):
-        return i%self.grid_shape
-
-    def local_index(self, i):
-        return i//self.grid_shape
-
-    def global_index(self, owner, p):
-        return owner + p*self.grid_shape
-
-
-class BlockCyclicMap(Map):
-    pass
+    def __init__(self, shape, grid_shape):
+        super(CyclicMap, self).__init__(shape, grid_shape, block_size=1)
 
 
 class MapRegistry(object):
@@ -70,23 +88,25 @@ class MapRegistry(object):
 
     def register_map(self, code, m):
         if inspect.isclass(m):
-            if issubclass(m, Map):
+            if issubclass(m, ILocalMap):
                 self.maps[code] = m
             else:
                 raise TypeError("Must register a Map subclass.")
         else:
-            raise TypeError("Must register a class")
+            raise TypeError("Must register a class.")
 
     def get_map_class(self, code):
         m = self.maps.get(code)
         if m is None:
             if inspect.isclass(code):
-                if issubclass(code, Map):
+                if issubclass(code, ILocalMap):
                     return code
                 else:
-                    raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                    msg = "Not an ILocalMap subclass or a valid map code: %s." % code
+                    raise InvalidMapCodeError(msg)
             else:
-                raise InvalidMapCode("Not a Map subclass or a valid map code: %s" % code)
+                msg = "Not a ILocalMap subclass or a valid map code: %s." % code
+                raise InvalidMapCodeError(msg)
         else:
             return m
 
@@ -98,17 +118,3 @@ get_map_class = _map_registry.get_map_class
 register_map('b', BlockMap)
 register_map('c', CyclicMap)
 register_map('bc', BlockCyclicMap)
-
-# bp1 = BlockMap(16, 2)
-# bp2 = CyclicMap(16, 2)
-#
-# import numpy
-# result = numpy.empty((16,16),dtype='int32')
-#
-# grid = numpy.arange(4, dtype='int32')
-# grid.shape=(2,2)
-#
-# for i in range(16):
-#     for j in range(16):
-#         # print bp1.owner(i), bp2.owner(j)
-#         result[i,j] = grid[bp1.owner(i), bp2.owner(j)]

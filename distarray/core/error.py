@@ -15,19 +15,6 @@ __docformat__ = "restructuredtext en"
 
 from distarray.error import DistArrayError
 
-#----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = ['InvalidBaseCommError',
-    'InvalidGridShapeError',
-    'GridShapeError',
-    'DistError',
-    'DistMatrixError',
-    'IncompatibleArrayError',
-    'NullCommError',
-    'InvalidMapCode',
-    'InvalidDimensionError']
 
 #----------------------------------------------------------------------------
 # Exceptions
@@ -54,9 +41,8 @@ class IncompatibleArrayError(DistArrayError):
 class NullCommError(DistArrayError):
     pass
 
-class InvalidMapCode(DistArrayError):
+class InvalidMapCodeError(DistArrayError):
     pass
 
 class InvalidDimensionError(DistArrayError):
     pass
-

@@ -15,15 +15,6 @@ __docformat__ = "restructuredtext en"
 
 from distarray.error import DistArrayError
 
-#----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = [
-    'MPIDistArrayError',
-    'InvalidCommSizeError',
-    'InvalidRankError',
-    'MPICommError']
 
 class MPIDistArrayError(DistArrayError):
     pass
@@ -36,4 +27,3 @@ class InvalidRankError(MPIDistArrayError):
 
 class MPICommError(MPIDistArrayError):
     pass
-

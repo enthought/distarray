@@ -13,29 +13,13 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.mpi import (
-    MPI, 
-    create_comm_of_size,
-    create_comm_with_list)
-
-from distarray.core.error import *
-from distarray.mpi.error import *
-
-import numpy as np
-
-#----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = [
-    'benchmark_function'
-]
+from distarray.mpi import MPI, create_comm_of_size
+from distarray.mpi.error import InvalidCommSizeError, MPICommError
 
 
 def benchmark_function(f, *args, **kwargs):
     comm_size = MPI.COMM_WORLD.Get_size()
-    comm_rank = MPI.COMM_WORLD.Get_rank()
-    
+
     sizes = []
     times = []
     size = 1
@@ -57,5 +41,3 @@ def benchmark_function(f, *args, **kwargs):
                 "It failed"
             size *= 2
     return (sizes, times, [times[0]/t for t in times])
-        
-        

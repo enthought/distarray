@@ -1,17 +1,10 @@
-import numpy as np
-
 import unittest
 import numpy as np
-from numpy.testing.utils import assert_array_equal, assert_array_almost_equal
 
-from distarray.core.error import *
-from distarray.mpi.error import *
-from distarray.mpi import mpibase
-from distarray.mpi.mpibase import (
-    MPI,
-    create_comm_of_size,
-    create_comm_with_list)
-from distarray.core import maps, denselocalarray
+from distarray.mpi.mpibase import create_comm_of_size
+from distarray.core import denselocalarray
+from distarray.mpi.error import InvalidCommSizeError
+from distarray.core.error import IncompatibleArrayError, NullCommError
 
 
 class TestUnaryUFunc(unittest.TestCase):

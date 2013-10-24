@@ -4,9 +4,11 @@ ODIN: ODin Isn't Numpy
 
 from itertools import chain
 from functools import wraps
+from six.moves import zip
 
 from IPython.parallel import Client
-from distarray.client import Context, DistArray
+from distarray.utils import all_equal
+from distarray.client import Context, DistArray, process_return_value
 
 
 # Set up a global Context on import
@@ -14,31 +16,6 @@ _global_client = Client()
 _global_view = _global_client[:]
 _global_context = Context(_global_view)
 context = _global_context
-
-
-def flatten(lst):
-    """Given a list of lists, return a flattened list.
-
-    Only flattens one level.  For example,
-
-    >>> flatten(zip(['a', 'b', 'c'], [1, 2, 3]))
-    ['a', 1, 'b', 2, 'c', 3]
-
-    >>> flatten([[1, 2], [3, 4, 5], [[5], [6], [7]]])
-    [1, 2, 3, 4, 5, [5], [6], [7]]
-    """
-    return list(chain.from_iterable(lst))
-
-
-def all_equal(lst):
-    """Return True if all elements in `lst` are equal.
-
-    Also returns True if list is empty.
-    """
-    if len(lst) == 0 or len(lst) == 1:
-        return True  # vacuously True
-    else:
-        return all(element == lst[0] for element in lst[1:])
 
 
 def key_and_push_args(subcontext, arglist):
@@ -93,48 +70,13 @@ def determine_context(definition_context, args):
     ValueError
         Raised if all DistArray objects don't have the same context.
     """
-    contexts = [definition_context] + [arg.context for arg in args if isinstance(arg, DistArray)]
+    contexts = [definition_context] + [arg.context for arg in args if
+                                       isinstance(arg, DistArray)]
     if not all_equal(contexts):
         errmsg = "All DistArray objects must be defined with the same context used for the function: {}"
         raise ValueError(errmsg.format(contexts))
     else:
         return contexts[0]
-
-
-def process_return_value(subcontext, result_key):
-    """Figure out what to return on the Client.
-
-    Parameters
-    ----------
-    key : string
-        Key corresponding to wrapped function's return value.
-
-    Returns
-    -------
-    A DistArray (if locally it's a DistArray), a None (if locally
-    it's a None).
-
-    Raises
-    ------
-    TypeError for any other type besides those handled above
-
-    """
-    type_key = subcontext._generate_key()
-    type_statement = "{} = str(type({}))".format(type_key, result_key)
-    subcontext._execute0(type_statement)
-    result_type_str = subcontext._pull0(type_key)
-
-    if (result_type_str == "<type 'NoneType'>" or  # Python 2
-            result_type_str == "<class 'NoneType'>"):  # Python 3
-        result = None
-    elif result_type_str == "<class 'distarray.core.denselocalarray.DenseLocalArray'>":
-        result = DistArray(result_key, subcontext)
-    else:
-        msg = ("Type is {}.  @local is not yet implemented for return types"
-                "other than DistArray and NoneType").format(result_type_str)
-        raise TypeError(msg)
-
-    return result
 
 
 def local(fn):
@@ -157,7 +99,8 @@ def local(fn):
     @wraps(fn)
     def inner(*args, **kwargs):
 
-        subcontext = determine_context(_global_context, flatten((args, kwargs.values())))
+        subcontext = determine_context(_global_context,
+                                       list(chain(args, kwargs.values())))
 
         # generate keys for each parameter
         # push to engines if not a DistArray
@@ -172,8 +115,9 @@ def local(fn):
         fmts = (fmt for fmt in (args_fmt, kwargs_fmt) if fmt)
         fnargs_fmt = ','.join(fmts)
         statement_fmt = ''.join(['{} = {}(', fnargs_fmt, ')'])
-        replacement_values = ([result_key, func_key] + arg_keys +
-                              flatten(zip(kwarg_names, kwarg_keys)))
+        replacement_values = chain([result_key, func_key],
+                                   arg_keys,
+                                   *zip(kwarg_names, kwarg_keys))
         statement = statement_fmt.format(*replacement_values)
 
         # execute it locally

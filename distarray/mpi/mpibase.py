@@ -1,12 +1,5 @@
 from mpi4py import MPI
-
-from distarray.mpi.error import *
-
-__all__ = [
-    'COMM_PRIVATE',
-    'MPI',
-    'create_comm_of_size',
-    'create_comm_with_list']
+from distarray.mpi.error import InvalidCommSizeError, InvalidRankError
 
 
 COMM_PRIVATE = MPI.COMM_WORLD.Clone()
@@ -38,6 +31,4 @@ def create_comm_with_list(nodes):
             raise InvalidRankError("rank is not valid: %r" % i)
     subgroup = group.Incl(nodes)
     newcomm = COMM_PRIVATE.Create(subgroup)
-    return newcomm    
-    
-    
+    return newcomm
