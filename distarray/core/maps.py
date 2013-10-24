@@ -118,17 +118,3 @@ get_map_class = _map_registry.get_map_class
 register_map('b', BlockMap)
 register_map('c', CyclicMap)
 register_map('bc', BlockCyclicMap)
-
-# bp1 = BlockMap(16, 2)
-# bp2 = CyclicMap(16, 2)
-#
-# import numpy
-# result = numpy.empty((16,16),dtype='int32')
-#
-# grid = numpy.arange(4, dtype='int32')
-# grid.shape=(2,2)
-#
-# for i in range(16):
-#     for j in range(16):
-#         # print bp1.owner(i), bp2.owner(j)
-#         result[i,j] = grid[bp1.owner(i), bp2.owner(j)]
