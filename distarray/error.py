@@ -13,7 +13,6 @@ __docformat__ = "restructuredtext en"
 # Exports
 #----------------------------------------------------------------------------
 
-__all__ = ['DistArrayError']
 
 class DistArrayError(Exception):
     pass

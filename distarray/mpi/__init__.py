@@ -18,7 +18,3 @@ from distarray.mpi.mpibase import *
 
 from distarray.mpi import error
 from distarray.mpi.error import *
-
-__all__ = []
-__all__ += mpibase.__all__
-__all__ += error.__all__

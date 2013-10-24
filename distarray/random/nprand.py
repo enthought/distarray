@@ -18,22 +18,6 @@ from distarray.core import denselocalarray
 from distarray.core.construct import find_local_shape, init_base_comm
 
 
-# def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
-#              comm=None, buf=None, offset=0):
-
-
-#----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = [
-    'beta',
-    'normal',
-    'rand',
-    'randint',
-    'randn']
-
-
 def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):
     if size is None:
         return np.random.beta(a, b)

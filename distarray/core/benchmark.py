@@ -17,15 +17,6 @@ from distarray.mpi import MPI, create_comm_of_size
 from distarray.mpi.error import InvalidCommSizeError, MPICommError
 
 
-#----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = [
-    'benchmark_function'
-]
-
-
 def benchmark_function(f, *args, **kwargs):
     comm_size = MPI.COMM_WORLD.Get_size()
 

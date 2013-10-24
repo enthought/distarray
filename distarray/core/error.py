@@ -17,20 +17,6 @@ from distarray.error import DistArrayError
 
 
 #----------------------------------------------------------------------------
-# Exports
-#----------------------------------------------------------------------------
-
-__all__ = ['InvalidBaseCommError',
-           'InvalidGridShapeError',
-           'GridShapeError',
-           'DistError',
-           'DistMatrixError',
-           'IncompatibleArrayError',
-           'NullCommError',
-           'InvalidMapCodeError',
-           'InvalidDimensionError']
-
-#----------------------------------------------------------------------------
 # Exceptions
 #----------------------------------------------------------------------------
 

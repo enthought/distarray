@@ -21,8 +21,3 @@ from distarray.core.base import *
 
 from distarray.core import benchmark
 from distarray.core.benchmark import *
-
-__all__ = []
-__all__ += denselocalarray.__all__
-__all__ += base.__all__
-__all__ += benchmark.__all__

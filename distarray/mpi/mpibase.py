@@ -2,13 +2,6 @@ from mpi4py import MPI
 from distarray.mpi.error import InvalidCommSizeError, InvalidRankError
 
 
-__all__ = [
-    'COMM_PRIVATE',
-    'MPI',
-    'create_comm_of_size',
-    'create_comm_with_list']
-
-
 COMM_PRIVATE = MPI.COMM_WORLD.Clone()
 
 def create_comm_of_size(size=4):
