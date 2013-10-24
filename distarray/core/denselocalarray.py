@@ -132,14 +132,44 @@ def _raise_dap_nie():
 class DenseLocalArray(BaseLocalArray):
     """Distribute memory Python arrays."""
 
+    #----------------------------------------------------------------------------
+    # Methods used for initialization
+    #----------------------------------------------------------------------------
+
+    def _allocate(self, buf=None, offset=0):
+        if buf is None:
+            # Allocate a new array and use its data attribute as my own
+            self.local_array = np.empty(self.local_shape, dtype=self.dtype)
+            self.data = self.local_array.data
+        else:
+            try:
+                buf = memoryview(buf)
+            except TypeError:
+                msg = "The object is not or can't be made into a buffer"
+                raise TypeError(msg)
+            try:
+                self.local_array = np.asarray(buf, dtype=self.dtype)
+                self.data = self.local_array.data
+            except ValueError:
+                msg = "The buffer is smaller than needed for this array"
+                raise ValueError(msg)
+
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
                  comm=None, buf=None, offset=0):
-        """
-        Create a distributed memory array on a set of processors.
-        """
-        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm, buf, offset)
+        """Create a distributed array on a set of processors.
 
-        # At this point, everything is setup, but the memory has not been allocated.
+        `__init__` resticts you a 'b' and 'c' disttypes and evenly
+        distributed data.
+
+        See also
+        --------
+        LocalArray.fromdap
+        """
+        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm,
+                                buf, offset)
+
+        # At this point, everything is setup, but the memory has not
+        # been allocated.
         self._allocate(buf, offset)
 
     def __del__(self):
@@ -205,11 +235,6 @@ class DenseLocalArray(BaseLocalArray):
 
         return cls.from_dap(dimdata=dimdata, buf=buf, comm=comm)
 
-
-    #----------------------------------------------------------------------------
-    # Distributed Array Protocol
-    #----------------------------------------------------------------------------
-
     def _dimdict(self, dim):
         """Given a dimension number `dim`, return a `dimdict`.
 
@@ -258,26 +283,6 @@ class DenseLocalArray(BaseLocalArray):
         distbuffer = {"buffer": self.local_array,
                       "dimdata": dimdata}
         return distbuffer
-
-    #----------------------------------------------------------------------------
-    # Methods used at initialization
-    #----------------------------------------------------------------------------
-
-    def _allocate(self, buf=None, offset=0):
-        if buf is None:
-            # Allocate a new array and use its data attribute as my own
-            self.local_array = np.empty(self.local_shape, dtype=self.dtype)
-            self.data = self.local_array.data
-        else:
-            try:
-                buf = memoryview(buf)
-            except TypeError:
-                raise TypeError("The object is not or can't be made into a buffer")
-            try:
-                self.local_array = np.asarray(buf, dtype=self.dtype)
-                self.data = self.local_array.data
-            except ValueError:
-                raise ValueError("The buffer is smaller than needed for this array")
 
     #----------------------------------------------------------------------------
     # Methods related to distributed indexing
