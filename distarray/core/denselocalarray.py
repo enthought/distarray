@@ -1225,14 +1225,14 @@ class LocalArrayUnaryOperation(object):
 
     def __call__(self, x1, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseLocalArray)
-        y_isdda = isinstance(y, DenseLocalArray)
-        assert x1_isdda or isscalar(x1), "Invalid type for unary ufunc"
-        assert y is None or y_isdda, "Invalid return array type"
+        x1_isdla = isinstance(x1, DenseLocalArray)
+        y_isdla = isinstance(y, DenseLocalArray)
+        assert x1_isdla or isscalar(x1), "Invalid type for unary ufunc"
+        assert y is None or y_isdla, "Invalid return array type"
         if y is None:
             return self.func(x1)
-        elif y_isdda:
-            if x1_isdda:
+        elif y_isdla:
+            if x1_isdla:
                 if not arecompatible(x1, y):
                     raise IncompatibleArrayError("Return LocalArray not compatible with LocalArray argument" % y)
             self.func(x1, y.local_array)
@@ -1253,22 +1253,22 @@ class LocalArrayBinaryOperation(object):
 
     def __call__(self, x1, x2, y=None):
         # What types of input are allowed?
-        x1_isdda = isinstance(x1, DenseLocalArray)
-        x2_isdda = isinstance(x2, DenseLocalArray)
-        y_isdda = isinstance(y, DenseLocalArray)
-        assert x1_isdda or isscalar(x1), "Invalid type for binary ufunc"
-        assert x2_isdda or isscalar(x2), "Invalid type for binary ufunc"
-        assert y is None or y_isdda
+        x1_isdla = isinstance(x1, DenseLocalArray)
+        x2_isdla = isinstance(x2, DenseLocalArray)
+        y_isdla = isinstance(y, DenseLocalArray)
+        assert x1_isdla or isscalar(x1), "Invalid type for binary ufunc"
+        assert x2_isdla or isscalar(x2), "Invalid type for binary ufunc"
+        assert y is None or y_isdla
         if y is None:
-                if x1_isdda and x2_isdda:
+                if x1_isdla and x2_isdla:
                     if not arecompatible(x1, x2):
                         raise IncompatibleArrayError("Incompatible DistArrays")
                 return self.func(x1, x2)
-        elif y_isdda:
-            if x1_isdda:
+        elif y_isdla:
+            if x1_isdla:
                 if not arecompatible(x1, y):
                     raise IncompatibleArrayError("Incompatible DistArrays")
-            if x2_isdda:
+            if x2_isdla:
                 if not arecompatible(x2, y):
                     raise IncompatibleArrayError("Incompatible DistArrays")
             self.func(x1, x2, y.local_array)
