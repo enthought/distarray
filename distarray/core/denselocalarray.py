@@ -27,9 +27,6 @@ from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
 
-if six.PY3:
-    buffer = memoryview
-
 
 #----------------------------------------------------------------------------
 # Exports
@@ -104,7 +101,8 @@ __all__ = [
     'arcsinh',
     'arccosh',
     'arctanh',
-    'invert']
+    'invert',
+    'fromdap']
 
 
 #----------------------------------------------------------------------------
@@ -112,6 +110,8 @@ __all__ = [
 # Base LocalArray class
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
+
+DAP_DISTTYPES = {None, 'b'}
 
 mpi_dtypes = {
     np.dtype('f') : MPI.FLOAT,
@@ -126,7 +126,7 @@ def mpi_type_for_ndarray(a):
 
 class DenseLocalArray(BaseLocalArray):
     """Distribute memory Python arrays."""
-    
+
     def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
                  comm=None, buf=None, offset=0):
         """
@@ -144,21 +144,49 @@ class DenseLocalArray(BaseLocalArray):
     # Distributed Array Protocol
     #---------------------------------------------------------------------------- 
 
-    def __distarray__(self):
-        metadata = {"disttype": None,
-                    "periodic": None,
-                    "datasize": None,
-                    "gridrank": None,
-                    "gridsize": None,
-                    "indices": None,
-                    "blocksize": None,
-                    "padding": None
-                   }
+    def _dimdict(self, dim):
+        """Given a dimension number `dim`, return a `dimdict`.
 
+        Where `dimdict` is the metadata datastructure provided for each
+        dimension by the Distributed Array Protocol.
+        """
+        if dim in self.distdims:
+            idx = self.distdims.index(dim)
+            gridrank = self.cart_coords[idx]
+            gridsize = self.grid_shape[idx]
+        else:
+            gridrank = 0
+            gridsize = 1
+
+        dimdict = {"disttype": self.dist[dim],
+                   "periodic": False,
+                   "datasize": self.shape[dim],
+                   "gridrank": gridrank,
+                   "gridsize": gridsize,
+                   "indices": slice(*self.global_limits(dim)),
+                   "blocksize": 1,
+                   "padding": (0, 0)
+                  }
+        return dimdict
+
+    def __distarray__(self):
+        """Returns the data structure required by the DAP.
+
+        DAP = Distributed Array Protocol
+
+        https://github.com/enthought/distributed-array-protocol
+        """
+        implemented = all(disttype in DAP_DISTTYPES for disttype in self.dist)
+        if not implemented:
+            msg = ("The Distributed Array Protocol has only been "
+                   "implemented for the following disttypes: {}")
+            raise NotImplementedError(msg.format(DAP_DISTTYPES))
+
+        dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
-                      "dimdata": (metadata,)}
+                      "dimdata": dimdata}
         return distbuffer
-    
+
     #----------------------------------------------------------------------------
     # Methods used at initialization
     #----------------------------------------------------------------------------   
@@ -170,12 +198,11 @@ class DenseLocalArray(BaseLocalArray):
             self.data = self.local_array.data
         else:
             try:
-                buf = buffer(buf)
+                buf = memoryview(buf)
             except TypeError:
                 raise TypeError("the object is not or can't be made into a buffer")
             try:
-                self.local_array = np.frombuffer(buf, dtype=self.dtype, count=self.local_size, offset=offset)
-                self.local_array.shape = self.local_shape
+                self.local_array = np.asarray(buf, dtype=self.dtype)
                 self.data = self.local_array.data
             except ValueError:
                 raise ValueError("the buffer is smaller than needed for this array")
@@ -188,12 +215,11 @@ class DenseLocalArray(BaseLocalArray):
         return self.local_view()
     
     def set_localarray(self, a):
-        a = np.asarray(a, dtype=self.dtype, order='C')
-        if a.shape != self.local_shape:
+        arr = np.asarray(a, dtype=self.dtype, order='C')
+        if arr.shape == self.local_shape:
+            self.local_array = arr
+        else:
             raise ValueError("incompatible local array shape")
-        b = buffer(a)
-        self.local_array = np.frombuffer(b,dtype=self.dtype)
-        self.local_array.shape = self.local_shape
     
     def owner_rank(self, *indices):
         owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in range(self.ndistdim)]
@@ -779,7 +805,7 @@ LocalArray = DenseLocalArray
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need accees to the LocalArray object in this module, and the
+# functions need access to the LocalArray object in this module, and the
 # LocalArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 # 
@@ -806,11 +832,51 @@ LocalArray = DenseLocalArray
 #              comm=None, buf=None, offset=0):
 
 
-def distarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
+def fromdap(obj, comm=None):
+    """Make a LocalArray from an `obj` with a `__distarray__` method.
+
+    An object that supports the Distributed Array Protocol will have
+    a `__distarray__` method that returns the data structure
+    described here:
+
+    https://github.com/enthought/distributed-array-protocol
+
+    Parameters
+    ----------
+    obj : an object with a `__distarray__` method
+
+    Returns
+    -------
+    la : LocalArray
+        A LocalArray encapsulating the buffer of the original data.
+        No copy is made.
+    """
+    distbuffer = obj.__distarray__()
+    buf = np.asarray(distbuffer['buffer'])
+    dimdata = distbuffer['dimdata']
+
+    dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
+            if dd['disttype']}
+
+    implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
+    if not implemented:
+        msg = ("The Distributed Array Protocol has only been "
+               "implemented for the following disttypes: {}")
+        raise NotImplementedError(msg.format(DAP_DISTTYPES))
+
+    shape = tuple(dd['datasize'] for dd in dimdata)
+    grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
+    base_comm = init_base_comm(comm)
+
+    return LocalArray(shape=shape, dtype=buf.dtype, dist=dist,
+                      grid_shape=grid_shape, comm=base_comm, buf=buf)
+
+
+def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
     _raise_nie()
 
     
-def asdistarray(object, dtype=None, order=None):
+def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
     
@@ -1247,5 +1313,3 @@ arcsinh = LocalArrayUnaryOperation(np.arcsinh)
 arccosh = LocalArrayUnaryOperation(np.arccosh)
 arctanh = LocalArrayUnaryOperation(np.arctanh)
 invert = LocalArrayUnaryOperation(np.invert)
-
-

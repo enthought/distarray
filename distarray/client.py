@@ -82,7 +82,7 @@ class Context(object):
                 assert target in all_targets, "engine with id %r not registered" % target
                 self.targets.append(target)
 
-        # FIXME: IPython bug?  This doens't work under Python 3
+        # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
         self.view.execute("import distarray")
