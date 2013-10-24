@@ -1281,15 +1281,16 @@ class LocalArrayBinaryOperation(object):
 
 
 # numpy unary operations to wrap
-uops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
-        'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert', 'log',
-        'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign', 'sin',
-        'sinh', 'sqrt', 'square', 'tan', 'tanh')
+unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
+             'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
+             'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
+             'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
 
 # numpy binary operations to wrap
-bops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor', 'divide',
-        'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod', 'multiply',
-        'power', 'remainder', 'right_shift', 'subtract', 'true_divide')
+binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
+              'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
+              'multiply', 'power', 'remainder', 'right_shift', 'subtract',
+              'true_divide')
 
 def add_operations(wrapper, ops):
     for op in ops:
@@ -1298,5 +1299,5 @@ def add_operations(wrapper, ops):
         names = globals()
         names[op] = fn_value
 
-add_operations(LocalArrayUnaryOperation, uops)
-add_operations(LocalArrayBinaryOperation, bops)
+add_operations(LocalArrayUnaryOperation, unary_ops)
+add_operations(LocalArrayBinaryOperation, binary_ops)
