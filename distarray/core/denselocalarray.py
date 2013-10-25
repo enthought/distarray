@@ -53,7 +53,7 @@ def _raise_dap_nie():
 
 
 class DenseLocalArray(BaseLocalArray):
-    """Distribute memory Python arrays."""
+    """Distributed memory Python arrays."""
 
     #----------------------------------------------------------------------------
     # Methods used for initialization
@@ -69,27 +69,26 @@ class DenseLocalArray(BaseLocalArray):
         buf : buffer object, optional
         """
         if buf is None:
-            # Allocate a new array and use its data attribute as my own
             self.local_array = np.empty(self.local_shape, dtype=self.dtype)
             self.data = self.local_array.data
         else:
             try:
                 buf = memoryview(buf)
             except TypeError:
-                msg = "The object is not or can't be made into a buffer"
+                msg = "The object is not or can't be made into a buffer."
                 raise TypeError(msg)
             try:
                 self.local_array = np.asarray(buf, dtype=self.dtype)
                 self.data = self.local_array.data
             except ValueError:
-                msg = "The buffer is smaller than needed for this array"
+                msg = "The buffer is smaller than needed for this array."
                 raise ValueError(msg)
 
     def __init__(self, shape, dtype=float, dist={0:'b'}, grid_shape=None,
                  comm=None, buf=None):
         """Create a distributed array on a set of processors.
 
-        `__init__` resticts you a 'b' and 'c' disttypes and evenly
+        `__init__` restricts you a 'b' and 'c' disttypes and evenly
         distributed data.
 
         See also
@@ -129,7 +128,8 @@ class DenseLocalArray(BaseLocalArray):
         dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
                 if dd['disttype']}
 
-        implemented = all(disttype in DAP_DISTTYPES for disttype in dist.values())
+        implemented = all(disttype in DAP_DISTTYPES for disttype in
+                          dist.values())
         if not implemented:
             _raise_dap_nie()
 

@@ -50,10 +50,11 @@ class BaseLocalArray(object):
         self.base = None
         self.ctypes = None
 
-        # This order is extremely important and is shown by the arguments passed on to
-        # subsequent _init_* methods.  It is critical that these _init_* methods are free
-        # of side effects and stateless.  This means that they cannot set or get class or
-        # instance attributes
+        # This order is extremely important and is shown by the
+        # arguments passed on to subsequent _init_* methods.  It is
+        # critical that these _init_* methods are free of side effects
+        # and stateless.  This means that they cannot set or get class
+        # or instance attributes.
         self.base_comm = init_base_comm(comm)
         self.comm_size = self.base_comm.Get_size()
         self.comm_rank = self.base_comm.Get_rank()
@@ -86,7 +87,5 @@ class BaseLocalArray(object):
 
 
 def arecompatible(a, b):
-    """
-    Do these arrays have the same compatibility hash?
-    """
+    """Do these arrays have the same compatibility hash?"""
     return a.compatibility_hash() == b.compatibility_hash()
