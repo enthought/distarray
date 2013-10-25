@@ -107,19 +107,19 @@ class BaseDAPCase(object):
 class TestDAPBasic(BaseDAPCase, unittest.TestCase):
     def get_array(self):
         return da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
-                             buf=None, offset=0)
+                             buf=None)
 
 
 class TestDAPUint(BaseDAPCase, unittest.TestCase):
     def get_array(self):
         return da.LocalArray((16,16), dtype='uint8', grid_shape=(4,),
-                             comm=self.comm, buf=None, offset=0)
+                             comm=self.comm, buf=None)
 
 
 class TestDAPComplex(BaseDAPCase, unittest.TestCase):
     def get_array(self):
         return da.LocalArray((16,16), dtype='complex128', grid_shape=(4,),
-                             comm=self.comm, buf=None, offset=0)
+                             comm=self.comm, buf=None)
 
 
 

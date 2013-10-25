@@ -59,7 +59,15 @@ class DenseLocalArray(BaseLocalArray):
     # Methods used for initialization
     #----------------------------------------------------------------------------
 
-    def _allocate(self, buf=None, offset=0):
+    def _allocate(self, buf=None):
+        """Allocate a new local numpy array or use `buf`.
+
+        Sets `self.local_array` and `self.data`.
+
+        Parameters
+        ----------
+        buf : buffer object, optional
+        """
         if buf is None:
             # Allocate a new array and use its data attribute as my own
             self.local_array = np.empty(self.local_shape, dtype=self.dtype)
@@ -77,8 +85,8 @@ class DenseLocalArray(BaseLocalArray):
                 msg = "The buffer is smaller than needed for this array"
                 raise ValueError(msg)
 
-    def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
-                 comm=None, buf=None, offset=0):
+    def __init__(self, shape, dtype=float, dist={0:'b'}, grid_shape=None,
+                 comm=None, buf=None):
         """Create a distributed array on a set of processors.
 
         `__init__` resticts you a 'b' and 'c' disttypes and evenly
@@ -89,11 +97,11 @@ class DenseLocalArray(BaseLocalArray):
         LocalArray.fromdap
         """
         BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm,
-                                buf, offset)
+                                buf)
 
         # At this point, everything is setup, but the memory has not
         # been allocated.
-        self._allocate(buf, offset)
+        self._allocate(buf)
 
     def __del__(self):
         BaseLocalArray.__del__(self)

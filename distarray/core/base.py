@@ -34,8 +34,8 @@ class BaseLocalArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
-                 comm=None, buf=None, offset=0):
+    def __init__(self, shape, dtype=float, dist={0:'b'}, grid_shape=None,
+                 comm=None, buf=None):
         """Create a distributed memory array on a set of processors.
         """
         if comm==MPI.COMM_NULL:
