@@ -6,8 +6,7 @@ from numpy.testing import assert_array_equal
 from distarray import utils
 from distarray.mpi.mpibase import create_comm_of_size
 from distarray.core import maps, denselocalarray
-from distarray.core.error import (DistError, IncompatibleArrayError,
-                                  NullCommError)
+from distarray.core.error import IncompatibleArrayError, NullCommError
 from distarray.mpi.error import InvalidCommSizeError
 
 
