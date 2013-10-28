@@ -91,12 +91,12 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
-    @unittest.skip
+    @unittest.skip("Slicing not yet implemented.")
     def test_slice_in_getitem_block_dist(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
         self.assertIsInstance(dap[20:40], DistArray)
 
-    @unittest.skip
+    @unittest.skip("Slicing not yet implemented.")
     def test_slice_in_setitem_raises_valueerror(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
         vals = np.random.random(20)
