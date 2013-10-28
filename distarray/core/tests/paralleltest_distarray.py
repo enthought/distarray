@@ -391,18 +391,14 @@ class TestLocalArrayUnaryOperations(unittest.TestCase):
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
-                x = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
-                                         dtype='uint8')
-                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
-                                         dtype='uint8')
+                x = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
             except NullCommError:
                 pass
             else:
                 result0 = op(x)  # standard form
                 op(x, y=y)  # two-arg form
-                result1 = eval("x." + op.__name__ + "()")  # method form
                 assert_array_equal(result0.local_array, y.local_array)
-                assert_array_equal(result0.local_array, result_1.local_array)
                 comm.Free()
 
 uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
@@ -426,20 +422,15 @@ class TestLocalArrayBinaryOperations(unittest.TestCase):
             raise unittest.SkipTest("Skipped due to Invalid Comm Size")
         else:
             try:
-                x1 = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
-                                          dtype='uint8')
-                x2 = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
-                                          dtype='uint8')
-                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm,
-                                         dtype='uint8')
+                x1 = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                x2 = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
             except NullCommError:
                 pass
             else:
                 result0 = op(x1, x2)  # standard form
                 op(x1, x2, y=y) # three-arg form
-                result1 = eval("x1." + op.__name__ + "(x2)")  # method form
                 assert_array_equal(result0.local_array, y.local_array)
-                assert_array_equal(result0.local_array, result1.local_array)
                 comm.Free()
 
 
