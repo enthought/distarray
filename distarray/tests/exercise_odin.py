@@ -9,6 +9,7 @@ For example,
 
 import unittest
 import numpy as np
+from six.moves import zip
 
 from distarray import odin
 from distarray.client import Context
@@ -109,15 +110,12 @@ class TestLocal(unittest.TestCase):
         dc = local_add50(self.da)
         assert_allclose(dc, 2 * np.pi + 50)
 
-    @unittest.skip("Returning np.float64 not yet supported")
     def test_local_sum(self):
         dd = local_sum(self.da)
-        client_dd = np.array(odin.context._pull(dd.key))
-
-        shape = self.da.get_localshapes()[0]
-        sum_val = shape[0] * shape[1] * (2 * np.pi)
-
-        assert_allclose(client_dd, sum_val)
+        lshapes = self.da.get_localshapes()
+        expected = [lshape[0] * lshape[1] * (2 * np.pi) for lshape in lshapes]
+        for (v, e) in zip(dd, expected):
+            self.assertAlmostEqual(v, e, places=5)
 
     def test_local_add_num(self):
         de = local_add_num(self.da, 11)
@@ -195,26 +193,6 @@ class TestLocal(unittest.TestCase):
         docstring = """This is a parameterless function."""
         self.assertEqual(parameterless.__name__, name)
         self.assertEqual(parameterless.__doc__, docstring)
-
-
-class TestUtils(unittest.TestCase):
-
-    def test_flatten(self):
-        self.assertEqual(odin.flatten(zip([1, 2, 3], [4, 5, 6])),
-                                      [1, 4, 2, 5, 3, 6])
-
-    def test_all_equal_false(self):
-        self.assertFalse(odin.all_equal([1, 2, 3, 4, 5]))
-
-    def test_all_equal_true(self):
-        self.assertTrue(odin.all_equal([7, 7, 7, 7, 7]))
-
-    def test_all_equal_contexts(self):
-        subcontext = Context(odin._global_view, targets=[0, 3])
-        db = subcontext.empty((100,))
-        dc = subcontext.ones((100,))
-        contexts = (subcontext, db.context, dc.context)
-        self.assertTrue(odin.all_equal(contexts))
 
 
 class TestDetermineContext(unittest.TestCase):

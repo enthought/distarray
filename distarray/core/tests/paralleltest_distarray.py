@@ -1,15 +1,13 @@
 import unittest
 import numpy as np
+import distarray.core as dc
 
-from distarray.core.error import *
-from distarray.mpi.error import *
-from distarray.mpi import mpibase
-from distarray.mpi.mpibase import (
-    MPI,
-    create_comm_of_size,
-    create_comm_with_list)
-from distarray.core import maps, denselocalarray
+from numpy.testing import assert_array_equal
 from distarray import utils
+from distarray.mpi.mpibase import create_comm_of_size
+from distarray.core import maps, denselocalarray
+from distarray.core.error import IncompatibleArrayError, NullCommError
+from distarray.mpi.error import InvalidCommSizeError
 
 
 class TestInit(unittest.TestCase):
@@ -95,7 +93,7 @@ class TestInit(unittest.TestCase):
                 da = denselocalarray.LocalArray((100,10,300), dist=('b',None,'c'), comm=comm)
                 self.assertEqual(da.grid_shape, (2,6))
                 da = denselocalarray.LocalArray((100,50,300), dist='b', comm=comm)
-                self.assertEqual(da.grid_shape, (2,2,3))                  
+                self.assertEqual(da.grid_shape, (2,2,3))
                 comm.Free()
 
 
@@ -122,7 +120,7 @@ class TestDistMatrix(unittest.TestCase):
                     if comm.Get_rank()==0:
                         import pylab
                         pylab.ion()
-                        pylab.matshow(a)
+                        pylab.matshow(da)
                         pylab.colorbar()
                         pylab.draw()
                         pylab.show()
@@ -242,8 +240,8 @@ class TestGlobalInd(unittest.TestCase):
                 self.round_trip(da)
                 comm.Free()
 
-    def test_global_limits(self):
-        """Find the boundaries of a block distribution or no distribution"""
+    def test_global_limits_block(self):
+        """Find the boundaries of a block distribution"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -251,7 +249,6 @@ class TestGlobalInd(unittest.TestCase):
         else:
             try:
                 a = denselocalarray.LocalArray((16,16), dist=('b',None),comm=comm)
-                b = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
             except NullCommError:
                 pass
             else:
@@ -261,7 +258,26 @@ class TestGlobalInd(unittest.TestCase):
                 answers = 4*[(0,15)]
                 limits = a.global_limits(1)
                 self.assertEqual(limits, answers[a.comm_rank])
-                self.assertRaises(DistError, b.global_limits, 0)
+                comm.Free()
+
+    def test_global_limits_cyclic(self):
+        """Find the boundaries of a cyclic distribution"""
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                a = denselocalarray.LocalArray((16,16), dist=('c',None),comm=comm)
+            except NullCommError:
+                pass
+            else:
+                answers = [(0,12),(1,13),(2,14),(3,15)]
+                limits = a.global_limits(0)
+                self.assertEqual(limits, answers[a.comm_rank])
+                answers = 4*[(0,15)]
+                limits = a.global_limits(1)
+                self.assertEqual(limits, answers[a.comm_rank])
                 comm.Free()
 
 
@@ -286,7 +302,7 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
+                    self.assertEqual(a[global_inds],0.0)
                 comm.Free()
 
     def test_indexing1(self):
@@ -308,9 +324,9 @@ class TestIndexing(unittest.TestCase):
                     b[global_inds] = a[global_inds]
                 for global_inds, value in denselocalarray.ndenumerate(a):
                     self.assertEqual(b[global_inds],a[global_inds])
-                    self.assertEqual(a[global_inds],0.0)                
-                comm.Free()    
-    
+                    self.assertEqual(a[global_inds],0.0)
+                comm.Free()
+
     def test_pack_unpack_index(self):
         try:
             comm = create_comm_of_size(4)
@@ -328,7 +344,7 @@ class TestIndexing(unittest.TestCase):
                 comm.Free()
 
 
-class TestDistArrayMethods(unittest.TestCase):
+class TestLocalArrayMethods(unittest.TestCase):
 
     def test_asdist_like(self):
         """
@@ -351,6 +367,78 @@ class TestDistArrayMethods(unittest.TestCase):
                 b = denselocalarray.LocalArray((16,16), dist=(None,'b'),comm=comm)
                 self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
                 comm.Free()
+
+
+def add_checkers(cls, ops):
+    """Add a test method for all of the `ops`"""
+    for op in ops:
+        fn_name = "test_" + op.__name__
+        fn_value = lambda self: self.check_op(op)
+        setattr(cls, fn_name, fn_value)
+
+
+class TestLocalArrayUnaryOperations(unittest.TestCase):
+
+    def check_op(self, op):
+        """Check unary operation for success.
+
+        Check the one- and two-arg ufunc versions as well as the method
+        version attached to a LocalArray.
+        """
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                x = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+            except NullCommError:
+                pass
+            else:
+                result0 = op(x)  # standard form
+                op(x, y=y)  # two-arg form
+                assert_array_equal(result0.local_array, y.local_array)
+                comm.Free()
+
+uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
+        dc.arctanh, dc.conjugate, dc.cos, dc.cosh, dc.exp, dc.expm1, dc.invert,
+        dc.log, dc.log10, dc.log1p, dc.negative, dc.reciprocal, dc.rint,
+        dc.sign, dc.sin, dc.sinh, dc.sqrt, dc.square, dc.tan, dc.tanh)
+add_checkers(TestLocalArrayUnaryOperations, uops)
+
+
+class TestLocalArrayBinaryOperations(unittest.TestCase):
+
+    def check_op(self, op):
+        """Check binary operation for success.
+
+        Check the two- and three-arg ufunc versions as well as the
+        method version attached to a LocalArray.
+        """
+        try:
+            comm = create_comm_of_size(4)
+        except InvalidCommSizeError:
+            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
+        else:
+            try:
+                x1 = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                x2 = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+                y = denselocalarray.ones((16,16), dist=('b',None), comm=comm)
+            except NullCommError:
+                pass
+            else:
+                result0 = op(x1, x2)  # standard form
+                op(x1, x2, y=y) # three-arg form
+                assert_array_equal(result0.local_array, y.local_array)
+                comm.Free()
+
+
+bops = (dc.add, dc.arctan2, dc.bitwise_and, dc.bitwise_or, dc.bitwise_xor,
+        dc.divide, dc.floor_divide, dc.fmod, dc.hypot, dc.left_shift, dc.mod,
+        dc.multiply, dc.power, dc.remainder, dc.right_shift, dc.subtract,
+        dc.true_divide)
+add_checkers(TestLocalArrayBinaryOperations, bops)
 
 
 if __name__ == '__main__':
