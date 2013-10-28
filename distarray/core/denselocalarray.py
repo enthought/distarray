@@ -120,7 +120,7 @@ class DenseLocalArray(BaseLocalArray):
 
         Returns
         -------
-        la : LocalArray
+        LocalArray
             A LocalArray encapsulating `buf`, or else an empty
             (uninitialized) LocalArray.
         """
@@ -1238,24 +1238,36 @@ class LocalArrayBinaryOperation(object):
         return "LocalArray version of " + str(self.func)
 
 
-# numpy unary operations to wrap
-unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
-             'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
-             'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
-             'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
+def _add_operations(wrapper, ops):
+    """Wrap numpy ufuncs for `LocalArray`s.
 
-# numpy binary operations to wrap
-binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
-              'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
-              'multiply', 'power', 'remainder', 'right_shift', 'subtract',
-              'true_divide')
+    Wraps numpy ufuncs and adds them to this module's namespace.
 
-def add_operations(wrapper, ops):
+    Parameters
+    ----------
+    wrapper : callable
+        Takes a numpy ufunc and returns a LocalArray ufunc.
+    ops : iterable of callables
+        All of the callables to wrap with `wrapper`.
+    """
     for op in ops:
         fn_name = "np." + op
         fn_value = wrapper(eval(fn_name))
         names = globals()
         names[op] = fn_value
 
-add_operations(LocalArrayUnaryOperation, unary_ops)
-add_operations(LocalArrayBinaryOperation, binary_ops)
+
+# numpy unary operations to wrap
+_unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
+              'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
+              'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
+              'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
+
+# numpy binary operations to wrap
+_binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
+               'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
+               'multiply', 'power', 'remainder', 'right_shift', 'subtract',
+               'true_divide')
+
+_add_operations(LocalArrayUnaryOperation, _unary_ops)
+_add_operations(LocalArrayBinaryOperation, _binary_ops)
