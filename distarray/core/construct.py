@@ -195,9 +195,9 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     map_classes = init_map_classes(dist)
-    grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
-    local_shape, maps = init_local_shape_and_maps(shape,
-        grid_shape, distdims, map_classes)
+    grid_shape = init_grid_shape(shape, distdims, comm_size, grid_shape)
+    local_shape, maps = init_local_shape_and_maps(shape, grid_shape, distdims,
+                                                  map_classes)
     return local_shape
 
 
@@ -207,5 +207,5 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
-    grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
+    grid_shape = init_grid_shape(shape, distdims, comm_size, grid_shape)
     return grid_shape
