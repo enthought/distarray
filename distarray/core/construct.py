@@ -127,10 +127,15 @@ def init_map_classes(dist):
     return tuple(map_classes)
 
 
-def init_grid_shape(shape, grid_shape, distdims, comm_size):
+def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
+    """Generate or validate a `grid_shape`.
+
+    If `grid_shape` is None, generate a `grid_shape` using
+    `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape` given.
+    """
     ndistdim = len(distdims)
     if grid_shape is None:
-        grid_shape = optimize_grid_shape(shape, grid_shape, distdims, comm_size)
+        grid_shape = optimize_grid_shape(shape, distdims, comm_size)
     else:
         try:
             grid_shape = tuple(grid_shape)
