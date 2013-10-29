@@ -35,17 +35,6 @@ from distarray.utils import _raise_nie
 
 DAP_DISTTYPES = {None, 'b', 'c'}
 
-mpi_dtypes = {
-    np.dtype('f') : MPI.FLOAT,
-    np.dtype('d') : MPI.DOUBLE,
-    np.dtype('i') : MPI.INTEGER,
-    np.dtype('l') : MPI.LONG
-}
-
-def mpi_type_for_ndarray(a):
-    return mpi_dtypes[a.dtype]
-
-
 def _raise_dap_nie():
     msg = ("The Distributed Array Protocol has only been "
            "implemented for the following disttypes: {}")
