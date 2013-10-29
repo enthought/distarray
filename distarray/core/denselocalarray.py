@@ -158,7 +158,7 @@ class DenseLocalArray(BaseLocalArray):
     def _dimdict(self, dim):
         """Given a dimension number `dim`, return a `dimdict`.
 
-        Where `dimdict` is the metadata datastructure provided for each
+        Where `dimdict` is the metadata data structure provided for each
         dimension by the Distributed Array Protocol.
         """
         if dim in self.distdims:
