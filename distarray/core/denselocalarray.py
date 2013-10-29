@@ -846,8 +846,9 @@ def arange(start, stop=None, step=1, dtype=None, dist={0:'b'},
     _raise_nie()
 
 
-def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
-    return LocalArray(shape, dtype, dist, grid_shape, comm)
+def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
+    return LocalArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
+                      comm=comm)
 
 
 def empty_like(arr, dtype=None):
@@ -860,7 +861,7 @@ def empty_like(arr, dtype=None):
         raise TypeError("A DenseLocalArray or subclass is expected")
 
 
-def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
+def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_zeros = np.zeros(local_shape, dtype=dtype)
@@ -874,7 +875,7 @@ def zeros_like(arr):
         raise TypeError("A DenseLocalArray or subclass is expected")
 
 
-def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
+def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_ones = np.ones(local_shape, dtype=dtype)
