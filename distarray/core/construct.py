@@ -144,7 +144,7 @@ def init_grid_shape(shape, grid_shape, distdims, comm_size):
     return tuple(int(s) for s in grid_shape)
 
 
-def optimize_grid_shape(shape, grid_shape, distdims, comm_size):
+def optimize_grid_shape(shape, distdims, comm_size):
     ndistdim = len(distdims)
     if ndistdim==1:
         grid_shape = (comm_size,)
