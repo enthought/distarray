@@ -75,7 +75,7 @@ def init_dist(dist, ndim):
     elif isinstance(dist, dict):
         return tuple([dist.get(i) for i in range(ndim)])
     else:
-        DistError("dist must be a string, tuple/list or dict")
+        DistError("Dist must be a string, tuple, list or dict")
 
 
 def init_distdims(dist, ndim):
