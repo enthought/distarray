@@ -141,7 +141,7 @@ class DenseLocalArray(BaseLocalArray):
 
         Returns
         -------
-        la : LocalArray
+        LocalArray
             A LocalArray encapsulating the buffer of the original data.
             No copy is made.
         """
