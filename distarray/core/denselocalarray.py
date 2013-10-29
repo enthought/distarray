@@ -204,9 +204,9 @@ class DenseLocalArray(BaseLocalArray):
                       "dimdata": dimdata}
         return distbuffer
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # Methods related to distributed indexing
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def get_localarray(self):
         return self.local_view()
@@ -272,7 +272,8 @@ class DenseLocalArray(BaseLocalArray):
                     a[i,j] = self.owner_rank(i,j)
             return a
         else:
-            raise DistMatrixError("The dist matrix can only be created for a 2d array")
+            msg = "The dist matrix can only be created for a 2d array"
+            raise DistMatrixError(msg)
 
     def plot_dist_matrix(self):
         try:
@@ -284,7 +285,9 @@ class DenseLocalArray(BaseLocalArray):
                 try:
                     import pylab
                 except ImportError:
-                    print("Matplotlib is not installed so the dist_matrix cannot be plotted")
+                    msg = ("Matplotlib is not installed so the "
+                           "dist_matrix cannot be plotted")
+                    raise ImportError(msg)
                 else:
                     pylab.ion()
                     pylab.matshow(dm)
@@ -296,14 +299,14 @@ class DenseLocalArray(BaseLocalArray):
                     pylab.show()
 
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2 ndarray methods
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.1 Array conversion
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
         if newdtype is None:
@@ -359,9 +362,9 @@ class DenseLocalArray(BaseLocalArray):
     def fill(self, scalar):
         self.local_array.fill(scalar)
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.2 Array shape manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def reshape(self, newshape):
         _raise_nie()
@@ -440,9 +443,9 @@ class DenseLocalArray(BaseLocalArray):
         else:
             raise IncompatibleArrayError("DistArrays have incompatible shape, dist or grid_shape")
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.3 Array item selection and manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def take(self, indices, axis=None, out=None, mode='raise'):
         _raise_nie()
@@ -477,9 +480,9 @@ class DenseLocalArray(BaseLocalArray):
     def diagonal(self, offset=0, axis1=0, axis2=1):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.4 Array item selection and manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def max(self, axis=None, out=None):
         _raise_nie()
@@ -540,13 +543,13 @@ class DenseLocalArray(BaseLocalArray):
     def any(self, axis=None, out=None):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3 Array special methods
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.1 Methods for standard library functions
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __copy__(self):
         _raise_nie()
@@ -554,9 +557,9 @@ class DenseLocalArray(BaseLocalArray):
     def __deepcopy__(self):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.2 Basic customization
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __lt__(self, other):
         _raise_nie()
@@ -585,9 +588,9 @@ class DenseLocalArray(BaseLocalArray):
     def __nonzero__(self):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.3 Container customization
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __len__(self):
         return self.shape[0]
@@ -892,8 +895,10 @@ class GlobalIterator(six.Iterator):
         global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
         return global_inds, value
 
+
 def ndenumerate(arr):
     return GlobalIterator(arr)
+
 
 def fromfunction(function, shape, **kwargs):
     dtype = kwargs.pop('dtype', int)
@@ -1181,7 +1186,7 @@ class LocalArrayUnaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Return LocalArray not compatible with LocalArray argument" % y)
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             self.func(x1, y.local_array)
             return y
         else:
@@ -1214,10 +1219,10 @@ class LocalArrayBinaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             if x2_isdla:
                 if not arecompatible(x2, y):
-                    raise IncompatibleArrayError("Incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             self.func(x1, x2, y.local_array)
             return y
         else:
