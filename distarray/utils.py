@@ -1,7 +1,10 @@
+import numpy as np
+
 from math import sqrt
 from functools import wraps
-from distarray.mpi.mpibase import MPI
 from six import next
+
+from distarray.mpi.mpibase import MPI
 
 
 def divisors(n):
@@ -211,6 +214,7 @@ mpi_dtypes = {
     np.dtype('i') : MPI.INTEGER,
     np.dtype('l') : MPI.LONG
 }
+
 
 def mpi_type_for_ndarray(a):
     return mpi_dtypes[a.dtype]
