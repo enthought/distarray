@@ -35,10 +35,6 @@ from distarray.utils import _raise_nie
 
 DAP_DISTTYPES = {None, 'b', 'c'}
 
-def _raise_dap_nie():
-    msg = ("The Distributed Array Protocol has only been "
-           "implemented for the following disttypes: {}")
-    raise NotImplementedError(msg.format(DAP_DISTTYPES))
 
 
 class DenseLocalArray(BaseLocalArray):
@@ -179,7 +175,8 @@ class DenseLocalArray(BaseLocalArray):
             stop = datasize
             step = gridsize
         else:
-            _raise_dap_nie()
+            msg = "disttype {} not implemented."
+            raise NotImplementedError(msg.format(disttype))
 
         dimdict = {"disttype": disttype,
                    "datasize": datasize,
