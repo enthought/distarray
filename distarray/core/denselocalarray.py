@@ -15,14 +15,12 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import six
-import sys
 import math
 
 import numpy as np
 
-from distarray.mpi import mpibase
 from distarray.mpi.mpibase import MPI
-from distarray.core.error import *
+from distarray.core.error import IncompatibleArrayError, DistError
 from distarray.core.base import BaseLocalArray, arecompatible
 from distarray.core.construct import init_base_comm, find_local_shape
 from distarray.utils import _raise_nie
@@ -35,74 +33,75 @@ from distarray.utils import _raise_nie
 
 __all__ = [
     'LocalArray',
-    'empty',
-    'empty_like',
-    'zeros',
-    'zeros_like',
-    'ones',
-    'fromfunction',
-    'set_printoptions',
-    'get_printoptions',
-    'dtype',
-    'maximum_sctype',
-    'issctype',
-    'obj2sctype',
-    'sctype2char',
-    'can_cast',
-    'issubclass_',
-    'issubdtype',
-    'iscomplexobj',
-    'isrealobj',
-    'isscalar',
-    'nan_to_num',
-    'real_if_close',
-    'cast',
-    'mintypecode',
-    'finfo',
-    'sum',
+    'absolute',
     'add',
-    'subtract',
-    'multiply',
-    'divide',
-    'true_divide',
-    'floor_divide',
-    'power',
-    'remainder',
-    'fmod',
+    'arccos',
+    'arccosh',
+    'arcsin',
+    'arcsinh',
+    'arctan',
     'arctan2',
-    'hypot',
+    'arctanh',
     'bitwise_and',
     'bitwise_or',
     'bitwise_xor',
-    'left_shift',
-    'right_shift',
-    'negative',
-    'absolute',
-    'rint',
-    'sign',
+    'can_cast',
+    'cast',
     'conjugate',
+    'cos',
+    'cosh',
+    'divide',
+    'dtype',
+    'empty',
+    'empty_like',
     'exp',
-    'log',
     'expm1',
-    'log1p',
+    'finfo',
+    'floor_divide',
+    'fmod',
+    'fromdap',
+    'fromfunction',
+    'get_printoptions',
+    'hypot',
+    'invert',
+    'iscomplexobj',
+    'isrealobj',
+    'isscalar',
+    'issctype',
+    'issubclass_',
+    'issubdtype',
+    'left_shift',
+    'log',
     'log10',
+    'log1p',
+    'maximum_sctype',
+    'mintypecode',
+    'multiply',
+    'nan_to_num',
+    'negative',
+    'obj2sctype',
+    'ones',
+    'power',
+    'real_if_close',
+    'reciprocal',
+    'remainder',
+    'right_shift',
+    'rint',
+    'sctype2char',
+    'set_printoptions',
+    'sign',
+    'sin',
+    'sinh',
     'sqrt',
     'square',
-    'reciprocal',
-    'sin',
-    'cos',
+    'subtract',
+    'sum',
     'tan',
-    'arcsin',
-    'arccos',
-    'arctan',
-    'sinh',
-    'cosh',
     'tanh',
-    'arcsinh',
-    'arccosh',
-    'arctanh',
-    'invert',
-    'fromdap']
+    'true_divide',
+    'zeros',
+    'zeros_like',
+    ]
 
 
 #----------------------------------------------------------------------------
@@ -174,7 +173,7 @@ class DenseLocalArray(BaseLocalArray):
 
         DAP = Distributed Array Protocol
 
-        https://github.com/enthought/distributed-array-protocol
+        See the project's documentation for the Protocol's specification.
         """
         implemented = all(disttype in DAP_DISTTYPES for disttype in self.dist)
         if not implemented:
@@ -835,11 +834,9 @@ LocalArray = DenseLocalArray
 def fromdap(obj, comm=None):
     """Make a LocalArray from an `obj` with a `__distarray__` method.
 
-    An object that supports the Distributed Array Protocol will have
-    a `__distarray__` method that returns the data structure
-    described here:
-
-    https://github.com/enthought/distributed-array-protocol
+    An object that supports the Distributed Array Protocol will have a
+    `__distarray__` method that returns a data structure described in this
+    project's documentation.
 
     Parameters
     ----------
