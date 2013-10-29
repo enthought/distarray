@@ -828,10 +828,6 @@ LocalArray = DenseLocalArray
 # 4.1 Creating arrays
 #----------------------------------------------------------------------------
 
-# Here is LocalArray.__init__ for reference
-# def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
-#              comm=None, buf=None, offset=0):
-
 
 def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
     _raise_nie()
