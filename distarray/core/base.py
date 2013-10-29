@@ -17,20 +17,15 @@ import numpy as np
 
 from distarray.mpi.mpibase import MPI
 from distarray.core.error import NullCommError
-from distarray.core.construct import (
-    init_base_comm,
-    init_dist,
-    init_distdims,
-    init_map_classes,
-    init_grid_shape,
-    init_comm,
-    init_local_shape_and_maps,
-)
+from distarray.core.construct import (init_base_comm, init_dist, init_distdims,
+        init_map_classes, init_grid_shape, init_comm,
+        init_local_shape_and_maps)
 from functools import reduce
 
 
 class BaseLocalArray(object):
-    """Distribute memory Python arrays."""
+
+    """Distributed memory Python arrays."""
 
     __array_priority__ = 20.0
 
@@ -73,8 +68,8 @@ class BaseLocalArray(object):
         self.local_size = reduce(lambda x,y: x*y, self.local_shape)
 
     def __del__(self):
-        # If the __init__ method fails, we may not have a valid comm attribute
-        # and this needs to be protected against.
+        # If the __init__ method fails, we may not have a valid comm
+        # attribute and this needs to be protected against.
         if hasattr(self, 'comm'):
             if self.comm is not None:
                 try:
