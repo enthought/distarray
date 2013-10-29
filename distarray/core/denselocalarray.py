@@ -23,7 +23,7 @@ from distarray.mpi.mpibase import MPI
 from distarray.core.error import (InvalidDimensionError,
                                   DistMatrixError, IncompatibleArrayError)
 from distarray.core.base import BaseLocalArray, arecompatible
-from distarray.core.construct import init_base_comm, find_local_shape
+from distarray.core.construct import init_base_comm, find_local_shape, init_dist
 from distarray.utils import _raise_nie
 
 
@@ -34,63 +34,56 @@ from distarray.utils import _raise_nie
 #----------------------------------------------------------------------------
 
 
+def _make_dimdata(shape, dist=None, grid_shape=None):
+    """Create a dimdata data structure from simple parameters.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Number of elements in each dimension.
+    dist : dict mapping int -> str, default is {0: 'b'}
+        Keys are dimension number, values are disttype, e.g 'b', 'c', or
+        None.
+
+    Returns
+    -------
+    dimdata : tuple of dict
+        Data structure outlined in the Distributed Array Protocol.
+    """
+
+    if dist is None:
+        dist = {0:'b'}
+
+    if grid_shape is not None:
+        grid_gen = iter(grid_shape)
+
+    dist_tuple = init_dist(dist, len(shape))
+    dimdata = []
+    for datasize, disttype in zip(shape, dist_tuple):
+        if disttype not in {None, 'b', 'c'}:
+            msg = ("disttype {} not supported.",
+                   "Try `from_dap`.").format(disttype)
+            raise TypeError(msg)
+        dimdict = dict(disttype=disttype,
+                       datasize=datasize)
+        if grid_shape is not None and disttype is not None:
+            dimdict["gridsize"] = six.next(grid_gen)
+
+        dimdata.append(dimdict)
+
+    return tuple(dimdata)
 
 
 class DenseLocalArray(BaseLocalArray):
+
     """Distributed memory Python arrays."""
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # Methods used for initialization
-    #----------------------------------------------------------------------------
-
-    def _allocate(self, buf=None):
-        """Allocate a new local numpy array or use `buf`.
-
-        Sets `self.local_array` and `self.data`.
-
-        Parameters
-        ----------
-        buf : buffer object, optional
-        """
-        if buf is None:
-            self.local_array = np.empty(self.local_shape, dtype=self.dtype)
-            self.data = self.local_array.data
-        else:
-            try:
-                buf = memoryview(buf)
-            except TypeError:
-                msg = "The object is not or can't be made into a buffer."
-                raise TypeError(msg)
-            try:
-                self.local_array = np.asarray(buf, dtype=self.dtype)
-                self.data = self.local_array.data
-            except ValueError:
-                msg = "The buffer is smaller than needed for this array."
-                raise ValueError(msg)
-
-    def __init__(self, shape, dtype=float, dist={0:'b'}, grid_shape=None,
-                 comm=None, buf=None):
-        """Create a distributed array on a set of processors.
-
-        `__init__` restricts you a 'b' and 'c' disttypes and evenly
-        distributed data.
-
-        See also
-        --------
-        LocalArray.fromdap
-        """
-        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm,
-                                buf)
-
-        # At this point, everything is setup, but the memory has not
-        # been allocated.
-        self._allocate(buf)
-
-    def __del__(self):
-        BaseLocalArray.__del__(self)
+    #-------------------------------------------------------------------------
 
     @classmethod
-    def from_dap(cls, dimdata, buf=None, comm=None):
+    def from_dimdata(cls, dimdata, dtype=None, buf=None, comm=None):
         """Make a LocalArray from a `dimdata` tuple.
 
         Parameters
@@ -98,9 +91,18 @@ class DenseLocalArray(BaseLocalArray):
         dimdata : tuple of dictionaries
             A dict for each dimension, with the data described here:
             https://github.com/enthought/distributed-array-protocol
+        dtype : numpy dtype, optional
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `dtype` is given, an empty array of that dtype will be
+            created.
         buf : buffer object, optional
-            If provided, encapsulate the buffer given.  If not provided,
-            allocate an empty array.
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `buf` is given, `self.dtype` will be set to its dtype.
+        comm : MPI comm object, optional
 
         Returns
         -------
@@ -108,21 +110,50 @@ class DenseLocalArray(BaseLocalArray):
             A LocalArray encapsulating `buf`, or else an empty
             (uninitialized) LocalArray.
         """
+        self = cls.__new__(cls)
+        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+                                              buf=buf, comm=comm)
+        return self
 
-        dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
-                if dd['disttype']}
 
-        implemented = all(disttype in DAP_DISTTYPES for disttype in
-                          dist.values())
-        if not implemented:
-            _raise_dap_nie()
+    def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
+                 comm=None, buf=None):
+        """Create a LocalArray from a simple set of parameters.
 
-        shape = tuple(dd['datasize'] for dd in dimdata)
-        grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
-        base_comm = init_base_comm(comm)
+        This initializer restricts you to 'b' and 'c' disttypes and evenly
+        distributed data.  See `LocalArray.from_dimdata` for a more general
+        method.
 
-        return cls(shape=shape, dtype=buf.dtype, dist=dist,
-                   grid_shape=grid_shape, comm=base_comm, buf=buf)
+        Parameters
+        ----------
+        shape : tuple of int
+            Number of elements in each dimension.
+        dtype : numpy dtype, optional
+        dist : dict mapping int -> str, default is {0: 'b'}, optional
+            Keys are dimension number, values are disttype, e.g 'b', 'c', or
+            None.
+        grid_shape : tuple of int, optional
+            A size of each dimension of the process grid.
+            There should be a dimension size for each distributed
+            dimension in `dist`.
+        comm : MPI communicator object, optional
+        buf : buffer object, optional
+            If not given, an empty array is created.
+
+        See also
+        --------
+        LocalArray.from_dimdata
+        """
+        dimdata = _make_dimdata(shape=shape, dist=dist, grid_shape=grid_shape)
+        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+                                              buf=buf, comm=comm)
+
+    def __del__(self):
+        super(DenseLocalArray, self).__del__()
+
+    #-------------------------------------------------------------------------
+    # Distributed Array Protocol
+    #-------------------------------------------------------------------------
 
     @classmethod
     def from_distarray(cls, obj, comm=None):
@@ -148,7 +179,7 @@ class DenseLocalArray(BaseLocalArray):
         buf = np.asarray(distbuffer['buffer'])
         dimdata = distbuffer['dimdata']
 
-        return cls.from_dap(dimdata=dimdata, buf=buf, comm=comm)
+        return cls.from_dimdata(dimdata=dimdata, buf=buf, comm=comm)
 
     def _dimdict(self, dim):
         """Given a dimension number `dim`, return a `dimdict`.
