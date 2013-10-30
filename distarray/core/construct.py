@@ -120,7 +120,7 @@ def init_map_classes(dist):
     Examples
     --------
     >>> init_map_classes(('b', None, None, 'c'))
-    (distarray.core.maps_fast.BlockMap, distarray.core.maps_fast.CyclicMap)
+    (distarray.core.maps.BlockMap, distarray.core.maps.CyclicMap)
     """
     reduced_dist = [d for d in dist if d is not None]
     map_classes = [maps.get_map_class(d) for d in reduced_dist]
