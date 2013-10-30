@@ -11,7 +11,6 @@ from distarray.core import maps
 from distarray.core.error import IncompatibleArrayError
 
 
-
 class TestInit(MpiTestCase):
 
     """Is the __init__ method working properly?"""
