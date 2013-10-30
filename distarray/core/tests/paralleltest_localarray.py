@@ -1,45 +1,15 @@
 import unittest
 import numpy as np
+
 import distarray.core as dc
+import distarray.core.denselocalarray as da
 
 from numpy.testing import assert_array_equal
+from distarray.testing import comm_null_passes, MpiTestCase
 from distarray import utils
-from distarray.utils import comm_null_passes
-from distarray.mpi.mpibase import create_comm_of_size
 from distarray.core import maps
-from distarray.core.error import IncompatibleArrayError, NullCommError
-from distarray.mpi.error import InvalidCommSizeError
-from distarray.mpi import MPI
+from distarray.core.error import IncompatibleArrayError
 
-from distarray.core import denselocalarray as da
-
-
-class MpiTestCase(unittest.TestCase):
-
-    """Base test class for MPI test cases.
-
-    Overload `get_comm_size` to change the default comm size (default is
-    4).  Overload `more_setUp` to add more to the default `setUp`.
-    """
-
-    def get_comm_size(self):
-        return 4
-
-    def more_setUp(self):
-        pass
-
-    def setUp(self):
-        try:
-            self.comm = create_comm_of_size(self.get_comm_size())
-        except InvalidCommSizeError:
-            msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(self.get_comm_size()))
-        else:
-            self.more_setUp()
-
-    def tearDown(self):
-        if self.comm != MPI.COMM_NULL:
-            self.comm.Free()
 
 
 class TestInit(MpiTestCase):
@@ -115,7 +85,7 @@ class TestDistMatrix(MpiTestCase):
     def test_plot_dist_matrix(self):
         """Can we create and possibly plot a dist_matrix?"""
         la = da.LocalArray((10,10), dist=('c','c'), comm=self.comm)
-        if comm.Get_rank() == 0:
+        if self.comm.Get_rank() == 0:
             import pylab
             pylab.ion()
             pylab.matshow(la)

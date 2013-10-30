@@ -114,20 +114,8 @@ def outer_zip(seqa, seqb):
 
 
 def _raise_nie():
-    raise NotImplementedError("This has not yet been implemented for distributed arrays")
-
-
-def comm_null_passes(fn):
-    """Decorator. If `self.comm` is COMM_NULL, pass."""
-
-    @wraps(fn)
-    def wrapper(self, *args, **kwargs):
-        if self.comm == MPI.COMM_NULL:
-            pass
-        else:
-            return fn(self, *args, **kwargs)
-
-    return wrapper
+    msg = "This has not yet been implemented for distributed arrays"
+    raise NotImplementedError(msg)
 
 
 def sanitize_indices(indices):
