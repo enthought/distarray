@@ -75,7 +75,7 @@ class TestFromDimdata(MpiTestCase):
 
     @comm_null_passes
     def test_block(self):
-        dim0 = {"disttype": "b",
+        dim0 = {"disttype": 'b',
                 "datasize": 16,
                 "gridsize": 4}
 
@@ -86,7 +86,44 @@ class TestFromDimdata(MpiTestCase):
         dimdata = (dim0, dim1)
 
         larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
-        expected = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm)
+        expected = da.LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
+                                 comm=self.comm)
+
+        self.assert_alike(larr, expected)
+
+    @comm_null_passes
+    def test_cyclic(self):
+        dim0 = {"disttype": None,
+                "datasize": 16,
+                "gridsize": None}
+
+        dim1 = {"disttype": 'c',
+                "datasize": 16,
+                "gridsize": 4}
+
+        dimdata = (dim0, dim1)
+
+        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        expected = da.LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
+                                 comm=self.comm)
+
+        self.assert_alike(larr, expected)
+
+    @comm_null_passes
+    def test_cyclic_and_block(self):
+        dim0 = {"disttype": 'c',
+                "datasize": 16,
+                "gridsize": 2}
+
+        dim1 = {"disttype": 'b',
+                "datasize": 16,
+                "gridsize": 2}
+
+        dimdata = (dim0, dim1)
+
+        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        expected = da.LocalArray((16,16), dist={0: 'c', 1: 'b'},
+                                 grid_shape=(2, 2), comm=self.comm)
 
         self.assert_alike(larr, expected)
 
