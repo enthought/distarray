@@ -11,14 +11,11 @@ from distarray.mpi.error import InvalidCommSizeError
 
 
 class TestInit(unittest.TestCase):
-    """
-    Is the __init__ method working properly?
-    """
+
+    """Is the __init__ method working properly?"""
 
     def test_basic(self):
-        """
-        Test basic LocalArray creation.
-        """
+        """Test basic LocalArray creation."""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -50,9 +47,7 @@ class TestInit(unittest.TestCase):
 
 
     def test_localarray(self):
-        """
-        Can the local_array be set and get?
-        """
+        """Can the local_array be set and get?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -72,9 +67,7 @@ class TestInit(unittest.TestCase):
 
 
     def test_grid_shape(self):
-        """
-        Test various ways of setting the grid_shape.
-        """
+        """Test various ways of setting the grid_shape."""
         try:
             comm = create_comm_of_size(12)
         except InvalidCommSizeError:
@@ -98,9 +91,8 @@ class TestInit(unittest.TestCase):
 
 
 class TestDistMatrix(unittest.TestCase):
-    """
-    Test the dist_matrix.
-    """
+
+    """Test the dist_matrix."""
 
     def test_plot_dist_matrix(self):
         """
@@ -128,14 +120,11 @@ class TestDistMatrix(unittest.TestCase):
 
 
 class TestLocalInd(unittest.TestCase):
-    """
-    Test the computation of local indices.
-    """
+
+    """Test the computation of local indices."""
 
     def test_block(self):
-        """
-        Can we compute local incides for a BlockMap?
-        """
+        """Can we compute local incides for a BlockMap?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -155,9 +144,7 @@ class TestLocalInd(unittest.TestCase):
                 comm.Free()
 
     def test_cyclic(self):
-        """
-        Can we compute local incides for a CyclicMap?
-        """
+        """Can we compute local incides for a CyclicMap?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -178,9 +165,8 @@ class TestLocalInd(unittest.TestCase):
 
 
 class TestGlobalInd(unittest.TestCase):
-    """
-    Test the computation of global indices.
-    """
+
+    """Test the computation of global indices."""
 
     def round_trip(self, da):
         for indices in utils.multi_for( [range(s) for s in da.shape] ):
@@ -190,9 +176,7 @@ class TestGlobalInd(unittest.TestCase):
             self.assertEqual(gi,indices)
 
     def test_block(self):
-        """
-        Can we go from global to local indices and back for BlockMap?
-        """
+        """Can we go from global to local indices and back for BlockMap?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -207,9 +191,7 @@ class TestGlobalInd(unittest.TestCase):
                 comm.Free()
 
     def test_cyclic(self):
-        """
-        Can we go from global to local indices and back for CyclicMap?
-        """
+        """Can we go from global to local indices and back for CyclicMap?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -224,9 +206,7 @@ class TestGlobalInd(unittest.TestCase):
                 comm.Free()
 
     def test_crazy(self):
-        """
-        Can we go from global to local indices and back for a complex case?
-        """
+        """Can we go from global to local indices and back for a complex case?"""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
@@ -347,9 +327,7 @@ class TestIndexing(unittest.TestCase):
 class TestLocalArrayMethods(unittest.TestCase):
 
     def test_asdist_like(self):
-        """
-        Test asdist_like for success and failure.
-        """
+        """Test asdist_like for success and failure."""
         try:
             comm = create_comm_of_size(4)
         except InvalidCommSizeError:
