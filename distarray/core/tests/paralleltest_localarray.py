@@ -127,6 +127,20 @@ class TestFromDimdata(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
+    def test_block_cyclic(self):
+        dim0 = {"disttype": 'bc',
+                "datasize": 16,
+                "gridsize": 4,
+                "blocksize": 2}
+
+        dim1 = {"disttype": None,
+                "datasize": 16,
+                "gridsize": None}
+
+        dimdata = (dim0, dim1)
+
+        da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+
 
 class TestGridShape(MpiTestCase):
 
