@@ -52,6 +52,45 @@ class TestInit(MpiTestCase):
         new_la = self.larr.get_localarray()
 
 
+class TestFromDimdata(MpiTestCase):
+
+    def assert_alike(self, l0, l1):
+        self.assertEqual(l0.shape, l1.shape)
+        self.assertEqual(l0.dist, l1.dist)
+        self.assertEqual(l0.grid_shape, l1.grid_shape)
+        self.assertEqual(l0.base_comm, l1.base_comm)
+        self.assertEqual(l0.comm_size, l1.comm_size)
+        self.assertEqual(l0.comm_rank, l1.comm_rank)
+        self.assertEqual(l0.ndistdim, l1.ndistdim)
+        self.assertEqual(l0.distdims, l1.distdims)
+        self.assertEqual(l0.map_classes, l1.map_classes)
+        self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
+        self.assertEqual(len(l0.maps), len(l1.maps))
+        self.assertEqual(l0.maps[0].local_shape, l1.maps[0].local_shape)
+        self.assertEqual(l0.maps[0].shape, l1.maps[0].shape)
+        self.assertEqual(l0.maps[0].grid_shape, l1.maps[0].grid_shape)
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
+        self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+
+    @comm_null_passes
+    def test_block(self):
+        dim0 = {"disttype": "b",
+                "datasize": 16,
+                "gridsize": 4}
+
+        dim1 = {"disttype": None,
+                "datasize": 16,
+                "gridsize": None}
+
+        dimdata = (dim0, dim1)
+
+        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        expected = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm)
+
+        self.assert_alike(larr, expected)
+
+
 class TestGridShape(MpiTestCase):
 
     def get_comm_size(self):
