@@ -61,8 +61,8 @@ def _make_dimdata(shape, dist=None, grid_shape=None):
     dimdata = []
     for datasize, disttype in zip(shape, dist_tuple):
         if disttype not in {None, 'b', 'c'}:
-            msg = ("disttype {} not supported.",
-                   "Try `from_dap`.").format(disttype)
+            msg = ("disttype {} not supported. ",
+                   "Try `from_dimdata`.").format(disttype)
             raise TypeError(msg)
         dimdict = dict(disttype=disttype,
                        datasize=datasize)
