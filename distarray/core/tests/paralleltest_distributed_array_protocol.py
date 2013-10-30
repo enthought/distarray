@@ -143,15 +143,15 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
+    def get_comm_size(self):
+        return 12
+
     @comm_null_passes
     def more_setUp(self):
         self.larr = da.LocalArray((53, 77, 99),
                                   dist={0: 'b', 1: 'b', 2: 'b'},
                                   grid_shape=(2, 2, 3),
                                   comm=self.comm)
-
-    def get_comm_size(self):
-        return 12
 
 
 class TestDapCyclicDim(DapTestMixin, MpiTestCase):
