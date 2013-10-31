@@ -183,7 +183,7 @@ def init_local_shape_and_maps(shape, grid_shape, distdims, map_classes):
     local_shape = list(shape)
     for i, distdim in enumerate(distdims):
         minst = map_classes[i](shape[distdim], grid_shape[i])
-        local_shape[distdim]= minst.local_shape
+        local_shape[distdim] = minst.local_shape
         maps.append(minst)
     return tuple(local_shape), tuple(maps)
 
