@@ -1,4 +1,5 @@
 # encoding: utf-8
+from __future__ import division
 
 __docformat__ = "restructuredtext en"
 
@@ -175,9 +176,9 @@ def optimize_grid_shape(shape, distdims, comm_size):
 
 def _compute_grid_ratios(shape):
     n = len(shape)
-    return np.array([float(shape[i]) / shape[j] for i in range(n)
-                                                for j in range(n)
-                                                if i < j])
+    return np.array([shape[i] / shape[j] for i in range(n)
+                                         for j in range(n)
+                                         if i < j])
 
 
 def init_comm(base_comm, grid_shape, ndistdim):
