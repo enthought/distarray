@@ -132,7 +132,8 @@ def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
     """Generate or validate a `grid_shape`.
 
     If `grid_shape` is None, generate a `grid_shape` using
-    `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape` given.
+    `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape`
+    given.
     """
     ndistdim = len(distdims)
     if grid_shape is None:
@@ -141,12 +142,14 @@ def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
         try:
             grid_shape = tuple(grid_shape)
         except:
-            raise InvalidGridShapeError("grid_shape not castable to a tuple")
+            msg = "grid_shape is not castable to a tuple"
+            raise InvalidGridShapeError(msg)
     if len(grid_shape)!=ndistdim:
         raise InvalidGridShapeError("grid_shape has the wrong length")
     ngriddim = reduce(lambda x,y: x*y, grid_shape)
     if ngriddim != comm_size:
-        raise InvalidGridShapeError("grid_shape is incompatible with the number of processors")
+        msg = "grid_shape is incompatible with the number of processors"
+        raise InvalidGridShapeError(msg)
     return tuple(int(s) for s in grid_shape)
 
 
@@ -172,7 +175,9 @@ def optimize_grid_shape(shape, distdims, comm_size):
 
 def _compute_grid_ratios(shape):
     n = len(shape)
-    return np.array([float(shape[i])/shape[j] for i in range(n) for j in range(n) if i < j])
+    return np.array([float(shape[i]) / shape[j] for i in range(n)
+                                                for j in range(n)
+                                                if i < j])
 
 
 def init_comm(base_comm, grid_shape, ndistdim):
