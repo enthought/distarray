@@ -188,9 +188,11 @@ def init_local_shape_and_maps(shape, grid_shape, distdims, map_classes):
     return tuple(local_shape), tuple(maps)
 
 
-def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
+def find_local_shape(shape, dist=None, grid_shape=None, comm_size=None):
     if comm_size is None:
         raise ValueError("comm_size can't be None")
+    if dist is None:
+        dist = {0: 'b'}
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
@@ -201,9 +203,11 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     return local_shape
 
 
-def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
+def find_grid_shape(shape, dist=None, grid_shape=None, comm_size=None):
     if comm_size is None:
         raise ValueError("comm_size can't be None")
+    if dist is None:
+        dist = {0: 'b'}
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
