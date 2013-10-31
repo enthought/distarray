@@ -40,7 +40,8 @@ from functools import reduce
 
 
 def init_base_comm(comm):
-    if comm==MPI.COMM_NULL:
+    """Sanitize an MPI.comm instance or create one."""
+    if comm == MPI.COMM_NULL:
         raise NullCommError("Cannot create a LocalArray with COMM_NULL")
     elif comm is None:
         return mpibase.COMM_PRIVATE
