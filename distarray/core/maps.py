@@ -80,8 +80,9 @@ class CyclicMap(BlockCyclicMap):
     def __init__(self, shape, grid_shape):
         super(CyclicMap, self).__init__(shape, grid_shape, block_size=1)
 
+class MapCodeRegistry(object):
 
-class MapRegistry(object):
+    """Registry of character code to `ILocalMap` mappings."""
 
     def __init__(self):
         self.maps = {}
@@ -111,9 +112,9 @@ class MapRegistry(object):
             return m
 
 
-_map_registry = MapRegistry()
-register_map = _map_registry.register_map
-get_map_class = _map_registry.get_map_class
+_map_code_registry = MapCodeRegistry()
+register_map = _map_code_registry.register_map
+get_map_class = _map_code_registry.get_map_class
 
 register_map('b', BlockMap)
 register_map('c', CyclicMap)
