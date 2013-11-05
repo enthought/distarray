@@ -18,12 +18,14 @@ import six
 import math
 
 import numpy as np
+from six.moves import zip, range
 
 from distarray.mpi.mpibase import MPI
-from distarray.core.error import (InvalidDimensionError,
-                                  DistMatrixError, IncompatibleArrayError)
+from distarray.core.error import (InvalidDimensionError, DistMatrixError,
+                                  IncompatibleArrayError)
 from distarray.core.base import BaseLocalArray, arecompatible
-from distarray.core.construct import init_base_comm, find_local_shape, init_dist
+from distarray.core.construct import (init_base_comm, find_local_shape,
+                                      init_dist, find_grid_shape)
 from distarray.utils import _raise_nie
 
 
