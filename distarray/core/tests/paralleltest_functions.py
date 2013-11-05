@@ -23,7 +23,8 @@ class TestFunctions(MpiTestCase):
         def f(*global_inds):
             return 1.0
 
-        a = dla.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=self.comm)
+        a = dla.fromfunction(f, (16, 16), dtype='int64', dist=('b', 'c'),
+                             comm=self.comm)
         self.assertEqual(a.shape, (16,16))
         self.assertEqual(a.dtype, np.dtype('int64'))
         for global_inds, value in dla.ndenumerate(a):
@@ -35,7 +36,8 @@ class TestFunctions(MpiTestCase):
         def f(*global_inds):
             return sum(global_inds)
 
-        a = dla.fromfunction(f, (16,16), dtype='int64', dist=('b','c'), comm=self.comm)
+        a = dla.fromfunction(f, (16, 16), dtype='int64', dist=('b', 'c'),
+                             comm=self.comm)
         self.assertEqual(a.shape, (16,16))
         self.assertEqual(a.dtype, np.dtype('int64'))
         for global_inds, value in dla.ndenumerate(a):
