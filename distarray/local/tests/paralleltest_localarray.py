@@ -242,11 +242,13 @@ class TestGlobalInd(MpiTestCase):
     @comm_null_passes
     def test_global_limits_block(self):
         """Find the boundaries of a block distribution"""
-        a = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
-        answers = [(0,3),(4,7),(8,11),(12,15)]
+        a = da.LocalArray((16, 16), dist=('b', None), comm=self.comm)
+
+        answers = [(0, 3), (4, 7), (8, 11), (12, 15)]
         limits = a.global_limits(0)
         self.assertEqual(limits, answers[a.comm_rank])
-        answers = 4*[(0,15)]
+
+        answers = 4 * [(0, 15)]
         limits = a.global_limits(1)
         self.assertEqual(limits, answers[a.comm_rank])
 

@@ -248,10 +248,10 @@ class DenseLocalArray(BaseLocalArray):
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
-        lower_local = self.ndim*[0,]
-        lower_global = self.local_to_global(self.comm_rank, *lower_local)
+        lower_local = self.ndim * [0,]
+        lower_global = self.local_to_global(*lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
-        upper_global = self.local_to_global(self.comm_rank, *upper_local)
+        upper_global = self.local_to_global(*upper_local)
         return lower_global[dim], upper_global[dim]
 
     def get_dist_matrix(self):
