@@ -28,7 +28,7 @@ class TestInit(MpiTestCase):
         self.assertTrue(self.larr.comm_rank in range(4))
         self.assertEqual(self.larr.ndistdim, 1)
         self.assertEqual(self.larr.distdims, (0,))
-        self.assertEqual(self.larr.map_classes, (maps.BlockMap,))
+        self.assertEqual(self.larr.map_classes, (maps.RegularBlockMap,))
         self.assertEqual(self.larr.comm.Get_topo(),
                 (list(self.larr.grid_shape),[0],[self.larr.comm_rank]))
         self.assertEqual(len(self.larr.maps), 1)
@@ -186,28 +186,84 @@ class TestLocalInd(MpiTestCase):
     """Test the computation of local indices."""
 
     @comm_null_passes
-    def test_block(self):
-        """Can we compute local indices for a BlockMap?"""
-        la = da.LocalArray((4,4), comm=self.comm)
-        self.assertEqual(la.shape,(4,4))
-        self.assertEqual(la.grid_shape,(4,))
-        row_result = [(0,0),(0,1),(0,2),(0,3)]
-        for row in range(la.shape[0]):
-            calc_row_result = [la.global_to_local(row,col) for col in
-                               range(la.shape[1])]
-            self.assertEqual(row_result, calc_row_result)
+    def test_block_simple(self):
+        """Can we compute local indices for a RegularBlockMap?"""
+        la = da.LocalArray((4, 4), comm=self.comm)
+        self.assertEqual(la.shape, (4, 4))
+        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.local_shape, (1, 4))
+        row_result = [(0, 0), (0, 1), (0, 2), (0, 3)]
+
+        row = la.comm_rank
+        calc_row_result = [la.global_to_local(row, col) for col in
+                           range(la.shape[1])]
+        self.assertEqual(row_result, calc_row_result)
 
     @comm_null_passes
-    def test_cyclic(self):
-        """Can we compute local indices for a CyclicMap?"""
-        la = da.LocalArray((8,8),dist={0:'c'},comm=self.comm)
-        self.assertEqual(la.shape,(8,8))
-        self.assertEqual(la.grid_shape,(4,))
-        self.assertEqual(la.map_classes, (maps.CyclicMap,))
-        result = utils.outer_zip(4*(0,)+4*(1,),list(range(8)))
-        calc_result = [[la.global_to_local(row,col) for col in
-                        range(la.shape[1])] for row in range(la.shape[0])]
-        self.assertEqual(result,calc_result)
+    def test_block_complex(self):
+        """Can we compute local indices for a RegularBlockMap?"""
+        la = da.LocalArray((8, 2), comm=self.comm)
+        self.assertEqual(la.shape, (8, 2))
+        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.local_shape, (2, 2))
+        expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]
+
+        if la.comm_rank == 0:
+            gis = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        elif la.comm_rank == 1:
+            gis = [(2, 0), (2, 1), (3, 0), (3, 1)]
+        elif la.comm_rank == 2:
+            gis = [(4, 0), (4, 1), (5, 0), (5, 1)]
+        elif la.comm_rank == 3:
+            gis = [(6, 0), (6, 1), (7, 0), (7, 1)]
+
+        result = [la.global_to_local(*gi) for gi in gis]
+        self.assertEqual(result, expected_lis)
+
+    @comm_null_passes
+    def test_cyclic_simple(self):
+        """Can we compute local indices for a RegularCyclicMap?"""
+        la = da.LocalArray((4, 4), dist={0: 'c'}, comm=self.comm)
+        self.assertEqual(la.shape, (4, 4))
+        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.local_shape, (1, 4))
+        self.assertEqual(la.map_classes, (maps.RegularCyclicMap,))
+
+        if la.comm_rank == 0:
+            gis = (0, 4, 8, 12)
+        elif la.comm_rank == 1:
+            gis = (1, 5, 9, 13)
+        elif la.comm_rank == 2:
+            gis = (2, 6, 10, 14)
+        elif la.comm_rank == 3:
+            gis = (3, 7, 11, 15)
+
+        result = [(0,), (1,), (2,), (3,)]
+        calc_result = [la.global_to_local(gi) for gi in gis]
+        self.assertEqual(result, calc_result)
+
+    @comm_null_passes
+    def test_cyclic_complex(self):
+        """Can we compute local indices for a RegularCyclicMap?"""
+        la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
+        self.assertEqual(la.shape, (8, 2))
+        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.local_shape, (2, 2))
+        self.assertEqual(la.map_classes, (maps.RegularCyclicMap,))
+
+        expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]
+
+        if la.comm_rank == 0:
+            gis = [(0, 0), (0, 1), (4, 0), (4, 1)]
+        elif la.comm_rank == 1:
+            gis = [(1, 0), (1, 1), (5, 0), (5, 1)]
+        elif la.comm_rank == 2:
+            gis = [(2, 0), (2, 1), (6, 0), (6, 1)]
+        elif la.comm_rank == 3:
+            gis = [(3, 0), (3, 1), (7, 0), (7, 1)]
+
+        result = [la.global_to_local(*gi) for gi in gis]
+        self.assertEqual(result, expected_lis)
 
 
 class TestGlobalInd(MpiTestCase):
