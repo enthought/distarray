@@ -216,11 +216,6 @@ class DenseLocalArray(BaseLocalArray):
         #          range(self.ndistdim)]
         return self.comm.Get_cart_rank(owners)
 
-    def owner_coords(self, *indices):
-        owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in
-                  range(self.ndistdim)]
-        return owners
-
     def rank_to_coords(self, rank):
         return self.comm.Get_coords(rank)
 
@@ -234,15 +229,11 @@ class DenseLocalArray(BaseLocalArray):
             local_ind[dd] = self.maps[i].local_index(global_ind[dd])
         return tuple(local_ind)
 
-    def local_to_global(self, owner, *local_ind):
-        if isinstance(owner, int):
-            owner_coords = self.rank_to_coords(owner)
-        else:
-            owner_coords = owner
+    def local_to_global(self, *local_ind):
         global_ind = list(local_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
-            global_ind[dd] = self.maps[i].global_index(owner_coords[i], local_ind[dd])
+            global_ind[dd] = self.maps[i].global_index(local_ind[dd])
         return tuple(global_ind)
 
     def global_limits(self, dim):
@@ -253,40 +244,6 @@ class DenseLocalArray(BaseLocalArray):
         upper_local = [shape-1 for shape in self.local_shape]
         upper_global = self.local_to_global(*upper_local)
         return lower_global[dim], upper_global[dim]
-
-    def get_dist_matrix(self):
-        if self.ndim==2:
-            a = np.empty(self.shape,dtype=int)
-            for i in range(self.shape[0]):
-                for j in range(self.shape[1]):
-                    a[i,j] = self.owner_rank(i,j)
-            return a
-        else:
-            msg = "The dist matrix can only be created for a 2d array"
-            raise DistMatrixError(msg)
-
-    def plot_dist_matrix(self):
-        try:
-            dm = self.get_dist_matrix()
-        except DistMatrixError:
-            pass
-        else:
-            if self.comm_rank==0:
-                try:
-                    import pylab
-                except ImportError:
-                    msg = ("Matplotlib is not installed so the "
-                           "dist_matrix cannot be plotted")
-                    raise ImportError(msg)
-                else:
-                    pylab.ion()
-                    pylab.matshow(dm)
-                    pylab.colorbar()
-                    pylab.xlabel('columns')
-                    pylab.ylabel('rows')
-                    pylab.title('Memory Distribution Plot')
-                    pylab.draw()
-                    pylab.show()
 
 
     #-------------------------------------------------------------------------
@@ -595,17 +552,13 @@ class DenseLocalArray(BaseLocalArray):
 
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
-        owner_rank = self.owner_rank(*global_inds)
-        if self.comm_rank == owner_rank:
-            local_inds = self.global_to_local(*global_inds)
-            return self.local_array[local_inds]
+        local_inds = self.global_to_local(*global_inds)
+        return self.local_array[local_inds]
 
     def __setitem__(self, global_inds, value):
         global_inds = self._sanitize_indices(global_inds)
-        owner_rank = self.owner_rank(*global_inds)
-        if self.comm_rank == owner_rank:
-            local_inds = self.global_to_local(*global_inds)
-            self.local_array[local_inds] = value
+        local_inds = self.global_to_local(*global_inds)
+        self.local_array[local_inds] = value
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
