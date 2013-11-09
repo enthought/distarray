@@ -7,7 +7,7 @@ from distarray.testing import MpiTestCase, comm_null_passes
 
 
 class TestBasic(MpiTestCase):
-    """Run basic shape/size tests on functions in `nprand.py`."""
+    """Run basic shape/size tests on functions in `random.py`."""
 
     def shape_asserts(self, la):
         self.assertEqual(la.shape, (16, 16))
