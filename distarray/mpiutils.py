@@ -1,5 +1,5 @@
 from mpi4py import MPI
-from distarray.mpi.error import InvalidCommSizeError, InvalidRankError
+from distarray import InvalidCommSizeError, InvalidRankError
 
 
 COMM_PRIVATE = MPI.COMM_WORLD.Clone()

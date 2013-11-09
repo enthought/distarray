@@ -20,7 +20,7 @@ import math
 import numpy as np
 from six.moves import zip, range
 
-from distarray.mpi.mpibase import MPI
+from distarray.mpiutils import MPI
 from distarray.core.error import (InvalidDimensionError, DistMatrixError,
                                   IncompatibleArrayError)
 from distarray.core.base import BaseLocalArray, arecompatible

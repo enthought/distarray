@@ -1,10 +1,8 @@
 import unittest
-
 from functools import wraps
 
-from distarray.mpi import MPI
-from distarray.mpi.mpibase import create_comm_of_size
-from distarray.mpi.error import InvalidCommSizeError
+from distarray import InvalidCommSizeError
+from distarray.mpiutils import MPI, create_comm_of_size
 
 
 def comm_null_passes(fn):

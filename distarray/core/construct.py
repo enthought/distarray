@@ -17,13 +17,12 @@ __docformat__ = "restructuredtext en"
 
 import numpy as np
 
-from distarray.mpi import mpibase
-from distarray.mpi.mpibase import MPI
+from distarray.mpiutils import MPI
 from distarray.core import maps
 from distarray.core.error import (DistError, InvalidGridShapeError,
                                   GridShapeError, NullCommError,
                                   InvalidBaseCommError)
-from distarray import utils
+from distarray import utils, mpiutils
 from functools import reduce
 
 #----------------------------------------------------------------------------
@@ -45,7 +44,7 @@ def init_base_comm(comm):
     if comm == MPI.COMM_NULL:
         raise NullCommError("Cannot create a LocalArray with COMM_NULL")
     elif comm is None:
-        return mpibase.COMM_PRIVATE
+        return mpiutils.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):
         return comm
     else:

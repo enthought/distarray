@@ -147,7 +147,7 @@ class Context(object):
 
     def _make_intracomm(self):
         def get_rank():
-            from distarray.mpi.mpibase import COMM_PRIVATE
+            from distarray.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
 
         # get a mapping of IPython engine ID to MPI rank
@@ -157,7 +157,7 @@ class Context(object):
         # self.view's engines must encompass all ranks in the MPI communicator,
         # i.e., everything in rank_map.values().
         def get_size():
-            from distarray.mpi.mpibase import COMM_PRIVATE
+            from distarray.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_size()
 
         comm_size = self.view.apply_async(get_size).get()[0]

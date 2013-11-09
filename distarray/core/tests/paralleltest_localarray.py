@@ -127,6 +127,7 @@ class TestFromDimdata(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
+    @unittest.skip("Not yet implemented.")
     def test_block_cyclic(self):
         dim0 = {"disttype": 'bc',
                 "datasize": 16,

@@ -16,7 +16,7 @@ __docformat__ = "restructuredtext en"
 import numpy as np
 from functools import reduce
 
-from distarray.mpi.mpibase import MPI
+from distarray.mpiutils import MPI
 from distarray.core.error import NullCommError
 from distarray.core.construct import (init_base_comm, init_dist, init_distdims,
                                       init_map_classes, init_grid_shape,

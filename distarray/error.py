@@ -16,3 +16,19 @@ __docformat__ = "restructuredtext en"
 
 class DistArrayError(Exception):
     pass
+
+
+class MPIDistArrayError(DistArrayError):
+    pass
+
+
+class InvalidCommSizeError(MPIDistArrayError):
+    pass
+
+
+class InvalidRankError(MPIDistArrayError):
+    pass
+
+
+class MPICommError(MPIDistArrayError):
+    pass

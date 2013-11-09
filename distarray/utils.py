@@ -1,10 +1,9 @@
 import numpy as np
 
 from math import sqrt
-from functools import wraps
 from six import next
 
-from distarray.mpi.mpibase import MPI
+from distarray.mpiutils import MPI
 
 
 def divisors(n):

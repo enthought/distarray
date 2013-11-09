@@ -1,4 +1,6 @@
 # encoding: utf-8
+from distarray import InvalidCommSizeError, MPICommError
+
 
 __docformat__ = "restructuredtext en"
 
@@ -13,8 +15,7 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.mpi import MPI, create_comm_of_size
-from distarray.mpi.error import InvalidCommSizeError, MPICommError
+from distarray.mpiutils import MPI, create_comm_of_size
 
 
 def benchmark_function(f, *args, **kwargs):

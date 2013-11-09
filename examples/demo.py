@@ -25,7 +25,7 @@ def local_sin_plus_50(da):
 @odin.local
 def global_sum(da):
     """Reproducing the `sum` function in densedistarray."""
-    from distarray.mpi.mpibase import MPI
+    from distarray.mpiutils import MPI
     local_sum = da.local_array.sum()
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
 
