@@ -11,7 +11,7 @@ __docformat__ = "restructuredtext en"
 
 import inspect
 from abc import ABCMeta, abstractproperty, abstractmethod
-from distarray.core.error import InvalidMapCodeError
+from distarray.local.error import InvalidMapCodeError
 
 
 class ILocalMap:

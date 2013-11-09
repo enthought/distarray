@@ -14,8 +14,8 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import numpy as np
-from distarray.core import denselocalarray
-from distarray.core.construct import find_local_shape, init_base_comm
+from distarray.local import denselocalarray
+from distarray.local.construct import find_local_shape, init_base_comm
 
 
 def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):

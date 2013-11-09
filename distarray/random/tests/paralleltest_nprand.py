@@ -1,7 +1,7 @@
 import unittest
 
 import distarray as da
-from distarray.core import maps
+from distarray.local import maps
 
 from distarray.testing import MpiTestCase, comm_null_passes
 

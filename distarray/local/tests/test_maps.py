@@ -1,5 +1,5 @@
 import unittest
-from distarray.core import maps
+from distarray.local import maps
 
 
 class TestBlockMap(unittest.TestCase):

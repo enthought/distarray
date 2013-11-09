@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import unittest
 
-import distarray.core.denselocalarray as dla
+import distarray.local.denselocalarray as dla
 from distarray.testing import MpiTestCase, comm_null_passes
 
 

@@ -13,9 +13,9 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.core import denselocalarray
-from distarray.core.denselocalarray import *
+from distarray.local import denselocalarray
+from distarray.local.denselocalarray import *
 
-from distarray.core import base
-from distarray.core.base import *
+from distarray.local import base
+from distarray.local.base import *
 

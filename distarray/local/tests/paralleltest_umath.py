@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from distarray.core import denselocalarray
-from distarray.core.error import IncompatibleArrayError
+from distarray.local import denselocalarray
+from distarray.local.error import IncompatibleArrayError
 from distarray.testing import MpiTestCase, comm_null_passes
 
 

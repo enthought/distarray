@@ -50,7 +50,7 @@ def process_return_value(subcontext, result_key):
                 typestring == "<class 'NoneType'>")
 
     def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.core.denselocalarray.DenseLocalArray'>"
+        return typestring == "<class 'distarray.local.denselocalarray.DenseLocalArray'>"
 
     if all(is_LocalArray(r) for r in result_type_str):
         result = DistArray(result_key, subcontext)

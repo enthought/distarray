@@ -1,14 +1,14 @@
 import unittest
 import numpy as np
 
-import distarray.core as dc
-import distarray.core.denselocalarray as da
+import distarray.local as dc
+import distarray.local.denselocalarray as da
 
 from numpy.testing import assert_array_equal
 from distarray.testing import comm_null_passes, MpiTestCase
 from distarray import utils
-from distarray.core import maps
-from distarray.core.error import IncompatibleArrayError
+from distarray.local import maps
+from distarray.local.error import IncompatibleArrayError
 
 
 class TestInit(MpiTestCase):

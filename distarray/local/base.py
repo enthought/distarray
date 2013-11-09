@@ -17,8 +17,8 @@ import numpy as np
 from functools import reduce
 
 from distarray.mpiutils import MPI
-from distarray.core.error import NullCommError
-from distarray.core.construct import (init_base_comm, init_dist, init_distdims,
+from distarray.local.error import NullCommError
+from distarray.local.construct import (init_base_comm, init_dist, init_distdims,
                                       init_map_classes, init_grid_shape,
                                       init_comm, init_local_shape_and_maps)
 

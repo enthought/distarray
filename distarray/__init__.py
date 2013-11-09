@@ -15,8 +15,8 @@ __docformat__ = "restructuredtext en"
 
 from distarray import error
 from distarray.error import *
-from distarray import core
-from distarray.core import *
+from distarray import local
+from distarray.local import *
 from distarray import random
 from distarray.random import *
 
