@@ -19,3 +19,5 @@ from distarray import core
 from distarray.core import *
 from distarray import random
 from distarray.random import *
+
+from distarray import mpiutils

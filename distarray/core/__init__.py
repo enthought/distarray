@@ -19,5 +19,3 @@ from distarray.core.denselocalarray import *
 from distarray.core import base
 from distarray.core.base import *
 
-from distarray.core import benchmark
-from distarray.core.benchmark import *
