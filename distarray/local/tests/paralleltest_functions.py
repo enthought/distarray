@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
 
 import distarray.local.denselocalarray as dla
 from distarray.testing import MpiTestCase, comm_null_passes
@@ -42,6 +43,21 @@ class TestFunctions(MpiTestCase):
         self.assertEqual(a.dtype, np.dtype('int64'))
         for global_inds, value in dla.ndenumerate(a):
             self.assertEqual(sum(global_inds), value)
+
+
+class TestCreationFuncs(MpiTestCase):
+
+    @comm_null_passes
+    def test_zeros(self):
+        a = dla.zeros((12, 20))
+        expected = np.zeros((3, 20))
+        assert_array_equal(a.local_array, expected)
+
+    @comm_null_passes
+    def test_ones(self):
+        a = dla.ones((12, 20))
+        expected = np.ones((3, 20))
+        assert_array_equal(a.local_array, expected)
 
 
 if __name__ == '__main__':
