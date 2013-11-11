@@ -18,7 +18,7 @@ from distarray.local import denselocalarray
 from distarray.local.construct import find_local_shape, init_base_comm
 
 
-def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.beta(a, b)
     else:
@@ -31,7 +31,7 @@ def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):
                                           grid_shape, comm, buf=local_result)
 
 
-def normal(loc=0.0, scale=1.0, size=None, dist={0: 'b'}, grid_shape=None,
+def normal(loc=0.0, scale=1.0, size=None, dist=None, grid_shape=None,
            comm=None):
     if size is None:
         return np.random.normal(loc, scale)
@@ -45,7 +45,7 @@ def normal(loc=0.0, scale=1.0, size=None, dist={0: 'b'}, grid_shape=None,
                                           grid_shape, comm, buf=local_result)
 
 
-def rand(size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def rand(size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.rand()
     else:
@@ -58,7 +58,7 @@ def rand(size=None, dist={0:'b'}, grid_shape=None, comm=None):
                                           grid_shape, comm, buf=local_result)
 
 
-def randint(low, high=None, size=None, dist={0: 'b'}, grid_shape=None,
+def randint(low, high=None, size=None, dist=None, grid_shape=None,
             comm=None):
     if size is None:
         return np.random.randint(low, high)
@@ -72,7 +72,7 @@ def randint(low, high=None, size=None, dist={0: 'b'}, grid_shape=None,
                                           grid_shape, comm, buf=local_result)
 
 
-def randn(size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def randn(size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.randn()
     else:
