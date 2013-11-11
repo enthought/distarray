@@ -216,4 +216,4 @@ def make_dist_tuple(dist, ndim):
     elif isinstance(dist, dict):
         return tuple([dist.get(i) for i in range(ndim)])
     else:
-        DistError("Dist must be a string, tuple, list or dict")
+        TypeError("Dist must be a string, tuple, list or dict")
