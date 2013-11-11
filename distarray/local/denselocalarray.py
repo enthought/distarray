@@ -24,9 +24,8 @@ from distarray.mpiutils import MPI
 from distarray.local.error import (InvalidDimensionError, DistMatrixError,
                                   IncompatibleArrayError)
 from distarray.local.base import BaseLocalArray, arecompatible
-from distarray.local.construct import (init_base_comm, find_local_shape,
-                                      init_dist, find_grid_shape)
-from distarray.utils import _raise_nie
+from distarray.local.construct import init_base_comm, find_local_shape
+from distarray.utils import _raise_nie, make_dist_tuple
 
 
 #----------------------------------------------------------------------------
@@ -59,7 +58,7 @@ def _make_dimdata(shape, dist=None, grid_shape=None):
     if grid_shape is not None:
         grid_gen = iter(grid_shape)
 
-    dist_tuple = init_dist(dist, len(shape))
+    dist_tuple = make_dist_tuple(dist, len(shape))
     dimdata = []
     for datasize, disttype in zip(shape, dist_tuple):
         if disttype not in {None, 'b', 'c'}:
