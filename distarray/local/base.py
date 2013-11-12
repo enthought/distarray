@@ -14,13 +14,11 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import numpy as np
+import operator
+
 from functools import reduce
 
-from distarray.mpiutils import MPI
-from distarray.local.error import NullCommError
-from distarray.local.construct import (init_base_comm, init_dist, init_distdims,
-                                      init_map_classes, init_grid_shape,
-                                      init_comm, init_local_shape_and_maps)
+from distarray.local import construct
 
 
 class BaseLocalArray(object):
@@ -56,68 +54,101 @@ class BaseLocalArray(object):
             A BaseLocalArray encapsulating `buf`, or else an empty
             (uninitialized) BaseLocalArray.
         """
-        comm = init_base_comm(comm)
+        self.dimdata = dimdata
+        self.base_comm = construct.init_base_comm(comm)
+        self.grid_shape = construct.init_grid_shape(self.shape, self.distdims,
+                                                    self.comm_size)
 
-        if comm == MPI.COMM_NULL:
-            raise NullCommError("Cannot create a LocalArray with COMM_NULL")
+        self.comm = construct.init_comm(self.base_comm, self.grid_shape,
+                                        self.ndistdim)
 
-        self.base_comm = init_base_comm(comm)
-        self.comm_size = self.base_comm.Get_size()
-        self.comm_rank = self.base_comm.Get_rank()
+        self.local_shape, self.maps = \
+            construct.init_local_shape_and_maps(self.shape,
+                                                self.grid_shape,
+                                                self.distdims,
+                                                self.map_classes)
 
-        self.shape = tuple(dd['datasize'] for dd in dimdata)
-        self.ndim = len(self.shape)
-        self.size = reduce(lambda x,y: x*y, self.shape)
+        self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
         self.base = None
         self.ctypes = None
 
-        # This order is extremely important and is shown by the
-        # arguments passed on to subsequent _init_* methods.  It is
-        # critical that these _init_* methods are free of side effects
-        # and stateless.  This means that they cannot set or get class
-        # or instance attributes.
-        dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
-                if dd['disttype']}
-        self.dist = init_dist(dist, self.ndim)
-        self.distdims = init_distdims(self.dist, self.ndim)
-        self.ndistdim = len(self.distdims)
-        self.map_classes = init_map_classes(self.dist)
 
-        try:
-            grid_shape = tuple(
-                dd['gridsize'] for dd in dimdata if dd['disttype'])
-        except KeyError:
-            grid_shape = None
-        self.grid_shape = init_grid_shape(self.shape, self.distdims,
-                                          self.comm_size, grid_shape)
+    @property
+    def shape(self):
+        return tuple(dd['datasize'] for dd in self.dimdata)
 
-        self.comm = init_comm(self.base_comm, self.grid_shape, self.ndistdim)
-        self.cart_coords = self.comm.Get_coords(self.comm_rank)
-        self.local_shape, self.maps = \
-            init_local_shape_and_maps(self.shape, self.grid_shape,
-                                      self.distdims, self.map_classes)
-        self.local_size = reduce(lambda x,y: x*y, self.local_shape)
+    @property
+    def ndim(self):
+        return len(self.dimdata)
 
+    @property
+    def size(self):
+        return reduce(operator.mul, self.shape)
+
+    @property
+    def comm_size(self):
+        return self.base_comm.Get_size()
+
+    @property
+    def comm_rank(self):
+        return self.base_comm.Get_rank()
+
+    @property
+    def dist(self):
+        return tuple(dd['disttype'] for dd in self.dimdata)
+
+    @property
+    def map_classes(self):
+        return construct.init_map_classes(self.dist)
+
+    @property
+    def distdims(self):
+        return tuple(i for (i, v) in enumerate(self.dist) if v)
+
+    @property
+    def ndistdim(self):
+        return len(self.distdims)
+
+    @property
+    def cart_coords(self):
+        return self.comm.Get_coords(self.comm_rank)
+
+    @property
+    def local_size(self):
+        return self.local_array.size
+
+    @property
+    def data(self):
+        return self.local_array.data
+
+    @property
+    def dtype(self):
+        return self.local_array.dtype
+
+    @property
+    def itemsize(self):
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self):
+        return self.size * self.itemsize
+
+    def _make_local_array(self, buf=None, dtype=None):
+        """Encapsulate `buf` or create an empty local array.
+
+        Returns
+        -------
+        local_array : numpy array
+        """
         if buf is None:
-            self.local_array = np.empty(self.local_shape, dtype=dtype)
+            return np.empty(self.local_shape, dtype=dtype)
         else:
-            try:
-                buf = memoryview(buf)
-            except TypeError:
-                msg = "The object is not or can't be made into a buffer."
-                raise TypeError(msg)
-            try:
-                self.local_array = np.asarray(buf, dtype=dtype)
-            except ValueError:
-                msg = "The buffer is smaller than needed for this array."
-                raise ValueError(msg)
+            mv = memoryview(buf)
+            return np.asarray(mv, dtype=dtype)
 
-        self.data = self.local_array.data
-        self.dtype = self.local_array.dtype
-        self.itemsize = self.dtype.itemsize
-        self.nbytes = self.size * self.itemsize
-
+    def compatibility_hash(self):
+        return hash((self.shape, self.dist, self.grid_shape, True))
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
@@ -128,9 +159,6 @@ class BaseLocalArray(object):
                     self.comm.Free()
                 except:
                     pass
-
-    def compatibility_hash(self):
-        return hash((self.shape, self.dist, self.grid_shape, True))
 
 
 def arecompatible(a, b):
