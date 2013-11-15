@@ -24,8 +24,9 @@ from distarray.mpiutils import MPI
 from distarray.local.error import (InvalidDimensionError, DistMatrixError,
                                    IncompatibleArrayError)
 from distarray.local.base import BaseLocalArray, arecompatible
-from distarray.utils import _raise_nie, make_dist_tuple
+from distarray.utils import _raise_nie
 
+from distarray.local import construct
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
@@ -33,8 +34,7 @@ from distarray.utils import _raise_nie, make_dist_tuple
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
-
-def _make_dimdata(shape, dist=None, grid_shape=None):
+def make_dimdata(shape, dist=None, grid_shape=None):
     """Create a dimdata data structure from simple parameters.
 
     Parameters
@@ -44,6 +44,8 @@ def _make_dimdata(shape, dist=None, grid_shape=None):
     dist : dict mapping int -> str, default is {0: 'b'}
         Keys are dimension number, values are disttype, e.g 'b', 'c', or
         None.
+    grid_shape : tuple of int, optional
+        Size of process grid in each dimension
 
     Returns
     -------
@@ -54,20 +56,19 @@ def _make_dimdata(shape, dist=None, grid_shape=None):
     if dist is None:
         dist = {0:'b'}
 
-    if grid_shape is not None:
+    dist_tuple = construct.init_dist(dist, len(shape))
+
+    if grid_shape:
         grid_gen = iter(grid_shape)
 
-    dist_tuple = make_dist_tuple(dist, len(shape))
     dimdata = []
     for datasize, disttype in zip(shape, dist_tuple):
         if disttype not in {None, 'b', 'c'}:
-            msg = ("disttype {} not supported. ",
-                   "Try `from_dimdata`.").format(disttype)
-            raise TypeError(msg)
-        dimdict = dict(disttype=disttype,
-                       datasize=datasize)
+            msg = "disttype {} not supported. Try `from_dimdata`."
+            raise TypeError(msg.format(disttype))
+        dimdict = dict(disttype=disttype, datasize=datasize)
         if grid_shape is not None and disttype is not None:
-            dimdict["gridsize"] = six.next(grid_gen)
+            dimdict["gridsize"] = next(grid_gen)
 
         dimdata.append(dimdict)
 
@@ -144,7 +145,8 @@ class DenseLocalArray(BaseLocalArray):
         --------
         LocalArray.from_dimdata
         """
-        dimdata = _make_dimdata(shape=shape, dist=dist, grid_shape=grid_shape)
+        dimdata = make_dimdata(shape=shape, dist=dist,
+                               grid_shape=grid_shape)
         super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
                                               buf=buf, comm=comm)
 
@@ -181,44 +183,6 @@ class DenseLocalArray(BaseLocalArray):
 
         return cls.from_dimdata(dimdata=dimdata, buf=buf, comm=comm)
 
-    def _dimdict(self, dim):
-        """Given a dimension number `dim`, return a `dimdict`.
-
-        Where `dimdict` is the metadata data structure provided for each
-        dimension by the Distributed Array Protocol.
-        """
-        if dim in self.distdims:
-            idx = self.distdims.index(dim)
-            gridrank = self.cart_coords[idx]
-            gridsize = self.grid_shape[idx]
-        else:
-            gridrank = 0
-            gridsize = 1
-
-        disttype = self.dist[dim]
-        start, stop = self.global_limits(dim)
-        datasize = self.shape[dim]
-
-        if disttype in {None, 'b'}:
-            step = 1
-        elif disttype == 'c':
-            stop = datasize
-            step = gridsize
-        else:
-            msg = "disttype {} not implemented."
-            raise NotImplementedError(msg.format(disttype))
-
-        dimdict = {"disttype": disttype,
-                   "datasize": datasize,
-                   "gridrank": gridrank,
-                   "gridsize": gridsize,
-                   "indices": slice(start, stop, step),
-                   "blocksize": 1,
-                   "periodic": False,
-                   "padding": (0, 0)
-                  }
-        return dimdict
-
     def __distarray__(self):
         """Returns the data structure required by the DAP.
 
@@ -226,9 +190,8 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
         """
-        dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
-                      "dimdata": dimdata}
+                      "dimdata": self.dimdata}
         return distbuffer
 
     #-------------------------------------------------------------------------
@@ -892,7 +855,8 @@ def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 def zeros_like(arr):
     if isinstance(arr, DenseLocalArray):
-        return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
+        return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
+                     arr.base_comm)
     else:
         raise TypeError("A DenseLocalArray or subclass is expected")
 
