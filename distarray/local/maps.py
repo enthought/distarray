@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from __future__ import division
+
 __docformat__ = "restructuredtext en"
 
 #----------------------------------------------------------------------------
@@ -9,113 +11,76 @@ __docformat__ = "restructuredtext en"
 #  the file COPYING, distributed as part of this software.
 #----------------------------------------------------------------------------
 
-import inspect
-from abc import ABCMeta, abstractproperty, abstractmethod
-from distarray.local.error import InvalidMapCodeError
+from six.moves import range, zip
+from math import ceil
 
 
-class ILocalMap:
-
-    __metaclass__ = ABCMeta
-
-    @abstractproperty
-    def local_shape(self):
-        pass
-
-    @abstractmethod
-    def owner(self, i):
-        pass
-
-    @abstractmethod
-    def local_index(self, i):
-        pass
-
-    @abstractmethod
-    def global_index(self, owner, p):
-        pass
+def block(dd):
+    return range(dd['start'], dd['stop'])
 
 
-def regular_local_shape(shape, grid_shape):
-    local_shape = shape // grid_shape
-    if shape % grid_shape > 0:
-        local_shape += 1
-    return local_shape
+def cyclic(dd):
+    return range(dd['start'], dd['datasize'], dd['gridsize'])
 
 
-class BlockCyclicMap(ILocalMap):
+def block_cyclic(dd):
+    nblocks = ceil(dd['datasize'] / dd['blocksize'])
+    block_indices = range(0, nblocks, dd['gridsize'])
 
-    def __init__(self, shape, grid_shape, block_size):
-        self.shape = shape
-        self.grid_shape = grid_shape
-        self.block_size = block_size
+    global_indices = []
+    for block_index in block_indices:
+        block_start = block_index * dd['blocksize'] + dd['start']
+        block_stop = block_start + dd['blocksize']
+        block = range(block_start, min(block_stop, dd['datasize']))
+        global_indices.extend(block)
+
+    return global_indices
+
+
+def unstructured(dd):
+    return dd['indices']
+
+
+disttype_to_global_indices = {
+    'b': block,
+    'bp': block,
+    'c': cyclic,
+    'bc': block_cyclic,
+    'u': unstructured
+}
+
+
+class IndexMap(object):
+
+    """Provide global->local and local->global index mappings.
+
+    Attributes
+    ----------
+    global_index : list of int or range object
+        Given a local index as a key, return the corresponding global index.
+    local_index : dict of int -> int
+        Given a global index as a key, return the corresponding local index.
+    """
+
+    def __init__(self, global_indices):
+        """Make an IndexMap from a local_index and global_index.
+
+        Parameters
+        ----------
+        global_indices: list of int or range object
+            Each position contains the corresponding global index for a
+            local index (position).
+        """
+        self.global_index = global_indices
+        local_indices = range(len(global_indices))
+        self.local_index = dict(zip(global_indices, local_indices))
 
     @property
-    def local_shape(self):
-        return regular_local_shape(self.shape, self.grid_shape)
+    def size(self):
+        return len(self.global_index)
 
-    def owner(self, i):
-        return (i // self.block_size) % self.grid_shape
-
-    def local_index(self, i):
-        local_block_number = i // (self.block_size * self.grid_shape)
-        offset = i % self.block_size
-        return local_block_number * self.block_size + offset
-
-    def global_index(self, owner, p):
-        local_block_number = p // self.block_size
-        offset = p % self.block_size
-        return ((local_block_number*self.grid_shape + owner) *
-                self.block_size + offset)
-
-
-class BlockMap(BlockCyclicMap):
-
-    def __init__(self, shape, grid_shape):
-        super(BlockMap, self).__init__(shape, grid_shape,
-                block_size=regular_local_shape(shape, grid_shape))
-
-
-class CyclicMap(BlockCyclicMap):
-
-    def __init__(self, shape, grid_shape):
-        super(CyclicMap, self).__init__(shape, grid_shape, block_size=1)
-
-class MapCodeRegistry(object):
-
-    """Registry of character code to `ILocalMap` mappings."""
-
-    def __init__(self):
-        self.maps = {}
-
-    def register_map(self, code, m):
-        if inspect.isclass(m):
-            if issubclass(m, ILocalMap):
-                self.maps[code] = m
-            else:
-                raise TypeError("Must register a Map subclass.")
-        else:
-            raise TypeError("Must register a class.")
-
-    def get_map_class(self, code):
-        m = self.maps.get(code)
-        if m is None:
-            if inspect.isclass(code):
-                if issubclass(code, ILocalMap):
-                    return code
-                else:
-                    msg = "Not an ILocalMap subclass or a valid map code: %s." % code
-                    raise InvalidMapCodeError(msg)
-            else:
-                msg = "Not a ILocalMap subclass or a valid map code: %s." % code
-                raise InvalidMapCodeError(msg)
-        else:
-            return m
-
-
-_map_code_registry = MapCodeRegistry()
-register_map = _map_code_registry.register_map
-get_map_class = _map_code_registry.get_map_class
-
-register_map('b', BlockMap)
-register_map('c', CyclicMap)
-register_map('bc', BlockCyclicMap)
+    @classmethod
+    def from_dimdict(cls, dimdict):
+        """Make an IndexMap from a `dimdict` data structure."""
+        global_indices_fn = disttype_to_global_indices[dimdict['disttype']]
+        return IndexMap(global_indices_fn(dimdict))

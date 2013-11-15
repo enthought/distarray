@@ -114,10 +114,6 @@ class BaseLocalArray(object):
         return tuple(dd['disttype'] for dd in self.dimdata)
 
     @property
-    def map_classes(self):
-        return construct.init_map_classes(self.dist)
-
-    @property
     def distdims(self):
         return tuple(i for (i, v) in enumerate(self.dist) if v)
 

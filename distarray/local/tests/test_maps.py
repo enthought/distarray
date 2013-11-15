@@ -1,170 +1,172 @@
 import unittest
 from distarray.local import maps
 
+from six.moves import range
+
 
 class TestBlockMap(unittest.TestCase):
 
-    def test_owner(self):
-        """Test the owner method of BlockMap."""
-        m = maps.BlockMap(16,4)
-        owners = [m.owner(e) for e in range(16)]
-        self.assertEqual(4*[0]+4*[1]+4*[2]+4*[3],owners)
-        m = maps.BlockMap(17,4)
-        owners = [m.owner(e) for e in range(17)]
-        self.assertEqual(5*[0]+5*[1]+5*[2]+2*[3],owners)
-        m = maps.BlockMap(15,4)
-        owners = [m.owner(e) for e in range(15)]
-        self.assertEqual(4*[0]+4*[1]+4*[2]+3*[3],owners)
+    def setUp(self):
+        dimdict = dict(start=16, stop=39)
+        self.m = maps.BlockMap(dimdict)
 
     def test_local_index(self):
-        """Test the local_index method of BlockMap."""
-        m = maps.BlockMap(16,4)
-        p = [m.local_index(i) for i in range(16)]
-        self.assertEqual(4*list(range(4)),p)
-        m = maps.BlockMap(17,4)
-        p = [m.local_index(i) for i in range(17)]
-        self.assertEqual(3*list(range(5))+[0,1],p)
-        m = maps.BlockMap(15,4)
-        p = [m.local_index(i) for i in range(15)]
-        self.assertEqual(3*list(range(4))+[0,1,2],p)
-        m = maps.BlockMap(10,2)
-        p = [m.local_index(i) for i in range(10)]
-        self.assertEqual(2*list(range(5)),p)
+        gis = range(16, 39)
+        lis = list(self.m.local_index(gi) for gi in gis)
+        expected = list(range(23))
+        self.assertEqual(lis, expected)
+
+    def test_local_index_IndexError(self):
+        gi = 15
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+        gi = 39
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+    def test_global_index(self):
+        lis = range(23)
+        gis = list(self.m.global_index(li) for li in lis)
+        expected = list(range(16, 39))
+        self.assertEqual(gis, expected)
+
+    def test_global_index_IndexError(self):
+        li = -1
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+        li = 25
+        self.assertRaises(IndexError, self.m.global_index, li)
 
 
-class TestCyclicMap(unittest.TestCase):
+class TestRegularBlockMap(unittest.TestCase):
 
-    def test_owner(self):
-        """Test the owner method of CyclicMap."""
-        m = maps.CyclicMap(16,4)
-        owners = [m.owner(e) for e in range(16)]
-        self.assertEqual(4*list(range(4)),owners)
-        m = maps.CyclicMap(17,4)
-        owners = [m.owner(e) for e in range(17)]
-        self.assertEqual(4*list(range(4))+[0],owners)
-        m = maps.CyclicMap(15,4)
-        owners = [m.owner(e) for e in range(15)]
-        self.assertEqual(3*list(range(4))+[0,1,2],owners)
+    def setUp(self):
+        dimdict = dict(gridrank=2, datasize=16, gridsize=4)
+        self.m = maps.RegularBlockMap(dimdict)
 
     def test_local_index(self):
-        """Test the local_index method of CyclicMap."""
-        m = maps.CyclicMap(16,4)
-        p = [m.local_index(i) for i in range(16)]
-        self.assertEqual(4*[0]+4*[1]+4*[2]+4*[3],p)
-        m = maps.CyclicMap(17,4)
-        p = [m.local_index(i) for i in range(17)]
-        self.assertEqual(4*[0]+4*[1]+4*[2]+4*[3]+[4],p)
-        m = maps.CyclicMap(15,4)
-        p = [m.local_index(i) for i in range(15)]
-        self.assertEqual(4*[0]+4*[1]+4*[2]+3*[3],p)
-        m = maps.BlockMap(10,2)
-        p = [m.local_index(i) for i in range(10)]
-        self.assertEqual(2*list(range(5)),p)
+        gis = range(8, 12)
+        lis = list(self.m.local_index(gi) for gi in gis)
+        expected = list(range(4))
+        self.assertEqual(lis, expected)
+
+    def test_local_index_IndexError(self):
+        gi = 7
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+        gi = 12
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+    def test_global_index(self):
+        lis = range(4)
+        gis = list(self.m.global_index(li) for li in lis)
+        expected = list(range(8, 12))
+        self.assertEqual(gis, expected)
+
+    def test_global_index_IndexError(self):
+        li = -1
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+        li = 5
+        self.assertRaises(IndexError, self.m.global_index, li)
 
 
-class TestBlockCyclicMap(unittest.TestCase):
+class TestRegularCyclicMap(unittest.TestCase):
 
-    def test_owner(self):
-        """Test the owner method of CyclicMap."""
-        size = 20
-        grid = 5
-        block = 2
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        owners = [bcm.owner(e) for e in range(size)]
-        expected = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4] * 2
-        self.assertEqual(expected,owners)
+    def setUp(self):
+        dimdict = dict(gridrank=2, datasize=16, gridsize=4)
+        self.m = maps.RegularCyclicMap(dimdict)
 
-    def test_compare_bcm_bm_owner(self):
-        """Test Block-Cyclic against Block map."""
-        size = 17
-        grid = 3
-        block = (size // grid) + 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        bm = maps.BlockMap(size,grid)
-        bcm_owners = [bcm.owner(e) for e in range(size)]
-        bm_owners = [bm.owner(e) for e in range(size)]
-        self.assertEqual(bcm_owners,bm_owners)
+    def test_local_index(self):
+        gis = (2, 6, 10, 14)
+        lis = tuple(self.m.local_index(gi) for gi in gis)
+        expected = tuple(range(4))
+        self.assertEqual(lis, expected)
 
-    def test_compare_bcm_cm_owner(self):
-        """Test Block-Cyclic against Cyclic map."""
-        size = 23
-        grid = 7
-        block = 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        cm = maps.CyclicMap(size,grid)
-        bcm_owners = [bcm.owner(e) for e in range(size)]
-        cm_owners = [cm.owner(e) for e in range(size)]
-        self.assertEqual(bcm_owners,cm_owners)
+    def test_local_index_IndexError(self):
+        gi = 3
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+        gi = 7
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+    def test_global_index(self):
+        lis = range(4)
+        gis = tuple(self.m.global_index(li) for li in lis)
+        expected = (2, 6, 10, 14)
+        self.assertEqual(gis, expected)
+
+    def test_global_index_IndexError(self):
+        li = -1
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+        li = 5
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+
+class TestRegularBlockCyclicMap(unittest.TestCase):
+
+    def setUp(self):
+        dimdict = dict(gridrank=1, datasize=16, gridsize=4, blocksize=2)
+        self.m = maps.RegularBlockCyclicMap(dimdict)
 
     def test_local_index(self):
         """Test the local_index method of BlockCyclicMap."""
-        size = 20
-        grid = 5
-        block = 2
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        lindices = [bcm.local_index(i) for i in range(size)]
-        expected = ([0, 1] * grid) + ([2, 3] * grid)
-        self.assertEqual(lindices, expected)
+        gis = (2, 3, 10, 11)
+        lis = tuple(self.m.local_index(gi) for gi in gis)
+        expected = tuple(range(4))
+        self.assertEqual(lis, expected)
+
+    def test_local_index_IndexError(self):
+        gi = 4
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+        gi = 12
+        self.assertRaises(IndexError, self.m.local_index, gi)
+
+    def test_global_index(self):
+        lis = range(4)
+        gis = tuple(self.m.global_index(li) for li in lis)
+        expected = (2, 3, 10, 11)
+        self.assertEqual(gis, expected)
+
+    def test_global_index_IndexError(self):
+        li = -1
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+        li = 5
+        self.assertRaises(IndexError, self.m.global_index, li)
+
+
+class TestMapEquivalences(unittest.TestCase):
 
     def test_compare_bcm_bm_local_index(self):
         """Test Block-Cyclic against Block map."""
-        size = 17
-        grid = 3
-        block = (size // grid) + 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        bm = maps.BlockMap(size,grid)
-        bcm_lindices = [bcm.local_index(e) for e in range(size)]
-        bm_lindices = [bm.local_index(e) for e in range(size)]
-        self.assertEqual(bcm_lindices,bm_lindices)
+        rank = 1
+        size = 16
+        grid = 4
+        block = size // grid
+        dimdict = dict(gridrank=rank, datasize=size, gridsize=grid,
+                       blocksize=block)
+
+        bcm = maps.RegularBlockCyclicMap(dimdict)
+        bm = maps.RegularBlockMap(dimdict)
+        bcm_lis = [bcm.local_index(e) for e in range(4, 8)]
+        bm_lis = [bm.local_index(e) for e in range(4, 8)]
+        self.assertEqual(bcm_lis, bm_lis)
 
     def test_compare_bcm_cm_local_index(self):
         """Test Block-Cyclic against Cyclic map."""
-        size = 23
-        grid = 7
+        rank = 1
+        size = 16
+        grid = 4
         block = 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        cm = maps.CyclicMap(size,grid)
-        bcm_lindices = [bcm.local_index(e) for e in range(size)]
-        cm_lindices = [cm.local_index(e) for e in range(size)]
-        self.assertEqual(bcm_lindices,cm_lindices)
-
-    def test_global_index(self):
-        """Test the local_index method of BlockCyclicMap."""
-        size = 20
-        grid = 5
-        block = 2
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        gindices = [bcm.global_index(o, p) for o in range(grid) for p in
-                    range(size//grid)]
-        expected = [0, 1, 10, 11, 2, 3, 12, 13, 4, 5, 14, 15, 6,
-                    7, 16, 17, 8, 9, 18, 19]
-        self.assertEqual(gindices, expected)
-
-    def test_compare_bcm_bm_global_index(self):
-        """Test Block-Cyclic against Block map."""
-        size = 17
-        grid = 3
-        block = (size // grid) + 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        bm = maps.BlockMap(size,grid)
-        bcm_gindices = [bcm.global_index(o, p) for o in range(grid) for p in
-                        range(size//grid)]
-        bm_gindices = [bm.global_index(o, p) for o in range(grid) for p in
-                       range(size//grid)]
-        self.assertEqual(bcm_gindices,bm_gindices)
-
-    def test_compare_bcm_cm_global_index(self):
-        """Test Block-Cyclic against Cyclic map."""
-        size = 23
-        grid = 7
-        block = 1
-        bcm = maps.BlockCyclicMap(size,grid,block)
-        cm = maps.CyclicMap(size,grid)
-        bcm_gindices = [bcm.global_index(o, p) for o in range(grid) for p in
-                        range(size//grid)]
-        cm_gindices = [cm.global_index(o, p) for o in range(grid) for p in
-                       range(size//grid)]
-        self.assertEqual(bcm_gindices,cm_gindices)
+        dimdict = dict(gridrank=rank, datasize=size, gridsize=grid,
+                       blocksize=block)
+        bcm = maps.RegularBlockCyclicMap(dimdict)
+        cm = maps.RegularCyclicMap(dimdict)
+        bcm_lis = [bcm.local_index(e) for e in range(1, 16, 4)]
+        cm_lis = [cm.local_index(e) for e in range(1, 16, 4)]
+        self.assertEqual(bcm_lis, cm_lis)
 
 
 class TestRegistry(unittest.TestCase):
@@ -172,16 +174,16 @@ class TestRegistry(unittest.TestCase):
     def test_get_class(self):
         """Test getting map classes by string identifier."""
         mc = maps.get_map_class('b')
-        self.assertEqual(mc,maps.BlockMap)
+        self.assertEqual(mc,maps.RegularBlockMap)
         mc = maps.get_map_class('c')
-        self.assertEqual(mc,maps.CyclicMap)
+        self.assertEqual(mc,maps.RegularCyclicMap)
         mc = maps.get_map_class('bc')
-        self.assertEqual(mc,maps.BlockCyclicMap)
+        self.assertEqual(mc,maps.RegularBlockCyclicMap)
 
     def test_get_class_pass(self):
         """Test getting a map class by the class itself."""
-        mc = maps.get_map_class(maps.BlockMap)
-        self.assertEqual(mc, maps.BlockMap)
+        mc = maps.get_map_class(maps.RegularBlockMap)
+        self.assertEqual(mc, maps.RegularBlockMap)
 
 
 if __name__ == '__main__':

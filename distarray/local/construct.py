@@ -104,30 +104,6 @@ def init_distdims(dist, ndim):
     return tuple(distdims)
 
 
-def init_map_classes(dist):
-    """Given a tuple of `str` dist types, return a tuple of map classes.
-
-    Parameters
-    ----------
-    dist : tuple of str as returned from `init_dist`
-
-    Returns
-    -------
-    tuple of classes
-        For example,
-        'b' -> distarray.local.maps_fast.BlockMap
-        'c' -> distarray.local.maps_fast.CyclicMap
-
-    Examples
-    --------
-    >>> init_map_classes(('b', None, None, 'c'))
-    (distarray.local.maps.BlockMap, distarray.local.maps.CyclicMap)
-    """
-    reduced_dist = [d for d in dist if d is not None]
-    map_classes = [maps.get_map_class(d) for d in reduced_dist]
-    return tuple(map_classes)
-
-
 def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
     """Generate or validate a `grid_shape`.
 
