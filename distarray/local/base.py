@@ -17,6 +17,7 @@ import numpy as np
 import operator
 
 from functools import reduce
+from six import next
 
 from distarray.local import construct
 
@@ -56,8 +57,11 @@ class BaseLocalArray(object):
         """
         self.dimdata = dimdata
         self.base_comm = construct.init_base_comm(comm)
-        self.grid_shape = construct.init_grid_shape(self.shape, self.distdims,
-                                                    self.comm_size)
+
+        self.grid_shape = construct.init_grid_shape(self.shape,
+                                                    self.distdims,
+                                                    self.comm_size,
+                                                    self.grid_shape)
 
         self.comm = construct.init_comm(self.base_comm, self.grid_shape,
                                         self.ndistdim)
@@ -73,6 +77,17 @@ class BaseLocalArray(object):
         self.base = None
         self.ctypes = None
 
+    @property
+    def grid_shape(self):
+        return tuple(dd.get('gridsize') for dd in self.dimdata
+                     if dd.get('gridsize'))
+
+    @grid_shape.setter
+    def grid_shape(self, grid_shape):
+        grid_size = iter(grid_shape)
+        for dist, dd in zip(self.dist, self.dimdata):
+            if dist:
+                dd['gridsize'] = next(grid_size)
 
     @property
     def shape(self):
@@ -112,7 +127,10 @@ class BaseLocalArray(object):
 
     @property
     def cart_coords(self):
-        return self.comm.Get_coords(self.comm_rank)
+        rval = tuple(dd.get('gridrank') for dd in self.dimdata
+                     if dd.get('gridrank'))
+        assert rval == self.comm.Get_coords(self.comm_rank)
+        return rval
 
     @property
     def local_size(self):
