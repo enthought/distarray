@@ -44,10 +44,9 @@ class DapTestMixin(object):
     def test_export_dimdata_keys(self):
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
-        required_keys = {"disttype", "periodic", "datasize", "gridrank",
-                "gridsize", "indices", "blocksize", "padding"}
+        required_keys = {"disttype", "datasize"}
         for dimdict in dimdata:
-            self.assertEqual(required_keys, set(dimdict.keys()))
+            self.assertTrue(required_keys <= set(dimdict.keys()))
 
     @comm_null_passes
     def test_export_dimdata_values(self):
@@ -55,13 +54,17 @@ class DapTestMixin(object):
         dimdata = export_data['dimdata']
         for dd in dimdata:
             self.assertIn(dd['disttype'], VALID_DISTTYPES)
-            self.assertIsInstance(dd['periodic'], bool)
             self.assertIsInstance(dd['datasize'], int)
-            self.assertIsInstance(dd['gridrank'], int)
-            self.assertIsInstance(dd['gridsize'], int)
-            self.assertIsInstance(dd['indices'], slice)
-            self.assertIsInstance(dd['blocksize'], int)
-            self.assertEqual(len(dd['padding']), 2)
+
+            for key in ('gridrank', 'gridsize',  'blocksize', 'padding'):
+                try:
+                    self.assertIsInstance(dd[key], int)
+                except KeyError:
+                    pass
+            try:
+                self.assertIsInstance(dd['periodic'], bool)
+            except KeyError:
+                pass
 
     @comm_null_passes
     def test_round_trip_equality(self):
@@ -97,8 +100,7 @@ class TestDapBasic(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), grid_shape=(4,), comm=self.comm,
-                                  buf=None)
+        self.larr = da.LocalArray((16, 16), grid_shape=(4,), comm=self.comm)
 
 
 class TestDapUint(DapTestMixin, MpiTestCase):
