@@ -181,7 +181,8 @@ def _compute_grid_ratios(shape):
 
 
 def init_comm(base_comm, grid_shape, ndistdim):
-    return base_comm.Create_cart(grid_shape,ndistdim*(False,),False)
+    return base_comm.Create_cart(grid_shape, ndistdim * (False,),
+                                 reorder=False)
 
 
 def init_local_shape_and_maps(shape, grid_shape, distdims, map_classes):
