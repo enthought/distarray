@@ -16,15 +16,30 @@ from math import ceil
 
 
 def block(dd):
+    """Return the global indices owned by this block-distributed process.
+
+    For a regularly-distributed block distribution, 'gridrank', 'datasize',
+    and 'gridsize' keys are required.  For an irregularly-distributed block
+    distribution, 'start' and 'stop' are required.
+    """
     return range(dd['start'], dd['stop'])
 
 
 def cyclic(dd):
+    """Return the global indices owned by this cyclically-distributed process.
+
+    Requires 'start', 'datasize', and 'gridsize' keys.
+    """
     return range(dd['start'], dd['datasize'], dd['gridsize'])
 
 
 def block_cyclic(dd):
-    nblocks = ceil(dd['datasize'] / dd['blocksize'])
+    """Return the global indices owned by this block-cyclically-distributed
+    process.
+
+    Requires 'start', 'datasize', 'gridsize', and 'blocksize' keys.
+    """
+    nblocks = int(ceil(dd['datasize'] / dd['blocksize']))
     block_indices = range(0, nblocks, dd['gridsize'])
 
     global_indices = []
@@ -38,6 +53,10 @@ def block_cyclic(dd):
 
 
 def unstructured(dd):
+    """Return the arbitrary global indices owned by this  process.
+
+    Requires the 'indices' key.
+    """
     return dd['indices']
 
 
