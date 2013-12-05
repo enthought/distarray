@@ -21,12 +21,11 @@ import numpy as np
 from six.moves import zip, range
 
 from distarray.mpiutils import MPI
-from distarray.local.error import (InvalidDimensionError, DistMatrixError,
-                                   IncompatibleArrayError)
-from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.utils import _raise_nie
-
 from distarray.local import construct
+from distarray.local.base import BaseLocalArray, arecompatible
+from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
+
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
