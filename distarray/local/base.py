@@ -19,7 +19,7 @@ import operator
 from functools import reduce
 from six import next
 
-from distarray.local import construct
+from distarray.local import construct, maps
 
 
 class BaseLocalArray(object):
@@ -66,16 +66,26 @@ class BaseLocalArray(object):
         self.comm = construct.init_comm(self.base_comm, self.grid_shape,
                                         self.ndistdim)
 
-        self.local_shape, self.maps = \
-            construct.init_local_shape_and_maps(self.shape,
-                                                self.grid_shape,
-                                                self.distdims,
-                                                self.map_classes)
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
+                          dimdata if dimdict['disttype'])
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
         self.base = None
         self.ctypes = None
+
+    @property
+    def local_shape(self):
+        lshape = []
+        maps = iter(self.maps)
+        for dim in self.dimdata:
+            if dim['disttype']:
+                m = maps.next()
+                size = len(m.global_index)
+            else:
+                size = dim['datasize']
+            lshape.append(size)
+        return tuple(lshape)
 
     @property
     def grid_shape(self):
