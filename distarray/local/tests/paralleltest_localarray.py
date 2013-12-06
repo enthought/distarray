@@ -4,7 +4,6 @@ import numpy as np
 import distarray.local.denselocalarray as da
 from distarray import utils
 from distarray.testing import comm_null_passes, MpiTestCase
-from distarray.local import maps
 from distarray.local.error import IncompatibleArrayError
 
 
@@ -21,21 +20,20 @@ class TestInit(MpiTestCase):
     def test_basic(self):
         """Test basic LocalArray creation."""
         self.assertEqual(self.larr.shape, (16,16))
-        self.assertEqual(self.larr.dist, ('b',None))
+        self.assertEqual(self.larr.dist, ('b', None))
         self.assertEqual(self.larr.grid_shape, (4,))
         self.assertEqual(self.larr.base_comm, self.comm)
         self.assertEqual(self.larr.comm_size, 4)
         self.assertTrue(self.larr.comm_rank in range(4))
         self.assertEqual(self.larr.ndistdim, 1)
         self.assertEqual(self.larr.distdims, (0,))
-        self.assertEqual(self.larr.map_classes, (maps.RegularBlockMap,))
         self.assertEqual(self.larr.comm.Get_topo(),
-                (list(self.larr.grid_shape),[0],[self.larr.comm_rank]))
+                         (list(self.larr.grid_shape),
+                          [0], [self.larr.comm_rank]))
         self.assertEqual(len(self.larr.maps), 1)
-        self.assertEqual(self.larr.maps[0].local_shape, 4)
-        self.assertEqual(self.larr.maps[0].shape, 16)
-        self.assertEqual(self.larr.maps[0].grid_shape, 4)
-        self.assertEqual(self.larr.local_shape, (4,16))
+        self.assertEqual(self.larr.grid_shape, (4,))
+        self.assertEqual(self.larr.shape, (16, 16))
+        self.assertEqual(self.larr.local_shape, (4, 16))
         self.assertEqual(self.larr.local_array.shape, self.larr.local_shape)
         self.assertEqual(self.larr.local_array.dtype, self.larr.dtype)
 
@@ -46,7 +44,7 @@ class TestInit(MpiTestCase):
         la = np.random.random(self.larr.local_shape)
         la = np.asarray(la, dtype=self.larr.dtype)
         self.larr.set_localarray(la)
-        new_la = self.larr.get_localarray()
+        self.larr.get_localarray()
 
 
 class TestFromDimdata(MpiTestCase):
@@ -60,25 +58,31 @@ class TestFromDimdata(MpiTestCase):
         self.assertEqual(l0.comm_rank, l1.comm_rank)
         self.assertEqual(l0.ndistdim, l1.ndistdim)
         self.assertEqual(l0.distdims, l1.distdims)
-        self.assertEqual(l0.map_classes, l1.map_classes)
         self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
         self.assertEqual(len(l0.maps), len(l1.maps))
-        self.assertEqual(l0.maps[0].local_shape, l1.maps[0].local_shape)
-        self.assertEqual(l0.maps[0].shape, l1.maps[0].shape)
-        self.assertEqual(l0.maps[0].grid_shape, l1.maps[0].grid_shape)
+        self.assertEqual(l0.shape, l1.shape)
+        self.assertEqual(l0.grid_shape, l1.grid_shape)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_array.shape, l1.local_array.shape)
         self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        self.assertEqual(list(l0.maps[0].global_index),
+                         list(l1.maps[0].global_index))
+        self.assertEqual(list(l0.maps[0].local_index),
+                         list(l1.maps[0].local_index))
 
     @comm_null_passes
     def test_block(self):
-        dim0 = {"disttype": 'b',
-                "datasize": 16,
-                "gridsize": 4}
+        dim0 = {
+            "disttype": 'b',
+            "datasize": 16,
+            "gridsize": 4,
+            }
 
-        dim1 = {"disttype": None,
-                "datasize": 16,
-                "gridsize": None}
+        dim1 = {
+            "disttype": None,
+            "datasize": 16,
+            "gridsize": None,
+        }
 
         dimdata = (dim0, dim1)
 
@@ -90,13 +94,17 @@ class TestFromDimdata(MpiTestCase):
 
     @comm_null_passes
     def test_cyclic(self):
-        dim0 = {"disttype": None,
-                "datasize": 16,
-                "gridsize": None}
+        dim0 = {
+            "disttype": None,
+            "datasize": 16,
+            "gridsize": None,
+            }
 
-        dim1 = {"disttype": 'c',
-                "datasize": 16,
-                "gridsize": 4}
+        dim1 = {
+            "disttype": 'c',
+            "datasize": 16,
+            "gridsize": 4,
+            }
 
         dimdata = (dim0, dim1)
 
@@ -108,13 +116,17 @@ class TestFromDimdata(MpiTestCase):
 
     @comm_null_passes
     def test_cyclic_and_block(self):
-        dim0 = {"disttype": 'c',
-                "datasize": 16,
-                "gridsize": 2}
+        dim0 = {
+            "disttype": 'c',
+            "datasize": 16,
+            "gridsize": 2,
+            }
 
-        dim1 = {"disttype": 'b',
-                "datasize": 16,
-                "gridsize": 2}
+        dim1 = {
+            "disttype": 'b',
+            "datasize": 16,
+            "gridsize": 2,
+            }
 
         dimdata = (dim0, dim1)
 
@@ -124,7 +136,7 @@ class TestFromDimdata(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
-    @unittest.skip("Not yet implemented.")
+    @unittest.skip('Not implemented.')
     def test_block_cyclic(self):
         dim0 = {"disttype": 'bc',
                 "datasize": 16,
@@ -137,7 +149,11 @@ class TestFromDimdata(MpiTestCase):
 
         dimdata = (dim0, dim1)
 
-        da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        expected = da.LocalArray((16,16), dist={0: 'bc'}, blocksize=2,
+                                 grid_shape=(2, 2), comm=self.comm)
+
+        self.assert_alike(larr, expected)
 
 
 class TestGridShape(MpiTestCase):
@@ -187,7 +203,7 @@ class TestLocalInd(MpiTestCase):
 
     @comm_null_passes
     def test_block_simple(self):
-        """Can we compute local indices for a RegularBlockMap?"""
+        """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((4, 4), comm=self.comm)
         self.assertEqual(la.shape, (4, 4))
         self.assertEqual(la.grid_shape, (4,))
@@ -201,7 +217,7 @@ class TestLocalInd(MpiTestCase):
 
     @comm_null_passes
     def test_block_complex(self):
-        """Can we compute local indices for a RegularBlockMap?"""
+        """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((8, 2), comm=self.comm)
         self.assertEqual(la.shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
@@ -222,34 +238,41 @@ class TestLocalInd(MpiTestCase):
 
     @comm_null_passes
     def test_cyclic_simple(self):
-        """Can we compute local indices for a RegularCyclicMap?"""
-        la = da.LocalArray((4, 4), dist={0: 'c'}, comm=self.comm)
-        self.assertEqual(la.shape, (4, 4))
+        """Can we compute local indices for a cyclic distribution?"""
+        la = da.LocalArray((10,), dist={0: 'c'}, comm=self.comm)
+        self.assertEqual(la.shape, (10,))
         self.assertEqual(la.grid_shape, (4,))
-        self.assertEqual(la.local_shape, (1, 4))
-        self.assertEqual(la.map_classes, (maps.RegularCyclicMap,))
 
         if la.comm_rank == 0:
-            gis = (0, 4, 8, 12)
+            gis = (0, 4, 8)
+            self.assertEqual(la.local_shape, (3,))
+            calc_result = [la.global_to_local(gi) for gi in gis]
+            result = [(0,), (1,), (2,)]
         elif la.comm_rank == 1:
-            gis = (1, 5, 9, 13)
+            gis = (1, 5, 9)
+            self.assertEqual(la.local_shape, (3,))
+            calc_result = [la.global_to_local(gi) for gi in gis]
+            result = [(0,), (1,), (2,)]
         elif la.comm_rank == 2:
-            gis = (2, 6, 10, 14)
+            gis = (2, 6)
+            self.assertEqual(la.local_shape, (2,))
+            calc_result = [la.global_to_local(gi) for gi in gis]
+            result = [(0,), (1,)]
         elif la.comm_rank == 3:
-            gis = (3, 7, 11, 15)
+            gis = (3, 7)
+            self.assertEqual(la.local_shape, (2,))
+            calc_result = [la.global_to_local(gi) for gi in gis]
+            result = [(0,), (1,)]
 
-        result = [(0,), (1,), (2,), (3,)]
-        calc_result = [la.global_to_local(gi) for gi in gis]
         self.assertEqual(result, calc_result)
 
     @comm_null_passes
     def test_cyclic_complex(self):
-        """Can we compute local indices for a RegularCyclicMap?"""
+        """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
         self.assertEqual(la.shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (2, 2))
-        self.assertEqual(la.map_classes, (maps.RegularCyclicMap,))
 
         expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]
 
@@ -271,21 +294,20 @@ class TestGlobalInd(MpiTestCase):
     """Test the computation of global indices."""
 
     def round_trip(self, la):
-        for indices in utils.multi_for( [range(s) for s in la.shape] ):
-            li = la.global_to_local(*indices)
-            owner_rank = la.owner_rank(*indices)
-            gi = la.local_to_global(owner_rank,*li)
-            self.assertEqual(gi,indices)
+        for indices in utils.multi_for([range(s) for s in la.local_shape]):
+            gi = la.local_to_global(*indices)
+            li = la.global_to_local(*gi)
+            self.assertEqual(li,indices)
 
     @comm_null_passes
     def test_block(self):
-        """Can we go from global to local indices and back for BlockMap?"""
+        """Can we go from global to local indices and back for block?"""
         la = da.LocalArray((4,4), comm=self.comm)
         self.round_trip(la)
 
     @comm_null_passes
     def test_cyclic(self):
-        """Can we go from global to local indices and back for CyclicMap?"""
+        """Can we go from global to local indices and back for cyclic?"""
         la = da.LocalArray((8,8), dist=('c',None), comm=self.comm)
         self.round_trip(la)
 
@@ -323,7 +345,7 @@ class TestGlobalInd(MpiTestCase):
 class TestIndexing(MpiTestCase):
 
     @comm_null_passes
-    def test_indexing0(self):
+    def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
         a = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
         b = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
@@ -336,7 +358,7 @@ class TestIndexing(MpiTestCase):
             self.assertEqual(a[global_inds],0.0)
 
     @comm_null_passes
-    def test_indexing1(self):
+    def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
         a = da.LocalArray((16,16,2), dist=('c','b',None), comm=self.comm)
         b = da.LocalArray((16,16,2), dist=('c','b',None), comm=self.comm)
@@ -375,3 +397,4 @@ if __name__ == '__main__':
         unittest.main()
     except SystemExit:
         pass
+

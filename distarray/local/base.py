@@ -28,7 +28,7 @@ def distribute_block_indices(dd):
         return
 
     nelements = dd['datasize'] // dd['gridsize']
-    if dd['gridsize'] % dd['datasize'] != 0:
+    if dd['datasize'] % dd['gridsize'] != 0:
         nelements += 1
 
     dd['start'] = dd['gridrank'] * nelements

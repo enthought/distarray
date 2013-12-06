@@ -210,14 +210,6 @@ class DenseLocalArray(BaseLocalArray):
         else:
             raise ValueError("Incompatible local array shape")
 
-    def owner_rank(self, *indices):
-        owners = []
-        for i, distdim in enumerate(self.distdims):
-            owners.append(self.maps[i].owner(indices[distdim]))
-        #owners = [self.maps[i].owner(indices[self.distdims[i]]) for i in
-        #          range(self.ndistdim)]
-        return self.comm.Get_cart_rank(owners)
-
     def rank_to_coords(self, rank):
         return self.comm.Get_coords(rank)
 
@@ -228,14 +220,14 @@ class DenseLocalArray(BaseLocalArray):
         local_ind = list(global_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
-            local_ind[dd] = self.maps[i].local_index(global_ind[dd])
+            local_ind[dd] = self.maps[i].local_index[global_ind[dd]]
         return tuple(local_ind)
 
     def local_to_global(self, *local_ind):
         global_ind = list(local_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
-            global_ind[dd] = self.maps[i].global_index(local_ind[dd])
+            global_ind[dd] = self.maps[i].global_index[local_ind[dd]]
         return tuple(global_ind)
 
     def global_limits(self, dim):
@@ -833,7 +825,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
+        global_inds = self.arr.local_to_global(*local_inds)
         return global_inds, value
 
 
