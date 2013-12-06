@@ -18,7 +18,6 @@ __docformat__ = "restructuredtext en"
 import numpy as np
 
 from distarray.mpiutils import MPI
-from distarray.local import maps
 from distarray.local.error import (DistError, InvalidGridShapeError,
                                   GridShapeError, NullCommError,
                                   InvalidBaseCommError)
@@ -49,6 +48,12 @@ def init_base_comm(comm):
         return comm
     else:
         raise InvalidBaseCommError("Not an MPI.Comm instance")
+
+
+def init_comm(base_comm, grid_shape, ndistdim):
+    """Create an MPI communicator with a cartesian topology."""
+    return base_comm.Create_cart(grid_shape, ndistdim * (False,),
+                                 reorder=False)
 
 
 def init_dist(dist, ndim):
@@ -145,7 +150,7 @@ def optimize_grid_shape(shape, distdims, comm_size):
             index = norms.argmin()
             grid_shape = tuple(factors[index])
         else:
-            raise GridShapeError("Cannot distribute array over processors")
+            raise GridShapeError("Cannot distribute array over processors.")
     return grid_shape
 
 
@@ -154,19 +159,4 @@ def _compute_grid_ratios(shape):
     return np.array([shape[i] / shape[j] for i in range(n)
                                          for j in range(n)
                                          if i < j])
-
-
-def init_comm(base_comm, grid_shape, ndistdim):
-    return base_comm.Create_cart(grid_shape, ndistdim * (False,),
-                                 reorder=False)
-
-
-def init_local_shape_and_maps(shape, grid_shape, distdims, map_classes):
-    maps = []
-    local_shape = list(shape)
-    for i, distdim in enumerate(distdims):
-        minst = map_classes[i](shape[distdim], grid_shape[i])
-        local_shape[distdim] = minst.local_shape
-        maps.append(minst)
-    return tuple(local_shape), tuple(maps)
 

@@ -218,9 +218,6 @@ class BaseLocalArray(object):
             mv = memoryview(buf)
             return np.asarray(mv, dtype=dtype)
 
-    def compatibility_hash(self):
-        return hash((self.shape, self.dist, self.grid_shape, True))
-
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
         # attribute and this needs to be protected against.
@@ -230,6 +227,9 @@ class BaseLocalArray(object):
                     self.comm.Free()
                 except:
                     pass
+
+    def compatibility_hash(self):
+        return hash((self.shape, self.dist, self.grid_shape, True))
 
 
 def arecompatible(a, b):
