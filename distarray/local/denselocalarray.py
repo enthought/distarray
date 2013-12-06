@@ -192,8 +192,11 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
         """
-        distbuffer = {"buffer": self.local_array,
-                      "dimdata": self.dimdata}
+        distbuffer = {
+            "__version__": "1.0.0",
+            "buffer": self.local_array,
+            "dimdata": self.dimdata,
+            }
         return distbuffer
 
     #-------------------------------------------------------------------------
