@@ -22,6 +22,47 @@ from six import next
 from distarray.local import construct, maps
 
 
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dimdict `dd`."""
+    if dd.has_key('start') and dd.has_key('stop'):
+        return
+
+    nelements = dd['datasize'] // dd['gridsize']
+    if dd['gridsize'] % dd['datasize'] != 0:
+        nelements += 1
+
+    dd['start'] = dd['gridrank'] * nelements
+    if dd['start'] > dd['datasize']:
+        dd['start'] = dd['datasize']
+        dd['stop'] = dd['datasize']
+
+    dd['stop'] = dd['start'] + nelements
+    if dd['stop'] > dd['datasize']:
+        dd['stop'] = dd['datasize']
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` given dimdict `dd`."""
+    if dd.has_key('start'):
+        return
+    else:
+        dd['start'] = dd['gridrank']
+
+
+def distribute_indices(dimdata):
+    """Fill in missing index related keys...
+
+    for supported disttypes.
+    """
+    distribute_fn = {
+        'b': distribute_block_indices,
+        'c': distribute_cyclic_indices,
+    }
+    for dim in dimdata:
+        if dim['disttype']:
+            distribute_fn[dim['disttype']](dim)
+
+
 class BaseLocalArray(object):
 
     """Distributed memory Python arrays."""
@@ -66,6 +107,8 @@ class BaseLocalArray(object):
         self.comm = construct.init_comm(self.base_comm, self.grid_shape,
                                         self.ndistdim)
 
+        self._cache_gridrank()
+        distribute_indices(self.dimdata)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
                           dimdata if dimdict['disttype'])
 
@@ -157,6 +200,10 @@ class BaseLocalArray(object):
     @property
     def nbytes(self):
         return self.size * self.itemsize
+
+    def _cache_gridrank(self):
+        for dim in self.dimdata:
+            dim['gridrank'] = self.base_comm.Get_rank()
 
     def _make_local_array(self, buf=None, dtype=None):
         """Encapsulate `buf` or create an empty local array.

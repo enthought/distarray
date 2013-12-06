@@ -33,8 +33,9 @@ from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
-def make_dimdata(shape, dist=None, grid_shape=None):
-    """Create a dimdata data structure from simple parameters.
+
+def make_partial_dimdata(shape, dist=None, grid_shape=None):
+    """Create an (incomplete) dimdata structure from simple parameters.
 
     Parameters
     ----------
@@ -49,20 +50,22 @@ def make_dimdata(shape, dist=None, grid_shape=None):
     Returns
     -------
     dimdata : tuple of dict
-        Data structure outlined in the Distributed Array Protocol.
+        Partial dimdata structure as outlined in the Distributed Array
+        Protocol.
     """
+    supported_disttypes = (None, 'b', 'c')
 
     if dist is None:
         dist = {0:'b'}
 
     dist_tuple = construct.init_dist(dist, len(shape))
 
-    if grid_shape:
+    if grid_shape:  # if None, BaseLocalArray will initialize
         grid_gen = iter(grid_shape)
 
     dimdata = []
     for datasize, disttype in zip(shape, dist_tuple):
-        if disttype not in {None, 'b', 'c'}:
+        if disttype not in supported_disttypes:
             msg = "disttype {} not supported. Try `from_dimdata`."
             raise TypeError(msg.format(disttype))
         dimdict = dict(disttype=disttype, datasize=datasize)
@@ -144,8 +147,8 @@ class DenseLocalArray(BaseLocalArray):
         --------
         LocalArray.from_dimdata
         """
-        dimdata = make_dimdata(shape=shape, dist=dist,
-                               grid_shape=grid_shape)
+        dimdata = make_partial_dimdata(shape=shape, dist=dist,
+                                       grid_shape=grid_shape)
         super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
                                               buf=buf, comm=comm)
 
