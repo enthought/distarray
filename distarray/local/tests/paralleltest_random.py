@@ -18,12 +18,12 @@ class TestBasic(MpiTestCase):
         self.assertTrue(la.comm_rank in range(4))
         self.assertEqual(la.ndistdim, 1)
         self.assertEqual(la.distdims, (0,))
-        self.assertEqual(la.map_classes, (maps.BlockMap,))
-        self.assertEqual(la.comm.Get_topo(), (list(la.grid_shape),[0],[la.comm_rank]))
+        self.assertEqual(la.comm.Get_topo(),
+                         (list(la.grid_shape),
+                          [0],[la.comm_rank]))
         self.assertEqual(len(la.maps), 1)
-        self.assertEqual(la.maps[0].local_shape, 4)
-        self.assertEqual(la.maps[0].shape, 16)
-        self.assertEqual(la.maps[0].grid_shape, 4)
+        self.assertEqual(la.shape, (16, 16))
+        self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (4, 16))
         self.assertEqual(la.local_array.shape, la.local_shape)
         self.assertEqual(la.local_array.dtype, la.dtype)
