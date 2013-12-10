@@ -92,8 +92,9 @@ class DapTestMixin(object):
     @comm_null_passes
     def test_round_trip_identity(self):
         larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
-        idx = (0,) * larr.local_array.ndim
-        larr.local_array[idx] = 99
+        if self.comm.Get_rank() == 0:
+            idx = (0,) * larr.local_array.ndim
+            larr.local_array[idx] = 99
         assert_array_equal(larr.local_array, self.larr.local_array)
         #self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
@@ -137,7 +138,6 @@ class TestDapExplicitNone1(DapTestMixin, MpiTestCase):
                                   grid_shape=(4,), comm=self.comm)
 
 
-@unittest.skip('')
 class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
@@ -146,7 +146,6 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
                                   grid_shape=(2, 2), comm=self.comm)
 
 
-@unittest.skip('')
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
     def get_comm_size(self):
@@ -170,7 +169,6 @@ class TestDapCyclicDim(DapTestMixin, MpiTestCase):
                                   comm=self.comm)
 
 
-@unittest.skip('')
 class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
@@ -181,7 +179,6 @@ class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
                                   comm=self.comm)
 
 
-@unittest.skip('')
 class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
