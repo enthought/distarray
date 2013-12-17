@@ -539,6 +539,19 @@ class DenseLocalArray(BaseLocalArray):
     def __len__(self):
         return self.shape[0]
 
+    def checked_getitem(self, global_inds):
+        try:
+            return self.__getitem__(global_inds)
+        except IndexError:
+            return None
+
+    def checked_setitem(self, global_inds, value):
+        try:
+            self.__setitem__(global_inds, value)
+            return True
+        except IndexError:
+            return None
+
     def _sanitize_indices(self, indices):
         if isinstance(indices, int) or isinstance(indices, slice):
             return (indices,)
@@ -549,13 +562,19 @@ class DenseLocalArray(BaseLocalArray):
 
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
-        local_inds = self.global_to_local(*global_inds)
-        return self.local_array[local_inds]
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            return self.local_array[local_inds]
+        except KeyError as err:
+            raise IndexError(err)
 
     def __setitem__(self, global_inds, value):
         global_inds = self._sanitize_indices(global_inds)
-        local_inds = self.global_to_local(*global_inds)
-        self.local_array[local_inds] = value
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            self.local_array[local_inds] = value
+        except KeyError as err:
+            raise IndexError(err)
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
