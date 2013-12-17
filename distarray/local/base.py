@@ -123,7 +123,7 @@ class BaseLocalArray(object):
         maps = iter(self.maps)
         for dim in self.dimdata:
             if dim['disttype']:
-                m = maps.next()
+                m = next(maps)
                 size = len(m.global_index)
             else:
                 size = dim['datasize']

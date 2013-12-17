@@ -106,10 +106,10 @@ class TestMapEquivalences(unittest.TestCase):
         block = size // grid
         dimdict = dict(start=start, datasize=size, gridsize=grid)
 
-        bcm = maps.IndexMap.from_dimdict(dict(dimdict.items() +
+        bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                               [('disttype', 'bc'),
                                                ('blocksize', block)]))
-        bm = maps.IndexMap.from_dimdict(dict(dimdict.items() +
+        bm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                              [('disttype', 'b'),
                                               ('stop', size // grid +
                                                        start)]))
@@ -125,14 +125,13 @@ class TestMapEquivalences(unittest.TestCase):
         block = 1
         dimdict = dict(start=start, datasize=size, gridsize=grid,
                        blocksize=block)
-        bcm = maps.IndexMap.from_dimdict(dict(dimdict.items() +
+        bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                               [('disttype', 'bc')]))
-        cm = maps.IndexMap.from_dimdict(dict(dimdict.items() +
+        cm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                              [('disttype', 'c')]))
         bcm_lis = [bcm.local_index[e] for e in range(1, 16, 4)]
         cm_lis = [cm.local_index[e] for e in range(1, 16, 4)]
         self.assertEqual(bcm_lis, cm_lis)
-
 
 
 if __name__ == '__main__':
