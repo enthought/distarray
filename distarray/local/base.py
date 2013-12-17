@@ -202,8 +202,10 @@ class BaseLocalArray(object):
         return self.size * self.itemsize
 
     def _cache_gridrank(self):
-        for dim in self.dimdata:
-            dim['gridrank'] = self.base_comm.Get_rank()
+        cart_coords = self.comm.Get_coords(self.comm_rank)
+        dist_data = (self.dimdata[i] for i in self.distdims)
+        for dim, cart_rank in zip(dist_data, cart_coords):
+            dim['gridrank'] = cart_rank
 
     def _make_local_array(self, buf=None, dtype=None):
         """Encapsulate `buf` or create an empty local array.
