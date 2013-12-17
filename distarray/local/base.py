@@ -24,7 +24,7 @@ from distarray.local import construct, maps
 
 def distribute_block_indices(dd):
     """Fill in `start` and `stop` in dimdict `dd`."""
-    if dd.has_key('start') and dd.has_key('stop'):
+    if ('start' in dd) and ('stop' in dd):
         return
 
     nelements = dd['datasize'] // dd['gridsize']
@@ -43,7 +43,7 @@ def distribute_block_indices(dd):
 
 def distribute_cyclic_indices(dd):
     """Fill in `start` given dimdict `dd`."""
-    if dd.has_key('start'):
+    if 'start' in dd:
         return
     else:
         dd['start'] = dd['gridrank']
