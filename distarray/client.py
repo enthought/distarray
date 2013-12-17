@@ -18,7 +18,6 @@ import numpy as np
 from six import next
 
 from distarray.utils import has_exactly_one
-from IPython.parallel import RemoteError
 
 
 #----------------------------------------------------------------------------
