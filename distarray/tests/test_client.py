@@ -126,13 +126,6 @@ class TestDistArray(unittest.TestCase):
         for val in dap:
             self.assertEqual(val, 10)
 
-    def test_owner_rank(self):
-        dap = self.dac.empty((100,), dist={0: 'b'})
-        self.assertEqual(dap.owner_rank(10), 0)
-        self.assertEqual(dap.owner_rank(30), 1)
-        self.assertEqual(dap.owner_rank(60), 2)
-        self.assertEqual(dap.owner_rank(80), 3)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

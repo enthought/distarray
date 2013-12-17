@@ -353,19 +353,6 @@ class DistArray(object):
             (self.shape, self.context.targets)
         return s
 
-    def owner_rank(self, index):
-        key = self.context._generate_key()
-        statement = '%s = %s.owner_rank(%s)'
-        self.context._execute0(statement % (key, self.key, index))
-        result = self.context._pull0(key)
-        return result
-
-    def owner_target(self, index):
-        rank = self.owner_rank(index)
-        #target_index = self.context.ranks.index(rank)
-        #return self.context.targets[target_index]
-        return rank  # FIXME: WRONG!!
-
     def __getitem__(self, index):
 
         if isinstance(index, int) or isinstance(index, slice):
@@ -374,17 +361,14 @@ class DistArray(object):
 
         elif isinstance(index, tuple):
             result_key = self.context._generate_key()
-            try:
-                fmt = '%s = %s.__getitem__(%s)'
-                statement = fmt % (result_key, self.key, index)
-                self.context._execute(statement)
-                return process_return_value(self.context, result_key)
-
-            except RemoteError as e:
-                if e.args[0] == 'IndexError':
-                    raise IndexError(e.args[1])
-                else:
-                    raise
+            fmt = '%s = %s.checked_getitem(%s)'
+            statement = fmt % (result_key, self.key, index)
+            self.context._execute(statement)
+            result = process_return_value(self.context, result_key)
+            if result is None:
+                raise IndexError
+            else:
+                return result
 
         else:
             raise TypeError("Invalid index type.")
@@ -396,15 +380,13 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
-            try:
-                statement = '%s.__setitem__(%s, %s)'
-                self.context._execute(statement % (self.key, index,
-                                                   value))
-            except RemoteError as e:
-                if e.args[0] == 'IndexError':
-                    raise IndexError(e.args[1])
-                else:
-                    raise
+            result_key = self.context._generate_key()
+            fmt = '%s = %s.checked_setitem(%s, %s)'
+            statement = fmt % (result_key, self.key, index, value)
+            self.context._execute(statement)
+            result = process_return_value(self.context, result_key)
+            if result is None:
+                raise IndexError()
 
         else:
             raise TypeError("Invalid index type.")
