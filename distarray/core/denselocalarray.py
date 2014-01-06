@@ -23,7 +23,7 @@ from distarray.mpi.mpibase import MPI
 from distarray.core.error import (InvalidDimensionError,
                                   DistMatrixError, IncompatibleArrayError)
 from distarray.core.base import BaseLocalArray, arecompatible
-from distarray.core.construct import init_base_comm, find_local_shape
+from distarray.core.construct import init_base_comm, find_local_shape, init_dist
 from distarray.utils import _raise_nie
 
 
@@ -33,80 +33,57 @@ from distarray.utils import _raise_nie
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
-DAP_DISTTYPES = {None, 'b', 'c'}
 
-mpi_dtypes = {
-    np.dtype('f') : MPI.FLOAT,
-    np.dtype('d') : MPI.DOUBLE,
-    np.dtype('i') : MPI.INTEGER,
-    np.dtype('l') : MPI.LONG
-}
+def _make_dimdata(shape, dist=None, grid_shape=None):
+    """Create a dimdata data structure from simple parameters.
 
-def mpi_type_for_ndarray(a):
-    return mpi_dtypes[a.dtype]
+    Parameters
+    ----------
+    shape : tuple of int
+        Number of elements in each dimension.
+    dist : dict mapping int -> str, default is {0: 'b'}
+        Keys are dimension number, values are disttype, e.g 'b', 'c', or
+        None.
 
+    Returns
+    -------
+    dimdata : tuple of dict
+        Data structure outlined in the Distributed Array Protocol.
+    """
 
-def _raise_dap_nie():
-    msg = ("The Distributed Array Protocol has only been "
-           "implemented for the following disttypes: {}")
-    raise NotImplementedError(msg.format(DAP_DISTTYPES))
+    if dist is None:
+        dist = {0:'b'}
+
+    if grid_shape is not None:
+        grid_gen = iter(grid_shape)
+
+    dist_tuple = init_dist(dist, len(shape))
+    dimdata = []
+    for datasize, disttype in zip(shape, dist_tuple):
+        if disttype not in {None, 'b', 'c'}:
+            msg = ("disttype {} not supported.",
+                   "Try `from_dap`.").format(disttype)
+            raise TypeError(msg)
+        dimdict = dict(disttype=disttype,
+                       datasize=datasize)
+        if grid_shape is not None and disttype is not None:
+            dimdict["gridsize"] = six.next(grid_gen)
+
+        dimdata.append(dimdict)
+
+    return tuple(dimdata)
 
 
 class DenseLocalArray(BaseLocalArray):
+
     """Distributed memory Python arrays."""
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # Methods used for initialization
-    #----------------------------------------------------------------------------
-
-    def _allocate(self, buf=None):
-        """Allocate a new local numpy array or use `buf`.
-
-        Sets `self.local_array` and `self.data`.
-
-        Parameters
-        ----------
-        buf : buffer object, optional
-        """
-        if buf is None:
-            self.local_array = np.empty(self.local_shape, dtype=self.dtype)
-            self.data = self.local_array.data
-        else:
-            try:
-                buf = memoryview(buf)
-            except TypeError:
-                msg = "The object is not or can't be made into a buffer."
-                raise TypeError(msg)
-            try:
-                self.local_array = np.asarray(buf, dtype=self.dtype)
-                self.data = self.local_array.data
-            except ValueError:
-                msg = "The buffer is smaller than needed for this array."
-                raise ValueError(msg)
-
-    def __init__(self, shape, dtype=float, dist={0:'b'}, grid_shape=None,
-                 comm=None, buf=None):
-        """Create a distributed array on a set of processors.
-
-        `__init__` restricts you a 'b' and 'c' disttypes and evenly
-        distributed data.
-
-        See also
-        --------
-        LocalArray.fromdap
-        """
-        BaseLocalArray.__init__(self, shape, dtype, dist, grid_shape, comm,
-                                buf)
-
-        # At this point, everything is setup, but the memory has not
-        # been allocated.
-        self._allocate(buf)
-
-    def __del__(self):
-        BaseLocalArray.__del__(self)
+    #-------------------------------------------------------------------------
 
     @classmethod
-    def from_dap(cls, dimdata, buf=None, comm=None):
+    def from_dimdata(cls, dimdata, dtype=None, buf=None, comm=None):
         """Make a LocalArray from a `dimdata` tuple.
 
         Parameters
@@ -114,31 +91,69 @@ class DenseLocalArray(BaseLocalArray):
         dimdata : tuple of dictionaries
             A dict for each dimension, with the data described here:
             https://github.com/enthought/distributed-array-protocol
+        dtype : numpy dtype, optional
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `dtype` is given, an empty array of that dtype will be
+            created.
         buf : buffer object, optional
-            If provided, encapsulate the buffer given.  If not provided,
-            allocate an empty array.
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `buf` is given, `self.dtype` will be set to its dtype.
+        comm : MPI comm object, optional
 
         Returns
         -------
-        la : LocalArray
+        LocalArray
             A LocalArray encapsulating `buf`, or else an empty
             (uninitialized) LocalArray.
         """
+        self = cls.__new__(cls)
+        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+                                              buf=buf, comm=comm)
+        return self
 
-        dist = {i: dd['disttype'] for (i, dd) in enumerate(dimdata)
-                if dd['disttype']}
 
-        implemented = all(disttype in DAP_DISTTYPES for disttype in
-                          dist.values())
-        if not implemented:
-            _raise_dap_nie()
+    def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
+                 comm=None, buf=None):
+        """Create a LocalArray from a simple set of parameters.
 
-        shape = tuple(dd['datasize'] for dd in dimdata)
-        grid_shape = tuple(dd['gridsize'] for dd in dimdata if dd['disttype'])
-        base_comm = init_base_comm(comm)
+        This initializer restricts you to 'b' and 'c' disttypes and evenly
+        distributed data.  See `LocalArray.from_dimdata` for a more general
+        method.
 
-        return cls(shape=shape, dtype=buf.dtype, dist=dist,
-                   grid_shape=grid_shape, comm=base_comm, buf=buf)
+        Parameters
+        ----------
+        shape : tuple of int
+            Number of elements in each dimension.
+        dtype : numpy dtype, optional
+        dist : dict mapping int -> str, default is {0: 'b'}, optional
+            Keys are dimension number, values are disttype, e.g 'b', 'c', or
+            None.
+        grid_shape : tuple of int, optional
+            A size of each dimension of the process grid.
+            There should be a dimension size for each distributed
+            dimension in `dist`.
+        comm : MPI communicator object, optional
+        buf : buffer object, optional
+            If not given, an empty array is created.
+
+        See also
+        --------
+        LocalArray.from_dimdata
+        """
+        dimdata = _make_dimdata(shape=shape, dist=dist, grid_shape=grid_shape)
+        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+                                              buf=buf, comm=comm)
+
+    def __del__(self):
+        super(DenseLocalArray, self).__del__()
+
+    #-------------------------------------------------------------------------
+    # Distributed Array Protocol
+    #-------------------------------------------------------------------------
 
     @classmethod
     def from_distarray(cls, obj, comm=None):
@@ -156,7 +171,7 @@ class DenseLocalArray(BaseLocalArray):
 
         Returns
         -------
-        la : LocalArray
+        LocalArray
             A LocalArray encapsulating the buffer of the original data.
             No copy is made.
         """
@@ -164,12 +179,12 @@ class DenseLocalArray(BaseLocalArray):
         buf = np.asarray(distbuffer['buffer'])
         dimdata = distbuffer['dimdata']
 
-        return cls.from_dap(dimdata=dimdata, buf=buf, comm=comm)
+        return cls.from_dimdata(dimdata=dimdata, buf=buf, comm=comm)
 
     def _dimdict(self, dim):
         """Given a dimension number `dim`, return a `dimdict`.
 
-        Where `dimdict` is the metadata datastructure provided for each
+        Where `dimdict` is the metadata data structure provided for each
         dimension by the Distributed Array Protocol.
         """
         if dim in self.distdims:
@@ -190,7 +205,8 @@ class DenseLocalArray(BaseLocalArray):
             stop = datasize
             step = gridsize
         else:
-            _raise_dap_nie()
+            msg = "disttype {} not implemented."
+            raise NotImplementedError(msg.format(disttype))
 
         dimdict = {"disttype": disttype,
                    "datasize": datasize,
@@ -215,9 +231,9 @@ class DenseLocalArray(BaseLocalArray):
                       "dimdata": dimdata}
         return distbuffer
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # Methods related to distributed indexing
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def get_localarray(self):
         return self.local_view()
@@ -283,7 +299,8 @@ class DenseLocalArray(BaseLocalArray):
                     a[i,j] = self.owner_rank(i,j)
             return a
         else:
-            raise DistMatrixError("The dist matrix can only be created for a 2d array")
+            msg = "The dist matrix can only be created for a 2d array"
+            raise DistMatrixError(msg)
 
     def plot_dist_matrix(self):
         try:
@@ -295,7 +312,9 @@ class DenseLocalArray(BaseLocalArray):
                 try:
                     import pylab
                 except ImportError:
-                    print("Matplotlib is not installed so the dist_matrix cannot be plotted")
+                    msg = ("Matplotlib is not installed so the "
+                           "dist_matrix cannot be plotted")
+                    raise ImportError(msg)
                 else:
                     pylab.ion()
                     pylab.matshow(dm)
@@ -307,14 +326,14 @@ class DenseLocalArray(BaseLocalArray):
                     pylab.show()
 
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2 ndarray methods
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.1 Array conversion
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
         if newdtype is None:
@@ -370,9 +389,9 @@ class DenseLocalArray(BaseLocalArray):
     def fill(self, scalar):
         self.local_array.fill(scalar)
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.2 Array shape manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def reshape(self, newshape):
         _raise_nie()
@@ -451,9 +470,9 @@ class DenseLocalArray(BaseLocalArray):
         else:
             raise IncompatibleArrayError("DistArrays have incompatible shape, dist or grid_shape")
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.3 Array item selection and manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def take(self, indices, axis=None, out=None, mode='raise'):
         _raise_nie()
@@ -488,9 +507,9 @@ class DenseLocalArray(BaseLocalArray):
     def diagonal(self, offset=0, axis1=0, axis2=1):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.2.4 Array item selection and manipulation
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def max(self, axis=None, out=None):
         _raise_nie()
@@ -551,13 +570,13 @@ class DenseLocalArray(BaseLocalArray):
     def any(self, axis=None, out=None):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3 Array special methods
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.1 Methods for standard library functions
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __copy__(self):
         _raise_nie()
@@ -565,9 +584,9 @@ class DenseLocalArray(BaseLocalArray):
     def __deepcopy__(self):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.2 Basic customization
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __lt__(self, other):
         _raise_nie()
@@ -596,9 +615,9 @@ class DenseLocalArray(BaseLocalArray):
     def __nonzero__(self):
         _raise_nie()
 
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     # 3.3.3 Container customization
-    #----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def __len__(self):
         return self.shape[0]
@@ -836,10 +855,6 @@ LocalArray = DenseLocalArray
 # 4.1 Creating arrays
 #----------------------------------------------------------------------------
 
-# Here is LocalArray.__init__ for reference
-# def __init__(self, shape, dtype=float, dist={0:'b'} , grid_shape=None,
-#              comm=None, buf=None, offset=0):
-
 
 def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
     _raise_nie()
@@ -854,8 +869,9 @@ def arange(start, stop=None, step=1, dtype=None, dist={0:'b'},
     _raise_nie()
 
 
-def empty(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
-    return LocalArray(shape, dtype, dist, grid_shape, comm)
+def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
+    return LocalArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
+                      comm=comm)
 
 
 def empty_like(arr, dtype=None):
@@ -868,7 +884,7 @@ def empty_like(arr, dtype=None):
         raise TypeError("A DenseLocalArray or subclass is expected")
 
 
-def zeros(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
+def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_zeros = np.zeros(local_shape, dtype=dtype)
@@ -882,7 +898,7 @@ def zeros_like(arr):
         raise TypeError("A DenseLocalArray or subclass is expected")
 
 
-def ones(shape, dtype=float, dist={0:'b'}, grid_shape=None, comm=None):
+def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     base_comm = init_base_comm(comm)
     local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
     local_ones = np.ones(local_shape, dtype=dtype)
@@ -903,8 +919,10 @@ class GlobalIterator(six.Iterator):
         global_inds = self.arr.local_to_global(self.arr.comm_rank, *local_inds)
         return global_inds, value
 
+
 def ndenumerate(arr):
     return GlobalIterator(arr)
+
 
 def fromfunction(function, shape, **kwargs):
     dtype = kwargs.pop('dtype', int)
@@ -1192,7 +1210,7 @@ class LocalArrayUnaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Return LocalArray not compatible with LocalArray argument" % y)
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             self.func(x1, y.local_array)
             return y
         else:
@@ -1225,10 +1243,10 @@ class LocalArrayBinaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             if x2_isdla:
                 if not arecompatible(x2, y):
-                    raise IncompatibleArrayError("Incompatible DistArrays")
+                    raise IncompatibleArrayError("Incompatible LocalArrays")
             self.func(x1, x2, y.local_array)
             return y
         else:
@@ -1238,24 +1256,36 @@ class LocalArrayBinaryOperation(object):
         return "LocalArray version of " + str(self.func)
 
 
-# numpy unary operations to wrap
-unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
-             'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
-             'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
-             'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
+def _add_operations(wrapper, ops):
+    """Wrap numpy ufuncs for `LocalArray`s.
 
-# numpy binary operations to wrap
-binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
-              'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
-              'multiply', 'power', 'remainder', 'right_shift', 'subtract',
-              'true_divide')
+    Wraps numpy ufuncs and adds them to this module's namespace.
 
-def add_operations(wrapper, ops):
+    Parameters
+    ----------
+    wrapper : callable
+        Takes a numpy ufunc and returns a LocalArray ufunc.
+    ops : iterable of callables
+        All of the callables to wrap with `wrapper`.
+    """
     for op in ops:
         fn_name = "np." + op
         fn_value = wrapper(eval(fn_name))
         names = globals()
         names[op] = fn_value
 
-add_operations(LocalArrayUnaryOperation, unary_ops)
-add_operations(LocalArrayBinaryOperation, binary_ops)
+
+# numpy unary operations to wrap
+_unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
+              'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
+              'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
+              'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
+
+# numpy binary operations to wrap
+_binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
+               'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
+               'multiply', 'power', 'remainder', 'right_shift', 'subtract',
+               'true_divide')
+
+_add_operations(LocalArrayUnaryOperation, _unary_ops)
+_add_operations(LocalArrayBinaryOperation, _binary_ops)

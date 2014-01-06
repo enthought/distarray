@@ -75,7 +75,7 @@ def init_dist(dist, ndim):
     elif isinstance(dist, dict):
         return tuple([dist.get(i) for i in range(ndim)])
     else:
-        DistError("dist must be a string, tuple/list or dict")
+        DistError("Dist must be a string, tuple, list or dict")
 
 
 def init_distdims(dist, ndim):
@@ -127,10 +127,15 @@ def init_map_classes(dist):
     return tuple(map_classes)
 
 
-def init_grid_shape(shape, grid_shape, distdims, comm_size):
+def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
+    """Generate or validate a `grid_shape`.
+
+    If `grid_shape` is None, generate a `grid_shape` using
+    `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape` given.
+    """
     ndistdim = len(distdims)
     if grid_shape is None:
-        grid_shape = optimize_grid_shape(shape, grid_shape, distdims, comm_size)
+        grid_shape = optimize_grid_shape(shape, distdims, comm_size)
     else:
         try:
             grid_shape = tuple(grid_shape)
@@ -144,7 +149,7 @@ def init_grid_shape(shape, grid_shape, distdims, comm_size):
     return tuple(int(s) for s in grid_shape)
 
 
-def optimize_grid_shape(shape, grid_shape, distdims, comm_size):
+def optimize_grid_shape(shape, distdims, comm_size):
     ndistdim = len(distdims)
     if ndistdim==1:
         grid_shape = (comm_size,)
@@ -190,9 +195,9 @@ def find_local_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
     map_classes = init_map_classes(dist)
-    grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
-    local_shape, maps = init_local_shape_and_maps(shape,
-        grid_shape, distdims, map_classes)
+    grid_shape = init_grid_shape(shape, distdims, comm_size, grid_shape)
+    local_shape, maps = init_local_shape_and_maps(shape, grid_shape, distdims,
+                                                  map_classes)
     return local_shape
 
 
@@ -202,5 +207,5 @@ def find_grid_shape(shape, dist={0:'b'}, grid_shape=None, comm_size=None):
     ndim = len(shape)
     dist = init_dist(dist, ndim)
     distdims = init_distdims(dist, ndim)
-    grid_shape = init_grid_shape(shape, grid_shape, distdims, comm_size)
+    grid_shape = init_grid_shape(shape, distdims, comm_size, grid_shape)
     return grid_shape
