@@ -127,5 +127,20 @@ class TestDistArray(unittest.TestCase):
             self.assertEqual(val, 10)
 
 
+class TestDistributedIO(unittest.TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.dv = self.client[:]
+        if len(self.dv.targets) < 4:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
+        self.dac = Context(self.dv)
+        self.da = self.dac.empty((100,), dist={0: 'b'})
+
+    def test_flat_file_write(self):
+        self.dac.save('outfile', self.da)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
