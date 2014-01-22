@@ -252,7 +252,7 @@ class Context(object):
         )
         result = self._pull('local_filename')
         self._execute(
-            '%s = pickle.load(open(local_filename))' % distbuffer_key
+            '%s = pickle.load(open(local_filename, "rb"))' % distbuffer_key
         )
         self._execute(
             '%s = distarray.denselocalarray.LocalArray.from_distarray(%s)' % (da_key, distbuffer_key)
