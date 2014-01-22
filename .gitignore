@@ -1,1 +1,4 @@
 build
+*.pyc
+dist/
+distarray.egg-info/
