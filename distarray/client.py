@@ -232,6 +232,33 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
+    def save(self, filename, da):
+        self._execute("import pickle")
+        self._push({'filename': filename})
+        self._execute(
+            'local_filename = filename + "_" + str(%s.comm_rank) + ".dar"' % da.key
+        )
+        self._execute(
+            'pickle.dump(%s.__distarray__(), open(local_filename, "wb"))' % da.key
+        )
+
+    def load(self, filename):
+        self._execute("import pickle")
+        self._push({'filename': filename})
+        distbuffer_key = self._generate_key()
+        da_key = self._generate_key()
+        self._execute(
+            'local_filename = filename + "_" + str(%s.Get_rank()) + ".dar"' % self._comm_key
+        )
+        result = self._pull('local_filename')
+        self._execute(
+            '%s = pickle.load(open(local_filename))' % distbuffer_key
+        )
+        self._execute(
+            '%s = distarray.denselocalarray.LocalArray.from_distarray(%s)' % (da_key, distbuffer_key)
+        )
+        return DistArray(da_key, self)
+
     def fromndarray(self, arr):
         keys = self._key_and_push(arr.shape, arr.dtype)
         arr_key = self._generate_key()
