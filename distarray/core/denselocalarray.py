@@ -38,7 +38,7 @@ DAP_DISTTYPES = {None, 'b', 'c'}
 mpi_dtypes = {
     np.dtype('f') : MPI.FLOAT,
     np.dtype('d') : MPI.DOUBLE,
-    np.dtype('i') : MPI.INTEGER,
+    np.dtype('i') : MPI.INT,
     np.dtype('l') : MPI.LONG
 }
 
