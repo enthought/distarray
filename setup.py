@@ -23,7 +23,9 @@ packages = [
     'distarray.core',
     'distarray.core.tests',
     'distarray.random',
-    'distarray.random.tests'
+    'distarray.random.tests',
+    'distarray.mpi',
+    'distarray.mpi.tests',
     ]
 
 install_requires = [
