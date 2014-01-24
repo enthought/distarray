@@ -1,30 +1,22 @@
 from __future__ import print_function
+
 import unittest
-from distarray.core import denselocalarray
-from distarray.mpi.error import InvalidCommSizeError
-from distarray.mpi.mpibase import create_comm_of_size
-from distarray.core.error import NullCommError
+
+import distarray.core.denselocalarray as dla
+from distarray.testing import MpiTestCase, comm_null_passes
 
 
-class TestNDEnumerate(unittest.TestCase):
+class TestNDEnumerate(MpiTestCase):
+
     """Make sure we generate indices compatible with __getitem__."""
 
+    @comm_null_passes
     def test_ndenumerate(self):
-        try:
-            comm = create_comm_of_size(4)
-        except InvalidCommSizeError:
-            raise unittest.SkipTest("Skipped due to Invalid Comm Size")
-        else:
-            try:
-                a = denselocalarray.LocalArray((16, 16, 2),
-                                               dist=('c', 'b', None),
-                                               comm=comm)
-            except NullCommError:
-                pass
-            else:
-                for global_inds, value in denselocalarray.ndenumerate(a):
-                    a[global_inds] = 0.0
-                comm.Free()
+        a = dla.LocalArray((16, 16, 2),
+                           dist=('c', 'b', None),
+                           comm=self.comm)
+        for global_inds, value in dla.ndenumerate(a):
+            a[global_inds] = 0.0
 
 
 if __name__ == '__main__':

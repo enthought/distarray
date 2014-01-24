@@ -2,30 +2,19 @@ import unittest
 import numpy as np
 import distarray as da
 from numpy.testing import assert_array_equal
-from distarray import LocalArray
-from distarray.mpi.mpibase import MPI, create_comm_of_size
-from distarray.mpi.error import InvalidCommSizeError
-from distarray.utils import comm_null_passes
+from distarray.testing import comm_null_passes, MpiTestCase
 
 
 VALID_DISTTYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
 
 
-class BaseDAPCase(object):
-    """Base class for Distributed Array Protocol test cases."""
+class DapTestMixin(object):
 
-    def get_comm_size(self):
-        return 4
+    """Base test class for DAP test cases.
 
-    def setUp(self):
-        try:
-            self.comm = create_comm_of_size(self.get_comm_size())
-        except InvalidCommSizeError:
-            msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(self.get_comm_size()))
-        else:
-            if self.comm != MPI.COMM_NULL:
-                self.larr = self.get_array()
+    You must overload `more_setUp` and add a `self.larr` LocalArray to
+    test.
+    """
 
     @comm_null_passes
     def test_has_export(self):
@@ -104,97 +93,110 @@ class BaseDAPCase(object):
         #self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
 
-class TestDAPBasic(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
-                             buf=None)
+class TestDapBasic(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((16, 16), grid_shape=(4,), comm=self.comm,
+                                  buf=None)
 
 
-class TestDAPUint(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((16,16), dtype='uint8', grid_shape=(4,),
-                             comm=self.comm, buf=None)
+class TestDapUint(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((16, 16), dtype='uint8', grid_shape=(4,),
+                                  comm=self.comm, buf=None)
 
 
-class TestDAPComplex(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((16,16), dtype='complex128', grid_shape=(4,),
-                             comm=self.comm, buf=None)
+class TestDapComplex(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((16, 16), dtype='complex128',
+                                  grid_shape=(4,), comm=self.comm, buf=None)
 
 
+class TestDapExplicitNone0(DapTestMixin, MpiTestCase):
 
-class TestDAPExplicitNone0(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((16,16),
-                             dist={0: 'b', 1: None},
-                             grid_shape=(4,),
-                             comm=self.comm)
-
-
-class TestDAPExplicitNone1(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((30,60),
-                             dist={0: None, 1: 'b'},
-                             grid_shape=(4,),
-                             comm=self.comm)
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: None},
+                                  grid_shape=(4,), comm=self.comm)
 
 
-class TestDAPTwoDistDims(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((53,77),
-                             dist={0: 'b', 1: 'b'},
-                             grid_shape=(2, 2),
-                             comm=self.comm)
+class TestDapExplicitNone1(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((30, 60), dist={0: None, 1: 'b'},
+                                  grid_shape=(4,), comm=self.comm)
 
 
-class TestDAPThreeBlockDims(BaseDAPCase, unittest.TestCase):
+class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
-    def get_array(self):
-        return da.LocalArray((53,77,99),
-                             dist={0: 'b', 1: 'b', 2: 'b'},
-                             grid_shape=(2, 2, 3),
-                             comm=self.comm)
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((53, 77), dist={0: 'b', 1: 'b'},
+                                  grid_shape=(2, 2), comm=self.comm)
+
+
+class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
     def get_comm_size(self):
         return 12
 
-
-class TestDAPCyclicDim(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((53,77),
-                             dist={0: 'c'},
-                             grid_shape=(4,),
-                             comm=self.comm)
-
-
-class TestDAPCyclicBlock(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((53,77),
-                             dist={0: 'c', 1: 'b'},
-                             grid_shape=(2, 2),
-                             comm=self.comm)
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((53, 77, 99),
+                                  dist={0: 'b', 1: 'b', 2: 'b'},
+                                  grid_shape=(2, 2, 3),
+                                  comm=self.comm)
 
 
-class TestDAPThreeMixedDims(BaseDAPCase, unittest.TestCase):
-    def get_array(self):
-        return da.LocalArray((53,77,99), dtype='float64',
-                             dist={0: 'b', 1: None, 2: 'c'},
-                             grid_shape=(2, 2),
-                             comm=self.comm)
+class TestDapCyclicDim(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((53, 77),
+                                  dist={0: 'c'},
+                                  grid_shape=(4,),
+                                  comm=self.comm)
 
 
-class TestDAPLopsided(BaseDAPCase, unittest.TestCase):
+class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((53, 77),
+                                  dist={0: 'c', 1: 'b'},
+                                  grid_shape=(2, 2),
+                                  comm=self.comm)
+
+
+class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.larr = da.LocalArray((53, 77, 99), dtype='float64',
+                                  dist={0: 'b', 1: None, 2: 'c'},
+                                  grid_shape=(2, 2),
+                                  comm=self.comm)
+
+
+class TestDapLopsided(DapTestMixin, MpiTestCase):
 
     def get_comm_size(self):
         return 2
 
-    def get_array(self):
+    @comm_null_passes
+    def more_setUp(self):
         if self.comm.Get_rank() == 0:
             arr = np.arange(20)
         elif self.comm.Get_rank() == 1:
             arr = np.arange(30)
 
-        return da.LocalArray((50,), dtype='float64',
+        self.larr = da.LocalArray((50,), dtype='float64',
                              dist={0: 'b', 1: None},
                              grid_shape=(2,), comm=self.comm, buf=arr)
 
@@ -210,6 +212,7 @@ class TestDAPLopsided(BaseDAPCase, unittest.TestCase):
             assert_array_equal(np.arange(20), larr.local_array)
         elif self.comm.Get_rank() == 1:
             assert_array_equal(np.arange(30), larr.local_array)
+
 
 if __name__ == '__main__':
     try:

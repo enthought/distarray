@@ -5,9 +5,7 @@ from distarray.core import maps
 class TestBlockMap(unittest.TestCase):
 
     def test_owner(self):
-        """
-        Test the owner method of BlockMap.
-        """
+        """Test the owner method of BlockMap."""
         m = maps.BlockMap(16,4)
         owners = [m.owner(e) for e in range(16)]
         self.assertEqual(4*[0]+4*[1]+4*[2]+4*[3],owners)
@@ -19,9 +17,7 @@ class TestBlockMap(unittest.TestCase):
         self.assertEqual(4*[0]+4*[1]+4*[2]+3*[3],owners)
 
     def test_local_index(self):
-        """
-        Test the local_index method of BlockMap.
-        """
+        """Test the local_index method of BlockMap."""
         m = maps.BlockMap(16,4)
         p = [m.local_index(i) for i in range(16)]
         self.assertEqual(4*list(range(4)),p)
@@ -39,9 +35,7 @@ class TestBlockMap(unittest.TestCase):
 class TestCyclicMap(unittest.TestCase):
 
     def test_owner(self):
-        """
-        Test the owner method of CyclicMap.
-        """
+        """Test the owner method of CyclicMap."""
         m = maps.CyclicMap(16,4)
         owners = [m.owner(e) for e in range(16)]
         self.assertEqual(4*list(range(4)),owners)
@@ -53,9 +47,7 @@ class TestCyclicMap(unittest.TestCase):
         self.assertEqual(3*list(range(4))+[0,1,2],owners)
 
     def test_local_index(self):
-        """
-        Test the local_index method of CyclicMap.
-        """
+        """Test the local_index method of CyclicMap."""
         m = maps.CyclicMap(16,4)
         p = [m.local_index(i) for i in range(16)]
         self.assertEqual(4*[0]+4*[1]+4*[2]+4*[3],p)
@@ -73,9 +65,7 @@ class TestCyclicMap(unittest.TestCase):
 class TestBlockCyclicMap(unittest.TestCase):
 
     def test_owner(self):
-        """
-        Test the owner method of CyclicMap.
-        """
+        """Test the owner method of CyclicMap."""
         size = 20
         grid = 5
         block = 2
@@ -107,9 +97,7 @@ class TestBlockCyclicMap(unittest.TestCase):
         self.assertEqual(bcm_owners,cm_owners)
 
     def test_local_index(self):
-        """
-        Test the local_index method of BlockCyclicMap.
-        """
+        """Test the local_index method of BlockCyclicMap."""
         size = 20
         grid = 5
         block = 2
@@ -141,9 +129,7 @@ class TestBlockCyclicMap(unittest.TestCase):
         self.assertEqual(bcm_lindices,cm_lindices)
 
     def test_global_index(self):
-        """
-        Test the local_index method of BlockCyclicMap.
-        """
+        """Test the local_index method of BlockCyclicMap."""
         size = 20
         grid = 5
         block = 2
@@ -184,9 +170,7 @@ class TestBlockCyclicMap(unittest.TestCase):
 class TestRegistry(unittest.TestCase):
 
     def test_get_class(self):
-        """
-        Test getting map classes by string identifier.
-        """
+        """Test getting map classes by string identifier."""
         mc = maps.get_map_class('b')
         self.assertEqual(mc,maps.BlockMap)
         mc = maps.get_map_class('c')
@@ -195,9 +179,7 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(mc,maps.BlockCyclicMap)
 
     def test_get_class_pass(self):
-        """
-        Test getting a map class by the class itself.
-        """
+        """Test getting a map class by the class itself."""
         mc = maps.get_map_class(maps.BlockMap)
         self.assertEqual(mc, maps.BlockMap)
 
