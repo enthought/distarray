@@ -16,7 +16,7 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def start(n=12):
+def start(n=4):
     """Convenient way to start an ipcluster for testing.
 
     You have to wait for it to start, however.
