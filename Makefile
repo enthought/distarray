@@ -10,7 +10,7 @@ install:
 	${PYTHON} setup.py install
 
 setup_cluster:
-	-${PYTHON} distarray/tests/run_ipcluster.py
+	-${PYTHON} distarray/tests/ipcluster.py
 	-sleep 15  # wait for ipcluster
 
 test:
