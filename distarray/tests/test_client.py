@@ -32,17 +32,17 @@ class TestContext(unittest.TestCase):
         self.dv.clear()
 
     def test_create_Context(self):
-        '''Can we create a plain vanilla context?'''
+        """Can we create a plain vanilla context?"""
         dac = Context(self.dv)
         self.assertIs(dac.view, self.dv)
 
     def test_create_Context_with_targets(self):
-        '''Can we create a context with a subset of engines?'''
+        """Can we create a context with a subset of engines?"""
         dac = Context(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
 
     def test_create_Context_with_sub_view(self):
-        '''Context's view must encompass all ranks in the MPI communicator.'''
+        """Context's view must encompass all ranks in the MPI communicator."""
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
             msg = 'Must set up a cluster with at least 2 engines running.'
@@ -51,7 +51,7 @@ class TestContext(unittest.TestCase):
             Context(subview)
 
     def test_create_Context_with_targets_ranks(self):
-        '''Check that the target <=> rank mapping is consistent.'''
+        """Check that the target <=> rank mapping is consistent."""
         targets = [3,2]
         dac = Context(self.dv, targets=targets)
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
