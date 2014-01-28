@@ -12,26 +12,37 @@ from distarray.client import Context, DistArray
 
 
 class TestContext(unittest.TestCase):
+    """Test Context Creation"""
 
-    def setUp(self):
-        self.client = Client()
-        self.dv = self.client[:]
-        if len(self.dv.targets) < 4:
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.dv = cls.client[:]
+        if len(cls.dv.targets) < 4:
             errmsg = 'Must set up a cluster with at least 4 engines running.'
             raise unittest.SkipTest(errmsg)
 
+    @classmethod
+    def tearDownClass(cls):
+        """Close the client connections"""
+        cls.client.close()
+
+    def tearDown(self):
+        """Clear the namespace on the engines after each test."""
+        self.dv.clear()
+
     def test_create_Context(self):
-        '''Can we create a plain vanilla context?'''
+        """Can we create a plain vanilla context?"""
         dac = Context(self.dv)
         self.assertIs(dac.view, self.dv)
 
     def test_create_Context_with_targets(self):
-        '''Can we create a context with a subset of engines?'''
+        """Can we create a context with a subset of engines?"""
         dac = Context(self.dv, targets=[0,1])
         self.assertIs(dac.view, self.dv)
 
     def test_create_Context_with_sub_view(self):
-        '''Context's view must encompass all ranks in the MPI communicator.'''
+        """Context's view must encompass all ranks in the MPI communicator."""
         subview = self.client[:1]
         if not set(subview.targets) < set(self.dv.targets):
             msg = 'Must set up a cluster with at least 2 engines running.'
@@ -40,7 +51,7 @@ class TestContext(unittest.TestCase):
             Context(subview)
 
     def test_create_Context_with_targets_ranks(self):
-        '''Check that the target <=> rank mapping is consistent.'''
+        """Check that the target <=> rank mapping is consistent."""
         targets = [3,2]
         dac = Context(self.dv, targets=targets)
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
@@ -49,7 +60,8 @@ class TestContext(unittest.TestCase):
 
 class TestDistArray(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.client = Client()
         self.dv = self.client[:]
         if len(self.dv.targets) < 4:
@@ -125,6 +137,47 @@ class TestDistArray(unittest.TestCase):
         dap.fill(10)
         for val in dap:
             self.assertEqual(val, 10)
+
+
+class TestDistArrayCreation(unittest.TestCase):
+    """Test distarray creation methods"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.dv = cls.client[:]
+        if len(cls.dv.targets) < 4:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
+        cls.context = Context(cls.dv)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Close the client connections"""
+        cls.client.close()
+
+    @classmethod
+    def tearDownClass(self):
+        """Clear the namespace on the engines after this class' tests
+        are run."""
+        self.dv.clear()
+
+    def test_zeros(self):
+        shape = (16, 16)
+        zero_distarray = self.context.zeros(shape)
+        zero_ndarray = np.zeros(shape)
+        np.testing.assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
+
+    def test_ones(self):
+        shape = (16, 16)
+        one_distarray = self.context.ones(shape)
+        one_ndarray = np.ones(shape)
+        np.testing.assert_array_equal(one_distarray.tondarray(), one_ndarray)
+
+    def test_empty(self):
+        shape = (16, 16)
+        empty_distarray = self.context.empty(shape)
+        self.assertEqual(empty_distarray.shape, shape)
 
 
 if __name__ == '__main__':
