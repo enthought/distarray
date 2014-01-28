@@ -1,25 +1,36 @@
+import sys
 import six
 from subprocess import Popen, PIPE
 
 
-def run_ipcluster(n=4):
+if six.PY2:
+    ipcluster_cmd = 'ipcluster'
+elif six.PY3:
+    ipcluster_cmd = 'ipcluster3'
+else:
+    raise NotImplementedError("Not run with Python 2 *or* 3?")
+
+
+def start(n=12):
     """Convenient way to start an ipcluster for testing.
 
     You have to wait for it to start, however.
     """
     # FIXME: This should be reimplemented to signal when the cluster has
     # successfully started
-    if six.PY2:
-        cmd = 'ipcluster'
-    elif six.PY3:
-        cmd = 'ipcluster3'
-    else:
-        raise NotImplementedError("Not run with Python 2 *or* 3?")
 
     engines = "--engines=MPIEngineSetLauncher"
-    Popen([cmd, 'start', '-n', str(n), engines, str('&')],
+    Popen([ipcluster_cmd, 'start', '-n', str(n), engines, str('&')],
            stdout=PIPE, stderr=PIPE)
 
 
+def stop():
+    """Convenient way to stop an ipcluster."""
+
+    Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
+
+
 if __name__ == '__main__':
-    run_ipcluster()
+    cmd = sys.argv[1]
+    fn = eval(cmd)
+    fn()
