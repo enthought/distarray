@@ -22,11 +22,9 @@ from six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.local.error import (InvalidDimensionError, DistMatrixError,
-                                  IncompatibleArrayError)
+                                   IncompatibleArrayError)
 from distarray.local.base import BaseLocalArray, arecompatible
-from distarray.local.construct import (init_base_comm, find_local_shape,
-                                      init_dist, find_grid_shape)
-from distarray.utils import _raise_nie
+from distarray.utils import _raise_nie, make_dist_tuple
 
 
 #----------------------------------------------------------------------------
@@ -59,7 +57,7 @@ def _make_dimdata(shape, dist=None, grid_shape=None):
     if grid_shape is not None:
         grid_gen = iter(grid_shape)
 
-    dist_tuple = init_dist(dist, len(shape))
+    dist_tuple = make_dist_tuple(dist, len(shape))
     dimdata = []
     for datasize, disttype in zip(shape, dist_tuple):
         if disttype not in {None, 'b', 'c'}:
@@ -887,10 +885,9 @@ def empty_like(arr, dtype=None):
 
 
 def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    base_comm = init_base_comm(comm)
-    local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
-    local_zeros = np.zeros(local_shape, dtype=dtype)
-    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_zeros)
+    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+    la.fill(0)
+    return la
 
 
 def zeros_like(arr):
@@ -901,10 +898,9 @@ def zeros_like(arr):
 
 
 def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    base_comm = init_base_comm(comm)
-    local_shape = find_local_shape(shape, dist, grid_shape, base_comm.Get_size())
-    local_ones = np.ones(local_shape, dtype=dtype)
-    return LocalArray(shape, dtype, dist, grid_shape, comm, buf=local_ones)
+    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+    la.fill(1)
+    return la
 
 
 class GlobalIterator(six.Iterator):

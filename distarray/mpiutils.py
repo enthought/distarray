@@ -1,8 +1,11 @@
+import numpy as np
+
 from mpi4py import MPI
 from distarray import InvalidCommSizeError, InvalidRankError
 
 
 COMM_PRIVATE = MPI.COMM_WORLD.Clone()
+
 
 def create_comm_of_size(size=4):
     """
@@ -16,6 +19,7 @@ def create_comm_of_size(size=4):
         subgroup = group.Incl(list(range(size)))
         newcomm = COMM_PRIVATE.Create(subgroup)
         return newcomm
+
 
 def create_comm_with_list(nodes):
     """
@@ -32,3 +36,15 @@ def create_comm_with_list(nodes):
     subgroup = group.Incl(nodes)
     newcomm = COMM_PRIVATE.Create(subgroup)
     return newcomm
+
+
+mpi_dtypes = {
+    np.dtype('f'): MPI.FLOAT,
+    np.dtype('d'): MPI.DOUBLE,
+    np.dtype('i'): MPI.INTEGER,
+    np.dtype('l'): MPI.LONG
+}
+
+
+def mpi_type_for_ndarray(a):
+    return mpi_dtypes[a.dtype]

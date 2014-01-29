@@ -1,9 +1,5 @@
-import numpy as np
-
 from math import sqrt
 from six import next
-
-from distarray.mpiutils import MPI
 
 
 def divisors(n):
@@ -195,13 +191,29 @@ def all_equal(iterable):
     return all(element == first for element in iterator)
 
 
-mpi_dtypes = {
-    np.dtype('f') : MPI.FLOAT,
-    np.dtype('d') : MPI.DOUBLE,
-    np.dtype('i') : MPI.INTEGER,
-    np.dtype('l') : MPI.LONG
-}
+def make_dist_tuple(dist, ndim):
+    """Return a tuple containing dist-type for each dim.
 
+    Parameters
+    ----------
+    dist : str, list, tuple, or dict
+    ndim : int
 
-def mpi_type_for_ndarray(a):
-    return mpi_dtypes[a.dtype]
+    Returns
+    -------
+    tuple of str
+        Contains string distribution type for each dim.
+
+    Examples
+    --------
+    >>> dist_tuple({0: 'b', 3: 'c'}, 4)
+    ('b', None, None, 'c')
+    """
+    if isinstance(dist, str):
+        return ndim*(dist,)
+    elif isinstance(dist, (list, tuple)):
+        return tuple(dist)
+    elif isinstance(dist, dict):
+        return tuple([dist.get(i) for i in range(ndim)])
+    else:
+        TypeError("Dist must be a string, tuple, list or dict")

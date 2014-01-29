@@ -15,71 +15,60 @@ __docformat__ = "restructuredtext en"
 
 import numpy as np
 from distarray.local import denselocalarray
-from distarray.local.construct import find_local_shape, init_base_comm
 
 
-def beta(a, b, size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.beta(a, b)
     else:
-        base_comm = init_base_comm(comm)
-        comm_size = base_comm.Get_size()
-        local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape,
-                                       comm_size=comm_size)
-        local_result = np.random.beta(a, b, size=local_shape)
-        return denselocalarray.LocalArray(size, local_result.dtype, dist,
-                                          grid_shape, comm, buf=local_result)
+        dtype = np.random.beta(a, b, size=1).dtype
+        la = denselocalarray.LocalArray(size, dtype=dtype, dist=dist,
+                                        grid_shape=grid_shape, comm=comm)
+        la.local_array[:] = np.random.beta(a, b, size=la.local_shape)
+        return la
 
 
-def normal(loc=0.0, scale=1.0, size=None, dist={0: 'b'}, grid_shape=None,
+def normal(loc=0.0, scale=1.0, size=None, dist=None, grid_shape=None,
            comm=None):
     if size is None:
         return np.random.normal(loc, scale)
     else:
-        base_comm = init_base_comm(comm)
-        comm_size = base_comm.Get_size()
-        local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape,
-                                       comm_size=comm_size)
-        local_result = np.random.normal(loc, scale, size=local_shape)
-        return denselocalarray.LocalArray(size, local_result.dtype, dist,
-                                          grid_shape, comm, buf=local_result)
+        dtype = np.random.normal(loc, scale, size=1).dtype
+        la = denselocalarray.LocalArray(size, dtype=dtype, dist=dist,
+                                        grid_shape=grid_shape, comm=comm)
+        la.local_array[:] = np.random.normal(loc, scale, size=la.local_shape)
+        return la
 
 
-def rand(size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def rand(size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.rand()
     else:
-        base_comm = init_base_comm(comm)
-        comm_size = base_comm.Get_size()
-        local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape,
-                                       comm_size=comm_size)
-        local_result = np.random.rand(*local_shape)
-        return denselocalarray.LocalArray(size, local_result.dtype, dist,
-                                          grid_shape, comm, buf=local_result)
+        dtype = np.random.rand(1).dtype
+        la = denselocalarray.LocalArray(size, dtype=dtype, dist=dist,
+                                        grid_shape=grid_shape, comm=comm)
+        la.local_array[:] = np.random.rand(*la.local_shape)
+        return la
 
 
-def randint(low, high=None, size=None, dist={0: 'b'}, grid_shape=None,
+def randint(low, high=None, size=None, dist=None, grid_shape=None,
             comm=None):
     if size is None:
         return np.random.randint(low, high)
     else:
-        base_comm = init_base_comm(comm)
-        comm_size = base_comm.Get_size()
-        local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape,
-                                       comm_size=comm_size)
-        local_result = np.random.randint(low, high, size=local_shape)
-        return denselocalarray.LocalArray(size, local_result.dtype, dist,
-                                          grid_shape, comm, buf=local_result)
+        dtype = np.random.randint(low, high, size=1).dtype
+        la = denselocalarray.LocalArray(size, dtype=dtype, dist=dist,
+                                        grid_shape=grid_shape, comm=comm)
+        la.local_array[:] = np.random.randint(low, high, size=la.local_shape)
+        return la
 
 
-def randn(size=None, dist={0:'b'}, grid_shape=None, comm=None):
+def randn(size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.randn()
     else:
-        base_comm = init_base_comm(comm)
-        comm_size = base_comm.Get_size()
-        local_shape = find_local_shape(size, dist=dist, grid_shape=grid_shape,
-                                       comm_size=comm_size)
-        local_result = np.random.randn(*local_shape)
-        return denselocalarray.LocalArray(size, local_result.dtype, dist,
-                                          grid_shape, comm, buf=local_result)
+        dtype = np.random.randn(1).dtype
+        la = denselocalarray.LocalArray(size, dtype=dtype, dist=dist,
+                                        grid_shape=grid_shape, comm=comm)
+        la.local_array[:] = np.random.randn(*la.local_shape)
+        return la
