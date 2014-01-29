@@ -226,7 +226,7 @@ class DenseLocalArray(BaseLocalArray):
 
         DAP = Distributed Array Protocol
 
-        https://github.com/enthought/distributed-array-protocol
+        See the project's documentation for the Protocol's specification.
         """
         dimdata = tuple(self._dimdict(dim) for dim in range(self.ndim))
         distbuffer = {"buffer": self.local_array,
