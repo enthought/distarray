@@ -11,7 +11,6 @@ install:
 
 setup_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py start
-	-sleep 15  # wait for ipcluster
 
 test:
 	${PYTHON} -m unittest discover
