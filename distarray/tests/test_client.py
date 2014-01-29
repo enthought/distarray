@@ -4,6 +4,7 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
+from math import ceil
 import unittest
 import numpy as np
 from six.moves import range
@@ -128,10 +129,10 @@ class TestDistArray(unittest.TestCase):
 
     def test_owner_rank(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
-        self.assertEqual(dap.owner_rank(10), 0)
-        self.assertEqual(dap.owner_rank(30), 1)
-        self.assertEqual(dap.owner_rank(60), 2)
-        self.assertEqual(dap.owner_rank(80), 3)
+        nprocs = len(self.dv)
+        elts_per_proc = int(ceil(100. / nprocs))
+        for idx in (10, 30, 60, 80):
+            self.assertEqual(dap.owner_rank(idx), idx // elts_per_proc)
 
 
 if __name__ == '__main__':
