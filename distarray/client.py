@@ -17,6 +17,7 @@ import uuid
 import numpy as np
 from six import next
 
+from IPython.parallel import Client
 from distarray.utils import has_exactly_one
 
 
@@ -108,8 +109,12 @@ class RandomModule(object):
 
 class Context(object):
 
-    def __init__(self, view, targets=None):
-        self.view = view
+    def __init__(self, view=None, targets=None):
+        if view is None:
+            c = Client()
+            self.view = c[:]
+        else:
+            self.view = view
 
         all_targets = self.view.targets
         if targets is None:
