@@ -136,19 +136,19 @@ def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
     given.
     """
     ndistdim = len(distdims)
-    if grid_shape is None:
+    if grid_shape is None or grid_shape == tuple():
         grid_shape = optimize_grid_shape(shape, distdims, comm_size)
     else:
         try:
             grid_shape = tuple(grid_shape)
         except:
-            msg = "grid_shape is not castable to a tuple"
+            msg = "grid_shape is not castable to a tuple."
             raise InvalidGridShapeError(msg)
-    if len(grid_shape)!=ndistdim:
-        raise InvalidGridShapeError("grid_shape has the wrong length")
-    ngriddim = reduce(lambda x,y: x*y, grid_shape)
+    if len(grid_shape) != ndistdim:
+        raise InvalidGridShapeError("grid_shape has the wrong length.")
+    ngriddim = reduce(lambda x, y: x * y, grid_shape)
     if ngriddim != comm_size:
-        msg = "grid_shape is incompatible with the number of processors"
+        msg = "grid_shape is incompatible with the number of processors."
         raise InvalidGridShapeError(msg)
     return tuple(int(s) for s in grid_shape)
 
@@ -181,7 +181,8 @@ def _compute_grid_ratios(shape):
 
 
 def init_comm(base_comm, grid_shape, ndistdim):
-    return base_comm.Create_cart(grid_shape,ndistdim*(False,),False)
+    return base_comm.Create_cart(grid_shape, ndistdim * (False,),
+                                 reorder=False)
 
 
 def init_local_shape_and_maps(shape, grid_shape, distdims, map_classes):
