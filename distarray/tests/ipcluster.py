@@ -19,19 +19,21 @@ else:
 def start(n=4):
     """Convenient way to start an ipcluster for testing.
 
-    You have to wait for it to start, however.
+    Doesn't exit until the ipcluster prints a success message.
     """
-    # FIXME: This should be reimplemented to signal when the cluster has
-    # successfully started
-
     engines = "--engines=MPIEngineSetLauncher"
-    Popen([ipcluster_cmd, 'start', '-n', str(n), engines, str('&')],
-           stdout=PIPE, stderr=PIPE)
+    cluster = Popen([ipcluster_cmd, 'start', '-n', str(n), engines],
+                       stdout=PIPE, stderr=PIPE)
+
+    match = six.text_type("Engines appear to have started successfully")
+    while True:
+        line = six.text_type(cluster.stderr.readline())
+        if match in line:
+            break
 
 
 def stop():
     """Convenient way to stop an ipcluster."""
-
     Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
 
 
