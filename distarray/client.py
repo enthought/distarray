@@ -68,7 +68,7 @@ class RandomModule(object):
 
     def __init__(self, context):
         self.context = context
-        self.context._execute('import distarray.random')
+        self.context._execute('import distarray.local.random')
 
     def rand(self, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(size, dist, grid_shape)
