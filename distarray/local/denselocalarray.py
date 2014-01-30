@@ -56,7 +56,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
     supported_disttypes = (None, 'b', 'c')
 
     if dist is None:
-        dist = {0:'b'}
+        dist = {0: 'b'}
 
     dist_tuple = construct.init_dist(dist, len(shape))
 
@@ -117,7 +117,6 @@ class DenseLocalArray(BaseLocalArray):
         super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
                                               buf=buf, comm=comm)
         return self
-
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
                  comm=None, buf=None):
@@ -236,18 +235,14 @@ class DenseLocalArray(BaseLocalArray):
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
-        lower_local = self.ndim * [0,]
+        lower_local = self.ndim * [0]
         lower_global = self.local_to_global(*lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
         upper_global = self.local_to_global(*upper_local)
         return lower_global[dim], upper_global[dim]
 
-
     #-------------------------------------------------------------------------
     # 3.2 ndarray methods
-    #-------------------------------------------------------------------------
-
-
     #-------------------------------------------------------------------------
     # 3.2.1 Array conversion
     #-------------------------------------------------------------------------
@@ -258,7 +253,8 @@ class DenseLocalArray(BaseLocalArray):
         else:
             local_copy = self.local_array.astype(newdtype)
             new_da = LocalArray(self.shape, dtype=newdtype, dist=self.dist,
-                grid_shape=self.grid_shape, comm=self.base_comm, buf=local_copy)
+                                grid_shape=self.grid_shape,
+                                comm=self.base_comm, buf=local_copy)
             return new_da
 
     def copy(self):
@@ -276,10 +272,10 @@ class DenseLocalArray(BaseLocalArray):
     def view(self, dtype=None):
         if dtype is None:
             new_da = LocalArray(self.shape, self.dtype, self.dist,
-                self.grid_shape, self.base_comm, buf=self.data)
+                                self.grid_shape, self.base_comm, buf=self.data)
         else:
             new_da = LocalArray(self.shape, dtype, self.dist,
-                self.grid_shape, self.base_comm, buf=self.data)
+                                self.grid_shape, self.base_comm, buf=self.data)
         return new_da
 
     def __array__(self, dtype=None):
@@ -293,15 +289,14 @@ class DenseLocalArray(BaseLocalArray):
     def __array_wrap__(self, obj, context=None):
         """
         Return a LocalArray based on obj.
-        
+
         This method constructs a new LocalArray object using (shape, dist,
         grid_shape and base_comm) from self and dtype, buffer from obj.
-        
+
         This is used to construct return arrays for ufuncs.
         """
         return self.__class__(self.shape, obj.dtype, self.dist,
                               self.grid_shape, self.base_comm, buf=obj)
-
 
     def fill(self, scalar):
         self.local_array.fill(scalar)
@@ -313,7 +308,7 @@ class DenseLocalArray(BaseLocalArray):
     def reshape(self, newshape):
         _raise_nie()
 
-    def redist(self, newshape, newdist={0:'b'}, newgrid_shape=None):
+    def redist(self, newshape, newdist={0: 'b'}, newgrid_shape=None):
         _raise_nie()
 
     def resize(self, newshape, refcheck=1, order='C'):
@@ -334,9 +329,10 @@ class DenseLocalArray(BaseLocalArray):
     def squeeze(self):
         _raise_nie()
 
-    def asdist(self, shape, dist={0:'b'}, grid_shape=None):
+    def asdist(self, shape, dist={0: 'b'}, grid_shape=None):
         pass
-        # new_da = LocalArray(shape, self.dtype, dist, grid_shape, self.base_comm)
+        # new_da = LocalArray(shape, self.dtype, dist, grid_shape,
+        #                     self.base_comm)
         # base_comm = self.base_comm
         # local_array = self.local_array
         # new_local_array = da.local_array
@@ -349,7 +345,8 @@ class DenseLocalArray(BaseLocalArray):
         # for old_local_inds, item in np.ndenumerate(local_array):
         #
         #     # Compute the new owner
-        #     global_inds = self.local_to_global(new_da.comm_rank, old_local_inds)
+        #     global_inds = self.local_to_global(new_da.comm_rank,
+        #                                        old_local_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
         #         pass
@@ -368,7 +365,8 @@ class DenseLocalArray(BaseLocalArray):
         #         if tag==2:
         #             done_count += 1
         #         # Figure out where new location of old_owner, tag
-        #         new_local_ind = local_ind_by_owner_and_location(old_owner, location)
+        #         new_local_ind = local_ind_by_owner_and_location(old_owner,
+        #                                                         location)
         #         new_local_array[new_local_ind] = y
         #         recv_counts[old_owner] = recv_counts[old_owner]+1
         #
@@ -380,12 +378,14 @@ class DenseLocalArray(BaseLocalArray):
 
     def asdist_like(self, other):
         """
-        Return a version of self that has shape, dist and grid_shape like other.
+        Return a version of self that has shape, dist and grid_shape like
+        other.
         """
         if arecompatible(self, other):
             return self
         else:
-            raise IncompatibleArrayError("DistArrays have incompatible shape, dist or grid_shape")
+            raise IncompatibleArrayError("DistArrays have incompatible shape,"
+                                         "dist or grid_shape")
 
     #-------------------------------------------------------------------------
     # 3.2.3 Array item selection and manipulation
@@ -506,22 +506,22 @@ class DenseLocalArray(BaseLocalArray):
     #-------------------------------------------------------------------------
 
     def __lt__(self, other):
-        _raise_nie()
+        return self._binary_op_from_ufunc(other, less, '__lt__')
 
     def __le__(self, other):
-        _raise_nie()
-
-    def __gt__(self, other):
-        _raise_nie()
-
-    def __ge__(self, other):
-        _raise_nie()
+        return self._binary_op_from_ufunc(other, less_equal, '__le__')
 
     def __eq__(self, other):
-        _raise_nie()
+        return self._binary_op_from_ufunc(other, equal, '__eq__')
 
     def __ne__(self, other):
-        _raise_nie()
+        return self._binary_op_from_ufunc(other, not_equal, '__ne__')
+
+    def __gt__(self, other):
+        return self._binary_op_from_ufunc(other, greater, '__gt__')
+
+    def __ge__(self, other):
+        return self._binary_op_from_ufunc(other, greater_equal, '__ge__')
 
     def __str__(self):
         return str(self.local_array)
@@ -589,14 +589,14 @@ class DenseLocalArray(BaseLocalArray):
 
     def unpack_index(self, packed_ind):
         if packed_ind > np.prod(self.shape)-1 or packed_ind < 0:
-            raise ValueError("Invalid index, must be 0 <= x <= number of elements.")
+            raise ValueError("Invalid index, must be 0 <= x <= number of"
+                             "elements.")
         strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
         return tuple(packed_ind//strides_array % self.shape)
 
-
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # 3.3.4 Arithmetic customization - binary
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
 
     # Binary
 
@@ -788,7 +788,8 @@ LocalArray = DenseLocalArray
 #----------------------------------------------------------------------------
 
 
-def localarray(object, dtype=None, copy=True, order=None, subok=False, ndmin=0):
+def localarray(object, dtype=None, copy=True, order=None, subok=False,
+               ndmin=0):
     _raise_nie()
 
 
@@ -796,8 +797,8 @@ def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
 
-def arange(start, stop=None, step=1, dtype=None, dist={0:'b'},
-    grid_shape=None, comm=None):
+def arange(start, stop=None, step=1, dtype=None, dist={0: 'b'},
+           grid_shape=None, comm=None):
     _raise_nie()
 
 
@@ -808,10 +809,12 @@ def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 def empty_like(arr, dtype=None):
     if isinstance(arr, DenseLocalArray):
-        if dtype==None:
-            return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape, arr.base_comm)
+        if dtype is None:
+            return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
+                         arr.base_comm)
         else:
-            return empty(arr.shape, dtype, arr.dist, arr.grid_shape, arr.base_comm)
+            return empty(arr.shape, dtype, arr.dist, arr.grid_shape,
+                         arr.base_comm)
     else:
         raise TypeError("A DenseLocalArray or subclass is expected")
 
@@ -857,7 +860,7 @@ def ndenumerate(arr):
 
 def fromfunction(function, shape, **kwargs):
     dtype = kwargs.pop('dtype', int)
-    dist = kwargs.pop('dist', {0:'b'})
+    dist = kwargs.pop('dist', {0: 'b'})
     grid_shape = kwargs.pop('grid_shape', None)
     comm = kwargs.pop('comm', None)
     da = empty(shape, dtype, dist, grid_shape, comm)
@@ -870,8 +873,9 @@ def fromlocalarray_like(local_arr, like_arr):
     """
     Create a new LocalArray using a given local array (+its dtype).
     """
-    return LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist, like_arr.grid_shape,
-        like_arr.base_comm, buf=local_arr)
+    res = LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist,
+                     like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
+    return res
 
 
 def identity(n, dtype=np.intp):
@@ -885,7 +889,6 @@ def where(condition, x=None, y=None):
 #----------------------------------------------------------------------------
 # 4.2 Operations on two or more arrays
 #----------------------------------------------------------------------------
-
 
 def concatenate(seq, axis=0):
     _raise_nie()
@@ -915,7 +918,7 @@ def vdot(a, b):
     _raise_nie()
 
 
-def tensordot(a, b, axes=(-1,0)):
+def tensordot(a, b, axes=(-1, 0)):
     _raise_nie()
 
 
@@ -938,7 +941,9 @@ def distarray2string(a):
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
                      linewidth=None, suppress=None):
-    return np.set_printoptions(precision, threshold, edgeitems, linewidth, suppress)
+    res = np.set_printoptions(precision, threshold, edgeitems, linewidth,
+                              suppress)
+    return res
 
 
 def get_printoptions():
@@ -977,6 +982,7 @@ def sum(a, dtype=None):
     local_sum = a.local_array.sum(dtype)
     global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
     return global_sum
+
 
 def average(a, axis=None, weights=None, returned=0):
     _raise_nie()
@@ -1105,20 +1111,24 @@ def _expand_shape(s, length, element=1):
     else:
         return s
 
+
 def _prepend_ones(*args):
     max_length = max(len(a) for a in args)
     return [_expand_shape(s, max_length, 1) for s in args]
+
 
 def _prepend_nones(*args):
     max_length = max(len(a) for a in args)
     return [_expand_shape(s, max_length, None) for s in args]
 
+
 def _return_shape(*args):
     return tuple([max(i) for i in zip(*args)])
 
+
 def _are_shapes_bcast(shape, target_shape):
     for si, tsi in zip(shape, target_shape):
-        if not si == 1 and not si==tsi:
+        if not si == 1 and not si == tsi:
             return False
     return True
 
@@ -1209,14 +1219,15 @@ def _add_operations(wrapper, ops):
 # numpy unary operations to wrap
 _unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
               'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'invert',
-              'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign',
-              'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
+              'log', 'log10', 'log1p', 'negative', 'reciprocal', 'rint',
+              'sign', 'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh')
 
 # numpy binary operations to wrap
 _binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
                'divide', 'floor_divide', 'fmod', 'hypot', 'left_shift', 'mod',
                'multiply', 'power', 'remainder', 'right_shift', 'subtract',
-               'true_divide')
+               'true_divide', 'less', 'less_equal', 'equal', 'not_equal',
+               'greater', 'greater_equal',)
 
 _add_operations(LocalArrayUnaryOperation, _unary_ops)
 _add_operations(LocalArrayBinaryOperation, _binary_ops)
