@@ -190,7 +190,7 @@ class DenseLocalArray(BaseLocalArray):
 
         DAP = Distributed Array Protocol
 
-        https://github.com/enthought/distributed-array-protocol
+        See the project's documentation for the Protocol's specification.
         """
         distbuffer = {
             "__version__": "1.0.0",
