@@ -10,15 +10,14 @@ install:
 	${PYTHON} setup.py install
 
 setup_cluster:
-	-${PYTHON} distarray/tests/run_ipcluster.py
-	-sleep 15  # wait for ipcluster
+	-${PYTHON} distarray/tests/ipcluster.py start
 
 test:
 	${PYTHON} -m unittest discover
 	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
 
 teardown_cluster:
-	-kill $(shell ps -ax | grep 'ipcluster start' | grep -v 'grep' | awk '{ print $$1; }' )
+	-${PYTHON} distarray/tests/ipcluster.py stop
 
 clean:
 	${PYTHON} setup.py clean --all
