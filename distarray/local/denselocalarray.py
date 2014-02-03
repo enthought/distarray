@@ -1140,19 +1140,19 @@ class LocalArrayUnaryOperation(object):
         self.__doc__ = getattr(numpy_ufunc, "__doc__", str(numpy_ufunc))
         self.__name__ = getattr(numpy_ufunc, "__name__", str(numpy_ufunc))
 
-    def __call__(self, x1, y=None):
+    def __call__(self, x1, y=None, *args, **kwargs):
         # What types of input are allowed?
         x1_isdla = isinstance(x1, DenseLocalArray)
         y_isdla = isinstance(y, DenseLocalArray)
         assert x1_isdla or isscalar(x1), "Invalid type for unary ufunc"
         assert y is None or y_isdla, "Invalid return array type"
         if y is None:
-            return self.func(x1)
+            return self.func(x1, *args, **kwargs)
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
                     raise IncompatibleArrayError("Incompatible LocalArrays")
-            self.func(x1, y.local_array)
+            self.func(x1, y.local_array, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
@@ -1168,7 +1168,7 @@ class LocalArrayBinaryOperation(object):
         self.__doc__ = getattr(numpy_ufunc, "__doc__", str(numpy_ufunc))
         self.__name__ = getattr(numpy_ufunc, "__name__", str(numpy_ufunc))
 
-    def __call__(self, x1, x2, y=None):
+    def __call__(self, x1, x2, y=None, *args, **kwargs):
         # What types of input are allowed?
         x1_isdla = isinstance(x1, DenseLocalArray)
         x2_isdla = isinstance(x2, DenseLocalArray)
@@ -1180,7 +1180,7 @@ class LocalArrayBinaryOperation(object):
                 if x1_isdla and x2_isdla:
                     if not arecompatible(x1, x2):
                         raise IncompatibleArrayError("Incompatible DistArrays")
-                return self.func(x1, x2)
+                return self.func(x1, x2, *args, **kwargs)
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
@@ -1188,7 +1188,8 @@ class LocalArrayBinaryOperation(object):
             if x2_isdla:
                 if not arecompatible(x2, y):
                     raise IncompatibleArrayError("Incompatible LocalArrays")
-            self.func(x1, x2, y.local_array)
+            kwargs.pop('y', None)
+            self.func(x1, x2, y.local_array, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
