@@ -111,8 +111,8 @@ class Context(object):
 
     def __init__(self, view=None, targets=None):
         if view is None:
-            c = Client()
-            self.view = c[:]
+            self.client = Client()
+            self.view = self.client[:]
         else:
             self.view = view
 
