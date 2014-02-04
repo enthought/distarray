@@ -303,6 +303,15 @@ class Context(object):
     def left_shift(self, a, b): return binary_proxy(self, a, b, 'left_shift')
     def right_shift(self, a, b): return binary_proxy(self, a, b, 'right_shift')
 
+    def mod(self, a, b): return binary_proxy(self, a, b, 'mod')
+    def rmod(self, a, b): return binary_proxy(self, a, b, 'rmod')
+
+    def less(self, a, b): return binary_proxy(self, a, b, 'less')
+    def less_equal(self, a, b): return binary_proxy(self, a, b, 'less_equal')
+    def equal(self, a, b): return binary_proxy(self, a, b, 'equal')
+    def not_equal(self, a, b): return binary_proxy(self, a, b, 'not_equal')
+    def greater(self, a, b): return binary_proxy(self, a, b, 'greater')
+    def greater_equal(self, a, b): return binary_proxy(self, a, b, 'greater_equal')
 
 def unary_proxy(context, a, meth_name):
     assert isinstance(a, DistArray), "This method only works on DistArrays"
@@ -546,10 +555,10 @@ class DistArray(object):
         return self._binary_op_from_ufunc(other, self.context.bitwise_and, '__rand__')
 
     def __or__(self, other):
-        return self._binary_op_from_ufunc(other, self.context.binary_or, '__ror__')
+        return self._binary_op_from_ufunc(other, self.context.bitwise_or, '__ror__')
 
     def __xor__(self, other):
-        return self._binary_op_from_ufunc(other, self.context.binary_xor, '__rxor__')
+        return self._binary_op_from_ufunc(other, self.context.bitwise_xor, '__rxor__')
 
     # Binary - right versions
 
@@ -603,3 +612,23 @@ class DistArray(object):
 
     def __invert__(self):
         return self.context.invert(self)
+
+    # Boolean comparisons
+
+    def __lt__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.less, '__lt__')
+
+    def __le__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.less_equal, '__le__')
+
+    def __eq__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.equal, '__eq__')
+
+    def __ne__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.not_equal, '__ne__')
+
+    def __gt__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.greater, '__gt__')
+
+    def __ge__(self, other):
+        return self._binary_op_from_ufunc(other, self.context.greater_equal, '__ge__')
