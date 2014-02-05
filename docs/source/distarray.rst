@@ -1,5 +1,5 @@
-Programmer's Reference
-======================
+distarray
+=========
 
 :mod:`distarray` Package
 ------------------------
