@@ -8,10 +8,9 @@ DistArray |release|
 ===================
 
 The DistArray package provides dense, multidimensional, distributed-memory
-arrays for Python.  These arrays are designed to look and feel just like
-`NumPy`_ arrays but to take advantage of parallel architectures with
-distributed memory.  It is currently under heavy development, so things may
-change quickly!
+arrays for Python.  These arrays are designed to look and feel like `NumPy`_
+arrays but to take advantage of parallel architectures with distributed memory.
+It is currently under heavy development, so things may change quickly!
 
 DistArray is targeting users who
 
@@ -77,15 +76,13 @@ Sandia's (Py)Trilinos project and Brian Granger and Min RK from the IPython
 project.
 
 
-Documentation
--------------
+Other Documentation
+-------------------
 
 .. toctree::
    :maxdepth: 2
 
-   modules
-
-
+   API Reference <modules.rst>
 
 
 Indices and tables
