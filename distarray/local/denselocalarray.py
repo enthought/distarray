@@ -161,7 +161,7 @@ class DenseLocalArray(BaseLocalArray):
 
     @classmethod
     def from_distarray(cls, obj, comm=None):
-        """Make a LocalArray from an `obj` with a `__distarray__` method.
+        """Make a LocalArray from Distributed Array Protocol data structure.
 
         An object that supports the Distributed Array Protocol will have
         a `__distarray__` method that returns the data structure
@@ -169,9 +169,13 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
 
+
+
         Parameters
         ----------
-        obj : an object with a `__distarray__` method
+        obj : an object with a `__distarray__` method or a dict
+            If a dict, it must conform to the structure defined by the
+            distributed array protocol.
 
         Returns
         -------
@@ -179,7 +183,10 @@ class DenseLocalArray(BaseLocalArray):
             A LocalArray encapsulating the buffer of the original data.
             No copy is made.
         """
-        distbuffer = obj.__distarray__()
+        if isinstance(obj, dict):
+            distbuffer = obj
+        else:
+            distbuffer = obj.__distarray__()
         buf = np.asarray(distbuffer['buffer'])
         dimdata = distbuffer['dimdata']
 
