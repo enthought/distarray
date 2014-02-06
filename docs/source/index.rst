@@ -49,11 +49,11 @@ or::
 To run the tests, you will need to start an IPython.parallel cluster with at
 least four engines, for example::
 
-    ipython cluster start -n4 --engines=MPI
+    ipcluster start -n4 --engines=MPI
 
 or under Python 3::
 
-    ipython3 cluster start -n4 --engines=MPI
+    ipcluster3 start -n4 --engines=MPI
 
 You should then be able to run all the tests with::
 
