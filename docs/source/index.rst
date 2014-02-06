@@ -23,6 +23,51 @@ DistArray is targeting users who
 .. _NumPy: http://www.numpy.org
 
 
+Installation
+------------
+
+Dependencies for DistArray:
+
+* NumPy
+* IPython
+* Mpi4Py
+* six
+
+Dependencies to build the documentation:
+
+* Sphinx
+* sphinxcontrib.napoleon
+
+If you have the above, you should be able to install this package with::
+
+    python setup.py install
+
+or::
+
+    python setup.py develop
+
+
+To run the tests, you will need to start an IPython.parallel cluster with at
+least four engines, for example::
+
+    ipython cluster start -n4 --engines=MPI
+
+or under Python 3::
+
+    ipython3 cluster start -n4 --engines=MPI
+
+You should then be able to run all the tests with::
+
+    make test
+
+To build this documentation, navigate to the `docs` directory and use the
+Makefile there.  For example, to build the html documentation::
+
+    make html
+
+from the `docs` directory.
+
+
 History
 -------
 
