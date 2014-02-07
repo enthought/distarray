@@ -23,7 +23,7 @@ class DapTestMixin(object):
 
     @comm_null_passes
     def test_export_keys(self):
-        required_keys = set(("__version__", "buffer", "dimdata"))
+        required_keys = set(("__version__", "buffer", "dim_data"))
         export_data = self.larr.__distarray__()
         exported_keys = set(export_data.keys())
         self.assertEqual(required_keys, exported_keys)
@@ -41,25 +41,25 @@ class DapTestMixin(object):
         StrictVersion(export_data['__version__'])
 
     @comm_null_passes
-    def test_export_dimdata_len(self):
+    def test_export_dim_data_len(self):
         """Test if there is a `dimdict` for every dimension."""
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
-        self.assertEqual(len(dimdata), self.larr.ndim)
+        dim_data = export_data['dim_data']
+        self.assertEqual(len(dim_data), self.larr.ndim)
 
     @comm_null_passes
-    def test_export_dimdata_keys(self):
+    def test_export_dim_data_keys(self):
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
+        dim_data = export_data['dim_data']
         required_keys = {"dist_type", "size"}
-        for dimdict in dimdata:
+        for dimdict in dim_data:
             self.assertTrue(required_keys <= set(dimdict.keys()))
 
     @comm_null_passes
-    def test_export_dimdata_values(self):
+    def test_export_dim_data_values(self):
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
-        for dd in dimdata:
+        dim_data = export_data['dim_data']
+        for dd in dim_data:
             self.assertIn(dd['dist_type'], VALID_DIST_TYPES)
             self.assertIsInstance(dd['size'], int)
 

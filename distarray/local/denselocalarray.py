@@ -34,8 +34,8 @@ from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 #----------------------------------------------------------------------------
 
 
-def make_partial_dimdata(shape, dist=None, grid_shape=None):
-    """Create an (incomplete) dimdata structure from simple parameters.
+def make_partial_dim_data(shape, dist=None, grid_shape=None):
+    """Create an (incomplete) dim_data structure from simple parameters.
 
     Parameters
     ----------
@@ -49,8 +49,8 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
 
     Returns
     -------
-    dimdata : tuple of dict
-        Partial dimdata structure as outlined in the Distributed Array
+    dim_data : tuple of dict
+        Partial dim_data structure as outlined in the Distributed Array
         Protocol.
     """
     supported_dist_types = (None, 'b', 'c')
@@ -63,18 +63,18 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
     if grid_shape:  # if None, BaseLocalArray will initialize
         grid_gen = iter(grid_shape)
 
-    dimdata = []
+    dim_data = []
     for size, dist_type in zip(shape, dist_tuple):
         if dist_type not in supported_dist_types:
-            msg = "dist_type {} not supported. Try `from_dimdata`."
+            msg = "dist_type {} not supported. Try `from_dim_data`."
             raise TypeError(msg.format(dist_type))
         dimdict = dict(dist_type=dist_type, size=size)
         if grid_shape is not None and dist_type is not None:
             dimdict["proc_grid_size"] = next(grid_gen)
 
-        dimdata.append(dimdict)
+        dim_data.append(dimdict)
 
-    return tuple(dimdata)
+    return tuple(dim_data)
 
 
 class DenseLocalArray(BaseLocalArray):
@@ -86,12 +86,12 @@ class DenseLocalArray(BaseLocalArray):
     #-------------------------------------------------------------------------
 
     @classmethod
-    def from_dimdata(cls, dimdata, dtype=None, buf=None, comm=None):
-        """Make a LocalArray from a `dimdata` tuple.
+    def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
+        """Make a LocalArray from a `dim_data` tuple.
 
         Parameters
         ----------
-        dimdata : tuple of dictionaries
+        dim_data : tuple of dictionaries
             A dict for each dimension, with the data described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
@@ -114,7 +114,7 @@ class DenseLocalArray(BaseLocalArray):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
                                               buf=buf, comm=comm)
         return self
 
@@ -123,7 +123,7 @@ class DenseLocalArray(BaseLocalArray):
         """Create a LocalArray from a simple set of parameters.
 
         This initializer restricts you to 'b' and 'c' dist_types and evenly
-        distributed data.  See `LocalArray.from_dimdata` for a more general
+        distributed data.  See `LocalArray.from_dim_data` for a more general
         method.
 
         Parameters
@@ -144,11 +144,11 @@ class DenseLocalArray(BaseLocalArray):
 
         See also
         --------
-        LocalArray.from_dimdata
+        LocalArray.from_dim_data
         """
-        dimdata = make_partial_dimdata(shape=shape, dist=dist,
+        dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                        grid_shape=grid_shape)
-        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
                                               buf=buf, comm=comm)
 
     def __del__(self):
@@ -180,9 +180,9 @@ class DenseLocalArray(BaseLocalArray):
         """
         distbuffer = obj.__distarray__()
         buf = np.asarray(distbuffer['buffer'])
-        dimdata = distbuffer['dimdata']
+        dim_data = distbuffer['dim_data']
 
-        return cls.from_dimdata(dimdata=dimdata, buf=buf, comm=comm)
+        return cls.from_dim_data(dim_data=dim_data, buf=buf, comm=comm)
 
     def __distarray__(self):
         """Returns the data structure required by the DAP.
@@ -194,7 +194,7 @@ class DenseLocalArray(BaseLocalArray):
         distbuffer = {
             "__version__": "1.0.0",
             "buffer": self.local_array,
-            "dimdata": self.dimdata,
+            "dim_data": self.dim_data,
             }
         return distbuffer
 

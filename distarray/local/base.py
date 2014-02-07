@@ -49,7 +49,7 @@ def distribute_cyclic_indices(dd):
         dd['start'] = dd['proc_grid_rank']
 
 
-def distribute_indices(dimdata):
+def distribute_indices(dim_data):
     """Fill in missing index related keys...
 
     for supported dist_types.
@@ -58,7 +58,7 @@ def distribute_indices(dimdata):
         'b': distribute_block_indices,
         'c': distribute_cyclic_indices,
     }
-    for dim in dimdata:
+    for dim in dim_data:
         if dim['dist_type']:
             distribute_fn[dim['dist_type']](dim)
 
@@ -69,12 +69,12 @@ class BaseLocalArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, dimdata, dtype=None, buf=None, comm=None):
-        """Make a BaseLocalArray from a `dimdata` tuple.
+    def __init__(self, dim_data, dtype=None, buf=None, comm=None):
+        """Make a BaseLocalArray from a `dim_data` tuple.
 
         Parameters
         ----------
-        dimdata : tuple of dictionaries
+        dim_data : tuple of dictionaries
             A dict for each dimension, with the data described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
@@ -96,7 +96,7 @@ class BaseLocalArray(object):
             A BaseLocalArray encapsulating `buf`, or else an empty
             (uninitialized) BaseLocalArray.
         """
-        self.dimdata = dimdata
+        self.dim_data = dim_data
         self.base_comm = construct.init_base_comm(comm)
 
         self.grid_shape = construct.init_grid_shape(self.shape,
@@ -108,9 +108,9 @@ class BaseLocalArray(object):
                                         self.ndistdim)
 
         self._cache_proc_grid_rank()
-        distribute_indices(self.dimdata)
+        distribute_indices(self.dim_data)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dimdata if dimdict['dist_type'])
+                          dim_data if dimdict['dist_type'])
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -121,7 +121,7 @@ class BaseLocalArray(object):
     def local_shape(self):
         lshape = []
         maps = iter(self.maps)
-        for dim in self.dimdata:
+        for dim in self.dim_data:
             if dim['dist_type']:
                 m = next(maps)
                 size = len(m.global_index)
@@ -132,23 +132,23 @@ class BaseLocalArray(object):
 
     @property
     def grid_shape(self):
-        return tuple(dd.get('proc_grid_size') for dd in self.dimdata
+        return tuple(dd.get('proc_grid_size') for dd in self.dim_data
                      if dd.get('proc_grid_size'))
 
     @grid_shape.setter
     def grid_shape(self, grid_shape):
         grid_size = iter(grid_shape)
-        for dist, dd in zip(self.dist, self.dimdata):
+        for dist, dd in zip(self.dist, self.dim_data):
             if dist:
                 dd['proc_grid_size'] = next(grid_size)
 
     @property
     def shape(self):
-        return tuple(dd['size'] for dd in self.dimdata)
+        return tuple(dd['size'] for dd in self.dim_data)
 
     @property
     def ndim(self):
-        return len(self.dimdata)
+        return len(self.dim_data)
 
     @property
     def size(self):
@@ -164,7 +164,7 @@ class BaseLocalArray(object):
 
     @property
     def dist(self):
-        return tuple(dd['dist_type'] for dd in self.dimdata)
+        return tuple(dd['dist_type'] for dd in self.dim_data)
 
     @property
     def distdims(self):
@@ -176,7 +176,7 @@ class BaseLocalArray(object):
 
     @property
     def cart_coords(self):
-        rval = tuple(dd.get('proc_grid_rank') for dd in self.dimdata
+        rval = tuple(dd.get('proc_grid_rank') for dd in self.dim_data
                      if dd.get('proc_grid_rank'))
         assert rval == self.comm.Get_coords(self.comm_rank)
         return rval
@@ -203,7 +203,7 @@ class BaseLocalArray(object):
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        dist_data = (self.dimdata[i] for i in self.distdims)
+        dist_data = (self.dim_data[i] for i in self.distdims)
         for dim, cart_rank in zip(dist_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 

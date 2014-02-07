@@ -21,9 +21,9 @@ class TestBaseLocalArray(unittest.TestCase):
             "size": 16,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = BaseLocalArray(dimdata)
+        larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1,))
         self.assertEqual(larr.shape, (16, 16))
@@ -57,9 +57,9 @@ class TestBaseLocalArray(unittest.TestCase):
             "stop": 16,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = BaseLocalArray(dimdata)
+        larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1, 1))
         self.assertEqual(larr.shape, (16, 16))

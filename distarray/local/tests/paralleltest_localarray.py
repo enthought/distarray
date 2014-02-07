@@ -47,7 +47,7 @@ class TestInit(MpiTestCase):
         self.larr.get_localarray()
 
 
-class TestFromDimdata(MpiTestCase):
+class TestFromDimData(MpiTestCase):
 
     def assert_alike(self, l0, l1):
         self.assertEqual(l0.shape, l1.shape)
@@ -84,9 +84,9 @@ class TestFromDimdata(MpiTestCase):
             "proc_grid_size": None,
         }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
                                  comm=self.comm)
 
@@ -106,9 +106,9 @@ class TestFromDimdata(MpiTestCase):
             "proc_grid_size": 4,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
                                  comm=self.comm)
 
@@ -128,9 +128,9 @@ class TestFromDimdata(MpiTestCase):
             "proc_grid_size": 2,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={0: 'c', 1: 'b'},
                                  grid_shape=(2, 2), comm=self.comm)
 
@@ -147,9 +147,9 @@ class TestFromDimdata(MpiTestCase):
                 "size": 16,
                 "proc_grid_size": None}
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={0: 'bc'}, block_size=2,
                                  grid_shape=(2, 2), comm=self.comm)
 
