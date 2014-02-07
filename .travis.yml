@@ -10,9 +10,12 @@ before_install:
     - pip install ipython --use-mirrors
     - pip install mpi4py --use-mirrors
     - pip install six --use-mirrors
+    - pip install sphinx --use-mirrors
+    - pip install sphinxcontrib-napoleon --use-mirrors
     - pip freeze
 install:
     - python setup.py install
+    - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
 before_script:
     - (cd $TRAVIS_BUILD_DIR && make setup_cluster)
 script:
