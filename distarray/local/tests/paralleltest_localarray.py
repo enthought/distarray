@@ -74,13 +74,13 @@ class TestFromDimdata(MpiTestCase):
     def test_block(self):
         dim0 = {
             "disttype": 'b',
-            "datasize": 16,
+            "size": 16,
             "gridsize": 4,
             }
 
         dim1 = {
             "disttype": None,
-            "datasize": 16,
+            "size": 16,
             "gridsize": None,
         }
 
@@ -96,13 +96,13 @@ class TestFromDimdata(MpiTestCase):
     def test_cyclic(self):
         dim0 = {
             "disttype": None,
-            "datasize": 16,
+            "size": 16,
             "gridsize": None,
             }
 
         dim1 = {
             "disttype": 'c',
-            "datasize": 16,
+            "size": 16,
             "gridsize": 4,
             }
 
@@ -118,13 +118,13 @@ class TestFromDimdata(MpiTestCase):
     def test_cyclic_and_block(self):
         dim0 = {
             "disttype": 'c',
-            "datasize": 16,
+            "size": 16,
             "gridsize": 2,
             }
 
         dim1 = {
             "disttype": 'b',
-            "datasize": 16,
+            "size": 16,
             "gridsize": 2,
             }
 
@@ -139,12 +139,12 @@ class TestFromDimdata(MpiTestCase):
     @unittest.skip('Not implemented.')
     def test_block_cyclic(self):
         dim0 = {"disttype": 'bc',
-                "datasize": 16,
+                "size": 16,
                 "gridsize": 4,
                 "blocksize": 2}
 
         dim1 = {"disttype": None,
-                "datasize": 16,
+                "size": 16,
                 "gridsize": None}
 
         dimdata = (dim0, dim1)

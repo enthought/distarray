@@ -64,11 +64,11 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
         grid_gen = iter(grid_shape)
 
     dimdata = []
-    for datasize, disttype in zip(shape, dist_tuple):
+    for size, disttype in zip(shape, dist_tuple):
         if disttype not in supported_disttypes:
             msg = "disttype {} not supported. Try `from_dimdata`."
             raise TypeError(msg.format(disttype))
-        dimdict = dict(disttype=disttype, datasize=datasize)
+        dimdict = dict(disttype=disttype, size=size)
         if grid_shape is not None and disttype is not None:
             dimdict["gridsize"] = next(grid_gen)
 

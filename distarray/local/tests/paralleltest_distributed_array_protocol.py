@@ -51,7 +51,7 @@ class DapTestMixin(object):
     def test_export_dimdata_keys(self):
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
-        required_keys = {"disttype", "datasize"}
+        required_keys = {"disttype", "size"}
         for dimdict in dimdata:
             self.assertTrue(required_keys <= set(dimdict.keys()))
 
@@ -61,7 +61,7 @@ class DapTestMixin(object):
         dimdata = export_data['dimdata']
         for dd in dimdata:
             self.assertIn(dd['disttype'], VALID_DISTTYPES)
-            self.assertIsInstance(dd['datasize'], int)
+            self.assertIsInstance(dd['size'], int)
 
             for key in ('gridrank', 'gridsize',  'blocksize', 'padding'):
                 try:

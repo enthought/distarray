@@ -27,18 +27,18 @@ def distribute_block_indices(dd):
     if ('start' in dd) and ('stop' in dd):
         return
 
-    nelements = dd['datasize'] // dd['gridsize']
-    if dd['datasize'] % dd['gridsize'] != 0:
+    nelements = dd['size'] // dd['gridsize']
+    if dd['size'] % dd['gridsize'] != 0:
         nelements += 1
 
     dd['start'] = dd['gridrank'] * nelements
-    if dd['start'] > dd['datasize']:
-        dd['start'] = dd['datasize']
-        dd['stop'] = dd['datasize']
+    if dd['start'] > dd['size']:
+        dd['start'] = dd['size']
+        dd['stop'] = dd['size']
 
     dd['stop'] = dd['start'] + nelements
-    if dd['stop'] > dd['datasize']:
-        dd['stop'] = dd['datasize']
+    if dd['stop'] > dd['size']:
+        dd['stop'] = dd['size']
 
 
 def distribute_cyclic_indices(dd):
@@ -126,7 +126,7 @@ class BaseLocalArray(object):
                 m = next(maps)
                 size = len(m.global_index)
             else:
-                size = dim['datasize']
+                size = dim['size']
             lshape.append(size)
         return tuple(lshape)
 
@@ -144,7 +144,7 @@ class BaseLocalArray(object):
 
     @property
     def shape(self):
-        return tuple(dd['datasize'] for dd in self.dimdata)
+        return tuple(dd['size'] for dd in self.dimdata)
 
     @property
     def ndim(self):

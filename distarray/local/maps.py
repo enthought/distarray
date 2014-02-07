@@ -18,7 +18,7 @@ from math import ceil
 def block(dd):
     """Return the global indices owned by this block-distributed process.
 
-    For a regularly-distributed block distribution, 'gridrank', 'datasize',
+    For a regularly-distributed block distribution, 'gridrank', 'size',
     and 'gridsize' keys are required.  For an irregularly-distributed block
     distribution, 'start' and 'stop' are required.
     """
@@ -28,25 +28,25 @@ def block(dd):
 def cyclic(dd):
     """Return the global indices owned by this cyclically-distributed process.
 
-    Requires 'start', 'datasize', and 'gridsize' keys.
+    Requires 'start', 'size', and 'gridsize' keys.
     """
-    return range(dd['start'], dd['datasize'], dd['gridsize'])
+    return range(dd['start'], dd['size'], dd['gridsize'])
 
 
 def block_cyclic(dd):
     """Return the global indices owned by this block-cyclically-distributed
     process.
 
-    Requires 'start', 'datasize', 'gridsize', and 'blocksize' keys.
+    Requires 'start', 'size', 'gridsize', and 'blocksize' keys.
     """
-    nblocks = int(ceil(dd['datasize'] / dd['blocksize']))
+    nblocks = int(ceil(dd['size'] / dd['blocksize']))
     block_indices = range(0, nblocks, dd['gridsize'])
 
     global_indices = []
     for block_index in block_indices:
         block_start = block_index * dd['blocksize'] + dd['start']
         block_stop = block_start + dd['blocksize']
-        block = range(block_start, min(block_stop, dd['datasize']))
+        block = range(block_start, min(block_stop, dd['size']))
         global_indices.extend(block)
 
     return global_indices
@@ -65,7 +65,7 @@ disttype_to_global_indices = {
     'bp': block,
     'c': cyclic,
     'bc': block_cyclic,
-    'u': unstructured
+    'u': unstructured,
 }
 
 
