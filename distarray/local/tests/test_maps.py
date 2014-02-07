@@ -37,7 +37,7 @@ class TestBlockMap(unittest.TestCase):
 class TestCyclicMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(disttype='c', start=2, size=16, gridsize=4)
+        dimdict = dict(disttype='c', start=2, size=16, proc_grid_size=4)
         self.m = maps.IndexMap.from_dimdict(dimdict)
 
     def test_local_index(self):
@@ -67,7 +67,7 @@ class TestCyclicMap(unittest.TestCase):
 class TestBlockCyclicMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(disttype='bc', start=2, size=16, gridsize=4,
+        dimdict = dict(disttype='bc', start=2, size=16, proc_grid_size=4,
                        blocksize=2)
         self.m = maps.IndexMap.from_dimdict(dimdict)
 
@@ -104,7 +104,7 @@ class TestMapEquivalences(unittest.TestCase):
         size = 16
         grid = 4
         block = size // grid
-        dimdict = dict(start=start, size=size, gridsize=grid)
+        dimdict = dict(start=start, size=size, proc_grid_size=grid)
 
         bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                               [('disttype', 'bc'),
@@ -123,7 +123,7 @@ class TestMapEquivalences(unittest.TestCase):
         size = 16
         grid = 4
         block = 1
-        dimdict = dict(start=start, size=size, gridsize=grid,
+        dimdict = dict(start=start, size=size, proc_grid_size=grid,
                        blocksize=block)
         bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
                                               [('disttype', 'bc')]))

@@ -75,13 +75,13 @@ class TestFromDimdata(MpiTestCase):
         dim0 = {
             "disttype": 'b',
             "size": 16,
-            "gridsize": 4,
+            "proc_grid_size": 4,
             }
 
         dim1 = {
             "disttype": None,
             "size": 16,
-            "gridsize": None,
+            "proc_grid_size": None,
         }
 
         dimdata = (dim0, dim1)
@@ -97,13 +97,13 @@ class TestFromDimdata(MpiTestCase):
         dim0 = {
             "disttype": None,
             "size": 16,
-            "gridsize": None,
+            "proc_grid_size": None,
             }
 
         dim1 = {
             "disttype": 'c',
             "size": 16,
-            "gridsize": 4,
+            "proc_grid_size": 4,
             }
 
         dimdata = (dim0, dim1)
@@ -119,13 +119,13 @@ class TestFromDimdata(MpiTestCase):
         dim0 = {
             "disttype": 'c',
             "size": 16,
-            "gridsize": 2,
+            "proc_grid_size": 2,
             }
 
         dim1 = {
             "disttype": 'b',
             "size": 16,
-            "gridsize": 2,
+            "proc_grid_size": 2,
             }
 
         dimdata = (dim0, dim1)
@@ -140,12 +140,12 @@ class TestFromDimdata(MpiTestCase):
     def test_block_cyclic(self):
         dim0 = {"disttype": 'bc',
                 "size": 16,
-                "gridsize": 4,
+                "proc_grid_size": 4,
                 "blocksize": 2}
 
         dim1 = {"disttype": None,
                 "size": 16,
-                "gridsize": None}
+                "proc_grid_size": None}
 
         dimdata = (dim0, dim1)
 

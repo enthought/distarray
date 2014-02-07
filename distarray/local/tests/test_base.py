@@ -10,7 +10,7 @@ class TestBaseLocalArray(unittest.TestCase):
         dim0 = {
             "disttype": 'b',
             "size": 16,
-            "gridsize": 1,
+            "proc_grid_size": 1,
             "gridrank": 0,
             "start": 0,
             "stop": 16,
@@ -43,7 +43,7 @@ class TestBaseLocalArray(unittest.TestCase):
         dim0 = {
             "disttype": 'c',
             "size": 16,
-            "gridsize": 1,
+            "proc_grid_size": 1,
             "gridrank": 0,
             "start": 0,
             }
@@ -51,7 +51,7 @@ class TestBaseLocalArray(unittest.TestCase):
         dim1 = {
             "disttype": 'b',
             "size": 16,
-            "gridsize": 1,
+            "proc_grid_size": 1,
             "gridrank": 0,
             "start": 0,
             "stop": 16,

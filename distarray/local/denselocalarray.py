@@ -70,7 +70,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
             raise TypeError(msg.format(disttype))
         dimdict = dict(disttype=disttype, size=size)
         if grid_shape is not None and disttype is not None:
-            dimdict["gridsize"] = next(grid_gen)
+            dimdict["proc_grid_size"] = next(grid_gen)
 
         dimdata.append(dimdict)
 

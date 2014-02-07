@@ -27,8 +27,8 @@ def distribute_block_indices(dd):
     if ('start' in dd) and ('stop' in dd):
         return
 
-    nelements = dd['size'] // dd['gridsize']
-    if dd['size'] % dd['gridsize'] != 0:
+    nelements = dd['size'] // dd['proc_grid_size']
+    if dd['size'] % dd['proc_grid_size'] != 0:
         nelements += 1
 
     dd['start'] = dd['gridrank'] * nelements
@@ -132,15 +132,15 @@ class BaseLocalArray(object):
 
     @property
     def grid_shape(self):
-        return tuple(dd.get('gridsize') for dd in self.dimdata
-                     if dd.get('gridsize'))
+        return tuple(dd.get('proc_grid_size') for dd in self.dimdata
+                     if dd.get('proc_grid_size'))
 
     @grid_shape.setter
     def grid_shape(self, grid_shape):
         grid_size = iter(grid_shape)
         for dist, dd in zip(self.dist, self.dimdata):
             if dist:
-                dd['gridsize'] = next(grid_size)
+                dd['proc_grid_size'] = next(grid_size)
 
     @property
     def shape(self):

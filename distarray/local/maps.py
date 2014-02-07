@@ -19,7 +19,7 @@ def block(dd):
     """Return the global indices owned by this block-distributed process.
 
     For a regularly-distributed block distribution, 'gridrank', 'size',
-    and 'gridsize' keys are required.  For an irregularly-distributed block
+    and 'proc_grid_size' keys are required.  For an irregularly-distributed block
     distribution, 'start' and 'stop' are required.
     """
     return range(dd['start'], dd['stop'])
@@ -28,19 +28,19 @@ def block(dd):
 def cyclic(dd):
     """Return the global indices owned by this cyclically-distributed process.
 
-    Requires 'start', 'size', and 'gridsize' keys.
+    Requires 'start', 'size', and 'proc_grid_size' keys.
     """
-    return range(dd['start'], dd['size'], dd['gridsize'])
+    return range(dd['start'], dd['size'], dd['proc_grid_size'])
 
 
 def block_cyclic(dd):
     """Return the global indices owned by this block-cyclically-distributed
     process.
 
-    Requires 'start', 'size', 'gridsize', and 'blocksize' keys.
+    Requires 'start', 'size', 'proc_grid_size', and 'blocksize' keys.
     """
     nblocks = int(ceil(dd['size'] / dd['blocksize']))
-    block_indices = range(0, nblocks, dd['gridsize'])
+    block_indices = range(0, nblocks, dd['proc_grid_size'])
 
     global_indices = []
     for block_index in block_indices:
