@@ -42,7 +42,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
     shape : tuple of int
         Number of elements in each dimension.
     dist : dict mapping int -> str, default is {0: 'b'}
-        Keys are dimension number, values are disttype, e.g 'b', 'c', or
+        Keys are dimension number, values are dist_type, e.g 'b', 'c', or
         None.
     grid_shape : tuple of int, optional
         Size of process grid in each dimension
@@ -53,7 +53,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
         Partial dimdata structure as outlined in the Distributed Array
         Protocol.
     """
-    supported_disttypes = (None, 'b', 'c')
+    supported_dist_types = (None, 'b', 'c')
 
     if dist is None:
         dist = {0: 'b'}
@@ -64,12 +64,12 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
         grid_gen = iter(grid_shape)
 
     dimdata = []
-    for size, disttype in zip(shape, dist_tuple):
-        if disttype not in supported_disttypes:
-            msg = "disttype {} not supported. Try `from_dimdata`."
-            raise TypeError(msg.format(disttype))
-        dimdict = dict(disttype=disttype, size=size)
-        if grid_shape is not None and disttype is not None:
+    for size, dist_type in zip(shape, dist_tuple):
+        if dist_type not in supported_dist_types:
+            msg = "dist_type {} not supported. Try `from_dimdata`."
+            raise TypeError(msg.format(dist_type))
+        dimdict = dict(dist_type=dist_type, size=size)
+        if grid_shape is not None and dist_type is not None:
             dimdict["proc_grid_size"] = next(grid_gen)
 
         dimdata.append(dimdict)
@@ -122,7 +122,7 @@ class DenseLocalArray(BaseLocalArray):
                  comm=None, buf=None):
         """Create a LocalArray from a simple set of parameters.
 
-        This initializer restricts you to 'b' and 'c' disttypes and evenly
+        This initializer restricts you to 'b' and 'c' dist_types and evenly
         distributed data.  See `LocalArray.from_dimdata` for a more general
         method.
 
@@ -132,7 +132,7 @@ class DenseLocalArray(BaseLocalArray):
             Number of elements in each dimension.
         dtype : numpy dtype, optional
         dist : dict mapping int -> str, default is {0: 'b'}, optional
-            Keys are dimension number, values are disttype, e.g 'b', 'c', or
+            Keys are dimension number, values are dist_type, e.g 'b', 'c', or
             None.
         grid_shape : tuple of int, optional
             A size of each dimension of the process grid.

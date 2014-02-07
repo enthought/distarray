@@ -7,7 +7,7 @@ from six.moves import range
 class TestBlockMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(disttype='b', start=16, stop=39)
+        dimdict = dict(dist_type='b', start=16, stop=39)
         self.m = maps.IndexMap.from_dimdict(dimdict)
 
     def test_local_index(self):
@@ -37,7 +37,7 @@ class TestBlockMap(unittest.TestCase):
 class TestCyclicMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(disttype='c', start=2, size=16, proc_grid_size=4)
+        dimdict = dict(dist_type='c', start=2, size=16, proc_grid_size=4)
         self.m = maps.IndexMap.from_dimdict(dimdict)
 
     def test_local_index(self):
@@ -67,7 +67,7 @@ class TestCyclicMap(unittest.TestCase):
 class TestBlockCyclicMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(disttype='bc', start=2, size=16, proc_grid_size=4,
+        dimdict = dict(dist_type='bc', start=2, size=16, proc_grid_size=4,
                        blocksize=2)
         self.m = maps.IndexMap.from_dimdict(dimdict)
 
@@ -107,10 +107,10 @@ class TestMapEquivalences(unittest.TestCase):
         dimdict = dict(start=start, size=size, proc_grid_size=grid)
 
         bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
-                                              [('disttype', 'bc'),
+                                              [('dist_type', 'bc'),
                                                ('blocksize', block)]))
         bm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
-                                             [('disttype', 'b'),
+                                             [('dist_type', 'b'),
                                               ('stop', size // grid +
                                                        start)]))
         bcm_lis = [bcm.local_index[e] for e in range(4, 8)]
@@ -126,9 +126,9 @@ class TestMapEquivalences(unittest.TestCase):
         dimdict = dict(start=start, size=size, proc_grid_size=grid,
                        blocksize=block)
         bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
-                                              [('disttype', 'bc')]))
+                                              [('dist_type', 'bc')]))
         cm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
-                                             [('disttype', 'c')]))
+                                             [('dist_type', 'c')]))
         bcm_lis = [bcm.local_index[e] for e in range(1, 16, 4)]
         cm_lis = [cm.local_index[e] for e in range(1, 16, 4)]
         self.assertEqual(bcm_lis, cm_lis)

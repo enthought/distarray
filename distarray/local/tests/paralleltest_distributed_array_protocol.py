@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal
 from distarray.testing import comm_null_passes, MpiTestCase
 
 
-VALID_DISTTYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
+VALID_DIST_TYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
 
 
 class DapTestMixin(object):
@@ -51,7 +51,7 @@ class DapTestMixin(object):
     def test_export_dimdata_keys(self):
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
-        required_keys = {"disttype", "size"}
+        required_keys = {"dist_type", "size"}
         for dimdict in dimdata:
             self.assertTrue(required_keys <= set(dimdict.keys()))
 
@@ -60,7 +60,7 @@ class DapTestMixin(object):
         export_data = self.larr.__distarray__()
         dimdata = export_data['dimdata']
         for dd in dimdata:
-            self.assertIn(dd['disttype'], VALID_DISTTYPES)
+            self.assertIn(dd['dist_type'], VALID_DIST_TYPES)
             self.assertIsInstance(dd['size'], int)
 
             for key in ('proc_grid_rank', 'proc_grid_size',  'blocksize', 'padding'):

@@ -73,13 +73,13 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_block(self):
         dim0 = {
-            "disttype": 'b',
+            "dist_type": 'b',
             "size": 16,
             "proc_grid_size": 4,
             }
 
         dim1 = {
-            "disttype": None,
+            "dist_type": None,
             "size": 16,
             "proc_grid_size": None,
         }
@@ -95,13 +95,13 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_cyclic(self):
         dim0 = {
-            "disttype": None,
+            "dist_type": None,
             "size": 16,
             "proc_grid_size": None,
             }
 
         dim1 = {
-            "disttype": 'c',
+            "dist_type": 'c',
             "size": 16,
             "proc_grid_size": 4,
             }
@@ -117,13 +117,13 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_cyclic_and_block(self):
         dim0 = {
-            "disttype": 'c',
+            "dist_type": 'c',
             "size": 16,
             "proc_grid_size": 2,
             }
 
         dim1 = {
-            "disttype": 'b',
+            "dist_type": 'b',
             "size": 16,
             "proc_grid_size": 2,
             }
@@ -138,12 +138,12 @@ class TestFromDimdata(MpiTestCase):
 
     @unittest.skip('Not implemented.')
     def test_block_cyclic(self):
-        dim0 = {"disttype": 'bc',
+        dim0 = {"dist_type": 'bc',
                 "size": 16,
                 "proc_grid_size": 4,
                 "blocksize": 2}
 
-        dim1 = {"disttype": None,
+        dim1 = {"dist_type": None,
                 "size": 16,
                 "proc_grid_size": None}
 

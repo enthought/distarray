@@ -52,15 +52,15 @@ def distribute_cyclic_indices(dd):
 def distribute_indices(dimdata):
     """Fill in missing index related keys...
 
-    for supported disttypes.
+    for supported dist_types.
     """
     distribute_fn = {
         'b': distribute_block_indices,
         'c': distribute_cyclic_indices,
     }
     for dim in dimdata:
-        if dim['disttype']:
-            distribute_fn[dim['disttype']](dim)
+        if dim['dist_type']:
+            distribute_fn[dim['dist_type']](dim)
 
 
 class BaseLocalArray(object):
@@ -110,7 +110,7 @@ class BaseLocalArray(object):
         self._cache_proc_grid_rank()
         distribute_indices(self.dimdata)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dimdata if dimdict['disttype'])
+                          dimdata if dimdict['dist_type'])
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -122,7 +122,7 @@ class BaseLocalArray(object):
         lshape = []
         maps = iter(self.maps)
         for dim in self.dimdata:
-            if dim['disttype']:
+            if dim['dist_type']:
                 m = next(maps)
                 size = len(m.global_index)
             else:
@@ -164,7 +164,7 @@ class BaseLocalArray(object):
 
     @property
     def dist(self):
-        return tuple(dd['disttype'] for dd in self.dimdata)
+        return tuple(dd['dist_type'] for dd in self.dimdata)
 
     @property
     def distdims(self):

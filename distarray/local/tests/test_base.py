@@ -8,7 +8,7 @@ class TestBaseLocalArray(unittest.TestCase):
 
     def test_block(self):
         dim0 = {
-            "disttype": 'b',
+            "dist_type": 'b',
             "size": 16,
             "proc_grid_size": 1,
             "proc_grid_rank": 0,
@@ -17,7 +17,7 @@ class TestBaseLocalArray(unittest.TestCase):
             }
 
         dim1 = {
-            "disttype": None,
+            "dist_type": None,
             "size": 16,
             }
 
@@ -41,7 +41,7 @@ class TestBaseLocalArray(unittest.TestCase):
 
     def test_cyclic(self):
         dim0 = {
-            "disttype": 'c',
+            "dist_type": 'c',
             "size": 16,
             "proc_grid_size": 1,
             "proc_grid_rank": 0,
@@ -49,7 +49,7 @@ class TestBaseLocalArray(unittest.TestCase):
             }
 
         dim1 = {
-            "disttype": 'b',
+            "dist_type": 'b',
             "size": 16,
             "proc_grid_size": 1,
             "proc_grid_rank": 0,
