@@ -35,15 +35,15 @@ def block_cyclic(dd):
     """Return the global indices owned by this block-cyclically-distributed
     process.
 
-    Requires 'start', 'size', 'proc_grid_size', and 'blocksize' keys.
+    Requires 'start', 'size', 'proc_grid_size', and 'block_size' keys.
     """
-    nblocks = int(ceil(dd['size'] / dd['blocksize']))
+    nblocks = int(ceil(dd['size'] / dd['block_size']))
     block_indices = range(0, nblocks, dd['proc_grid_size'])
 
     global_indices = []
     for block_index in block_indices:
-        block_start = block_index * dd['blocksize'] + dd['start']
-        block_stop = block_start + dd['blocksize']
+        block_start = block_index * dd['block_size'] + dd['start']
+        block_stop = block_start + dd['block_size']
         block = range(block_start, min(block_stop, dd['size']))
         global_indices.extend(block)
 

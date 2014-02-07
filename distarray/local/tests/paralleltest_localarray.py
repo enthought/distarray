@@ -141,7 +141,7 @@ class TestFromDimdata(MpiTestCase):
         dim0 = {"dist_type": 'bc',
                 "size": 16,
                 "proc_grid_size": 4,
-                "blocksize": 2}
+                "block_size": 2}
 
         dim1 = {"dist_type": None,
                 "size": 16,
@@ -150,7 +150,7 @@ class TestFromDimdata(MpiTestCase):
         dimdata = (dim0, dim1)
 
         larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={0: 'bc'}, blocksize=2,
+        expected = da.LocalArray((16,16), dist={0: 'bc'}, block_size=2,
                                  grid_shape=(2, 2), comm=self.comm)
 
         self.assert_alike(larr, expected)
