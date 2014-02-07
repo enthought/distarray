@@ -63,7 +63,7 @@ class DapTestMixin(object):
             self.assertIn(dd['disttype'], VALID_DISTTYPES)
             self.assertIsInstance(dd['size'], int)
 
-            for key in ('gridrank', 'proc_grid_size',  'blocksize', 'padding'):
+            for key in ('proc_grid_rank', 'proc_grid_size',  'blocksize', 'padding'):
                 try:
                     self.assertIsInstance(dd[key], int)
                 except KeyError:

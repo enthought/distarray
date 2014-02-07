@@ -18,9 +18,7 @@ from math import ceil
 def block(dd):
     """Return the global indices owned by this block-distributed process.
 
-    For a regularly-distributed block distribution, 'gridrank', 'size',
-    and 'proc_grid_size' keys are required.  For an irregularly-distributed block
-    distribution, 'start' and 'stop' are required.
+    Requires 'start' and 'stop' keys.
     """
     return range(dd['start'], dd['stop'])
 
