@@ -24,19 +24,13 @@ def block(dd):
 
 
 def cyclic(dd):
-    """Return the global indices owned by this cyclically-distributed process.
-
-    Requires 'start', 'size', and 'proc_grid_size' keys.
-    """
-    return range(dd['start'], dd['size'], dd['proc_grid_size'])
-
-
-def block_cyclic(dd):
-    """Return the global indices owned by this block-cyclically-distributed
+    """Return the global indices owned by this (block-)cyclically-distributed
     process.
 
-    Requires 'start', 'size', 'proc_grid_size', and 'block_size' keys.
+    Requires 'start', 'size', 'proc_grid_size', and (optionally) 'block_size'
+    keys.  If 'block_size' key does not exist, it is set to 1.
     """
+    dd.setdefault('block_size', 1)
     nblocks = int(ceil(dd['size'] / dd['block_size']))
     block_indices = range(0, nblocks, dd['proc_grid_size'])
 
@@ -60,9 +54,7 @@ def unstructured(dd):
 
 dist_type_to_global_indices = {
     'b': block,
-    'bp': block,
     'c': cyclic,
-    'bc': block_cyclic,
     'u': unstructured,
 }
 

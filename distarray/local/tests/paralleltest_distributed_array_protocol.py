@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal
 from distarray.testing import comm_null_passes, MpiTestCase
 
 
-VALID_DIST_TYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
+VALID_DIST_TYPES = {None, 'b', 'c', 'u'}
 
 
 class DapTestMixin(object):
