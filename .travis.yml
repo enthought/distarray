@@ -8,7 +8,7 @@ before_install:
     - pip install numpy
     - pip install pyzmq --install-option="--zmq=bundled"
     - pip install ipython
-    - pip install mpi4py
+    - pip install mpi4py --allow-all-external --allow-unverified mpi4py
     - pip install six
     - pip freeze
 install:
