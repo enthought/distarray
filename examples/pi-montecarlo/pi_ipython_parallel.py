@@ -7,6 +7,8 @@ Usage:
 import sys
 from IPython.parallel import Client, interactive
 
+from util import timer
+
 client = Client()
 view = client[:]
 view.execute('import numpy')
@@ -20,11 +22,15 @@ def calc_pi_on_engines(n):
     return 4. * (r < 1.).sum() / n
 
 
+@timer
 def calc_pi(n):
+    """Estimate pi using IPython.parallel."""
     n_engines = n/len(view)
     results = view.apply_sync(calc_pi_on_engines, n_engines)
-    client.purge_everything()
     return float(sum(results))/len(results)
 
 if __name__ == "__main__":
-    print(calc_pi(int(sys.argv[1])))
+    N = int(sys.argv[1])
+    result, time = calc_pi(N)
+    print('time  : %3.4g\nresult: %.7f' % (time, result))
+    client.purge_everything()
