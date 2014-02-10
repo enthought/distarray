@@ -68,7 +68,7 @@ class RandomModule(object):
 
     def __init__(self, context):
         self.context = context
-        self.context._execute('import distarray.random')
+        self.context._execute('import distarray.local.random')
 
     def rand(self, size=None, dist={0:'b'}, grid_shape=None):
         keys = self.context._key_and_push(size, dist, grid_shape)
@@ -111,8 +111,8 @@ class Context(object):
 
     def __init__(self, view=None, targets=None):
         if view is None:
-            c = Client()
-            self.view = c[:]
+            self.client = Client()
+            self.view = self.client[:]
         else:
             self.view = view
 
