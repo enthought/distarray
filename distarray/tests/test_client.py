@@ -4,6 +4,7 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
+from math import ceil
 import unittest
 import numpy as np
 from six.moves import range
