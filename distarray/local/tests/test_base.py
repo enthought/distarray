@@ -27,7 +27,7 @@ class TestBaseLocalArray(unittest.TestCase):
 
         self.assertEqual(larr.grid_shape, (1,))
         self.assertEqual(larr.shape, (16, 16))
-        self.assertEqual(len(larr.maps), 1)
+        self.assertEqual(len(larr.maps), 2)
         self.assertEqual(larr.local_array.shape, larr.shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)

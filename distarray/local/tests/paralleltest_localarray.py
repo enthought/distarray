@@ -30,7 +30,7 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr.comm.Get_topo(),
                          (list(self.larr.grid_shape),
                           [0], [self.larr.comm_rank]))
-        self.assertEqual(len(self.larr.maps), 1)
+        self.assertEqual(len(self.larr.maps), 2)
         self.assertEqual(self.larr.grid_shape, (4,))
         self.assertEqual(self.larr.shape, (16, 16))
         self.assertEqual(self.larr.local_shape, (4, 16))

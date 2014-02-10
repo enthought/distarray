@@ -110,7 +110,7 @@ class BaseLocalArray(object):
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dim_data if dimdict['dist_type'] != 'n')
+                          dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
