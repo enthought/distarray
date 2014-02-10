@@ -42,8 +42,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     shape : tuple of int
         Number of elements in each dimension.
     dist : dict mapping int -> str, default is {0: 'b'}
-        Keys are dimension number, values are dist_type, e.g 'b', 'c', or
-        None.
+        Keys are dimension number, values are dist_type, e.g 'b', 'c', or 'n'.
     grid_shape : tuple of int, optional
         Size of process grid in each dimension
 
@@ -53,7 +52,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
         Partial dim_data structure as outlined in the Distributed Array
         Protocol.
     """
-    supported_dist_types = (None, 'b', 'c')
+    supported_dist_types = ('n', 'b', 'c')
 
     if dist is None:
         dist = {0: 'b'}
@@ -69,7 +68,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
             msg = "dist_type {} not supported. Try `from_dim_data`."
             raise TypeError(msg.format(dist_type))
         dimdict = dict(dist_type=dist_type, size=size)
-        if grid_shape is not None and dist_type is not None:
+        if grid_shape is not None and dist_type != 'n':
             dimdict["proc_grid_size"] = next(grid_gen)
 
         dim_data.append(dimdict)
@@ -133,7 +132,7 @@ class DenseLocalArray(BaseLocalArray):
         dtype : numpy dtype, optional
         dist : dict mapping int -> str, default is {0: 'b'}, optional
             Keys are dimension number, values are dist_type, e.g 'b', 'c', or
-            None.
+            'n'.
         grid_shape : tuple of int, optional
             A size of each dimension of the process grid.
             There should be a dimension size for each distributed

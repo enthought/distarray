@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal
 from distarray.testing import comm_null_passes, MpiTestCase
 
 
-VALID_DIST_TYPES = {None, 'b', 'c', 'u'}
+VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
 
 
 class DapTestMixin(object):
@@ -122,19 +122,19 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
                                   grid_shape=(4,), comm=self.comm, buf=None)
 
 
-class TestDapExplicitNone0(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: None},
+        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
                                   grid_shape=(4,), comm=self.comm)
 
 
-class TestDapExplicitNone1(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((30, 60), dist={0: None, 1: 'b'},
+        self.larr = da.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
                                   grid_shape=(4,), comm=self.comm)
 
 
@@ -184,7 +184,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
     @comm_null_passes
     def more_setUp(self):
         self.larr = da.LocalArray((53, 77, 99), dtype='float64',
-                                  dist={0: 'b', 1: None, 2: 'c'},
+                                  dist={0: 'b', 1: 'n', 2: 'c'},
                                   grid_shape=(2, 2),
                                   comm=self.comm)
 
@@ -202,7 +202,7 @@ class TestDapLopsided(DapTestMixin, MpiTestCase):
             arr = np.arange(30)
 
         self.larr = da.LocalArray((50,), dtype='float64',
-                             dist={0: 'b', 1: None},
+                             dist={0: 'b', 1: 'n'},
                              grid_shape=(2,), comm=self.comm, buf=arr)
 
     @comm_null_passes

@@ -11,7 +11,7 @@ class TestBasic(MpiTestCase):
 
     def shape_asserts(self, la):
         self.assertEqual(la.shape, (16, 16))
-        self.assertEqual(la.dist, ('b', None))
+        self.assertEqual(la.dist, ('b', 'n'))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.base_comm, self.comm)
         self.assertEqual(la.comm_size, 4)

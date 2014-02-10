@@ -59,7 +59,7 @@ def distribute_indices(dim_data):
         'c': distribute_cyclic_indices,
     }
     for dim in dim_data:
-        if dim['dist_type']:
+        if dim['dist_type'] != 'n':
             distribute_fn[dim['dist_type']](dim)
 
 
@@ -110,7 +110,7 @@ class BaseLocalArray(object):
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dim_data if dimdict['dist_type'])
+                          dim_data if dimdict['dist_type'] != 'n')
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -122,7 +122,7 @@ class BaseLocalArray(object):
         lshape = []
         maps = iter(self.maps)
         for dim in self.dim_data:
-            if dim['dist_type']:
+            if dim['dist_type'] != 'n':
                 m = next(maps)
                 size = len(m.global_index)
             else:
@@ -139,7 +139,7 @@ class BaseLocalArray(object):
     def grid_shape(self, grid_shape):
         grid_size = iter(grid_shape)
         for dist, dd in zip(self.dist, self.dim_data):
-            if dist:
+            if dist != 'n':
                 dd['proc_grid_size'] = next(grid_size)
 
     @property
@@ -168,7 +168,7 @@ class BaseLocalArray(object):
 
     @property
     def distdims(self):
-        return tuple(i for (i, v) in enumerate(self.dist) if v)
+        return tuple(i for (i, v) in enumerate(self.dist) if v != 'n')
 
     @property
     def ndistdim(self):

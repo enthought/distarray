@@ -17,7 +17,7 @@ class TestBaseLocalArray(unittest.TestCase):
             }
 
         dim1 = {
-            "dist_type": None,
+            "dist_type": 'n',
             "size": 16,
             }
 
@@ -31,7 +31,7 @@ class TestBaseLocalArray(unittest.TestCase):
         self.assertEqual(larr.local_array.shape, larr.shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
-        self.assertEqual(larr.dist, ('b', None))
+        self.assertEqual(larr.dist, ('b', 'n'))
         self.assertEqual(larr.distdims, (0,))
         self.assertEqual(larr.ndistdim, 1)
         self.assertEqual(larr.local_size, 16*16)
