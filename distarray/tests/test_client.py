@@ -4,6 +4,7 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
+from math import ceil
 import unittest
 import numpy as np
 from six.moves import range
@@ -38,7 +39,7 @@ class TestContext(unittest.TestCase):
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        dac = Context(self.dv, targets=[0,1])
+        dac = Context(self.dv, targets=[0, 1])
         self.assertIs(dac.view, self.dv)
 
     def test_create_Context_with_sub_view(self):
@@ -52,10 +53,11 @@ class TestContext(unittest.TestCase):
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
-        targets = [3,2]
+        targets = [3, 2]
         dac = Context(self.dv, targets=targets)
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
-        self.assertEqual(set(range(len(dac.targets))), set(dac.target_to_rank.values()))
+        self.assertEqual(set(range(len(dac.targets))),
+                         set(dac.target_to_rank.values()))
 
 
 class TestDistArray(unittest.TestCase):
@@ -68,6 +70,11 @@ class TestDistArray(unittest.TestCase):
             errmsg = 'Must set up a cluster with at least 4 engines running.'
             raise unittest.SkipTest(errmsg)
         self.dac = Context(self.dv)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.clear()
+        cls.client.close()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -94,7 +101,7 @@ class TestDistArray(unittest.TestCase):
                 self.assertEqual(dap[row, col], val)
 
     def test_set_and_getitem_cyclic_dist(self):
-        size=10
+        size = 10
         dap = self.dac.empty((size,), dist={0: 'c'})
 
         for val in range(size):
@@ -153,14 +160,9 @@ class TestDistArrayCreation(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Close the client connections"""
+        """Clear the namespace and close the client connections after
+        this class' tests are run."""
         cls.client.close()
-
-    @classmethod
-    def tearDownClass(self):
-        """Clear the namespace on the engines after this class' tests
-        are run."""
-        self.dv.clear()
 
     def test_zeros(self):
         shape = (16, 16)

@@ -5,13 +5,13 @@ python:
 before_install:
     - sudo apt-get install libopenmpi-dev
     - sudo apt-get install openmpi-bin
-    - pip install numpy --use-mirrors
-    - pip install pyzmq --install-option="--zmq=bundled" --use-mirrors
-    - pip install ipython --use-mirrors
-    - pip install mpi4py --use-mirrors
-    - pip install six --use-mirrors
-    - pip install sphinx --use-mirrors
-    - pip install sphinxcontrib-napoleon --use-mirrors
+    - pip install numpy
+    - pip install pyzmq --install-option="--zmq=bundled"
+    - pip install ipython
+    - pip install mpi4py --allow-all-external --allow-unverified mpi4py
+    - pip install six
+    - pip install sphinx
+    - pip install sphinxcontrib-napoleon
     - pip freeze
 install:
     - python setup.py install
