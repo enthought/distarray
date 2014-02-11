@@ -119,16 +119,7 @@ class BaseLocalArray(object):
 
     @property
     def local_shape(self):
-        lshape = []
-        maps = iter(self.maps)
-        for dim in self.dim_data:
-            if dim['dist_type'] != 'n':
-                m = next(maps)
-                size = len(m.global_index)
-            else:
-                size = dim['size']
-            lshape.append(size)
-        return tuple(lshape)
+        return tuple(m.size for m in self.maps)
 
     @property
     def grid_shape(self):
