@@ -4,7 +4,7 @@ from distarray.local import maps
 from six.moves import range
 
 
-class TestNodistMap(unittest.TestCase):
+class TestNotDistMap(unittest.TestCase):
 
     def setUp(self):
         dimdict = dict(dist_type='n', size=20)

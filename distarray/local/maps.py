@@ -15,7 +15,7 @@ from six.moves import range, zip
 from math import ceil
 
 
-def no_distribution(dd):
+def not_distributed(dd):
     """Return the global indicies owned by this undistributed process.
 
     Requires the 'size' key.
@@ -61,7 +61,7 @@ def unstructured(dd):
 
 
 dist_type_to_global_indices = {
-    'n': no_distribution,
+    'n': not_distributed,
     'b': block,
     'c': cyclic,
     'u': unstructured,
