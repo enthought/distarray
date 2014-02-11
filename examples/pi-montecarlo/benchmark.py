@@ -1,3 +1,10 @@
+"""
+Benchmark all the scripts. Usage:
+    $ python benchmark.py <n>
+
+Where in is the power of 2 for the maximum number of points
+benchmarked. i.e. N = 2**n where N is the number of points used.
+"""
 import sys
 import timeit
 
