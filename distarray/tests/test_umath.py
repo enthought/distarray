@@ -1,7 +1,7 @@
 """
 Tests for distarray ufuncs.
 
-Many of these tests require a 4-engine cluster to be running locally.
+Many of these tests require a 4-engine cluster to be running remotely.
 """
 
 import unittest
@@ -53,7 +53,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         """Check binary operation for success.
 
         Check the two- and three-arg ufunc versions as well as the
-        method version attached to a LocalArray.
+        method version attached to a RemoteArray.
         """
         op = getattr(context, op_name)
         ufunc = getattr(np, op_name)
@@ -68,7 +68,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         """Check unary operation for success.
 
         Check the two- and three-arg ufunc versions as well as the
-        method version attached to a LocalArray.
+        method version attached to a RemoteArray.
         """
         op = getattr(context, op_name)
         ufunc = getattr(np, op_name)

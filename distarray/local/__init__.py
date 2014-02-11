@@ -13,12 +13,12 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.local import denselocalarray
-from distarray.local.denselocalarray import *
+from distarray.remote import denseremotearray
+from distarray.remote.denseremotearray import *
 
-from distarray.local import random
-from distarray.local.random import *
+from distarray.remote import random
+from distarray.remote.random import *
 
-from distarray.local import base
-from distarray.local.base import *
+from distarray.remote import base
+from distarray.remote.base import *
 

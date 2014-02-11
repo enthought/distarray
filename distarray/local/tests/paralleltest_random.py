@@ -1,7 +1,7 @@
 import unittest
 
 import distarray as da
-from distarray.local import maps
+from distarray.remote import maps
 
 from distarray.testing import MpiTestCase, comm_null_passes
 
@@ -24,9 +24,9 @@ class TestBasic(MpiTestCase):
         self.assertEqual(len(la.maps), 1)
         self.assertEqual(la.shape, (16, 16))
         self.assertEqual(la.grid_shape, (4,))
-        self.assertEqual(la.local_shape, (4, 16))
-        self.assertEqual(la.local_array.shape, la.local_shape)
-        self.assertEqual(la.local_array.dtype, la.dtype)
+        self.assertEqual(la.remote_shape, (4, 16))
+        self.assertEqual(la.remote_array.shape, la.remote_shape)
+        self.assertEqual(la.remote_array.dtype, la.dtype)
 
     @comm_null_passes
     def test_beta(self):

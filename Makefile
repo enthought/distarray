@@ -14,7 +14,7 @@ setup_cluster:
 
 test:
 	${PYTHON} -m unittest discover
-	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
+	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/remote/tests -p 'paralleltest*.py' 
 
 teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py stop

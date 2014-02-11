@@ -13,7 +13,7 @@ class DapTestMixin(object):
 
     """Base test class for DAP test cases.
 
-    You must overload `more_setUp` and add a `self.larr` LocalArray to
+    You must overload `more_setUp` and add a `self.larr` RemoteArray to
     test.
     """
 
@@ -75,7 +75,7 @@ class DapTestMixin(object):
 
     @comm_null_passes
     def test_round_trip_equality(self):
-        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = da.RemoteArray.from_distarray(self.larr, comm=self.comm)
         self.assertEqual(larr.shape, self.larr.shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
@@ -84,33 +84,33 @@ class DapTestMixin(object):
         self.assertEqual(larr.distdims, self.larr.distdims)
         self.assertEqual(larr.comm.Get_topo(), self.larr.comm.Get_topo())
         self.assertEqual(len(larr.maps), len(self.larr.maps))
-        self.assertEqual(larr.local_shape, self.larr.local_shape)
-        self.assertEqual(larr.local_array.shape, self.larr.local_array.shape)
-        self.assertEqual(larr.local_array.dtype, self.larr.local_array.dtype)
-        assert_array_equal(larr.local_array, self.larr.local_array)
+        self.assertEqual(larr.remote_shape, self.larr.remote_shape)
+        self.assertEqual(larr.remote_array.shape, self.larr.remote_array.shape)
+        self.assertEqual(larr.remote_array.dtype, self.larr.remote_array.dtype)
+        assert_array_equal(larr.remote_array, self.larr.remote_array)
 
     @comm_null_passes
     def test_round_trip_identity(self):
-        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = da.RemoteArray.from_distarray(self.larr, comm=self.comm)
         if self.comm.Get_rank() == 0:
-            idx = (0,) * larr.local_array.ndim
-            larr.local_array[idx] = 99
-        assert_array_equal(larr.local_array, self.larr.local_array)
-        #self.assertIs(larr.local_array.data, self.larr.local_array.data)
+            idx = (0,) * larr.remote_array.ndim
+            larr.remote_array[idx] = 99
+        assert_array_equal(larr.remote_array, self.larr.remote_array)
+        #self.assertIs(larr.remote_array.data, self.larr.remote_array.data)
 
 
 class TestDapBasic(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), grid_shape=(4,), comm=self.comm)
+        self.larr = da.RemoteArray((16, 16), grid_shape=(4,), comm=self.comm)
 
 
 class TestDapUint(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), dtype='uint8', grid_shape=(4,),
+        self.larr = da.RemoteArray((16, 16), dtype='uint8', grid_shape=(4,),
                                   comm=self.comm, buf=None)
 
 
@@ -118,7 +118,7 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), dtype='complex128',
+        self.larr = da.RemoteArray((16, 16), dtype='complex128',
                                   grid_shape=(4,), comm=self.comm, buf=None)
 
 
@@ -126,7 +126,7 @@ class TestDapExplicitNone0(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: None},
+        self.larr = da.RemoteArray((16, 16), dist={0: 'b', 1: None},
                                   grid_shape=(4,), comm=self.comm)
 
 
@@ -134,7 +134,7 @@ class TestDapExplicitNone1(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((30, 60), dist={0: None, 1: 'b'},
+        self.larr = da.RemoteArray((30, 60), dist={0: None, 1: 'b'},
                                   grid_shape=(4,), comm=self.comm)
 
 
@@ -142,7 +142,7 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((53, 77), dist={0: 'b', 1: 'b'},
+        self.larr = da.RemoteArray((53, 77), dist={0: 'b', 1: 'b'},
                                   grid_shape=(2, 2), comm=self.comm)
 
 
@@ -153,7 +153,7 @@ class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((53, 77, 99),
+        self.larr = da.RemoteArray((53, 77, 99),
                                   dist={0: 'b', 1: 'b', 2: 'b'},
                                   grid_shape=(2, 2, 3),
                                   comm=self.comm)
@@ -163,7 +163,7 @@ class TestDapCyclicDim(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((53, 77),
+        self.larr = da.RemoteArray((53, 77),
                                   dist={0: 'c'},
                                   grid_shape=(4,),
                                   comm=self.comm)
@@ -173,7 +173,7 @@ class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((53, 77),
+        self.larr = da.RemoteArray((53, 77),
                                   dist={0: 'c', 1: 'b'},
                                   grid_shape=(2, 2),
                                   comm=self.comm)
@@ -183,7 +183,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((53, 77, 99), dtype='float64',
+        self.larr = da.RemoteArray((53, 77, 99), dtype='float64',
                                   dist={0: 'b', 1: None, 2: 'c'},
                                   grid_shape=(2, 2),
                                   comm=self.comm)
@@ -201,22 +201,22 @@ class TestDapLopsided(DapTestMixin, MpiTestCase):
         elif self.comm.Get_rank() == 1:
             arr = np.arange(30)
 
-        self.larr = da.LocalArray((50,), dtype='float64',
+        self.larr = da.RemoteArray((50,), dtype='float64',
                              dist={0: 'b', 1: None},
                              grid_shape=(2,), comm=self.comm, buf=arr)
 
     @comm_null_passes
     def test_values(self):
         if self.comm.Get_rank() == 0:
-            assert_array_equal(np.arange(20), self.larr.local_array)
+            assert_array_equal(np.arange(20), self.larr.remote_array)
         elif self.comm.Get_rank() == 1:
-            assert_array_equal(np.arange(30), self.larr.local_array)
+            assert_array_equal(np.arange(30), self.larr.remote_array)
 
-        larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = da.RemoteArray.from_distarray(self.larr, comm=self.comm)
         if self.comm.Get_rank() == 0:
-            assert_array_equal(np.arange(20), larr.local_array)
+            assert_array_equal(np.arange(20), larr.remote_array)
         elif self.comm.Get_rank() == 1:
-            assert_array_equal(np.arange(30), larr.local_array)
+            assert_array_equal(np.arange(30), larr.remote_array)
 
 
 if __name__ == '__main__':

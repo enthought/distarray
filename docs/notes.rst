@@ -2,7 +2,7 @@ Redistribution of Data
 ======================
 
 
-2. Walk over local indices of local_array
+2. Walk over remote indices of remote_array
 3. Using old_dist compute global_inds
 4. Using new_dist compute new_owner, append to array for that owner
 5. Everyone now knows where data needs to be sent

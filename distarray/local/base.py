@@ -19,7 +19,7 @@ import operator
 from functools import reduce
 from six import next
 
-from distarray.local import construct, maps
+from distarray.remote import construct, maps
 
 
 def distribute_block_indices(dd):
@@ -63,14 +63,14 @@ def distribute_indices(dimdata):
             distribute_fn[dim['disttype']](dim)
 
 
-class BaseLocalArray(object):
+class BaseRemoteArray(object):
 
     """Distributed memory Python arrays."""
 
     __array_priority__ = 20.0
 
     def __init__(self, dimdata, dtype=None, buf=None, comm=None):
-        """Make a BaseLocalArray from a `dimdata` tuple.
+        """Make a BaseRemoteArray from a `dimdata` tuple.
 
         Parameters
         ----------
@@ -92,9 +92,9 @@ class BaseLocalArray(object):
 
         Returns
         -------
-        BaseLocalArray
-            A BaseLocalArray encapsulating `buf`, or else an empty
-            (uninitialized) BaseLocalArray.
+        BaseRemoteArray
+            A BaseRemoteArray encapsulating `buf`, or else an empty
+            (uninitialized) BaseRemoteArray.
         """
         self.dimdata = dimdata
         self.base_comm = construct.init_base_comm(comm)
@@ -112,13 +112,13 @@ class BaseLocalArray(object):
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
                           dimdata if dimdict['disttype'])
 
-        self.local_array = self._make_local_array(buf=buf, dtype=dtype)
+        self.remote_array = self._make_remote_array(buf=buf, dtype=dtype)
 
         self.base = None
         self.ctypes = None
 
     @property
-    def local_shape(self):
+    def remote_shape(self):
         lshape = []
         maps = iter(self.maps)
         for dim in self.dimdata:
@@ -182,16 +182,16 @@ class BaseLocalArray(object):
         return rval
 
     @property
-    def local_size(self):
-        return self.local_array.size
+    def remote_size(self):
+        return self.remote_array.size
 
     @property
     def data(self):
-        return self.local_array.data
+        return self.remote_array.data
 
     @property
     def dtype(self):
-        return self.local_array.dtype
+        return self.remote_array.dtype
 
     @property
     def itemsize(self):
@@ -207,15 +207,15 @@ class BaseLocalArray(object):
         for dim, cart_rank in zip(dist_data, cart_coords):
             dim['gridrank'] = cart_rank
 
-    def _make_local_array(self, buf=None, dtype=None):
-        """Encapsulate `buf` or create an empty local array.
+    def _make_remote_array(self, buf=None, dtype=None):
+        """Encapsulate `buf` or create an empty remote array.
 
         Returns
         -------
-        local_array : numpy array
+        remote_array : numpy array
         """
         if buf is None:
-            return np.empty(self.local_shape, dtype=dtype)
+            return np.empty(self.remote_shape, dtype=dtype)
         else:
             mv = memoryview(buf)
             return np.asarray(mv, dtype=dtype)
