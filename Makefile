@@ -21,6 +21,7 @@ teardown_cluster:
 
 clean:
 	${PYTHON} setup.py clean --all
+	-${RM} `find . -name '__pycache__'`
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
 	-${RM} -r build  *.py[co]
