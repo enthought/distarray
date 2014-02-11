@@ -13,38 +13,68 @@ class TestInit(MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
-                                  buf=None)
+        self.larr_1d = da.LocalArray((7,), grid_shape=(4,), comm=self.comm,
+                                     buf=None)
+        self.larr_2d = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
+                                     buf=None)
 
     @comm_null_passes
-    def test_basic(self):
+    def test_basic_1d(self):
         """Test basic LocalArray creation."""
-        self.assertEqual(self.larr.shape, (16,16))
-        self.assertEqual(self.larr.dist, ('b', 'n'))
-        self.assertEqual(self.larr.grid_shape, (4,))
-        self.assertEqual(self.larr.base_comm, self.comm)
-        self.assertEqual(self.larr.comm_size, 4)
-        self.assertTrue(self.larr.comm_rank in range(4))
-        self.assertEqual(self.larr.ndistdim, 1)
-        self.assertEqual(self.larr.distdims, (0,))
-        self.assertEqual(self.larr.comm.Get_topo(),
-                         (list(self.larr.grid_shape),
-                          [0], [self.larr.comm_rank]))
-        self.assertEqual(len(self.larr.maps), 1)
-        self.assertEqual(self.larr.grid_shape, (4,))
-        self.assertEqual(self.larr.shape, (16, 16))
-        self.assertEqual(self.larr.local_shape, (4, 16))
-        self.assertEqual(self.larr.local_array.shape, self.larr.local_shape)
-        self.assertEqual(self.larr.local_array.dtype, self.larr.dtype)
+        self.assertEqual(self.larr_1d.shape, (7,))
+        self.assertEqual(self.larr_1d.dist, ('b',))
+        self.assertEqual(self.larr_1d.grid_shape, (4,))
+        self.assertEqual(self.larr_1d.base_comm, self.comm)
+        self.assertEqual(self.larr_1d.comm_size, 4)
+        self.assertTrue(self.larr_1d.comm_rank in range(4))
+        self.assertEqual(self.larr_1d.ndistdim, 1)
+        self.assertEqual(self.larr_1d.distdims, (0,))
+        self.assertEqual(self.larr_1d.comm.Get_topo(),
+                         (list(self.larr_1d.grid_shape),
+                          [0], [self.larr_1d.comm_rank]))
+        self.assertEqual(len(self.larr_1d.maps), 1)
+        self.assertEqual(self.larr_1d.shape, (7,))
+        if self.larr_1d.comm_rank == 3:
+            self.assertEqual(self.larr_1d.local_shape, (1,))
+        else:
+            self.assertEqual(self.larr_1d.local_shape, (2,))
+        self.assertEqual(self.larr_1d.local_array.shape, self.larr_1d.local_shape)
+        self.assertEqual(self.larr_1d.local_array.size, self.larr_1d.local_size)
+        self.assertEqual(self.larr_1d.local_size, self.larr_1d.local_shape[0])
+        self.assertEqual(self.larr_1d.local_array.dtype, self.larr_1d.dtype)
+
+    @comm_null_passes
+    def test_basic_2d(self):
+        """Test basic LocalArray creation."""
+        self.assertEqual(self.larr_2d.shape, (16,16))
+        self.assertEqual(self.larr_2d.dist, ('b', 'n'))
+        self.assertEqual(self.larr_2d.grid_shape, (4,))
+        self.assertEqual(self.larr_2d.base_comm, self.comm)
+        self.assertEqual(self.larr_2d.comm_size, 4)
+        self.assertTrue(self.larr_2d.comm_rank in range(4))
+        self.assertEqual(self.larr_2d.ndistdim, 1)
+        self.assertEqual(self.larr_2d.distdims, (0,))
+        self.assertEqual(self.larr_2d.comm.Get_topo(),
+                         (list(self.larr_2d.grid_shape),
+                          [0], [self.larr_2d.comm_rank]))
+        self.assertEqual(len(self.larr_2d.maps), 2)
+        self.assertEqual(self.larr_2d.grid_shape, (4,))
+        self.assertEqual(self.larr_2d.shape, (16, 16))
+        self.assertEqual(self.larr_2d.local_shape, (4, 16))
+        self.assertEqual(self.larr_2d.local_size,
+                         np.array(self.larr_2d.local_shape).prod())
+        self.assertEqual(self.larr_2d.local_array.shape, self.larr_2d.local_shape)
+        self.assertEqual(self.larr_2d.local_array.size, self.larr_2d.local_size)
+        self.assertEqual(self.larr_2d.local_array.dtype, self.larr_2d.dtype)
 
     @comm_null_passes
     def test_localarray(self):
         """Can the local_array be set and get?"""
-        self.larr.get_localarray()
-        la = np.random.random(self.larr.local_shape)
-        la = np.asarray(la, dtype=self.larr.dtype)
-        self.larr.set_localarray(la)
-        self.larr.get_localarray()
+        self.larr_2d.get_localarray()
+        la = np.random.random(self.larr_2d.local_shape)
+        la = np.asarray(la, dtype=self.larr_2d.dtype)
+        self.larr_2d.set_localarray(la)
+        self.larr_2d.get_localarray()
 
 
 class TestFromDimData(MpiTestCase):
@@ -65,6 +95,8 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_array.shape, l1.local_array.shape)
         self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_size, l1.local_size)
         self.assertEqual(list(l0.maps[0].global_index),
                          list(l1.maps[0].global_index))
         self.assertEqual(list(l0.maps[0].local_index),

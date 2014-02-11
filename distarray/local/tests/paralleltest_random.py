@@ -21,7 +21,7 @@ class TestBasic(MpiTestCase):
         self.assertEqual(la.comm.Get_topo(),
                          (list(la.grid_shape),
                           [0],[la.comm_rank]))
-        self.assertEqual(len(la.maps), 1)
+        self.assertEqual(len(la.maps), 2)
         self.assertEqual(la.shape, (16, 16))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (4, 16))
