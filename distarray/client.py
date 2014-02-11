@@ -14,6 +14,8 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import uuid
+from itertools import product
+
 import numpy as np
 from six import next
 
@@ -237,16 +239,11 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def fromndarray(self, arr):
-        keys = self._key_and_push(arr.shape, arr.dtype)
-        arr_key = self._generate_key()
-        new_key = self._generate_key()
-        self.view.scatter(arr_key, arr, targets=self.targets, block=True)
-        subs = (new_key,) + keys + (arr_key,)
-        self._execute(
-            '%s = distarray.LocalArray(%s,dtype=%s,buf=%s)' % subs
-        )
-        return DistArray(new_key, self)
+    def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
+        out = self.empty(arr.shape, dtype=arr.dtype, dist=dist, grid_shape=None)
+        for index, value in np.ndenumerate(arr):
+            out[index] = value
+        return out
 
     fromarray = fromndarray
 
@@ -437,14 +434,15 @@ class DistArray(object):
         return self._get_attribute('item_size')
 
     def tondarray(self):
+        """Returns the distributed array as an ndarray."""
+        arr = np.empty(self.shape, dtype=self.dtype)
         local_name = self.context._generate_key()
-        local_shape = self.context._generate_key()
-        subs = (local_name, self.key, local_shape, self.key)
-        self.context._execute('%s = %s.local_view(); %s = %s.shape' % subs)
-        shape = self.context._pull0(local_shape)
-        arr = self.context.view.gather(
-            local_name,targets=self.context.targets,block=True)
-        arr.shape = shape
+        self.context._execute('%s = %s.copy()' % (local_name, self.key))
+        local_arrays = self.context._pull(local_name)
+        for local_array in local_arrays:
+            maps = (ax_map.global_index for ax_map in local_array.maps)
+            for index in product(*maps):
+                arr[index] = local_array[index]
         return arr
 
     toarray = tondarray
