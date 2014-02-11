@@ -20,7 +20,7 @@ class TestInit(MpiTestCase):
     def test_basic(self):
         """Test basic LocalArray creation."""
         self.assertEqual(self.larr.shape, (16,16))
-        self.assertEqual(self.larr.dist, ('b', None))
+        self.assertEqual(self.larr.dist, ('b', 'n'))
         self.assertEqual(self.larr.grid_shape, (4,))
         self.assertEqual(self.larr.base_comm, self.comm)
         self.assertEqual(self.larr.comm_size, 4)
@@ -47,7 +47,7 @@ class TestInit(MpiTestCase):
         self.larr.get_localarray()
 
 
-class TestFromDimdata(MpiTestCase):
+class TestFromDimData(MpiTestCase):
 
     def assert_alike(self, l0, l1):
         self.assertEqual(l0.shape, l1.shape)
@@ -73,20 +73,20 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_block(self):
         dim0 = {
-            "disttype": 'b',
-            "datasize": 16,
-            "gridsize": 4,
+            "dist_type": 'b',
+            "size": 16,
+            "proc_grid_size": 4,
             }
 
         dim1 = {
-            "disttype": None,
-            "datasize": 16,
-            "gridsize": None,
+            "dist_type": 'n',
+            "size": 16,
+            "proc_grid_size": None,
         }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
                                  comm=self.comm)
 
@@ -95,20 +95,20 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_cyclic(self):
         dim0 = {
-            "disttype": None,
-            "datasize": 16,
-            "gridsize": None,
+            "dist_type": 'n',
+            "size": 16,
+            "proc_grid_size": None,
             }
 
         dim1 = {
-            "disttype": 'c',
-            "datasize": 16,
-            "gridsize": 4,
+            "dist_type": 'c',
+            "size": 16,
+            "proc_grid_size": 4,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
                                  comm=self.comm)
 
@@ -117,20 +117,20 @@ class TestFromDimdata(MpiTestCase):
     @comm_null_passes
     def test_cyclic_and_block(self):
         dim0 = {
-            "disttype": 'c',
-            "datasize": 16,
-            "gridsize": 2,
+            "dist_type": 'c',
+            "size": 16,
+            "proc_grid_size": 2,
             }
 
         dim1 = {
-            "disttype": 'b',
-            "datasize": 16,
-            "gridsize": 2,
+            "dist_type": 'b',
+            "size": 16,
+            "proc_grid_size": 2,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
         expected = da.LocalArray((16,16), dist={0: 'c', 1: 'b'},
                                  grid_shape=(2, 2), comm=self.comm)
 
@@ -138,19 +138,19 @@ class TestFromDimdata(MpiTestCase):
 
     @unittest.skip('Not implemented.')
     def test_block_cyclic(self):
-        dim0 = {"disttype": 'bc',
-                "datasize": 16,
-                "gridsize": 4,
-                "blocksize": 2}
+        dim0 = {"dist_type": 'c',
+                "size": 16,
+                "proc_grid_size": 4,
+                "block_size": 2}
 
-        dim1 = {"disttype": None,
-                "datasize": 16,
-                "gridsize": None}
+        dim1 = {"dist_type": 'n',
+                "size": 16,
+                "proc_grid_size": None}
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dimdata(dimdata, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={0: 'bc'}, blocksize=2,
+        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
+        expected = da.LocalArray((16,16), dist={0: 'c'}, block_size=2,
                                  grid_shape=(2, 2), comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -170,7 +170,7 @@ class TestGridShape(MpiTestCase):
         self.assertEqual(self.larr.grid_shape, (2,6))
         self.larr = da.LocalArray((6*10,2*10), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (6,2))
-        self.larr = da.LocalArray((100,10,300), dist=('b',None,'c'), comm=self.comm)
+        self.larr = da.LocalArray((100,10,300), dist=('b', 'n', 'c'), comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,6))
         self.larr = da.LocalArray((100,50,300), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,2,3))
@@ -308,19 +308,19 @@ class TestGlobalInd(MpiTestCase):
     @comm_null_passes
     def test_cyclic(self):
         """Can we go from global to local indices and back for cyclic?"""
-        la = da.LocalArray((8,8), dist=('c',None), comm=self.comm)
+        la = da.LocalArray((8,8), dist=('c', 'n'), comm=self.comm)
         self.round_trip(la)
 
     @comm_null_passes
     def test_crazy(self):
         """Can we go from global to local indices and back for a complex case?"""
-        la = da.LocalArray((10,100,20), dist=('b','c',None), comm=self.comm)
+        la = da.LocalArray((10,100,20), dist=('b', 'c', 'n'), comm=self.comm)
         self.round_trip(la)
 
     @comm_null_passes
     def test_global_limits_block(self):
         """Find the boundaries of a block distribution"""
-        a = da.LocalArray((16, 16), dist=('b', None), comm=self.comm)
+        a = da.LocalArray((16, 16), dist=('b', 'n'), comm=self.comm)
 
         answers = [(0, 3), (4, 7), (8, 11), (12, 15)]
         limits = a.global_limits(0)
@@ -333,7 +333,7 @@ class TestGlobalInd(MpiTestCase):
     @comm_null_passes
     def test_global_limits_cyclic(self):
         """Find the boundaries of a cyclic distribution"""
-        a = da.LocalArray((16,16), dist=('c',None), comm=self.comm)
+        a = da.LocalArray((16,16), dist=('c', 'n'), comm=self.comm)
         answers = [(0,12),(1,13),(2,14),(3,15)]
         limits = a.global_limits(0)
         self.assertEqual(limits, answers[a.comm_rank])
@@ -347,8 +347,8 @@ class TestIndexing(MpiTestCase):
     @comm_null_passes
     def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
-        a = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
-        b = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
+        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         for global_inds, value in da.ndenumerate(a):
             a[global_inds] = 0.0
         for global_inds, value in da.ndenumerate(a):
@@ -360,8 +360,8 @@ class TestIndexing(MpiTestCase):
     @comm_null_passes
     def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
-        a = da.LocalArray((16,16,2), dist=('c','b',None), comm=self.comm)
-        b = da.LocalArray((16,16,2), dist=('c','b',None), comm=self.comm)
+        a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
+        b = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
         for global_inds, value in da.ndenumerate(a):
             a[global_inds] = 0.0
         for global_inds, value in da.ndenumerate(a):
@@ -372,7 +372,7 @@ class TestIndexing(MpiTestCase):
 
     @comm_null_passes
     def test_pack_unpack_index(self):
-        a = da.LocalArray((16,16,2), dist=('c','b',None), comm=self.comm)
+        a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
         for global_inds, value in da.ndenumerate(a):
             packed_ind = a.pack_index(global_inds)
             self.assertEqual(global_inds, a.unpack_index(packed_ind))
@@ -383,12 +383,12 @@ class TestLocalArrayMethods(MpiTestCase):
     @comm_null_passes
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
-        a = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
-        b = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
+        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         new_a = a.asdist_like(b)
         self.assertEqual(id(a),id(new_a))
-        a = da.LocalArray((16,16), dist=('b',None), comm=self.comm)
-        b = da.LocalArray((16,16), dist=(None,'b'), comm=self.comm)
+        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = da.LocalArray((16,16), dist=('n', 'b'), comm=self.comm)
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
 
 

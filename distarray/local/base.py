@@ -27,18 +27,18 @@ def distribute_block_indices(dd):
     if ('start' in dd) and ('stop' in dd):
         return
 
-    nelements = dd['datasize'] // dd['gridsize']
-    if dd['datasize'] % dd['gridsize'] != 0:
+    nelements = dd['size'] // dd['proc_grid_size']
+    if dd['size'] % dd['proc_grid_size'] != 0:
         nelements += 1
 
-    dd['start'] = dd['gridrank'] * nelements
-    if dd['start'] > dd['datasize']:
-        dd['start'] = dd['datasize']
-        dd['stop'] = dd['datasize']
+    dd['start'] = dd['proc_grid_rank'] * nelements
+    if dd['start'] > dd['size']:
+        dd['start'] = dd['size']
+        dd['stop'] = dd['size']
 
     dd['stop'] = dd['start'] + nelements
-    if dd['stop'] > dd['datasize']:
-        dd['stop'] = dd['datasize']
+    if dd['stop'] > dd['size']:
+        dd['stop'] = dd['size']
 
 
 def distribute_cyclic_indices(dd):
@@ -46,21 +46,21 @@ def distribute_cyclic_indices(dd):
     if 'start' in dd:
         return
     else:
-        dd['start'] = dd['gridrank']
+        dd['start'] = dd['proc_grid_rank']
 
 
-def distribute_indices(dimdata):
+def distribute_indices(dim_data):
     """Fill in missing index related keys...
 
-    for supported disttypes.
+    for supported dist_types.
     """
     distribute_fn = {
         'b': distribute_block_indices,
         'c': distribute_cyclic_indices,
     }
-    for dim in dimdata:
-        if dim['disttype']:
-            distribute_fn[dim['disttype']](dim)
+    for dim in dim_data:
+        if dim['dist_type'] != 'n':
+            distribute_fn[dim['dist_type']](dim)
 
 
 class BaseLocalArray(object):
@@ -69,12 +69,12 @@ class BaseLocalArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, dimdata, dtype=None, buf=None, comm=None):
-        """Make a BaseLocalArray from a `dimdata` tuple.
+    def __init__(self, dim_data, dtype=None, buf=None, comm=None):
+        """Make a BaseLocalArray from a `dim_data` tuple.
 
         Parameters
         ----------
-        dimdata : tuple of dictionaries
+        dim_data : tuple of dictionaries
             A dict for each dimension, with the data described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
@@ -96,7 +96,7 @@ class BaseLocalArray(object):
             A BaseLocalArray encapsulating `buf`, or else an empty
             (uninitialized) BaseLocalArray.
         """
-        self.dimdata = dimdata
+        self.dim_data = dim_data
         self.base_comm = construct.init_base_comm(comm)
 
         self.grid_shape = construct.init_grid_shape(self.shape,
@@ -107,10 +107,10 @@ class BaseLocalArray(object):
         self.comm = construct.init_comm(self.base_comm, self.grid_shape,
                                         self.ndistdim)
 
-        self._cache_gridrank()
-        distribute_indices(self.dimdata)
+        self._cache_proc_grid_rank()
+        distribute_indices(self.dim_data)
         self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dimdata if dimdict['disttype'])
+                          dim_data if dimdict['dist_type'] != 'n')
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -121,34 +121,34 @@ class BaseLocalArray(object):
     def local_shape(self):
         lshape = []
         maps = iter(self.maps)
-        for dim in self.dimdata:
-            if dim['disttype']:
+        for dim in self.dim_data:
+            if dim['dist_type'] != 'n':
                 m = next(maps)
                 size = len(m.global_index)
             else:
-                size = dim['datasize']
+                size = dim['size']
             lshape.append(size)
         return tuple(lshape)
 
     @property
     def grid_shape(self):
-        return tuple(dd.get('gridsize') for dd in self.dimdata
-                     if dd.get('gridsize'))
+        return tuple(dd.get('proc_grid_size') for dd in self.dim_data
+                     if dd.get('proc_grid_size'))
 
     @grid_shape.setter
     def grid_shape(self, grid_shape):
         grid_size = iter(grid_shape)
-        for dist, dd in zip(self.dist, self.dimdata):
-            if dist:
-                dd['gridsize'] = next(grid_size)
+        for dist, dd in zip(self.dist, self.dim_data):
+            if dist != 'n':
+                dd['proc_grid_size'] = next(grid_size)
 
     @property
     def shape(self):
-        return tuple(dd['datasize'] for dd in self.dimdata)
+        return tuple(dd['size'] for dd in self.dim_data)
 
     @property
     def ndim(self):
-        return len(self.dimdata)
+        return len(self.dim_data)
 
     @property
     def size(self):
@@ -164,11 +164,11 @@ class BaseLocalArray(object):
 
     @property
     def dist(self):
-        return tuple(dd['disttype'] for dd in self.dimdata)
+        return tuple(dd['dist_type'] for dd in self.dim_data)
 
     @property
     def distdims(self):
-        return tuple(i for (i, v) in enumerate(self.dist) if v)
+        return tuple(i for (i, v) in enumerate(self.dist) if v != 'n')
 
     @property
     def ndistdim(self):
@@ -176,8 +176,8 @@ class BaseLocalArray(object):
 
     @property
     def cart_coords(self):
-        rval = tuple(dd.get('gridrank') for dd in self.dimdata
-                     if dd.get('gridrank'))
+        rval = tuple(dd.get('proc_grid_rank') for dd in self.dim_data
+                     if dd.get('proc_grid_rank'))
         assert rval == self.comm.Get_coords(self.comm_rank)
         return rval
 
@@ -201,11 +201,11 @@ class BaseLocalArray(object):
     def nbytes(self):
         return self.size * self.itemsize
 
-    def _cache_gridrank(self):
+    def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        dist_data = (self.dimdata[i] for i in self.distdims)
+        dist_data = (self.dim_data[i] for i in self.distdims)
         for dim, cart_rank in zip(dist_data, cart_coords):
-            dim['gridrank'] = cart_rank
+            dim['proc_grid_rank'] = cart_rank
 
     def _make_local_array(self, buf=None, dtype=None):
         """Encapsulate `buf` or create an empty local array.

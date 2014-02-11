@@ -19,8 +19,8 @@ import numpy as np
 
 from distarray.mpiutils import MPI
 from distarray.local.error import (DistError, InvalidGridShapeError,
-                                  GridShapeError, NullCommError,
-                                  InvalidBaseCommError)
+                                   GridShapeError, NullCommError,
+                                   InvalidBaseCommError)
 from distarray import utils, mpiutils
 from functools import reduce
 
@@ -72,14 +72,14 @@ def init_dist(dist, ndim):
     Examples
     --------
     >>> init_dist({0: 'b', 3: 'c'}, 4)
-    ('b', None, None, 'c')
+    ('b', 'n', 'n', 'c')
     """
     if isinstance(dist, str):
         return ndim*(dist,)
     elif isinstance(dist, (list, tuple)):
         return tuple(dist)
     elif isinstance(dist, dict):
-        return tuple([dist.get(i) for i in range(ndim)])
+        return tuple([dist.get(i, 'n') for i in range(ndim)])
     else:
         DistError("Dist must be a string, tuple, list or dict")
 
@@ -98,14 +98,14 @@ def init_distdims(dist, ndim):
 
     Examples
     --------
-    >>> init_distdims(('b', None, None, 'c'), 4)
+    >>> init_distdims(('b', 'n', 'n', 'c'), 4)
     (0, 3)
     """
-    reduced_dist = [d for d in dist if d is not None]
+    reduced_dist = [d for d in dist if d != 'n']
     ndistdim = len(reduced_dist)
     if ndistdim > ndim:
         raise DistError("Too many distributed dimensions")
-    distdims = [i for i in range(ndim) if dist[i] is not None]
+    distdims = [i for i in range(ndim) if dist[i] != 'n']
     return tuple(distdims)
 
 

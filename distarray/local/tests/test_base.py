@@ -8,22 +8,22 @@ class TestBaseLocalArray(unittest.TestCase):
 
     def test_block(self):
         dim0 = {
-            "disttype": 'b',
-            "datasize": 16,
-            "gridsize": 1,
-            "gridrank": 0,
+            "dist_type": 'b',
+            "size": 16,
+            "proc_grid_size": 1,
+            "proc_grid_rank": 0,
             "start": 0,
             "stop": 16,
             }
 
         dim1 = {
-            "disttype": None,
-            "datasize": 16,
+            "dist_type": 'n',
+            "size": 16,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = BaseLocalArray(dimdata)
+        larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1,))
         self.assertEqual(larr.shape, (16, 16))
@@ -31,7 +31,7 @@ class TestBaseLocalArray(unittest.TestCase):
         self.assertEqual(larr.local_array.shape, larr.shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
-        self.assertEqual(larr.dist, ('b', None))
+        self.assertEqual(larr.dist, ('b', 'n'))
         self.assertEqual(larr.distdims, (0,))
         self.assertEqual(larr.ndistdim, 1)
         self.assertEqual(larr.local_size, 16*16)
@@ -41,25 +41,25 @@ class TestBaseLocalArray(unittest.TestCase):
 
     def test_cyclic(self):
         dim0 = {
-            "disttype": 'c',
-            "datasize": 16,
-            "gridsize": 1,
-            "gridrank": 0,
+            "dist_type": 'c',
+            "size": 16,
+            "proc_grid_size": 1,
+            "proc_grid_rank": 0,
             "start": 0,
             }
 
         dim1 = {
-            "disttype": 'b',
-            "datasize": 16,
-            "gridsize": 1,
-            "gridrank": 0,
+            "dist_type": 'b',
+            "size": 16,
+            "proc_grid_size": 1,
+            "proc_grid_rank": 0,
             "start": 0,
             "stop": 16,
             }
 
-        dimdata = (dim0, dim1)
+        dim_data = (dim0, dim1)
 
-        larr = BaseLocalArray(dimdata)
+        larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1, 1))
         self.assertEqual(larr.shape, (16, 16))

@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal
 from distarray.testing import comm_null_passes, MpiTestCase
 
 
-VALID_DISTTYPES = {None, 'b', 'c', 'bc', 'bp', 'u'}
+VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
 
 
 class DapTestMixin(object):
@@ -23,7 +23,7 @@ class DapTestMixin(object):
 
     @comm_null_passes
     def test_export_keys(self):
-        required_keys = set(("__version__", "buffer", "dimdata"))
+        required_keys = set(("__version__", "buffer", "dim_data"))
         export_data = self.larr.__distarray__()
         exported_keys = set(export_data.keys())
         self.assertEqual(required_keys, exported_keys)
@@ -41,29 +41,29 @@ class DapTestMixin(object):
         StrictVersion(export_data['__version__'])
 
     @comm_null_passes
-    def test_export_dimdata_len(self):
+    def test_export_dim_data_len(self):
         """Test if there is a `dimdict` for every dimension."""
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
-        self.assertEqual(len(dimdata), self.larr.ndim)
+        dim_data = export_data['dim_data']
+        self.assertEqual(len(dim_data), self.larr.ndim)
 
     @comm_null_passes
-    def test_export_dimdata_keys(self):
+    def test_export_dim_data_keys(self):
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
-        required_keys = {"disttype", "datasize"}
-        for dimdict in dimdata:
+        dim_data = export_data['dim_data']
+        required_keys = {"dist_type", "size"}
+        for dimdict in dim_data:
             self.assertTrue(required_keys <= set(dimdict.keys()))
 
     @comm_null_passes
-    def test_export_dimdata_values(self):
+    def test_export_dim_data_values(self):
         export_data = self.larr.__distarray__()
-        dimdata = export_data['dimdata']
-        for dd in dimdata:
-            self.assertIn(dd['disttype'], VALID_DISTTYPES)
-            self.assertIsInstance(dd['datasize'], int)
+        dim_data = export_data['dim_data']
+        for dd in dim_data:
+            self.assertIn(dd['dist_type'], VALID_DIST_TYPES)
+            self.assertIsInstance(dd['size'], int)
 
-            for key in ('gridrank', 'gridsize',  'blocksize', 'padding'):
+            for key in ('proc_grid_rank', 'proc_grid_size',  'block_size', 'padding'):
                 try:
                     self.assertIsInstance(dd[key], int)
                 except KeyError:
@@ -122,19 +122,19 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
                                   grid_shape=(4,), comm=self.comm, buf=None)
 
 
-class TestDapExplicitNone0(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: None},
+        self.larr = da.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
                                   grid_shape=(4,), comm=self.comm)
 
 
-class TestDapExplicitNone1(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
     def more_setUp(self):
-        self.larr = da.LocalArray((30, 60), dist={0: None, 1: 'b'},
+        self.larr = da.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
                                   grid_shape=(4,), comm=self.comm)
 
 
@@ -184,7 +184,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
     @comm_null_passes
     def more_setUp(self):
         self.larr = da.LocalArray((53, 77, 99), dtype='float64',
-                                  dist={0: 'b', 1: None, 2: 'c'},
+                                  dist={0: 'b', 1: 'n', 2: 'c'},
                                   grid_shape=(2, 2),
                                   comm=self.comm)
 
@@ -202,7 +202,7 @@ class TestDapLopsided(DapTestMixin, MpiTestCase):
             arr = np.arange(30)
 
         self.larr = da.LocalArray((50,), dtype='float64',
-                             dist={0: 'b', 1: None},
+                             dist={0: 'b', 1: 'n'},
                              grid_shape=(2,), comm=self.comm, buf=arr)
 
     @comm_null_passes

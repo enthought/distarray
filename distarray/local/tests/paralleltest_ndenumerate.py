@@ -13,7 +13,7 @@ class TestNDEnumerate(MpiTestCase):
     @comm_null_passes
     def test_ndenumerate(self):
         a = dla.LocalArray((16, 16, 2),
-                           dist=('c', 'b', None),
+                           dist=('c', 'b', 'n'),
                            comm=self.comm)
         for global_inds, value in dla.ndenumerate(a):
             a[global_inds] = 0.0
