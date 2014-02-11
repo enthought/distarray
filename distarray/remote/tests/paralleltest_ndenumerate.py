@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import unittest
 
-import distarray.local.denselocalarray as dla
+import distarray.remote.denseremotearray as dla
 from distarray.testing import MpiTestCase, comm_null_passes
 
 
@@ -12,7 +12,7 @@ class TestNDEnumerate(MpiTestCase):
 
     @comm_null_passes
     def test_ndenumerate(self):
-        a = dla.LocalArray((16, 16, 2),
+        a = dla.RemoteArray((16, 16, 2),
                            dist=('c', 'b', None),
                            comm=self.comm)
         for global_inds, value in dla.ndenumerate(a):

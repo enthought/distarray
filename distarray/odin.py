@@ -79,18 +79,18 @@ def determine_context(definition_context, args):
         return contexts[0]
 
 
-def local(fn):
-    """Decorator indicating a function is run locally on engines.
+def remote(fn):
+    """Decorator indicating a function is run remotely on engines.
 
     Parameters
     ----------
-    fn : function to wrap to run locally on engines
+    fn : function to wrap to run remotely on engines
 
     Returns
     -------
-    fn : function wrapped to run locally on engines
+    fn : function wrapped to run remotely on engines
     """
-    # we want @local functions to be able to call each other, so push
+    # we want @remote functions to be able to call each other, so push
     # their `__name__` as their key
     func_key = fn.__name__
     _global_context._push({func_key: fn})
@@ -120,7 +120,7 @@ def local(fn):
                                    *zip(kwarg_names, kwarg_keys))
         statement = statement_fmt.format(*replacement_values)
 
-        # execute it locally
+        # execute it remotely
         subcontext._execute(statement)
 
         return process_return_value(subcontext, result_key)

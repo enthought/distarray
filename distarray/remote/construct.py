@@ -18,7 +18,7 @@ __docformat__ = "restructuredtext en"
 import numpy as np
 
 from distarray.mpiutils import MPI
-from distarray.local.error import (DistError, InvalidGridShapeError,
+from distarray.remote.error import (DistError, InvalidGridShapeError,
                                   GridShapeError, NullCommError,
                                   InvalidBaseCommError)
 from distarray import utils, mpiutils
@@ -26,14 +26,14 @@ from functools import reduce
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Stateless functions for initializing various aspects of LocalArray objects
+# Stateless functions for initializing various aspects of RemoteArray objects
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
 # These are functions rather than methods because they need to be both
 # stateless and free of side-effects.  It is possible that they could be
 # called multiple times and in multiple different contexts in the course
-# of a LocalArray object's lifetime (for example upon a reshape or redist).
+# of a RemoteArray object's lifetime (for example upon a reshape or redist).
 # The simplest and most robust way of insuring this is to get rid of 'self'
 # (which holds all state) and make them standalone functions.
 
@@ -41,7 +41,7 @@ from functools import reduce
 def init_base_comm(comm):
     """Sanitize an MPI.comm instance or create one."""
     if comm == MPI.COMM_NULL:
-        raise NullCommError("Cannot create a LocalArray with COMM_NULL")
+        raise NullCommError("Cannot create a RemoteArray with COMM_NULL")
     elif comm is None:
         return mpiutils.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):

@@ -10,27 +10,27 @@ numpy.set_printoptions(precision=2, linewidth=1000)
 odin.context.view.execute("import numpy")
 
 
-@odin.local
-def local_sin(da):
-    """A simple @local function."""
+@odin.remote
+def remote_sin(da):
+    """A simple @remote function."""
     return numpy.sin(da)
 
 
-@odin.local
-def local_sin_plus_50(da):
-    """An @local function that calls another."""
-    return local_sin(da) + 50
+@odin.remote
+def remote_sin_plus_50(da):
+    """An @remote function that calls another."""
+    return remote_sin(da) + 50
 
 
-@odin.local
+@odin.remote
 def global_sum(da):
     """Reproducing the `sum` function in densedistarray."""
     from distarray.mpiutils import MPI
-    local_sum = da.local_array.sum()
-    global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
+    remote_sum = da.remote_array.sum()
+    global_sum = da.comm.allreduce(remote_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    new_distarray = distarray.LocalArray((1,), buf=new_arr)
+    new_distarray = distarray.RemoteArray((1,), buf=new_arr)
     return new_distarray
 
 
@@ -50,8 +50,8 @@ if __name__ == '__main__':
     for x in range(arr_len):
         dap_b[x] = x
         dap_c[x] = x
-    pprint(dap_b.get_localarrays())
-    pprint(dap_c.get_localarrays())
+    pprint(dap_b.get_remotearrays())
+    pprint(dap_c.get_remotearrays())
 
 #    print
 #    input("__getitem__ with slicing:")
@@ -59,16 +59,16 @@ if __name__ == '__main__':
 #    print dap_c[19:34:2]
 
     print()
-    input("@local functions:")
-    dap1 = local_sin(dap_b)
-    pprint(dap1.get_localarrays())
+    input("@remote functions:")
+    dap1 = remote_sin(dap_b)
+    pprint(dap1.get_remotearrays())
 
     print()
-    input("calling @local functions from each other:")
-    dap2 = local_sin_plus_50(dap_b)
-    pprint(dap2.get_localarrays())
+    input("calling @remote functions from each other:")
+    dap2 = remote_sin_plus_50(dap_b)
+    pprint(dap2.get_remotearrays())
 
     print()
-    input("calling MPI from @local functions:")
+    input("calling MPI from @remote functions:")
     dap3 = global_sum(dap_b)
-    pprint(dap3.get_localarrays())
+    pprint(dap3.get_remotearrays())

@@ -3,10 +3,10 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-import distarray.local as dc
-import distarray.local.denselocalarray as da
-from distarray.local import denselocalarray
-from distarray.local.error import IncompatibleArrayError
+import distarray.remote as dc
+import distarray.remote.denseremotearray as da
+from distarray.remote import denseremotearray
+from distarray.remote.error import IncompatibleArrayError
 from distarray.testing import MpiTestCase, comm_null_passes
 
 
@@ -14,20 +14,20 @@ class TestUnaryUFunc(MpiTestCase):
 
     @comm_null_passes
     def test_negative(self):
-        """See if unary ufunc works for a LocalArray."""
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
+        """See if unary ufunc works for a RemoteArray."""
+        a = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
         a.fill(1)
-        b = denselocalarray.negative(a)
-        self.assertTrue(np.all(a.local_array == -b.local_array))
+        b = denseremotearray.negative(a)
+        self.assertTrue(np.all(a.remote_array == -b.remote_array))
 
-        b = denselocalarray.empty_like(a)
-        b = denselocalarray.negative(a, b)
-        self.assertTrue(np.all(a.local_array == -b.local_array))
+        b = denseremotearray.empty_like(a)
+        b = denseremotearray.negative(a, b)
+        self.assertTrue(np.all(a.remote_array == -b.remote_array))
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
+        a = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
+        b = denseremotearray.RemoteArray((20, 20), dtype='int32', comm=self.comm)
         self.assertRaises(IncompatibleArrayError,
-                          denselocalarray.negative,
+                          denseremotearray.negative,
                           b, a)
 
 
@@ -35,26 +35,26 @@ class TestBinaryUFunc(MpiTestCase):
 
     @comm_null_passes
     def test_add(self):
-        """See if binary ufunc works for a LocalArray."""
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
+        """See if binary ufunc works for a RemoteArray."""
+        a = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
+        b = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
         a.fill(1)
         b.fill(1)
-        c = denselocalarray.add(a, b)
-        self.assertTrue(np.all(c.local_array == 2))
+        c = denseremotearray.add(a, b)
+        self.assertTrue(np.all(c.remote_array == 2))
 
-        c = denselocalarray.empty_like(a)
-        c = denselocalarray.add(a, b, c)
-        self.assertTrue(np.all(c.local_array == 2))
+        c = denseremotearray.empty_like(a)
+        c = denseremotearray.add(a, b, c)
+        self.assertTrue(np.all(c.remote_array == 2))
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
-        self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b)
+        a = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
+        b = denseremotearray.RemoteArray((20, 20), dtype='int32', comm=self.comm)
+        self.assertRaises(IncompatibleArrayError, denseremotearray.add, a, b)
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        c = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
-        self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b, c)
+        a = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
+        b = denseremotearray.RemoteArray((16, 16), dtype='int32', comm=self.comm)
+        c = denseremotearray.RemoteArray((20, 20), dtype='int32', comm=self.comm)
+        self.assertRaises(IncompatibleArrayError, denseremotearray.add, a, b, c)
 
 
 def add_checkers(cls, ops, bad_ops):
@@ -82,14 +82,14 @@ def add_checkers(cls, ops, bad_ops):
             setattr(cls, fn_name, check(op))
 
 
-class TestLocalArrayUnaryOperations(MpiTestCase):
+class TestRemoteArrayUnaryOperations(MpiTestCase):
 
     @comm_null_passes
     def check_op(self, op):
         """Check unary operation for success.
 
         Check the one- and two-arg ufunc versions as well as the method
-        version attached to a LocalArray.
+        version attached to a RemoteArray.
         """
         x = da.ones((16, 16), dist=('b', None), comm=self.comm)
         y = da.ones((16, 16), dist=('b', None), comm=self.comm)
@@ -97,17 +97,17 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x, casting='unsafe')  # standard form
             op(x, y=y, casting='unsafe')  # two-arg form
-        assert_array_equal(result0.local_array, y.local_array)
+        assert_array_equal(result0.remote_array, y.remote_array)
 
 
-class TestLocalArrayBinaryOperations(MpiTestCase):
+class TestRemoteArrayBinaryOperations(MpiTestCase):
 
     @comm_null_passes
     def check_op(self, op):
         """Check binary operation for success.
 
         Check the two- and three-arg ufunc versions as well as the
-        method version attached to a LocalArray.
+        method version attached to a RemoteArray.
         """
         x1 = da.ones((16, 16), dist=('b', None), comm=self.comm)
         x2 = da.ones((16, 16), dist=('b', None), comm=self.comm)
@@ -116,7 +116,7 @@ class TestLocalArrayBinaryOperations(MpiTestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x1, x2, casting='unsafe')  # standard form
             op(x1, x2, y=y, casting='unsafe')  # three-arg form
-        assert_array_equal(result0.local_array, y.local_array)
+        assert_array_equal(result0.remote_array, y.remote_array)
 
 
 uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
@@ -135,8 +135,8 @@ bops = (dc.add, dc.arctan2, dc.divide, dc.floor_divide, dc.fmod, dc.hypot,
 broken_tests = (dc.invert, dc.bitwise_and, dc.bitwise_or, dc.bitwise_xor,
                 dc.left_shift, dc.right_shift,)
 
-add_checkers(TestLocalArrayUnaryOperations, uops, broken_tests)
-add_checkers(TestLocalArrayBinaryOperations, bops, broken_tests)
+add_checkers(TestRemoteArrayUnaryOperations, uops, broken_tests)
+add_checkers(TestRemoteArrayBinaryOperations, bops, broken_tests)
 
 
 if __name__ == '__main__':

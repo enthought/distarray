@@ -22,14 +22,14 @@ from six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct
-from distarray.local.base import BaseLocalArray, arecompatible
-from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
+from distarray.remote import construct
+from distarray.remote.base import BaseRemoteArray, arecompatible
+from distarray.remote.error import InvalidDimensionError, IncompatibleArrayError
 
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Base LocalArray class
+# Base RemoteArray class
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
 
     dist_tuple = construct.init_dist(dist, len(shape))
 
-    if grid_shape:  # if None, BaseLocalArray will initialize
+    if grid_shape:  # if None, BaseRemoteArray will initialize
         grid_gen = iter(grid_shape)
 
     dimdata = []
@@ -77,7 +77,7 @@ def make_partial_dimdata(shape, dist=None, grid_shape=None):
     return tuple(dimdata)
 
 
-class DenseLocalArray(BaseLocalArray):
+class DenseRemoteArray(BaseRemoteArray):
 
     """Distributed memory Python arrays."""
 
@@ -87,7 +87,7 @@ class DenseLocalArray(BaseLocalArray):
 
     @classmethod
     def from_dimdata(cls, dimdata, dtype=None, buf=None, comm=None):
-        """Make a LocalArray from a `dimdata` tuple.
+        """Make a RemoteArray from a `dimdata` tuple.
 
         Parameters
         ----------
@@ -109,21 +109,21 @@ class DenseLocalArray(BaseLocalArray):
 
         Returns
         -------
-        LocalArray
-            A LocalArray encapsulating `buf`, or else an empty
-            (uninitialized) LocalArray.
+        RemoteArray
+            A RemoteArray encapsulating `buf`, or else an empty
+            (uninitialized) RemoteArray.
         """
         self = cls.__new__(cls)
-        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+        super(DenseRemoteArray, self).__init__(dimdata=dimdata, dtype=dtype,
                                               buf=buf, comm=comm)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
                  comm=None, buf=None):
-        """Create a LocalArray from a simple set of parameters.
+        """Create a RemoteArray from a simple set of parameters.
 
         This initializer restricts you to 'b' and 'c' disttypes and evenly
-        distributed data.  See `LocalArray.from_dimdata` for a more general
+        distributed data.  See `RemoteArray.from_dimdata` for a more general
         method.
 
         Parameters
@@ -144,15 +144,15 @@ class DenseLocalArray(BaseLocalArray):
 
         See also
         --------
-        LocalArray.from_dimdata
+        RemoteArray.from_dimdata
         """
         dimdata = make_partial_dimdata(shape=shape, dist=dist,
                                        grid_shape=grid_shape)
-        super(DenseLocalArray, self).__init__(dimdata=dimdata, dtype=dtype,
+        super(DenseRemoteArray, self).__init__(dimdata=dimdata, dtype=dtype,
                                               buf=buf, comm=comm)
 
     def __del__(self):
-        super(DenseLocalArray, self).__del__()
+        super(DenseRemoteArray, self).__del__()
 
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
@@ -160,7 +160,7 @@ class DenseLocalArray(BaseLocalArray):
 
     @classmethod
     def from_distarray(cls, obj, comm=None):
-        """Make a LocalArray from an `obj` with a `__distarray__` method.
+        """Make a RemoteArray from an `obj` with a `__distarray__` method.
 
         An object that supports the Distributed Array Protocol will have
         a `__distarray__` method that returns the data structure
@@ -174,8 +174,8 @@ class DenseLocalArray(BaseLocalArray):
 
         Returns
         -------
-        LocalArray
-            A LocalArray encapsulating the buffer of the original data.
+        RemoteArray
+            A RemoteArray encapsulating the buffer of the original data.
             No copy is made.
         """
         distbuffer = obj.__distarray__()
@@ -193,7 +193,7 @@ class DenseLocalArray(BaseLocalArray):
         """
         distbuffer = {
             "__version__": "1.0.0",
-            "buffer": self.local_array,
+            "buffer": self.remote_array,
             "dimdata": self.dimdata,
             }
         return distbuffer
@@ -202,15 +202,15 @@ class DenseLocalArray(BaseLocalArray):
     # Methods related to distributed indexing
     #-------------------------------------------------------------------------
 
-    def get_localarray(self):
-        return self.local_view()
+    def get_remotearray(self):
+        return self.remote_view()
 
-    def set_localarray(self, a):
+    def set_remotearray(self, a):
         arr = np.asarray(a, dtype=self.dtype, order='C')
-        if arr.shape == self.local_shape:
-            self.local_array = arr
+        if arr.shape == self.remote_shape:
+            self.remote_array = arr
         else:
-            raise ValueError("Incompatible local array shape")
+            raise ValueError("Incompatible remote array shape")
 
     def rank_to_coords(self, rank):
         return self.comm.Get_coords(rank)
@@ -218,27 +218,27 @@ class DenseLocalArray(BaseLocalArray):
     def coords_to_rank(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def global_to_local(self, *global_ind):
-        local_ind = list(global_ind)
+    def global_to_remote(self, *global_ind):
+        remote_ind = list(global_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
-            local_ind[dd] = self.maps[i].local_index[global_ind[dd]]
-        return tuple(local_ind)
+            remote_ind[dd] = self.maps[i].remote_index[global_ind[dd]]
+        return tuple(remote_ind)
 
-    def local_to_global(self, *local_ind):
-        global_ind = list(local_ind)
+    def remote_to_global(self, *remote_ind):
+        global_ind = list(remote_ind)
         for i in range(self.ndistdim):
             dd = self.distdims[i]
-            global_ind[dd] = self.maps[i].global_index[local_ind[dd]]
+            global_ind[dd] = self.maps[i].global_index[remote_ind[dd]]
         return tuple(global_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
-        lower_local = self.ndim * [0]
-        lower_global = self.local_to_global(*lower_local)
-        upper_local = [shape-1 for shape in self.local_shape]
-        upper_global = self.local_to_global(*upper_local)
+        lower_remote = self.ndim * [0]
+        lower_global = self.remote_to_global(*lower_remote)
+        upper_remote = [shape-1 for shape in self.remote_shape]
+        upper_global = self.remote_to_global(*upper_remote)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -251,46 +251,46 @@ class DenseLocalArray(BaseLocalArray):
         if newdtype is None:
             return self.copy()
         else:
-            local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.shape, dtype=newdtype, dist=self.dist,
+            remote_copy = self.remote_array.astype(newdtype)
+            new_da = RemoteArray(self.shape, dtype=newdtype, dist=self.dist,
                                 grid_shape=self.grid_shape,
-                                comm=self.base_comm, buf=local_copy)
+                                comm=self.base_comm, buf=remote_copy)
             return new_da
 
     def copy(self):
-        local_copy = self.local_array.copy()
-        return LocalArray(self.shape, dtype=self.dtype, dist=self.dist,
+        remote_copy = self.remote_array.copy()
+        return RemoteArray(self.shape, dtype=self.dtype, dist=self.dist,
                           grid_shape=self.grid_shape, comm=self.base_comm,
-                          buf=local_copy)
+                          buf=remote_copy)
 
-    def local_view(self, dtype=None):
+    def remote_view(self, dtype=None):
         if dtype is None:
-            return self.local_array.view()
+            return self.remote_array.view()
         else:
-            return self.local_array.view(dtype)
+            return self.remote_array.view(dtype)
 
     def view(self, dtype=None):
         if dtype is None:
-            new_da = LocalArray(self.shape, self.dtype, self.dist,
+            new_da = RemoteArray(self.shape, self.dtype, self.dist,
                                 self.grid_shape, self.base_comm, buf=self.data)
         else:
-            new_da = LocalArray(self.shape, dtype, self.dist,
+            new_da = RemoteArray(self.shape, dtype, self.dist,
                                 self.grid_shape, self.base_comm, buf=self.data)
         return new_da
 
     def __array__(self, dtype=None):
         if dtype is None:
-            return self.local_array
+            return self.remote_array
         elif np.dtype(dtype) == self.dtype:
-            return self.local_array
+            return self.remote_array
         else:
-            return self.local_array.astype(dtype)
+            return self.remote_array.astype(dtype)
 
     def __array_wrap__(self, obj, context=None):
         """
-        Return a LocalArray based on obj.
+        Return a RemoteArray based on obj.
 
-        This method constructs a new LocalArray object using (shape, dist,
+        This method constructs a new RemoteArray object using (shape, dist,
         grid_shape and base_comm) from self and dtype, buffer from obj.
 
         This is used to construct return arrays for ufuncs.
@@ -299,7 +299,7 @@ class DenseLocalArray(BaseLocalArray):
                               self.grid_shape, self.base_comm, buf=obj)
 
     def fill(self, scalar):
-        self.local_array.fill(scalar)
+        self.remote_array.fill(scalar)
 
     #-------------------------------------------------------------------------
     # 3.2.2 Array shape manipulation
@@ -331,26 +331,26 @@ class DenseLocalArray(BaseLocalArray):
 
     def asdist(self, shape, dist={0: 'b'}, grid_shape=None):
         pass
-        # new_da = LocalArray(shape, self.dtype, dist, grid_shape,
+        # new_da = RemoteArray(shape, self.dtype, dist, grid_shape,
         #                     self.base_comm)
         # base_comm = self.base_comm
-        # local_array = self.local_array
-        # new_local_array = da.local_array
+        # remote_array = self.remote_array
+        # new_remote_array = da.remote_array
         # recv_counts = np.zeros(self.comm_size, dtype=int)
         #
         # status = MPI.Status()
         # MPI.Attach_buffer(np.empty(128+MPI.BSEND_OVERHEAD,dtype=float))
         # done_count = 0
         #
-        # for old_local_inds, item in np.ndenumerate(local_array):
+        # for old_remote_inds, item in np.ndenumerate(remote_array):
         #
         #     # Compute the new owner
-        #     global_inds = self.local_to_global(new_da.comm_rank,
-        #                                        old_local_inds)
+        #     global_inds = self.remote_to_global(new_da.comm_rank,
+        #                                        old_remote_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
         #         pass
-        #         # Just move the data to the right place in new_local_array
+        #         # Just move the data to the right place in new_remote_array
         #     else:
         #         # Send to the new owner with default tag
         #         # Bsend is probably best, but Isend is also a possibility.
@@ -365,9 +365,9 @@ class DenseLocalArray(BaseLocalArray):
         #         if tag==2:
         #             done_count += 1
         #         # Figure out where new location of old_owner, tag
-        #         new_local_ind = local_ind_by_owner_and_location(old_owner,
+        #         new_remote_ind = remote_ind_by_owner_and_location(old_owner,
         #                                                         location)
-        #         new_local_array[new_local_ind] = y
+        #         new_remote_array[new_remote_ind] = y
         #         recv_counts[old_owner] = recv_counts[old_owner]+1
         #
         # while done_count < self.comm_size:
@@ -524,10 +524,10 @@ class DenseLocalArray(BaseLocalArray):
         return self._binary_op_from_ufunc(other, greater_equal, '__ge__')
 
     def __str__(self):
-        return str(self.local_array)
+        return str(self.remote_array)
 
     def __repr__(self):
-        return str(self.local_array)
+        return str(self.remote_array)
 
     def __nonzero__(self):
         _raise_nie()
@@ -563,16 +563,16 @@ class DenseLocalArray(BaseLocalArray):
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
-            return self.local_array[local_inds]
+            remote_inds = self.global_to_remote(*global_inds)
+            return self.remote_array[remote_inds]
         except KeyError as err:
             raise IndexError(err)
 
     def __setitem__(self, global_inds, value):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
-            self.local_array[local_inds] = value
+            remote_inds = self.global_to_remote(*global_inds)
+            self.remote_array[remote_inds] = value
         except KeyError as err:
             raise IndexError(err)
 
@@ -580,7 +580,7 @@ class DenseLocalArray(BaseLocalArray):
         raise NotImplementedError("`sync` not yet implemented.")
 
     def __contains__(self, item):
-        return item in self.local_array
+        return item in self.remote_array
 
     def pack_index(self, inds):
         inds_array = np.array(inds)
@@ -756,22 +756,22 @@ class DenseLocalArray(BaseLocalArray):
         return invert(self)
 
 
-LocalArray = DenseLocalArray
+RemoteArray = DenseRemoteArray
 
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# Functions that are friends of LocalArray
+# Functions that are friends of RemoteArray
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need access to the LocalArray object in this module, and the
-# LocalArray object needs to use these functions.  There are 3 options for
+# functions need access to the RemoteArray object in this module, and the
+# RemoteArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 #
 #     * Put everything in one file
-#     * Put the functions needed by LocalArray in distarray, others elsewhere
-#     * Make a subclass of LocalArray that has methods that use the functions
+#     * Put the functions needed by RemoteArray in distarray, others elsewhere
+#     * Make a subclass of RemoteArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -788,12 +788,12 @@ LocalArray = DenseLocalArray
 #----------------------------------------------------------------------------
 
 
-def localarray(object, dtype=None, copy=True, order=None, subok=False,
+def remotearray(object, dtype=None, copy=True, order=None, subok=False,
                ndmin=0):
     _raise_nie()
 
 
-def aslocalarray(object, dtype=None, order=None):
+def asremotearray(object, dtype=None, order=None):
     _raise_nie()
 
 
@@ -803,12 +803,12 @@ def arange(start, stop=None, step=1, dtype=None, dist={0: 'b'},
 
 
 def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    return LocalArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
+    return RemoteArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
                       comm=comm)
 
 
 def empty_like(arr, dtype=None):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, DenseRemoteArray):
         if dtype is None:
             return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
@@ -816,25 +816,25 @@ def empty_like(arr, dtype=None):
             return empty(arr.shape, dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A DenseRemoteArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+    la = RemoteArray(shape, dtype, dist, grid_shape, comm)
     la.fill(0)
     return la
 
 
 def zeros_like(arr):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, DenseRemoteArray):
         return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
                      arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A DenseRemoteArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+    la = RemoteArray(shape, dtype, dist, grid_shape, comm)
     la.fill(1)
     return la
 
@@ -843,14 +843,14 @@ class GlobalIterator(six.Iterator):
 
     def __init__(self, arr):
         self.arr = arr
-        self.nditerator = np.ndenumerate(self.arr.local_view())
+        self.nditerator = np.ndenumerate(self.arr.remote_view())
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.local_to_global(*local_inds)
+        remote_inds, value = six.advance_iterator(self.nditerator)
+        global_inds = self.arr.remote_to_global(*remote_inds)
         return global_inds, value
 
 
@@ -869,12 +869,12 @@ def fromfunction(function, shape, **kwargs):
     return da
 
 
-def fromlocalarray_like(local_arr, like_arr):
+def fromremotearray_like(remote_arr, like_arr):
     """
-    Create a new LocalArray using a given local array (+its dtype).
+    Create a new RemoteArray using a given remote array (+its dtype).
     """
-    res = LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist,
-                     like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
+    res = RemoteArray(like_arr.shape, remote_arr.dtype, like_arr.dist,
+                     like_arr.grid_shape, like_arr.base_comm, buf=remote_arr)
     return res
 
 
@@ -979,8 +979,8 @@ can_cast = np.can_cast
 
 
 def sum(a, dtype=None):
-    local_sum = a.local_array.sum(dtype)
-    global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
+    remote_sum = a.remote_array.sum(dtype)
+    global_sum = a.comm.allreduce(remote_sum, None, op=MPI.SUM)
     return global_sum
 
 
@@ -1091,13 +1091,13 @@ finfo = np.finfo
 #
 # I would really like these functions to be in a separate file, but that
 # is not possible because of circular import problems.  Basically, these
-# functions need access to the LocalArray object in this module, and the
-# LocalArray object needs to use these functions.  There are 3 options for
+# functions need access to the RemoteArray object in this module, and the
+# RemoteArray object needs to use these functions.  There are 3 options for
 # solving this problem:
 #
 #     * Put everything in one file
-#     * Put the functions needed by LocalArray in distarray, others elsewhere
-#     * Make a subclass of LocalArray that has methods that use the functions
+#     * Put the functions needed by RemoteArray in distarray, others elsewhere
+#     * Make a subclass of RemoteArray that has methods that use the functions
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -1133,7 +1133,7 @@ def _are_shapes_bcast(shape, target_shape):
     return True
 
 
-class LocalArrayUnaryOperation(object):
+class RemoteArrayUnaryOperation(object):
 
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1142,8 +1142,8 @@ class LocalArrayUnaryOperation(object):
 
     def __call__(self, x1, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, DenseRemoteArray)
+        y_isdla = isinstance(y, DenseRemoteArray)
         assert x1_isdla or isscalar(x1), "Invalid type for unary ufunc"
         assert y is None or y_isdla, "Invalid return array type"
         if y is None:
@@ -1151,17 +1151,17 @@ class LocalArrayUnaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Incompatible LocalArrays")
-            self.func(x1, y.local_array, *args, **kwargs)
+                    raise IncompatibleArrayError("Incompatible RemoteArrays")
+            self.func(x1, y.remote_array, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
 
     def __str__(self):
-        return "LocalArray version of " + str(self.func)
+        return "RemoteArray version of " + str(self.func)
 
 
-class LocalArrayBinaryOperation(object):
+class RemoteArrayBinaryOperation(object):
 
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
@@ -1170,9 +1170,9 @@ class LocalArrayBinaryOperation(object):
 
     def __call__(self, x1, x2, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        x2_isdla = isinstance(x2, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, DenseRemoteArray)
+        x2_isdla = isinstance(x2, DenseRemoteArray)
+        y_isdla = isinstance(y, DenseRemoteArray)
         assert x1_isdla or isscalar(x1), "Invalid type for binary ufunc"
         assert x2_isdla or isscalar(x2), "Invalid type for binary ufunc"
         assert y is None or y_isdla
@@ -1184,29 +1184,29 @@ class LocalArrayBinaryOperation(object):
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):
-                    raise IncompatibleArrayError("Incompatible LocalArrays")
+                    raise IncompatibleArrayError("Incompatible RemoteArrays")
             if x2_isdla:
                 if not arecompatible(x2, y):
-                    raise IncompatibleArrayError("Incompatible LocalArrays")
+                    raise IncompatibleArrayError("Incompatible RemoteArrays")
             kwargs.pop('y', None)
-            self.func(x1, x2, y.local_array, *args, **kwargs)
+            self.func(x1, x2, y.remote_array, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
 
     def __str__(self):
-        return "LocalArray version of " + str(self.func)
+        return "RemoteArray version of " + str(self.func)
 
 
 def _add_operations(wrapper, ops):
-    """Wrap numpy ufuncs for `LocalArray`s.
+    """Wrap numpy ufuncs for `RemoteArray`s.
 
     Wraps numpy ufuncs and adds them to this module's namespace.
 
     Parameters
     ----------
     wrapper : callable
-        Takes a numpy ufunc and returns a LocalArray ufunc.
+        Takes a numpy ufunc and returns a RemoteArray ufunc.
     ops : iterable of callables
         All of the callables to wrap with `wrapper`.
     """
@@ -1230,5 +1230,5 @@ _binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
                'true_divide', 'less', 'less_equal', 'equal', 'not_equal',
                'greater', 'greater_equal',)
 
-_add_operations(LocalArrayUnaryOperation, _unary_ops)
-_add_operations(LocalArrayBinaryOperation, _binary_ops)
+_add_operations(RemoteArrayUnaryOperation, _unary_ops)
+_add_operations(RemoteArrayBinaryOperation, _binary_ops)

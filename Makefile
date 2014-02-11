@@ -14,13 +14,14 @@ setup_cluster:
 
 test:
 	${PYTHON} -m unittest discover
-	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
+	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/remote/tests -p 'paralleltest*.py' 
 
 teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py stop
 
 clean:
 	${PYTHON} setup.py clean --all
+	-${RM} `find . -name '__pycache__'`
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
 	-${RM} -r build  *.py[co]

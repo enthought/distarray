@@ -71,28 +71,28 @@ disttype_to_global_indices = {
 
 class IndexMap(object):
 
-    """Provide global->local and local->global index mappings.
+    """Provide global->remote and remote->global index mappings.
 
     Attributes
     ----------
     global_index : list of int or range object
-        Given a local index as a key, return the corresponding global index.
-    local_index : dict of int -> int
-        Given a global index as a key, return the corresponding local index.
+        Given a remote index as a key, return the corresponding global index.
+    remote_index : dict of int -> int
+        Given a global index as a key, return the corresponding remote index.
     """
 
     def __init__(self, global_indices):
-        """Make an IndexMap from a local_index and global_index.
+        """Make an IndexMap from a remote_index and global_index.
 
         Parameters
         ----------
         global_indices: list of int or range object
             Each position contains the corresponding global index for a
-            local index (position).
+            remote index (position).
         """
         self.global_index = global_indices
-        local_indices = range(len(global_indices))
-        self.local_index = dict(zip(global_indices, local_indices))
+        remote_indices = range(len(global_indices))
+        self.remote_index = dict(zip(global_indices, remote_indices))
 
     @property
     def size(self):

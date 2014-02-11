@@ -1,7 +1,7 @@
 """
 Tests for distarray.client
 
-Many of these tests require a 4-engine cluster to be running locally.
+Many of these tests require a 4-engine cluster to be running remotely.
 """
 
 from math import ceil

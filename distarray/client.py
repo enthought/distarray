@@ -35,8 +35,8 @@ def process_return_value(subcontext, result_key):
 
     Returns
     -------
-    A DistArray (if locally all values are DistArray), a None (if
-    locally all values are None), or else, pull the result back to the
+    A DistArray (if remotely all values are DistArray), a None (if
+    remotely all values are None), or else, pull the result back to the
     client and return it.  If all but one of the pulled values is None,
     return that non-None value only.
     """
@@ -49,10 +49,10 @@ def process_return_value(subcontext, result_key):
         return (typestring == "<type 'NoneType'>" or
                 typestring == "<class 'NoneType'>")
 
-    def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.local.denselocalarray.DenseLocalArray'>"
+    def is_RemoteArray(typestring):
+        return typestring == "<class 'distarray.remote.denseremotearray.DenseRemoteArray'>"
 
-    if all(is_LocalArray(r) for r in result_type_str):
+    if all(is_RemoteArray(r) for r in result_type_str):
         result = DistArray(result_key, subcontext)
     elif all(is_NoneType(r) for r in result_type_str):
         result = None
@@ -244,7 +244,7 @@ class Context(object):
         self.view.scatter(arr_key, arr, targets=self.targets, block=True)
         subs = (new_key,) + keys + (arr_key,)
         self._execute(
-            '%s = distarray.LocalArray(%s,dtype=%s,buf=%s)' % subs
+            '%s = distarray.RemoteArray(%s,dtype=%s,buf=%s)' % subs
         )
         return DistArray(new_key, self)
 
@@ -437,13 +437,13 @@ class DistArray(object):
         return self._get_attribute('item_size')
 
     def tondarray(self):
-        local_name = self.context._generate_key()
-        local_shape = self.context._generate_key()
-        subs = (local_name, self.key, local_shape, self.key)
-        self.context._execute('%s = %s.local_view(); %s = %s.shape' % subs)
-        shape = self.context._pull0(local_shape)
+        remote_name = self.context._generate_key()
+        remote_shape = self.context._generate_key()
+        subs = (remote_name, self.key, remote_shape, self.key)
+        self.context._execute('%s = %s.remote_view(); %s = %s.shape' % subs)
+        shape = self.context._pull0(remote_shape)
         arr = self.context.view.gather(
-            local_name,targets=self.context.targets,block=True)
+            remote_name,targets=self.context.targets,block=True)
         arr.shape = shape
         return arr
 
@@ -493,15 +493,15 @@ class DistArray(object):
         result = self.context._pull0(result_key)
         return result
 
-    def get_localarrays(self):
+    def get_remotearrays(self):
         key = self.context._generate_key()
-        self.context._execute('%s = %s.get_localarray()' % (key, self.key))
+        self.context._execute('%s = %s.get_remotearray()' % (key, self.key))
         result = self.context._pull(key)
         return result
 
-    def get_localshapes(self):
+    def get_remoteshapes(self):
         key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key))
+        self.context._execute('%s = %s.remote_shape' % (key, self.key))
         result = self.context._pull(key)
         return result
 
