@@ -4,6 +4,33 @@ from distarray.local import maps
 from six.moves import range
 
 
+class TestNodistMap(unittest.TestCase):
+
+    def setUp(self):
+        dimdict = dict(dist_type='n', size=20)
+        self.m = maps.IndexMap.from_dimdict(dimdict)
+
+    def test_local_index(self):
+        gis = range(0, 20)
+        lis = list(self.m.local_index[gi] for gi in gis)
+        expected = list(range(20))
+        self.assertEqual(lis, expected)
+
+    def test_local_index_KeyError(self):
+        gi = 20
+        self.assertRaises(KeyError, self.m.local_index.__getitem__, gi)
+
+    def test_global_index(self):
+        lis = range(20)
+        gis = list(self.m.global_index[li] for li in lis)
+        expected = list(range(20))
+        self.assertEqual(gis, expected)
+
+    def test_global_index_IndexError(self):
+        li = 20
+        self.assertRaises(IndexError, self.m.global_index.__getitem__, li)
+
+
 class TestBlockMap(unittest.TestCase):
 
     def setUp(self):
