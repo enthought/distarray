@@ -18,35 +18,27 @@ from math import ceil
 def block(dd):
     """Return the global indices owned by this block-distributed process.
 
-    For a regularly-distributed block distribution, 'gridrank', 'datasize',
-    and 'gridsize' keys are required.  For an irregularly-distributed block
-    distribution, 'start' and 'stop' are required.
+    Requires 'start' and 'stop' keys.
     """
     return range(dd['start'], dd['stop'])
 
 
 def cyclic(dd):
-    """Return the global indices owned by this cyclically-distributed process.
-
-    Requires 'start', 'datasize', and 'gridsize' keys.
-    """
-    return range(dd['start'], dd['datasize'], dd['gridsize'])
-
-
-def block_cyclic(dd):
-    """Return the global indices owned by this block-cyclically-distributed
+    """Return the global indices owned by this (block-)cyclically-distributed
     process.
 
-    Requires 'start', 'datasize', 'gridsize', and 'blocksize' keys.
+    Requires 'start', 'size', 'proc_grid_size', and (optionally) 'block_size'
+    keys.  If 'block_size' key does not exist, it is set to 1.
     """
-    nblocks = int(ceil(dd['datasize'] / dd['blocksize']))
-    block_indices = range(0, nblocks, dd['gridsize'])
+    dd.setdefault('block_size', 1)
+    nblocks = int(ceil(dd['size'] / dd['block_size']))
+    block_indices = range(0, nblocks, dd['proc_grid_size'])
 
     global_indices = []
     for block_index in block_indices:
-        block_start = block_index * dd['blocksize'] + dd['start']
-        block_stop = block_start + dd['blocksize']
-        block = range(block_start, min(block_stop, dd['datasize']))
+        block_start = block_index * dd['block_size'] + dd['start']
+        block_stop = block_start + dd['block_size']
+        block = range(block_start, min(block_stop, dd['size']))
         global_indices.extend(block)
 
     return global_indices
@@ -60,12 +52,10 @@ def unstructured(dd):
     return dd['indices']
 
 
-disttype_to_global_indices = {
+dist_type_to_global_indices = {
     'b': block,
-    'bp': block,
     'c': cyclic,
-    'bc': block_cyclic,
-    'u': unstructured
+    'u': unstructured,
 }
 
 
@@ -101,5 +91,5 @@ class IndexMap(object):
     @classmethod
     def from_dimdict(cls, dimdict):
         """Make an IndexMap from a `dimdict` data structure."""
-        global_indices_fn = disttype_to_global_indices[dimdict['disttype']]
+        global_indices_fn = dist_type_to_global_indices[dimdict['dist_type']]
         return IndexMap(global_indices_fn(dimdict))

@@ -91,8 +91,8 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
         Check the one- and two-arg ufunc versions as well as the method
         version attached to a LocalArray.
         """
-        x = da.ones((16, 16), dist=('b', None), comm=self.comm)
-        y = da.ones((16, 16), dist=('b', None), comm=self.comm)
+        x = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        y = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x, casting='unsafe')  # standard form
@@ -109,9 +109,9 @@ class TestLocalArrayBinaryOperations(MpiTestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        x1 = da.ones((16, 16), dist=('b', None), comm=self.comm)
-        x2 = da.ones((16, 16), dist=('b', None), comm=self.comm)
-        y = da.ones((16, 16), dist=('b', None), comm=self.comm)
+        x1 = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        x2 = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        y = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x1, x2, casting='unsafe')  # standard form
