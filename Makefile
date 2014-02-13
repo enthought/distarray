@@ -29,6 +29,6 @@ clean:
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
 	-${RM} -r build  *.py[co]
-	-${RM} -r MANIFEST dist distarray.egg-info
+	-${RM} -r MANIFEST dist distarray.egg-info .coverage
 	-${RM} -rf coverage_report
 
