@@ -12,6 +12,8 @@ before_install:
     - pip install six
     - pip install sphinx
     - pip install sphinxcontrib-napoleon
+    - pip install coverage
+    - pip install coveralls
     - pip freeze
 install:
     - python setup.py install
@@ -19,6 +21,9 @@ install:
 before_script:
     - (cd $TRAVIS_BUILD_DIR && make setup_cluster)
 script:
-    - (cd $TRAVIS_BUILD_DIR && make test)
+    - (cd $TRAVIS_BUILD_DIR && make test && make coverage)
 after_script:
     - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
+after_success:
+  coveralls
+
