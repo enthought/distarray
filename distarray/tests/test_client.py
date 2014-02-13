@@ -4,7 +4,6 @@ Tests for distarray.client
 Many of these tests require a 4-engine cluster to be running locally.
 """
 
-from math import ceil
 import unittest
 import numpy as np
 from six.moves import range
@@ -145,6 +144,13 @@ class TestDistArray(unittest.TestCase):
         for val in dap:
             self.assertEqual(val, 10)
 
+    def test_tondarray(self):
+        dap = self.dac.empty((3, 3))
+        ndarr = np.arange(9).reshape(3, 3)
+        for (i, j), val in np.ndenumerate(ndarr):
+            dap[i, j] = ndarr[i, j]
+        np.testing.assert_array_equal(dap.tondarray(), ndarr)
+
 
 class TestDistArrayCreation(unittest.TestCase):
     """Test distarray creation methods"""
@@ -181,6 +187,11 @@ class TestDistArrayCreation(unittest.TestCase):
         empty_distarray = self.context.empty(shape)
         self.assertEqual(empty_distarray.shape, shape)
 
+    def test_fromndarray(self):
+        ndarr = np.arange(16).reshape(4, 4)
+        distarr = self.context.fromndarray(ndarr)
+        for (i, j), val in np.ndenumerate(ndarr):
+            self.assertEqual(distarr[i, j], ndarr[i, j])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
