@@ -14,11 +14,10 @@ setup_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py start
 
 test:
-	${PYTHON} -m unittest discover
+	${COVERAGE} run -m unittest discover
 	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
 
-coverage:
-	${COVERAGE} run -m unittest discover
+report:
 	${COVERAGE} html
 
 teardown_cluster:
