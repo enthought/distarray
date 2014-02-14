@@ -2,17 +2,19 @@ Notes on building environment-modules
 -------------------------------------
 
 environment-modules is a tool, written with Tcl, that makes it convenient to
-switch environment settings. It is not required to use distarray, 
-but we find it useful in development. It is a difficult name to google.
-I had to build it from source, and made some notes of my steps,
-which will hopefully be helpful for others that build this.
+switch environment settings. It is not required to use distarray, but we find
+it useful in development. It is a difficult name to google.  I had to build it
+from source, and made some notes of my steps, which will hopefully be helpful
+for others that build this.
 
-There seems to be some version available to ``apt-get`` for Debian. But I read suggestions not to mix
-Debian and Ubuntu packages, and as I have Ubuntu, I did not try and configure my ``apt-get`` to look 
-at the Debian packages. So I installed from source, with notes as follows.
+There seems to be some version available to ``apt-get`` for Debian. But I read
+suggestions not to mix Debian and Ubuntu packages, and as I have Ubuntu, I did
+not try and configure my ``apt-get`` to look at the Debian packages. So I
+installed from source, with notes as follows.
 
-These specific notes are from an installation from source for Linux Mint (Ubuntu), done by Mark Kness.
-These actions were based on the INSTALL document in the modules source and the Geoghegan link.
+These specific notes are from an installation from source for Linux Mint
+(Ubuntu), done by Mark Kness.  These actions were based on the INSTALL
+document in the modules source and the Geoghegan link.
 
 ``$ sudo apt-get install tcl tcl8.4-dev``
 
@@ -49,17 +51,18 @@ I got the following messages from ./configure...::
     configure: WARNING: will use MODULEPATH=/usr/local/Modules/modulefiles : rerun configure using --with-module-path to override default
     configure: WARNING: will use VERSIONPATH=/usr/local/Modules/versions : rerun configure using --with-version-path to override default
 
-It seems that TCL_VERSION, TCL_LIB_SPEC, and TCL_INCLUDE_SPEC were all found ok.
-(The TCLX variants are not found but that is different and not a problem.)
-Generally it seems like Tcl is ok, except perhaps for some 8.4 vs 8.5 version inconsistency.
-A non-default path for the module files themselves seems recommended, so...
+It seems that TCL_VERSION, TCL_LIB_SPEC, and TCL_INCLUDE_SPEC were all found
+ok.  (The TCLX variants are not found but that is different and not a
+problem.) Generally it seems like Tcl is ok, except perhaps for some 8.4 vs
+8.5 version inconsistency.  A non-default path for the module files themselves
+seems recommended, so...
 
 | ``$ cd ~``
 | ``$ mkdir modules``
 
-This created ``/home/mkness/modules`` on my machine.
-The install notes suggest that one make a non-default location for these.
-This directory name was an arbitrary choice.
+This created ``/home/mkness/modules`` on my machine.  The install notes
+suggest that one make a non-default location for these.  This directory name
+was an arbitrary choice.
 
 | ``$ cd modules-3.2.10``
 | ``$ ./configure --with-module-path=~/modules``
@@ -86,15 +89,15 @@ Setup symbolic link named 'default' to point to the installed version.
 | ``$ cd ~``
 | ``$ /usr/local/Modules/default/bin/add.modules``
 
-This script is supposed to update my local .bashrc and similar files to have access to the Modules stuff.
-For me, it modified .bashrc and .profile.
-But if I say 'module', I get an error about an invalid path.
-It seems that MODULE_VERSION is not defined, so I added ``export MODULE_VERSION=default``
-to the top of my .bashrc.
+This script is supposed to update my local .bashrc and similar files to have
+access to the Modules stuff.  For me, it modified .bashrc and .profile.  But
+if I say 'module', I get an error about an invalid path.  It seems that
+MODULE_VERSION is not defined, so I added ``export MODULE_VERSION=default`` to
+the top of my .bashrc.
 
-At this point I can say 'module' at the command line and I get the usage instructions.
-But 'module avail' dislikes the lack of an environment variable MODULEPATH.
-So I also add ``export MODULEPATH=~/modules`` to my .bashrc.
+At this point I can say 'module' at the command line and I get the usage
+instructions.  But 'module avail' dislikes the lack of an environment variable
+MODULEPATH.  So I also add ``export MODULEPATH=~/modules`` to my .bashrc.
 This path matches the --with-module-path argument to ./configure.
 
 Now it works!
