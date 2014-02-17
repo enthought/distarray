@@ -3,6 +3,8 @@ Simple runner for `ipcluster start` or `ipcluster stop` on Python 2 or 3, as
 appropriate.
 """
 
+from __future__ import print_function
+
 import sys
 import six
 from subprocess import Popen, PIPE
