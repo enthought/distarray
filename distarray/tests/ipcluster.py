@@ -23,21 +23,33 @@ def start(n=4):
     """
     engines = "--engines=MPIEngineSetLauncher"
     cluster = Popen([ipcluster_cmd, 'start', '-n', str(n), engines],
-                       stdout=PIPE, stderr=PIPE)
+                    stdout=PIPE, stderr=PIPE)
 
-    match = six.text_type("Engines appear to have started successfully")
+    started = six.text_type("Engines appear to have started successfully")
+    running = six.text_type("CRITICAL | Cluster is already running with")
     while True:
         line = six.text_type(cluster.stderr.readline())
-        if match in line:
+        if line != '':
+            print(line)
+        if (started in line) or (running in line):
             break
 
 
 def stop():
     """Convenient way to stop an ipcluster."""
-    Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
+    stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
+
+    stopped = six.text_type("Stopping cluster")
+    not_running = six.text_type("CRITICAL | Could not read pid file, cluster "
+                                "is probably not running.")
+    while True:
+        line = six.text_type(stopping.stderr.readline())
+        if line != '':
+            print(line)
+        if (stopped in line) or (not_running in line):
+            break
 
 
 if __name__ == '__main__':
     cmd = sys.argv[1]
     fn = eval(cmd)
-    fn()
