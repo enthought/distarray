@@ -10,14 +10,14 @@ install:
 	${PYTHON} setup.py install
 
 setup_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py start
+	-${PYTHON} distarray/tests/ipcluster.py 'start()'
 
 test:
 	${PYTHON} -m unittest discover
 	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
 
 teardown_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py stop
+	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 
 clean:
 	${PYTHON} setup.py clean --all
