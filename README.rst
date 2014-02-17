@@ -22,5 +22,7 @@ DistArray is targeting users who
 
 .. _NumPy: http://www.numpy.org
 
-Please see our documentation at `distarray.readthedocs.org` (or in the `docs`
+Please see our documentation at `readthedocs`_ (or in the `docs`
 directory) for more.  Pull requests happily accepted.
+
+.. _readthedocs: http://distarray.readthedocs.org
