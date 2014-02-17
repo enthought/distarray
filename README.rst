@@ -1,6 +1,9 @@
 .. image:: https://travis-ci.org/enthought/distarray.png
    :target: https://travis-ci.org/enthought/distarray
 
+.. image:: https://coveralls.io/repos/enthought/distarray/badge.png?branch=master
+   :target: https://coveralls.io/r/enthought/distarray?branch=master
+
 DistArray
 =========
 

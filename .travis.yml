@@ -3,6 +3,7 @@ python:
     - 2.7
     - 3.3
 before_install:
+    - sudo apt-get update
     - sudo apt-get install libopenmpi-dev
     - sudo apt-get install openmpi-bin
     - pip install numpy
@@ -12,6 +13,8 @@ before_install:
     - pip install six
     - pip install sphinx
     - pip install sphinxcontrib-napoleon
+    - pip install coverage
+    - pip install coveralls
     - pip freeze
 install:
     - python setup.py install
@@ -22,3 +25,5 @@ script:
     - (cd $TRAVIS_BUILD_DIR && make test)
 after_script:
     - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
+after_success:
+    - coveralls

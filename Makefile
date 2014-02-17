@@ -2,6 +2,7 @@
 
 PYTHON = python
 MPIEXEC = mpiexec
+COVERAGE = coverage
 
 develop:
 	${PYTHON} setup.py develop
@@ -13,8 +14,11 @@ setup_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py start
 
 test:
-	${PYTHON} -m unittest discover
+	${COVERAGE} run -m unittest discover
 	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
+
+report:
+	${COVERAGE} html
 
 teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py stop
@@ -24,4 +28,6 @@ clean:
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
 	-${RM} -r build  *.py[co]
-	-${RM} -r MANIFEST dist distarray.egg-info
+	-${RM} -r MANIFEST dist distarray.egg-info .coverage
+	-${RM} -rf coverage_report
+
