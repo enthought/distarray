@@ -27,6 +27,7 @@ clean:
 	${PYTHON} setup.py clean --all
 	-${RM} `find . -name '*.py[co]'`
 	-${RM} `find . -name '*.so'`
+	-${RM} -r `find . -name '__pycache__'`
 	-${RM} -r build  *.py[co]
 	-${RM} -r MANIFEST dist distarray.egg-info .coverage
 	-${RM} -rf coverage_report
