@@ -240,7 +240,9 @@ class Context(object):
         return DistArray(da_key, self)
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
-        out = self.empty(arr.shape, dtype=arr.dtype, dist=dist, grid_shape=None)
+        """Convert an ndarray to a distarray."""
+        out = self.empty(arr.shape, dtype=arr.dtype, dist=dist,
+                         grid_shape=grid_shape)
         for index, value in np.ndenumerate(arr):
             out[index] = value
         return out
@@ -443,6 +445,9 @@ class DistArray(object):
         return s
 
     def __getitem__(self, index):
+        #TODO: FIXME: major performance improvements possible here,
+        # especially for special casese like `index == slice(None)`.
+        # This would dramatically improve tondarray's performance.
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -463,6 +468,11 @@ class DistArray(object):
             raise TypeError("Invalid index type.")
 
     def __setitem__(self, index, value):
+        #TODO: FIXME: major performance improvements possible here.
+        # Especially when `index == slice(None)` and value is an
+        # ndarray, since for block and cyclic, we can generate slices of
+        # `value` and assign to local arrays. This would dramatically
+        # improve the fromndarray method's performance.
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
