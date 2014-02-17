@@ -26,4 +26,4 @@ script:
 after_script:
     - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
 after_success:
-  coveralls
+    - coveralls
