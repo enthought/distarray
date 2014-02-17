@@ -361,8 +361,11 @@ class Context(object):
         return binary_proxy(self, a, b, 'greater_equal', *args, **kwargs)
 
 def unary_proxy(context, a, meth_name, *args, **kwargs):
-    assert isinstance(a, DistArray), "This method only works on DistArrays"
-    assert context==a.context, "distarray context mismatch: " % (context, a.context)
+    if not isinstance(a, DistArray):
+        raise TypeError("This method only works on DistArrays")
+    if  context != a.context:
+        raise TypeError("distarray context mismatch: " % (context,
+                                                          a.context))
     context = a.context
     new_key = context._generate_key()
     if 'casting' in kwargs:
@@ -380,16 +383,24 @@ def binary_proxy(context, a, b, meth_name, *args, **kwargs):
     is_a_dap = isinstance(a, DistArray)
     is_b_dap = isinstance(b, DistArray)
     if is_a_dap and is_b_dap:
-        assert b.context==a.context, "distarray context mismatch: " % (b.context, a.context)
-        assert context==a.context, "distarray context mismatch: " % (context, a.context)
+        if b.context != a.context:
+            raise TypeError("distarray context mismatch: " % (b.context,
+                                                              a.context))
+        if context != a.context:
+            raise TypeError("distarray context mismatch: " % (context,
+                                                              a.context))
         a_key = a.key
         b_key = b.key
     elif is_a_dap and np.isscalar(b):
-        assert context==a.context, "distarray context mismatch: " % (context, a.context)
+        if context != a.context:
+            raise TypeError("distarray context mismatch: " % (context,
+                                                              a.context))
         a_key = a.key
         b_key = context._key_and_push(b)[0]
     elif is_b_dap and np.isscalar(a):
-        assert context==b.context, "distarray context mismatch: " % (context, b.context)
+        if context != b.context:
+            raise TypeError("distarray context mismatch: " % (context,
+                                                              b.context))
         a_key = context._key_and_push(a)[0]
         b_key = b.key
     else:
