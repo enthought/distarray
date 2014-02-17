@@ -104,3 +104,7 @@ doc/source/generated
 # Things specific to this project #
 ###################################
 dist
+
+# Coverage related files #
+##########################
+.coverage
