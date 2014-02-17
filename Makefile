@@ -24,11 +24,6 @@ teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py stop
 
 clean:
-	${PYTHON} setup.py clean --all
-	-${RM} `find . -name '*.py[co]'`
-	-${RM} `find . -name '*.so'`
-	-${RM} -r `find . -name '__pycache__'`
-	-${RM} -r build  *.py[co]
-	-${RM} -r MANIFEST dist distarray.egg-info .coverage
-	-${RM} -rf coverage_report
-
+	-${PYTHON} setup.py clean --all
+	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} '{}' +
+	-${RM} -r build MANIFEST dist distarray.egg-info coverage_report
