@@ -89,7 +89,7 @@ class TestSpecialMethods(unittest.TestCase):
         cls.client = Client()
         cls.context = Context(cls.client[:])
         # Standard data
-        cls.a = np.arange(1, 99)
+        cls.a = np.arange(1, 33)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
         cls.da = cls.context.fromndarray(cls.a)
@@ -112,29 +112,25 @@ class TestSpecialMethods(unittest.TestCase):
 unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
              'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'log',
              'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign', 'sin',
-             'sinh', 'sqrt', 'square', 'tan', 'tanh',)
+             'sinh', 'sqrt', 'square', 'tan', 'tanh', 'invert')
 
 binary_ops = ('add', 'arctan2', 'divide', 'floor_divide', 'fmod', 'hypot',
               'multiply', 'power', 'remainder', 'subtract', 'true_divide',
               'less', 'less_equal', 'equal', 'not_equal', 'greater',
-              'greater_equal', 'mod',)
+              'greater_equal', 'mod', 'bitwise_and', 'bitwise_or',
+              'bitwise_xor', 'left_shift', 'right_shift',)
 
 binary_special_methods = ('__lt__', '__le__', '__eq__', '__ne__', '__gt__',
                           '__ge__', '__add__', '__sub__', '__mul__',
                           '__floordiv__', '__mod__', '__pow__', '__radd__',
                           '__rsub__', '__rmul__', '__rfloordiv__', '__rmod__',
-                          '__rpow__',)
+                          '__rpow__', '__rrshift__', '__rlshift__',
+                          '__rand__', '__rxor__', '__ror__', '__lshift__',
+                          '__rshift__', '__and__', '__xor__', '__or__',)
 
 # There is no divmod function in numpy. And there is no __div__
 # attribute on ndarrays.
 problematic_special_methods = ('__divmod__', '__rdivmod__', '__div__')
-# These operations don't work with our default data.
-broken_ops = ('invert', 'bitwise_and', 'bitwise_or', 'bitwise_xor',
-              'left_shift', 'right_shift',)
-broken_special_methods = ('__rrshift__', '__rlshift__', '__rand__', '__rxor__',
-                          '__ror__', '__lshift__', '__rshift__', '__and__',
-                          '__xor__', '__or__',)
-
 
 add_checkers(TestDistArrayUfuncs, binary_ops, 'check_binary_op')
 add_checkers(TestDistArrayUfuncs, unary_ops, 'check_unary_op')
