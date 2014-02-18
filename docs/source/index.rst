@@ -83,6 +83,7 @@ Other Documentation
    :maxdepth: 2
 
    API Reference <modules.rst>
+   Notes on building environment-modules <environment-modules-notes.rst>
 
 
 Indices and tables
