@@ -11,7 +11,7 @@ install:
 	${PYTHON} setup.py install
 
 setup_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py start
+	-${PYTHON} distarray/tests/ipcluster.py 'start()'
 
 test:
 	${COVERAGE} run -m unittest discover
@@ -21,7 +21,7 @@ report:
 	${COVERAGE} html
 
 teardown_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py stop
+	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 
 clean:
 	-${PYTHON} setup.py clean --all

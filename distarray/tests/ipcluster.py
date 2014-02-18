@@ -3,6 +3,8 @@ Simple runner for `ipcluster start` or `ipcluster stop` on Python 2 or 3, as
 appropriate.
 """
 
+from __future__ import print_function
+
 import sys
 import six
 from subprocess import Popen, PIPE
@@ -23,21 +25,31 @@ def start(n=4):
     """
     engines = "--engines=MPIEngineSetLauncher"
     cluster = Popen([ipcluster_cmd, 'start', '-n', str(n), engines],
-                       stdout=PIPE, stderr=PIPE)
+                    stdout=PIPE, stderr=PIPE)
 
-    match = six.text_type("Engines appear to have started successfully")
+    started = "Engines appear to have started successfully"
+    running = "CRITICAL | Cluster is already running with"
     while True:
-        line = six.text_type(cluster.stderr.readline())
-        if match in line:
+        line = cluster.stderr.readline().strip().decode()
+        print(line)
+        if (started in line) or (running in line):
             break
 
 
 def stop():
     """Convenient way to stop an ipcluster."""
-    Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
+    stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
+
+    stopped = "Stopping cluster"
+    not_running = ("CRITICAL | Could not read pid file, cluster "
+                   "is probably not running.")
+    while True:
+        line = stopping.stderr.readline().strip().decode()
+        print(line)
+        if (stopped in line) or (not_running in line):
+            break
 
 
 if __name__ == '__main__':
     cmd = sys.argv[1]
     fn = eval(cmd)
-    fn()
