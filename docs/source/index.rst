@@ -82,8 +82,9 @@ Other Documentation
 .. toctree::
    :maxdepth: 2
 
-   API Reference <modules.rst>
    Notes on building environment-modules <environment-modules-notes.rst>
+   Notes on building HDF5 and h5py <hdf5-notes.rst>
+   API Reference <modules.rst>
 
 
 Indices and tables
