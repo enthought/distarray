@@ -77,7 +77,7 @@ class DapTestMixin(object):
                 pass
 
     @comm_null_passes
-    def test_round_trip_equality(self):
+    def test_round_trip_equality_from_object(self):
         larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
         self.assertEqual(larr.shape, self.larr.shape)
         self.assertEqual(larr.dist, self.larr.dist)
