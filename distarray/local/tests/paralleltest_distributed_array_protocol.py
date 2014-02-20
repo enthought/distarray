@@ -9,6 +9,9 @@ from distarray.testing import comm_null_passes, MpiTestCase
 VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
 
 
+#TODO: Use the validator from the Distributed Array Protocol here
+
+
 class DapTestMixin(object):
 
     """Base test class for DAP test cases.
@@ -74,8 +77,24 @@ class DapTestMixin(object):
                 pass
 
     @comm_null_passes
-    def test_round_trip_equality(self):
+    def test_round_trip_equality_from_object(self):
         larr = da.LocalArray.from_distarray(self.larr, comm=self.comm)
+        self.assertEqual(larr.shape, self.larr.shape)
+        self.assertEqual(larr.dist, self.larr.dist)
+        self.assertEqual(larr.grid_shape, self.larr.grid_shape)
+        self.assertEqual(larr.comm_size, self.larr.comm_size)
+        self.assertEqual(larr.ndistdim, self.larr.ndistdim)
+        self.assertEqual(larr.distdims, self.larr.distdims)
+        self.assertEqual(larr.comm.Get_topo(), self.larr.comm.Get_topo())
+        self.assertEqual(len(larr.maps), len(self.larr.maps))
+        self.assertEqual(larr.local_shape, self.larr.local_shape)
+        self.assertEqual(larr.local_array.shape, self.larr.local_array.shape)
+        self.assertEqual(larr.local_array.dtype, self.larr.local_array.dtype)
+        assert_array_equal(larr.local_array, self.larr.local_array)
+
+    @comm_null_passes
+    def test_round_trip_equality_from_dict(self):
+        larr = da.LocalArray.from_distarray(self.larr.__distarray__(), comm=self.comm)
         self.assertEqual(larr.shape, self.larr.shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
