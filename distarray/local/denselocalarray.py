@@ -22,7 +22,7 @@ from six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct
+from distarray.local import construct, format
 from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -856,10 +856,9 @@ def save(filename, arr):
         Array to save to a file.
 
     """
-    import pickle
     local_filename = filename + "_" + str(arr.comm_rank) + ".dap"
     with open(local_filename, "wb") as fh:
-        pickle.dump(arr.__distarray__(), fh)
+        format.write_localarray(fh, arr)
 
 
 def load(filename, comm=None):
@@ -878,14 +877,13 @@ def load(filename, comm=None):
         A LocalArray encapsulating the data loaded.
 
     """
-    import pickle
     if comm is not None:
         local_filename = filename + "_" + str(comm.Get_rank()) + ".dap"
     else:
         local_filename = filename + ".dap"
 
     with open(local_filename, "rb") as fh:
-        distbuffer = pickle.load(fh)
+        distbuffer = format.read_localarray(fh)
     return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
