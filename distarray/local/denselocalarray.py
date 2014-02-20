@@ -167,8 +167,6 @@ class DenseLocalArray(BaseLocalArray):
 
         https://github.com/enthought/distributed-array-protocol
 
-
-
         Parameters
         ----------
         obj : an object with a `__distarray__` method or a dict
@@ -843,6 +841,52 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     la = LocalArray(shape, dtype, dist, grid_shape, comm)
     la.fill(1)
     return la
+
+
+def save(filename, arr):
+    """
+    Save a LocalArray to a ``.dap`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Prefix for filename.  File will be saved as
+        ``<filename>_<comm_rank>.dap``.
+    arr : LocalArray
+        Array to save to a file.
+
+    """
+    import pickle
+    local_filename = filename + "_" + str(arr.comm_rank) + ".dap"
+    with open(local_filename, "wb") as fh:
+        pickle.dump(arr.__distarray__(), fh)
+
+
+def load(filename, comm=None):
+    """
+    Load a LocalArray from a ``.dap`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Prefix for filename.  File loaded will be named
+        ``<filename>_<comm_rank>.dap``.
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    """
+    import pickle
+    if comm is not None:
+        local_filename = filename + "_" + str(comm.Get_rank()) + ".dap"
+    else:
+        local_filename = filename + ".dap"
+
+    with open(local_filename, "rb") as fh:
+        distbuffer = pickle.load(fh)
+    return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
 class GlobalIterator(six.Iterator):

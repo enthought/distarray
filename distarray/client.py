@@ -237,6 +237,47 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
+    def save(self, filename, da):
+        """
+        Save a distributed array to files in the ``.dap`` format.
+
+        Parameters
+        ----------
+        filename : str
+            Prefix for filename used by each engine.  Each engine will save a
+            file named ``<filename>_<comm_rank>.dap``.
+        da : DistArray
+            Array to save to files.
+
+        """
+        subs = self._key_and_push(filename) + (da.key,)
+        self._execute(
+            'distarray.save(%s, %s)' % subs
+        )
+
+    def load(self, filename):
+        """
+        Load a distributed array from ``.dap`` files.
+
+        Parameters
+        ----------
+        filename : str
+            Prefix used for the file saved by each engine.  Each engine will
+            load a file named ``<filename>_<comm_rank>.dap``.
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded on each engine.
+
+        """
+        da_key = self._generate_key()
+        subs = (da_key, filename, self._comm_key)
+        self._execute(
+            '%s = distarray.load("%s", comm=%s)' % subs
+        )
+        return DistArray(da_key, self)
+
     def fromndarray(self, arr):
         keys = self._key_and_push(arr.shape, arr.dtype)
         arr_key = self._generate_key()
