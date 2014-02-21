@@ -12,11 +12,6 @@ from distarray.client import Context
 from numpy.testing import assert_array_equal
 
 
-# For these tests we use a global context
-c = Client()
-context = Context(c[:])
-
-
 def add_checkers(cls, ops, checker_name):
     """Helper function to dynamically add a list of tests.
 
@@ -42,12 +37,19 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.client = Client()
+        cls.context = Context(cls.client[:])
+
         # Standard data
         cls.a = np.arange(1, 99)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = context.fromndarray(cls.a)
-        cls.db = context.fromndarray(cls.b)
+        cls.da = cls.context.fromndarray(cls.a)
+        cls.db = cls.context.fromndarray(cls.b)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
 
     def check_binary_op(self, op_name):
         """Check binary operation for success.
@@ -55,13 +57,13 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(context, op_name)
+        op = getattr(self.context, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             # ignore inf, NaN warnings etc.
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            expected = ufunc(self.a, self.b)
-            result = op(self.da, self.db)
+            expected = ufunc(self.a, self.b, casting='unsafe')
+            result = op(self.da, self.db, casting='unsafe')
         assert_array_equal(result.toarray(), expected)
 
     def check_unary_op(self, op_name):
@@ -70,25 +72,32 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(context, op_name)
+        op = getattr(self.context, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            expected = ufunc(self.a)
-            result = op(self.da)
+            expected = ufunc(self.a, casting='unsafe')
+            result = op(self.da, casting='unsafe')
         assert_array_equal(result.toarray(), expected)
 
 
 class TestSpecialMethods(unittest.TestCase):
+    """Test the __methods__"""
 
     @classmethod
     def setUpClass(cls):
+        cls.client = Client()
+        cls.context = Context(cls.client[:])
         # Standard data
-        cls.a = np.arange(1, 99)
+        cls.a = np.arange(1, 33)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = context.fromndarray(cls.a)
-        cls.db = context.fromndarray(cls.b)
+        cls.da = cls.context.fromndarray(cls.a)
+        cls.db = cls.context.fromndarray(cls.b)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
 
     def check_op(self, op_name):
         distop = getattr(self.da, op_name)
@@ -100,26 +109,24 @@ class TestSpecialMethods(unittest.TestCase):
         assert_array_equal(result.toarray(), expected)
 
 
-unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh',
-             'arctan', 'arctanh', 'conjugate', 'cos', 'cosh', 'exp',
-             'expm1', 'invert', 'log', 'log10', 'log1p', 'negative',
-             'reciprocal', 'rint', 'sign', 'sin', 'sinh', 'sqrt',
-             'square', 'tan', 'tanh',)
+unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
+             'arctanh', 'conjugate', 'cos', 'cosh', 'exp', 'expm1', 'log',
+             'log10', 'log1p', 'negative', 'reciprocal', 'rint', 'sign', 'sin',
+             'sinh', 'sqrt', 'square', 'tan', 'tanh', 'invert')
 
-binary_ops = ('add', 'arctan2', 'bitwise_and', 'bitwise_or',
-              'bitwise_xor', 'divide', 'floor_divide', 'fmod', 'hypot',
-              'left_shift', 'multiply', 'power', 'remainder',
-              'right_shift', 'subtract', 'true_divide', 'less',
-              'less_equal', 'equal', 'not_equal', 'greater',
-              'greater_equal', 'mod',)
+binary_ops = ('add', 'arctan2', 'divide', 'floor_divide', 'fmod', 'hypot',
+              'multiply', 'power', 'remainder', 'subtract', 'true_divide',
+              'less', 'less_equal', 'equal', 'not_equal', 'greater',
+              'greater_equal', 'mod', 'bitwise_and', 'bitwise_or',
+              'bitwise_xor', 'left_shift', 'right_shift',)
 
 binary_special_methods = ('__lt__', '__le__', '__eq__', '__ne__', '__gt__',
                           '__ge__', '__add__', '__sub__', '__mul__',
-                          '__floordiv__', '__mod__', '__pow__', '__lshift__',
-                          '__rshift__', '__and__', '__xor__', '__or__',
-                          '__radd__', '__rsub__', '__rmul__', '__rfloordiv__',
-                          '__rmod__', '__rpow__', '__rlshift__', '__rrshift__',
-                          '__rand__', '__rxor__', '__ror__',)
+                          '__floordiv__', '__mod__', '__pow__', '__radd__',
+                          '__rsub__', '__rmul__', '__rfloordiv__', '__rmod__',
+                          '__rpow__', '__rrshift__', '__rlshift__',
+                          '__rand__', '__rxor__', '__ror__', '__lshift__',
+                          '__rshift__', '__and__', '__xor__', '__or__',)
 
 # There is no divmod function in numpy. And there is no __div__
 # attribute on ndarrays.
