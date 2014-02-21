@@ -25,5 +25,5 @@ teardown_cluster:
 
 clean:
 	-${PYTHON} setup.py clean --all
-	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} '{}' +
+	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} -r '{}' +
 	-${RM} -r build MANIFEST dist distarray.egg-info coverage_report
