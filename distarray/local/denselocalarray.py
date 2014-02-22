@@ -884,6 +884,7 @@ def load(filename, comm=None):
 
     with open(local_filename, "rb") as fh:
         distbuffer = format.read_localarray(fh)
+
     return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
