@@ -2,6 +2,64 @@
 
 __docformat__ = "restructuredtext en"
 
+"""
+Define a simple format for saving LocalArrays to disk with full information
+about them.  This format, ``.dap``, draws heavily from the ``.npy`` format
+specification from NumPy and from the data structure defined in the Distributed
+Array Protocol.
+
+Version numbering
+-----------------
+
+The version numbering of this format is independent of DistArray and the
+Distributed Array Protocol's version numbering.
+
+Format Version 1.0
+------------------
+
+The first 6 bytes are a magic string: exactly ``\\x93DARRY``.
+
+The next 1 byte is an unsigned byte: the major version number of the file
+format, e.g. ``\\x01``.
+
+The next 1 byte is an unsigned byte: the minor version number of the file
+format, e.g. ``\\x00``. Note: the version of the file format is not tied
+to the version of the DistArray package.
+
+The next 2 bytes form a little-endian unsigned short int: the length of
+the header data HEADER_LEN.
+
+The next HEADER_LEN bytes form the header data describing the
+distribution of this chunk of the LocalArray.  It is an ASCII string
+which contains a Python literal expression of a dictionary. It is
+terminated by a newline (``\\n``) and padded with spaces (``\\x20``) to
+make the total length of ``magic string + 4 + HEADER_LEN`` be evenly
+divisible by 16 for alignment purposes.
+
+The dictionary contains two keys, both described in the Distributed
+Array Protocol:
+
+    "__version__" : str
+        Version of the Distributed Array Protocol used in this header.
+    "dim_data" : tuple of dict
+        One dictionary per array dimension; see the Distributed Array
+        Protocol for the details of this data structure.
+
+For repeatability and readability, the dictionary keys are sorted in
+alphabetic order. This is for convenience only. A writer SHOULD implement
+this if possible. A reader MUST NOT depend on this.
+
+Following this header is the output of ``numpy.save`` for the underlying
+data buffer.  This contains the full output of ``save``, beginning with
+the magic number for ``.npy`` files, followed by the ``.npy`` header and
+array data.
+
+The ``.npy`` format, including reasons for creating it and a comparison
+of alternatives, is described fully in the "npy-format" NEP and in the
+module docstring for ``numpy.lib.format``.
+
+"""
+
 import io
 import six
 
