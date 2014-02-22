@@ -2,7 +2,6 @@
 
 __docformat__ = "restructuredtext en"
 
-
 import pickle
 import io
 import six
@@ -20,7 +19,7 @@ MAGIC_LEN = len(MAGIC_PREFIX) + 2
 
 
 def magic(major, minor, prefix=MAGIC_PREFIX):
-    """ Return the magic string for the given file format version.
+    """Return the magic string for the given file format version.
 
     Parameters
     ----------
@@ -34,6 +33,7 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
     Raises
     ------
     ValueError if the version cannot be formatted.
+
     """
     if major < 0 or major > 255:
         raise ValueError("Major version must be 0 <= major < 256.")
@@ -48,7 +48,33 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
 
 
 def write_localarray(fp, arr, version=(1, 0)):
+    """
+    Write a LocalArray to a .dap file, including a header.
 
+    The ``__version__`` and ``dim_data`` keys from the Distributed Array
+    Protocol are written to a header, then ``numpy.save`` is used to write the
+    value of the ``buffer`` key.
+
+    Parameters
+    ----------
+    fp : file_like object
+        An open, writable file object, or similar object with a ``.write()``
+        method.
+    arr : LocalArray
+        The array to write to disk.
+    version : (int, int), optional
+        The version number of the file format.  Default: (1, 0)
+
+    Raises
+    ------
+    ValueError
+        If the array cannot be persisted.
+    Various other errors
+        If the underlying numpy array contains Python objects as part of its
+        dtype, the process of pickling them may raise various errors if the
+        objects are not picklable.
+
+    """
     if version != (1, 0):
         msg = "Only version (1, 0) is supported, not %s."
         raise ValueError(msg % (version,))
@@ -65,7 +91,7 @@ def write_localarray(fp, arr, version=(1, 0)):
 
 
 def read_magic(fp):
-    """ Read the magic string to get the version of the file format.
+    """Read the magic string to get the version of the file format.
 
     Parameters
     ----------
@@ -144,6 +170,26 @@ def read_array_header_1_0(fp):
 
 
 def read_localarray(fp):
+    """
+    Read a LocalArray from an .dap file.
+
+    Parameters
+    ----------
+    fp : file_like object
+        If this is not a real file object, then this may take extra memory
+        and time.
+
+    Returns
+    -------
+    distbuffer : dict
+        The Distributed Array Protocol structure created from the data on disk.
+
+    Raises
+    ------
+    ValueError
+        If the data is invalid.
+
+    """
     version = read_magic(fp)
     if version != (1, 0):
         msg = "only support version (1,0) of file format, not %r"
