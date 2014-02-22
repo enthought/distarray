@@ -1,4 +1,3 @@
-import unittest
 import tempfile
 from numpy.testing import assert_allclose
 from os import path

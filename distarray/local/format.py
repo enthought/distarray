@@ -2,7 +2,6 @@
 
 __docformat__ = "restructuredtext en"
 
-import pickle
 import io
 import six
 
