@@ -17,6 +17,8 @@ MAGIC_PREFIX = asbytes('\x93DARRY')
 MAGIC_LEN = len(MAGIC_PREFIX) + 2
 
 
+# This is only copied from numpy/lib/format.py because the numpy version
+# doesn't allow one to set the MAGIC_PREFIX
 def magic(major, minor, prefix=MAGIC_PREFIX):
     """Return the magic string for the given file format version.
 
@@ -207,6 +209,8 @@ def read_localarray(fp):
     return distbuffer
 
 
+# This is only copied from numpy/lib/format.py because importing it doesn't
+# work
 def _read_bytes(fp, size, error_template="ran out of data"):
     """
     Read from file-like object until size bytes are read.
