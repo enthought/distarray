@@ -18,6 +18,7 @@ import six
 import math
 
 import numpy as np
+from collections import Mapping
 from six.moves import zip, range
 
 from distarray.mpiutils import MPI
@@ -181,7 +182,7 @@ class DenseLocalArray(BaseLocalArray):
             A LocalArray encapsulating the buffer of the original data.
             No copy is made.
         """
-        if isinstance(obj, dict):
+        if isinstance(obj, Mapping):
             distbuffer = obj
         else:
             distbuffer = obj.__distarray__()
