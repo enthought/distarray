@@ -4,7 +4,7 @@ ODIN: ODin Isn't Numpy
 
 from itertools import chain
 from functools import wraps
-from six.moves import zip
+from distarray.six.moves import zip
 
 from IPython.parallel import Client
 from distarray.utils import all_equal

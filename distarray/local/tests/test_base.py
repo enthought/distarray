@@ -1,6 +1,6 @@
 import unittest
 
-from six.moves import range
+from distarray.six.moves import range
 from distarray.local.base import BaseLocalArray
 
 

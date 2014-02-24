@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy
 import distarray
-from six.moves import input
+from distarray.six.moves import input
 from distarray import odin
 from pprint import pprint
 

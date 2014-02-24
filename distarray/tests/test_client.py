@@ -6,7 +6,7 @@ Many of these tests require a 4-engine cluster to be running locally.
 
 import unittest
 import numpy as np
-from six.moves import range
+from distarray.six.moves import range
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
 

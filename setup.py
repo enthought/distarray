@@ -8,7 +8,6 @@ from setuptools import setup, find_packages
 install_requires = [
     'ipython',
     'numpy',
-    'six',
     'mpi4py'
 ]
 

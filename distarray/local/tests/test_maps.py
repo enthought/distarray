@@ -1,7 +1,7 @@
 import unittest
 from distarray.local import maps
 
-from six.moves import range
+from distarray.six.moves import range
 
 
 class TestNotDistMap(unittest.TestCase):

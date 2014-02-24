@@ -17,7 +17,7 @@ import uuid
 from itertools import product
 
 import numpy as np
-from six import next
+from distarray.six import next
 
 from IPython.parallel import Client
 from distarray.utils import has_exactly_one

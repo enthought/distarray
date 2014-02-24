@@ -17,7 +17,7 @@ import numpy as np
 import operator
 
 from functools import reduce
-from six import next
+from distarray.six import next
 
 from distarray.local import construct, maps
 
