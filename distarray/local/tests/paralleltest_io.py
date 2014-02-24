@@ -9,7 +9,7 @@ class TestFlatFileIO(MpiTestCase):
 
     @comm_null_passes
     def test_flat_file_read_write(self):
-        larr0 = LocalArray((7,))
+        larr0 = LocalArray((7,), comm=self.comm)
         output_dir = tempfile.gettempdir()
         filename = 'outfile'
         output_path = path.join(output_dir, filename)
