@@ -22,6 +22,10 @@ class MPIDistArrayError(DistArrayError):
     pass
 
 
+class ContextError(DistArrayError):
+    pass
+
+
 class InvalidCommSizeError(MPIDistArrayError):
     pass
 
