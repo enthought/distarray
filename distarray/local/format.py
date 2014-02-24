@@ -11,8 +11,8 @@ Array Protocol.
 Version numbering
 -----------------
 
-The version numbering of this format is independent of DistArray and the
-Distributed Array Protocol's version numbering.
+The version numbering of this format is independent of DistArray's and
+the Distributed Array Protocol's version numberings.
 
 Format Version 1.0
 ------------------
