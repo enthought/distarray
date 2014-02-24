@@ -26,7 +26,7 @@ test: test_client test_engines
 
 test_with_coverage: test_client_with_coverage test_engines
 
-report:
+coverage_report:
 	${COVERAGE} html
 
 teardown_cluster:
