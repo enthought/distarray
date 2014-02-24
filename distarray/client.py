@@ -90,6 +90,7 @@ class Context(object):
         #with self.view.sync_imports():
         #    import distarray
         self.view.execute("import distarray.local; import distarray.mpiutils")
+        self.view.execute("import numpy")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
