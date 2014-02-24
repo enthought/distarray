@@ -12,11 +12,6 @@ from distarray.client import Context
 from numpy.testing import assert_array_equal
 
 
-# For these tests we use a global context
-c = Client()
-context = Context(c[:])
-
-
 def add_checkers(cls, ops, checker_name):
     """Helper function to dynamically add a list of tests.
 
@@ -42,12 +37,15 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.client = Client()
+        cls.context = Context(cls.client[:])
+
         # Standard data
         cls.a = np.arange(1, 99)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = context.fromndarray(cls.a)
-        cls.db = context.fromndarray(cls.b)
+        cls.da = cls.context.fromndarray(cls.a)
+        cls.db = cls.context.fromndarray(cls.b)
 
     def check_binary_op(self, op_name):
         """Check binary operation for success.
@@ -55,7 +53,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(context, op_name)
+        op = getattr(self.context, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             # ignore inf, NaN warnings etc.
@@ -70,7 +68,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(context, op_name)
+        op = getattr(self.context, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -83,12 +81,15 @@ class TestSpecialMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.client = Client()
+        cls.context = Context(cls.client[:])
+
         # Standard data
         cls.a = np.arange(1, 99)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = context.fromndarray(cls.a)
-        cls.db = context.fromndarray(cls.b)
+        cls.da = cls.context.fromndarray(cls.a)
+        cls.db = cls.context.fromndarray(cls.b)
 
     def check_op(self, op_name):
         distop = getattr(self.da, op_name)
@@ -128,6 +129,7 @@ problematic_special_methods = ('__divmod__', '__rdivmod__', '__div__')
 add_checkers(TestDistArrayUfuncs, binary_ops, 'check_binary_op')
 add_checkers(TestDistArrayUfuncs, unary_ops, 'check_unary_op')
 add_checkers(TestSpecialMethods, binary_special_methods, 'check_op')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
