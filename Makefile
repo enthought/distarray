@@ -1,4 +1,4 @@
-.PHONY: clean setup_cluster test test_travis teardown_cluster
+.PHONY: clean setup_cluster test test_travis teardown_cluster test_client test_engines
 
 PYTHON = python
 MPIEXEC = mpiexec
@@ -13,9 +13,18 @@ install:
 setup_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'start()'
 
-test:
+test_client:
+	${PYTHON} -m unittest discover
+
+test_client_with_coverage:
 	${COVERAGE} run -m unittest discover
+
+test_engines:
 	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
+
+test: test_client test_engines
+
+test_with_coverage: test_client_with_coverage test_engines
 
 report:
 	${COVERAGE} html

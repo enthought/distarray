@@ -22,7 +22,7 @@ install:
 before_script:
     - (cd $TRAVIS_BUILD_DIR && make setup_cluster)
 script:
-    - (cd $TRAVIS_BUILD_DIR && make test)
+    - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
 after_script:
     - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
 after_success:
