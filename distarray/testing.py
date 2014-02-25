@@ -1,7 +1,7 @@
 import unittest
 from functools import wraps
 
-from distarray import InvalidCommSizeError
+from distarray.error import InvalidCommSizeError
 from distarray.mpiutils import MPI, create_comm_of_size
 
 
