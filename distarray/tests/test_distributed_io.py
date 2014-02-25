@@ -67,6 +67,7 @@ class TestDistributedIO(unittest.TestCase):
 
         expected = np.arange(datalen)
         assert_equal(expected, fp["buffer"])
+        fp.close()
 
 
     def test_hdf5_file_write_3d(self):
@@ -94,6 +95,7 @@ class TestDistributedIO(unittest.TestCase):
         self.assertTrue("buffer" in fp)
 
         assert_allclose(source, fp["buffer"])
+        fp.close()
 
 
 if __name__ == '__main__':
