@@ -1,5 +1,4 @@
 import tempfile
-import h5py
 from numpy.testing import assert_allclose
 from os import path
 from distarray.local import LocalArray, save, load, save_hdf5
@@ -24,6 +23,8 @@ class TestHDF5FileIO(MpiTestCase):
 
     @comm_null_passes
     def test_hdf5_file_write(self):
+        import h5py
+
         dataset = "data"
         larr0 = LocalArray((51,), comm=self.comm)
         output_dir = tempfile.gettempdir()
