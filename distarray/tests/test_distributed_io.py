@@ -9,7 +9,7 @@ import unittest
 import tempfile
 
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 
 from os import path
 from six.moves import range
@@ -67,6 +67,33 @@ class TestDistributedIO(unittest.TestCase):
 
         expected = np.arange(datalen)
         assert_equal(expected, fp["buffer"])
+
+
+    def test_hdf5_file_write_3d(self):
+        import h5py
+
+        shape = (4, 5, 3)
+        source = np.random.random(shape)
+
+        dac = Context(self.dv)
+        dist = {0: 'b', 1: 'c', 2: 'n'}
+        da = dac.empty(shape, dist=dist)
+
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    da[i, j, k] = source[i, j, k]
+
+        output_dir = tempfile.gettempdir()
+        filename = 'outfile.hdf5'
+        output_path = path.join(output_dir, filename)
+        dac.save_hdf5(output_path, da)
+
+        self.assertTrue(path.exists(output_path))
+        fp = h5py.File(output_path, 'r')
+        self.assertTrue("buffer" in fp)
+
+        assert_allclose(source, fp["buffer"])
 
 
 if __name__ == '__main__':
