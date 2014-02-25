@@ -6,10 +6,13 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libopenmpi-dev
     - sudo apt-get install openmpi-bin
+    - sudo apt-get install libhdf5-openmpi-dev
     - pip install numpy
     - pip install pyzmq --install-option="--zmq=bundled"
     - pip install ipython
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
+    - pip install cython
+    - CC=mpicc pip install git+https://github.com/h5py/h5py.git --install-option="--mpi"
     - pip install six
     - pip install sphinx
     - pip install sphinxcontrib-napoleon
