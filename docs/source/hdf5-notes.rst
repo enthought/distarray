@@ -37,7 +37,8 @@ This gives me an error about "MPI Message" addressed here::
 
     https://github.com/h5py/h5py/issues/401
    
-After patching api_compat.h as suggested, it builds.
+After patching api_compat.h as suggested, it builds.  One could also use the
+``master`` version of h5py from GitHub instead of the latest release.
 
 Run the tests::
 
