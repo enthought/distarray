@@ -7,7 +7,13 @@ write out temporary files.
 
 import unittest
 import tempfile
+
+import numpy as np
+from numpy.testing import assert_equal
+
 from os import path
+from six.moves import range
+
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
 
@@ -40,6 +46,27 @@ class TestDistributedIO(unittest.TestCase):
         db = dac.load(output_path)
         self.assertTrue(isinstance(db, DistArray))
         self.assertEqual(da, db)
+
+    def test_hdf5_file_write_block(self):
+        import h5py
+
+        datalen = 33
+        dac = Context(self.dv)
+        da = dac.empty((datalen,), dist={0: 'b'})
+        for i in range(datalen):
+            da[i] = i
+
+        output_dir = tempfile.gettempdir()
+        filename = 'outfile.hdf5'
+        output_path = path.join(output_dir, filename)
+        dac.save_hdf5(output_path, da)
+
+        self.assertTrue(path.exists(output_path))
+        fp = h5py.File(output_path, 'r')
+        self.assertTrue("buffer" in fp)
+
+        expected = np.arange(datalen)
+        assert_equal(expected, fp["buffer"])
 
 
 if __name__ == '__main__':
