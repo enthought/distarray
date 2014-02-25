@@ -278,6 +278,48 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
+    def save_hdf5(self, filename, da, dataset='buffer'):
+        """
+        Save a DistArray to an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of file to write to.
+        da : DistArray
+            Array to save to a file.
+        dataset : str, optional
+            The dataset to save the DistArray to (the default is 'buffer').
+
+        """
+        subs = self._key_and_push(filename) + (da.key,) + \
+               self._key_and_push(dataset)
+        self._execute(
+            'distarray.save_hdf5(%s, %s, %s)' % subs
+        )
+
+    def load_hdf5(self, filename, dataset='buffer'):
+        """
+        Load a distributed array an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to load.
+        dataset : str
+            Dataset to load from the HDF5 file.
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded.
+
+        """
+        import h5py
+        fp = h5py.File(filename, "r")
+        da = self.fromndarray(fp[dataset])
+        return da
+
     def fromndarray(self, arr):
         keys = self._key_and_push(arr.shape, arr.dtype)
         arr_key = self._generate_key()

@@ -889,6 +889,28 @@ def load(filename, comm=None):
     return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
+def save_hdf5(filename, arr, dataset='buffer'):
+    """
+    Save a LocalArray to a dataset in an ``.hdf5`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to write to.
+    arr : LocalArray
+        Array to save to a file.
+    dataset : str
+        Name to use for dataset in HDF5 file.
+
+    """
+    import h5py
+    fp = h5py.File(filename, 'w', driver='mpio', comm=arr.comm)
+    dset = fp.create_dataset(dataset, arr.shape, dtype=arr.dtype)
+    for index, value in ndenumerate(arr):
+        dset[index] = value
+    fp.close()
+
+
 class GlobalIterator(six.Iterator):
 
     def __init__(self, arr):
