@@ -31,7 +31,7 @@ Install HDF5::
 Build h5py against this version of HDF5.  Without setting HDF5_DIR, the build
 found Canopy's serial version of HDF5.  In the h5py source directory::
 
-    $ HDF5_DIR=/Users/robertgrant/localroot/ CC=mpicc python setup.py build
+    $ HDF5_DIR=/Users/robertgrant/localroot/ CC=mpicc python setup.py build --mpi
 
 This gives me an error about "MPI Message" addressed here::
 
