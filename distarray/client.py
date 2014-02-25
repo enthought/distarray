@@ -89,7 +89,7 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local")
+        self.view.execute("import distarray.local; import distarray.mpiutils")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
@@ -132,7 +132,7 @@ class Context(object):
         # involved in the new communicator.
         self._comm_key = self._generate_key()
         self.view.execute(
-            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, ranks),
+            '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
