@@ -22,6 +22,8 @@ from six import next
 from IPython.parallel import Client
 from distarray.utils import has_exactly_one
 
+__all__ = ['DistArray', 'Context']
+
 
 #----------------------------------------------------------------------------
 # Code
@@ -87,7 +89,7 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray")
+        self.view.execute("import distarray.local; import distarray.mpiutils")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
@@ -130,7 +132,7 @@ class Context(object):
         # involved in the new communicator.
         self._comm_key = self._generate_key()
         self.view.execute(
-            '%s = distarray.create_comm_with_list(%s)' % (self._comm_key, ranks),
+            '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
@@ -172,7 +174,7 @@ class Context(object):
         da_key = self._generate_key()
         subs = (da_key,) + keys + (self._comm_key,)
         self._execute(
-            '%s = distarray.zeros(%s, %s, %s, %s, %s)' % subs
+            '%s = distarray.local.zeros(%s, %s, %s, %s, %s)' % subs
         )
         return DistArray(da_key, self)
 
@@ -181,7 +183,7 @@ class Context(object):
         da_key = self._generate_key()
         subs = (da_key,) + keys + (self._comm_key,)
         self._execute(
-            '%s = distarray.ones(%s, %s, %s, %s, %s)' % subs
+            '%s = distarray.local.ones(%s, %s, %s, %s, %s)' % subs
         )
         return DistArray(da_key, self)
 
@@ -190,7 +192,7 @@ class Context(object):
         da_key = self._generate_key()
         subs = (da_key,) + keys + (self._comm_key,)
         self._execute(
-            '%s = distarray.empty(%s, %s, %s, %s, %s)' % subs
+            '%s = distarray.local.empty(%s, %s, %s, %s, %s)' % subs
         )
         return DistArray(da_key, self)
 
@@ -209,7 +211,7 @@ class Context(object):
         """
         subs = self._key_and_push(filename) + (da.key,)
         self._execute(
-            'distarray.save(%s, %s)' % subs
+            'distarray.local.save(%s, %s)' % subs
         )
 
     def load(self, filename):
@@ -231,7 +233,7 @@ class Context(object):
         da_key = self._generate_key()
         subs = (da_key, filename, self._comm_key)
         self._execute(
-            '%s = distarray.load("%s", comm=%s)' % subs
+            '%s = distarray.local.load("%s", comm=%s)' % subs
         )
         return DistArray(da_key, self)
 
@@ -251,7 +253,7 @@ class Context(object):
         keys = self._key_and_push(shape, kwargs)
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
-        self._execute('%s = distarray.fromfunction(%s,%s,**%s)' % subs)
+        self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
         return DistArray(new_key, self)
 
     def negative(self, a, *args, **kwargs):
@@ -367,11 +369,11 @@ def unary_proxy(context, a, meth_name, *args, **kwargs):
     context = a.context
     new_key = context._generate_key()
     if 'casting' in kwargs:
-        exec_str = "%s = distarray.%s(%s, casting='%s')" % (
+        exec_str = "%s = distarray.local.%s(%s, casting='%s')" % (
                 new_key, meth_name, a.key, kwargs['casting'],
                 )
     else:
-        exec_str = '%s = distarray.%s(%s)' % (
+        exec_str = '%s = distarray.local.%s(%s)' % (
                 new_key, meth_name, a.key,
                 )
     context._execute(exec_str)
@@ -406,11 +408,11 @@ def binary_proxy(context, a, b, meth_name, *args, **kwargs):
     new_key = context._generate_key()
 
     if 'casting' in kwargs:
-        exec_str = "%s = distarray.%s(%s,%s, casting='%s')" % (
+        exec_str = "%s = distarray.local.%s(%s,%s, casting='%s')" % (
                 new_key, meth_name, a_key, b_key, kwargs['casting'],
                 )
     else:
-        exec_str = '%s = distarray.%s(%s,%s)' % (
+        exec_str = '%s = distarray.local.%s(%s,%s)' % (
                 new_key, meth_name, a_key, b_key,
                 )
 

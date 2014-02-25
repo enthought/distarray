@@ -1,7 +1,7 @@
 import numpy as np
 
 from mpi4py import MPI
-from distarray import InvalidCommSizeError, InvalidRankError
+from distarray.error import InvalidCommSizeError, InvalidRankError
 
 
 COMM_PRIVATE = MPI.COMM_WORLD.Clone()
