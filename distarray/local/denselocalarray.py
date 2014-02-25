@@ -846,31 +846,31 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 def save(filename, arr):
     """
-    Save a LocalArray to a ``.dap`` file.
+    Save a LocalArray to a ``.dnpy`` file.
 
     Parameters
     ----------
     filename : str
         Prefix for filename.  File will be saved as
-        ``<filename>_<comm_rank>.dap``.
+        ``<filename>_<comm_rank>.dnpy``.
     arr : LocalArray
         Array to save to a file.
 
     """
-    local_filename = filename + "_" + str(arr.comm_rank) + ".dap"
+    local_filename = filename + "_" + str(arr.comm_rank) + ".dnpy"
     with open(local_filename, "wb") as fh:
         format.write_localarray(fh, arr)
 
 
 def load(filename, comm=None):
     """
-    Load a LocalArray from a ``.dap`` file.
+    Load a LocalArray from a ``.dnpy`` file.
 
     Parameters
     ----------
     filename : str
         Prefix for filename.  File loaded will be named
-        ``<filename>_<comm_rank>.dap``.
+        ``<filename>_<comm_rank>.dnpy``.
 
     Returns
     -------
@@ -879,9 +879,9 @@ def load(filename, comm=None):
 
     """
     if comm is not None:
-        local_filename = filename + "_" + str(comm.Get_rank()) + ".dap"
+        local_filename = filename + "_" + str(comm.Get_rank()) + ".dnpy"
     else:
-        local_filename = filename + ".dap"
+        local_filename = filename + ".dnpy"
 
     with open(local_filename, "rb") as fh:
         distbuffer = format.read_localarray(fh)

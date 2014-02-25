@@ -239,13 +239,13 @@ class Context(object):
 
     def save(self, filename, da):
         """
-        Save a distributed array to files in the ``.dap`` format.
+        Save a distributed array to files in the ``.dnpy`` format.
 
         Parameters
         ----------
         filename : str
             Prefix for filename used by each engine.  Each engine will save a
-            file named ``<filename>_<comm_rank>.dap``.
+            file named ``<filename>_<comm_rank>.dnpy``.
         da : DistArray
             Array to save to files.
 
@@ -257,13 +257,13 @@ class Context(object):
 
     def load(self, filename):
         """
-        Load a distributed array from ``.dap`` files.
+        Load a distributed array from ``.dnpy`` files.
 
         Parameters
         ----------
         filename : str
             Prefix used for the file saved by each engine.  Each engine will
-            load a file named ``<filename>_<comm_rank>.dap``.
+            load a file named ``<filename>_<comm_rank>.dnpy``.
 
         Returns
         -------
