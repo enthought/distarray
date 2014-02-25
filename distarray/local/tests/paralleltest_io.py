@@ -23,7 +23,11 @@ class TestHDF5FileIO(MpiTestCase):
 
     @comm_null_passes
     def test_hdf5_file_write(self):
-        import h5py
+        try:
+            import h5py
+        except ImportError:
+            errmsg = 'h5py not found... skipping'
+            raise unittest.SkipTest(errmsg)
 
         dataset = "data"
         larr0 = LocalArray((51,), comm=self.comm)

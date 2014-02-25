@@ -48,7 +48,11 @@ class TestDistributedIO(unittest.TestCase):
         self.assertEqual(da, db)
 
     def test_hdf5_file_write_block(self):
-        import h5py
+        try:
+            import h5py
+        except ImportError:
+            errmsg = 'h5py not found... skipping'
+            raise unittest.SkipTest(errmsg)
 
         datalen = 33
         dac = Context(self.dv)
@@ -71,7 +75,11 @@ class TestDistributedIO(unittest.TestCase):
 
 
     def test_hdf5_file_write_3d(self):
-        import h5py
+        try:
+            import h5py
+        except ImportError:
+            errmsg = 'h5py not found... skipping'
+            raise unittest.SkipTest(errmsg)
 
         shape = (4, 5, 3)
         source = np.random.random(shape)
