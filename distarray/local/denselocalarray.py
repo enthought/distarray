@@ -23,7 +23,7 @@ from six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct
+from distarray.local import construct, format
 from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -167,8 +167,6 @@ class DenseLocalArray(BaseLocalArray):
         described here:
 
         https://github.com/enthought/distributed-array-protocol
-
-
 
         Parameters
         ----------
@@ -844,6 +842,51 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     la = LocalArray(shape, dtype, dist, grid_shape, comm)
     la.fill(1)
     return la
+
+
+def save(filename, arr):
+    """
+    Save a LocalArray to a ``.dnpy`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Prefix for filename.  File will be saved as
+        ``<filename>_<comm_rank>.dnpy``.
+    arr : LocalArray
+        Array to save to a file.
+
+    """
+    local_filename = filename + "_" + str(arr.comm_rank) + ".dnpy"
+    with open(local_filename, "wb") as fh:
+        format.write_localarray(fh, arr)
+
+
+def load(filename, comm=None):
+    """
+    Load a LocalArray from a ``.dnpy`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Prefix for filename.  File loaded will be named
+        ``<filename>_<comm_rank>.dnpy``.
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    """
+    if comm is not None:
+        local_filename = filename + "_" + str(comm.Get_rank()) + ".dnpy"
+    else:
+        local_filename = filename + ".dnpy"
+
+    with open(local_filename, "rb") as fh:
+        distbuffer = format.read_localarray(fh)
+
+    return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
 class GlobalIterator(six.Iterator):
