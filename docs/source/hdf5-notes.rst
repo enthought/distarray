@@ -4,6 +4,9 @@ Building HDF5 and h5py for DistArray
 These are notes from trying to build HDF5 1.8.12 and h5py 2.2.1 against mpi4py
 1.3 and openmpi-1.6.5 on OS X 10.8.5.
 
+HDF5
+----
+
 Download the HDF5 source (1.8.12) and configure it with parallel support.  From
 the source directory::
 
@@ -28,8 +31,12 @@ Install HDF5::
 
     $ make install
 
-Build h5py against this version of HDF5.  Without setting HDF5_DIR, the build
-found Canopy's serial version of HDF5.  In the h5py source directory::
+h5py
+----
+
+Build h5py against this version of HDF5.  Without setting ``HDF5_DIR``, on my
+system the build found Canopy's serial version of HDF5.  In the h5py source
+directory::
 
     $ HDF5_DIR=/Users/robertgrant/localroot/ CC=mpicc python setup.py build --mpi
 
