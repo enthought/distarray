@@ -211,7 +211,7 @@ class Context(object):
         """
         subs = self._key_and_push(filename) + (da.key,)
         self._execute(
-            'distarray.save(%s, %s)' % subs
+            'distarray.local.save(%s, %s)' % subs
         )
 
     def load(self, filename):
@@ -233,7 +233,7 @@ class Context(object):
         da_key = self._generate_key()
         subs = (da_key, filename, self._comm_key)
         self._execute(
-            '%s = distarray.load("%s", comm=%s)' % subs
+            '%s = distarray.local.load("%s", comm=%s)' % subs
         )
         return DistArray(da_key, self)
 
