@@ -253,7 +253,7 @@ class Context(object):
         keys = self._key_and_push(shape, kwargs)
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
-        self._execute('%s = distarray.fromfunction(%s,%s,**%s)' % subs)
+        self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
         return DistArray(new_key, self)
 
     def negative(self, a, *args, **kwargs):
