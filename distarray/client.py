@@ -280,7 +280,7 @@ class Context(object):
 
     def save_hdf5(self, filename, da, dataset='buffer'):
         """
-        Save a DistArray to an ``.hdf5`` file.
+        Save a DistArray to a dataset in an ``.hdf5`` file.
 
         Parameters
         ----------
@@ -306,8 +306,8 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dataset : str
-            Dataset to load from the HDF5 file.
+        dataset : str, optional
+            The dataset to load the DistArray from (the default is 'buffer').
 
         Returns
         -------

@@ -899,8 +899,8 @@ def save_hdf5(filename, arr, dataset='buffer'):
         Name of file to write to.
     arr : LocalArray
         Array to save to a file.
-    dataset : str
-        Name to use for dataset in HDF5 file.
+    dataset : str, optional
+        The dataset to save the LocalArray to (the default is 'buffer').
 
     """
     import h5py
