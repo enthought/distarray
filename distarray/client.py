@@ -300,7 +300,7 @@ class Context(object):
 
     def load_hdf5(self, filename, dataset='buffer'):
         """
-        Load a distributed array an ``.hdf5`` file.
+        Load a DistArray from a dataset in an ``.hdf5`` file.
 
         Parameters
         ----------
