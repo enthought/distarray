@@ -73,23 +73,6 @@ class TestDecoratorBase(TestCase):
                          db.key)
 
 
-class TestWithContext(TestCase):
-    """
-    Test the *.with_context usage of the decorators.
-    """
-
-    def test_with_context(self):
-
-        context = Context()
-
-        @local.with_context(context)
-        def pushed_func(da):
-            return da
-        # Now see if the function exists on the engines
-        res_func = context._pull0('pushed_func')
-        self.assertEqual(res_func.__name__, pushed_func.__name__)
-
-
 class TestLocalDecorator(TestCase):
 
     # Functions for @local decorator tests. These are here so we can
