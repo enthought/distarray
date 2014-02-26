@@ -53,6 +53,7 @@ class TestDecoratorBase(TestCase):
         arg_keys2, kw_keys2 = dummy_func(da, 'question', answer=42, foo=db)
 
         self.assertEqual(arg_keys1, "(%s, %s,)" % (da.key, db.key))
+        # assert we pushed the right key, keystr pair
         self.assertTrue("'foo': %s" % (da.key) in kw_keys1)
         self.assertTrue("'bar': %s" % (db.key) in kw_keys1)
 
@@ -62,15 +63,10 @@ class TestDecoratorBase(TestCase):
 
         _key = arg_keys2[1: -2].split(', ')[1]
         self.assertEqual(context._pull0(_key), 'question')
-        self.assertEqual(kw_keys2[1: -1].split(', ')[0].split(': ')[0],
-                         "'answer'")
+        self.assertTrue("'answer'" in kw_keys2)
 
-        _key = kw_keys2[1: -1].split(', ')[0].split(': ')[1]
-        self.assertEqual(context._pull0(_key), 42)
-        self.assertEqual(kw_keys2[1: -1].split(', ')[1].split(': ')[0],
-                         "'foo'")
-        self.assertEqual(kw_keys2[1: -1].split(', ')[1].split(': ')[1],
-                         db.key)
+        self.assertTrue("'foo'" in kw_keys2)
+        self.assertTrue(db.key in kw_keys2)
 
 
 class TestLocalDecorator(TestCase):
