@@ -8,7 +8,8 @@ from six.moves import zip
 
 from IPython.parallel import Client
 from distarray.utils import all_equal
-from distarray.client import Context, DistArray, process_return_value
+from distarray.client import DistArray, process_return_value
+from distarray.context import Context
 
 
 # Set up a global Context on import

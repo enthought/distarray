@@ -12,7 +12,7 @@ import numpy as np
 from six.moves import zip
 
 from distarray import odin
-from distarray.client import Context
+from distarray.context import Context
 
 
 @odin.local
