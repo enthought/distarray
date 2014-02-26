@@ -84,12 +84,11 @@ class TestHDF5FileIO(unittest.TestCase):
         dac.save_hdf5(output_path, da)
 
         self.assertTrue(path.exists(output_path))
-        fp = h5py.File(output_path, 'r')
-        self.assertTrue("buffer" in fp)
 
-        expected = np.arange(datalen)
-        assert_equal(expected, fp["buffer"])
-        fp.close()
+        with h5py.File(output_path, 'r') as fp:
+            self.assertTrue("buffer" in fp)
+            expected = np.arange(datalen)
+            assert_equal(expected, fp["buffer"])
 
     def test_hdf5_file_write_3d(self):
         try:
@@ -116,11 +115,10 @@ class TestHDF5FileIO(unittest.TestCase):
         dac.save_hdf5(output_path, da)
 
         self.assertTrue(path.exists(output_path))
-        fp = h5py.File(output_path, 'r')
-        self.assertTrue("buffer" in fp)
 
-        assert_allclose(source, fp["buffer"])
-        fp.close()
+        with h5py.File(output_path, 'r') as fp:
+            self.assertTrue("buffer" in fp)
+            assert_allclose(source, fp["buffer"])
 
 
 if __name__ == '__main__':
