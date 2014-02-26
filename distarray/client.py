@@ -102,11 +102,12 @@ class Context(object):
         # The MPI intracomm referred to by self._comm_key may have a different
         # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
         # self.ranks to this mapping.
-        rank = self._generate_key()
+        rank = self._generate_key(save=False)
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
         self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+        self.remove_global(rank)
 
         # ensure consistency
         assert set(self.targets) == set(self.target_to_rank.keys())
@@ -134,29 +135,31 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        self._comm_key = self._generate_key()
+        self._comm_key = self._generate_key(save=False)
+        print 'comm key:', self._comm_key
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
-    def _generate_key(self):
+    def _generate_key(self, save=True):
         uid = uuid.uuid4()
         key = '__distarray_%s' % uid.hex
-        self.keys.append(key)
+        if save:
+            self.keys.append(key)
+        print 'key:', key
         return key
 
-    def _generate_key0(self):
+    def _generate_key0(self, save=True):
         uid = uuid.uuid4()
         key = '__distarray_%s' % uid.hex
-        self.keys0.append(key)
+        if save:
+            self.keys0.append(key)
+        print 'key0:', key
         return key
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
-        print 'Created keys in key_and_push...'
-        for key, value in zip(keys, values):
-            print '    ', key, value
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
@@ -174,6 +177,25 @@ class Context(object):
         reversed_keys0.reverse()
         for i, key0 in enumerate(reversed_keys0):
             print i, key0
+
+    def dump_globals(self):
+        globals_key = self._generate_key(False)
+        print 'globals key:', globals_key
+        cmd = '%s = [key for key in globals().keys() if key.startswith("__distarray")]' % (globals_key)
+        self._execute(cmd)
+        result = self._pull(globals_key)
+        self.remove_global(globals_key)
+        print 'Globals:'
+        for i, globals_list in enumerate(result):
+            print 'Engine:', i
+            for global_name in globals_list:
+                print '    ', global_name
+            print
+
+    def remove_global(self, key):
+        """ Delete a global from the engines that is not in our keys. """
+        cmd = 'del %s' % key
+        self._execute(cmd)
 
     def del_key(self, key):
         """ Delete the object with the key on all engines. """
@@ -199,14 +221,22 @@ class Context(object):
         reversed_keys = self.keys[:]
         reversed_keys.reverse()
         for i, key in enumerate(reversed_keys):
-            print i, key
             self.del_key(key)
         # Now for keys only sent to engine 0.
         reversed_keys0 = self.keys0[:]
         reversed_keys0.reverse()
         for i, key0 in enumerate(reversed_keys0):
-            print i, key0
             self.del_key0(key0)
+
+    def cleanup(self):
+        print 'Context.cleanup()...'
+        print 'Initial keys:'
+        self.dump_keys()
+        self.purge()
+        print 'After purge...'
+        self.dump_keys()
+        print 'Engine globals...'
+        self.dump_globals()
 
     def _execute(self, lines, targets=None):
         if targets is None:
