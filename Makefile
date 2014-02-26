@@ -19,17 +19,21 @@ test_client:
 .PHONY: test_client
 
 test_client_with_coverage:
-	${COVERAGE} run -m unittest discover
+	${COVERAGE} run -pm unittest discover
 .PHONY: test_client_with_coverage
 
 test_engines:
-	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py' 
+	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
 .PHONY: test_engines
+
+test_engines_with_coverage:
+	${MPIEXEC} -n 12 ${COVERAGE} run -pm unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+.PHONY: test_engines_with_coverage
 
 test: test_client test_engines
 .PHONY: test
 
-test_with_coverage: test_client_with_coverage test_engines
+test_with_coverage: test_client_with_coverage test_engines_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
