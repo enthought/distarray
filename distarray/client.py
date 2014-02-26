@@ -86,6 +86,10 @@ class Context(object):
                 assert target in all_targets, "Engine with id %r not registered" % target
                 self.targets.append(target)
 
+        # Keys sent to: all engines, and only engine 0.
+        self.keys = []
+        self.keys0 = []
+
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
@@ -138,12 +142,71 @@ class Context(object):
 
     def _generate_key(self):
         uid = uuid.uuid4()
-        return '__distarray_%s' % uid.hex
+        key = '__distarray_%s' % uid.hex
+        self.keys.append(key)
+        return key
+
+    def _generate_key0(self):
+        uid = uuid.uuid4()
+        key = '__distarray_%s' % uid.hex
+        self.keys0.append(key)
+        return key
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
+        print 'Created keys in key_and_push...'
+        for key, value in zip(keys, values):
+            print '    ', key, value
         self._push(dict(zip(keys, values)))
         return tuple(keys)
+
+    def dump_keys(self):
+        """ Dump all of the object keys that were created through this context. """
+        print 'The following keys have been created [all engines]:'
+        # Reverse the list so we destroy in reverse order of creation.
+        reversed_keys = self.keys[:]
+        reversed_keys.reverse()
+        for i, key in enumerate(reversed_keys):
+            print i, key
+        print 'The following keys have been created [engine 0]:'
+        # Reverse the list so we destroy in reverse order of creation.
+        reversed_keys0 = self.keys0[:]
+        reversed_keys0.reverse()
+        for i, key0 in enumerate(reversed_keys0):
+            print i, key0
+
+    def del_key(self, key):
+        """ Delete the object with the key on all engines. """
+        if key in self.keys:
+            cmd = 'del %s' % key
+            self._execute(cmd)
+            self.keys.remove(key)
+        else:
+            print 'key', key, 'does not exist.'
+
+    def del_key0(self, key0):
+        """ Delete the object with the key on all engines. """
+        if key0 in self.keys0:
+            cmd = 'del %s' % key0
+            self._execute0(cmd)
+            self.keys0.remove(key0)
+        else:
+            print 'key0', key0, 'does not exist.'
+        
+    def purge(self):
+        """ Delete all objects that were created through this context. """
+        # Destroy in reverse order of creation.
+        reversed_keys = self.keys[:]
+        reversed_keys.reverse()
+        for i, key in enumerate(reversed_keys):
+            print i, key
+            self.del_key(key)
+        # Now for keys only sent to engine 0.
+        reversed_keys0 = self.keys0[:]
+        reversed_keys0.reverse()
+        for i, key0 in enumerate(reversed_keys0):
+            print i, key0
+            self.del_key0(key0)
 
     def _execute(self, lines, targets=None):
         if targets is None:
@@ -429,10 +492,12 @@ class DistArray(object):
         self.context = context
 
     def __del__(self):
-        self.context._execute('del %s' % self.key)
+        print 'deleting distarray', self.key
+        ##self.context._execute('del %s' % self.key)
+        self.context.del_key(self.key)
 
     def _get_attribute(self, name):
-        key = self.context._generate_key()
+        key = self.context._generate_key0()
         self.context._execute0('%s = %s.%s' % (key, self.key, name))
         result = self.context._pull0(key)
         return result
