@@ -8,7 +8,8 @@ import unittest
 import numpy as np
 from six.moves import range
 from IPython.parallel import Client
-from distarray.client import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 
 
 class TestContext(unittest.TestCase):
