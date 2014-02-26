@@ -303,7 +303,7 @@ class Context(object):
         subs = self._key_and_push(filename) + (da.key,) + \
                self._key_and_push(dataset)
         self._execute(
-            'distarray.save_hdf5(%s, %s, %s)' % subs
+            'distarray.local.save_hdf5(%s, %s, %s)' % subs
         )
 
     def load_hdf5(self, filename, dataset='buffer'):
