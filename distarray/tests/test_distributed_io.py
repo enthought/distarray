@@ -18,7 +18,7 @@ from IPython.parallel import Client
 from distarray.client import Context, DistArray
 
 
-class TestDistributedIO(unittest.TestCase):
+class TestFlatFileIO(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -47,6 +47,24 @@ class TestDistributedIO(unittest.TestCase):
         self.assertTrue(isinstance(db, DistArray))
         self.assertEqual(da, db)
 
+
+class TestHDF5FileIO(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.dv = cls.client[:]
+        if len(cls.dv.targets) < 4:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
+
+    def tearDown(self):
+        self.dv.clear()
+
     def test_hdf5_file_write_block(self):
         try:
             import h5py
@@ -72,7 +90,6 @@ class TestDistributedIO(unittest.TestCase):
         expected = np.arange(datalen)
         assert_equal(expected, fp["buffer"])
         fp.close()
-
 
     def test_hdf5_file_write_3d(self):
         try:
