@@ -292,6 +292,14 @@ class Context(object):
             The dataset to save the DistArray to (the default is 'buffer').
 
         """
+        try:
+            # this is just an early check,
+            # h5py isn't necessary until the local call on the engines
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+            raise ImportError(errsg)
+
         subs = self._key_and_push(filename) + (da.key,) + \
                self._key_and_push(dataset)
         self._execute(
@@ -315,7 +323,12 @@ class Context(object):
             A DistArray encapsulating the file loaded.
 
         """
-        import h5py
+        try:
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
+            raise ImportError(errsg)
+
         fp = h5py.File(filename, "r")
         da = self.fromndarray(fp[dataset])
         return da
