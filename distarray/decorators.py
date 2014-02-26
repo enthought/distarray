@@ -14,33 +14,11 @@ class DecoratorBase(object):
     decorator to take an optional kwarg.
     """
 
-    # Set by the with_context classmethod, used to pass the context
-    # at __init__ time.
-    _set_with_context = None
-
     def __init__(self, fn):
         self.fn = fn
         self.fn_key = self.fn.__name__
         functools.update_wrapper(self, fn)
-
-        # Check if context was set with with_context.
-        if self.__class__._set_with_context is not None:
-            self.context = self.__class__._set_with_context
-            # Erase _set_with_context's context.
-            self.__class__._set_with_context = None
-            # push the fn
-            self.push_fn(self.context, self.fn_key, self.fn)
-        else:
-            self.context = None
-
-    @classmethod
-    def with_context(cls, context):
-        """
-        Specify a context, so we don't have to inspect the arguments
-        for one.
-        """
-        cls._set_with_context = context
-        return cls
+        self.context = None
 
     def push_fn(self, context, fn_key, fn):
         """Push function to the engines."""
