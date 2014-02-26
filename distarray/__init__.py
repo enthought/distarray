@@ -13,10 +13,4 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray import error
-from distarray.error import *
-from distarray import mpiutils
-from distarray.mpiutils import *
-from distarray import local
-from distarray.local import *
-
+from distarray.client import *
