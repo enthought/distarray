@@ -224,10 +224,30 @@ class DistArray(object):
         result = self.context._pull0(result_key)
         return result
 
-    def get_localarrays(self):
+    def get_ndarrays(self):
+        """Pull the local ndarrays from the engines.
+
+        Returns
+        -------
+        list of ndarrays
+            one ndarray per process
+
+        """
         key = self.context._generate_key()
         self.context._execute('%s = %s.get_localarray()' % (key, self.key))
         result = self.context._pull(key)
+        return result
+
+    def get_localarrays(self):
+        """Pull the LocalArray objects from the engines.
+
+        Returns
+        -------
+        list of localarrays
+            one localarray per process
+
+        """
+        result = self.context._pull(self.key)
         return result
 
     def get_localshapes(self):
