@@ -142,25 +142,24 @@ class Context(object):
 
     # Keeping track of the keys that we create on each engine.
     # This allows us to properly clean up after ourselves.
+    # We store these as a dict, with the key as the key.
+    # The value is the list of engines where the key has been pushed.
     # We can also find keys on the engines that are *not* tracked.
     # These should be kept track of better, but we can also delete them.
 
     def _setup_key_records(self):
-        """ Create a dictionary, keyed by engine id, for a list of keys
-        that we create. This can be used to properly clean up.
+        """ Create a dictionary, keyed by key name, with values as the
+        set of targets the key is sent to.
+        This can be used to properly clean up.
         """
         self.key_records = {}
-        for engine in self.targets:
-            self.key_records[engine] = []
 
     def _dump_key_records(self):
         """ Print out all the keys that we are tracking. """
-        print ('Tracked keys per engine:')
-        for target in self.targets:
-            print 'Target', target
-            target_keys = self.key_records[target]
-            for i, key in enumerate(target_keys):
-                print i, key
+        print ('Tracked keys:')
+        for key in self.key_records:
+            targets = self.key_records[key]
+            print 'key:', key, 'targets:', targets
 
     def _generate_key_name(self):
         """ Generate a unique name for a key. """
@@ -177,32 +176,27 @@ class Context(object):
         if targets is None:
             targets = self.targets
         key = self._generate_key_name()
-        for target in targets:
-            self.key_records[target].append(key)
+        self.key_records[key] = targets
         return key
 
-    def _delete_recorded_key(self, key, targets=None):
+    def _delete_recorded_key(self, key):
         """ Delete the key from the engines, and our records. """
-        if targets is None:
-            targets = self.targets
-        for target in targets:
-            keys_to_remove = self.key_records[target][:]
-            if key in keys_to_remove:
-                cmd = 'del %s' % key
-                self._execute(cmd, targets=[target])
-                self.key_records[target].remove(key)
-            else:
-                print 'key', key, 'does not exist on engine', target
+        if key in self.key_records:
+            cmd = 'del %s' % key
+            targets = self.key_records[key]
+            self._execute(cmd, targets=targets)
+            del self.key_records[key]
+        else:
+            print 'key', key, 'is not known.'
 
     def _delete_all_recorded_keys(self):
         """ Delete all the keys we are tracking from all the engines.
         This should leave no keys on the engines, 
         if we really kept track of them all.
         """
-        for target in self.targets:
-            keys_to_remove = self.key_records[target][:]
-            for key in keys_to_remove:
-                self._delete_recorded_key(key, targets=[target])
+        keys_to_remove = self.key_records.keys()
+        for key in keys_to_remove:
+            self._delete_recorded_key(key)
         
     def _generate_key(self, targets=None):
         key = self._generate_recorded_key(targets)
@@ -257,7 +251,9 @@ class Context(object):
     def cleanup(self):
         """ Calling at test case shutdown... """
         print 'Context.cleanup()...'
+        ##self._dump_key_records()
         self._delete_all_recorded_keys()
+        ##self._dump_key_records()
         self.dump_globals()
 
     def _execute(self, lines, targets=None):
