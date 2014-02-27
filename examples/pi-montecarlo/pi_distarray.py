@@ -4,12 +4,15 @@ Usage:
     $ python pi_distarray.py <number of points>
 """
 import sys
-from distarray.client import RandomModule, Context
+
+from distarray.random import Random
+from distarray.client import Context
 
 from util import timer
 
 context = Context()
-random = RandomModule(context)
+random = Random(context)
+
 
 @timer
 def calc_pi(n):
