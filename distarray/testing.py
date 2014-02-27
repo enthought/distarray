@@ -1,8 +1,41 @@
 import unittest
+import importlib
 from functools import wraps
 
 from distarray.error import InvalidCommSizeError
 from distarray.mpiutils import MPI, create_comm_of_size
+
+
+def import_or_skip(name):
+    """Try importing `name`, raise SkipTest on failure.
+
+    Parameters
+    ----------
+    name : str
+        Module name to try to import.
+
+    Returns
+    -------
+    module : module object
+        Module object imported by importlib.
+
+    Raises
+    ------
+    unittest.SkipTest
+        If the attempted import raises an ImportError.
+
+    Examples
+    --------
+    >>> h5py = import_or_skip('h5py')
+    >>> h5py.get_config()
+    <h5py.h5.H5PYConfig at 0x103dd5a78>
+
+    """
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        errmsg = '%s not found... skipping.' % name
+        raise unittest.SkipTest(errmsg)
 
 
 def comm_null_passes(fn):
