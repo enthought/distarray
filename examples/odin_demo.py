@@ -3,6 +3,7 @@ import numpy
 import distarray
 from six.moves import input
 from distarray import Context
+from distarray.decorators import local
 from pprint import pprint
 
 context = Context()
@@ -11,19 +12,19 @@ numpy.set_printoptions(precision=2, linewidth=1000)
 context.view.execute("import numpy")
 
 
-@context.local
+@local
 def local_sin(da):
     """A simple @local function."""
     return numpy.sin(da)
 
 
-@context.local
+@local
 def local_sin_plus_50(da):
     """An @local function that calls another."""
     return local_sin(da) + 50
 
 
-@context.local
+@local
 def global_sum(da):
     """Reproducing the `sum` function in densedistarray."""
     from distarray.mpiutils import MPI
@@ -31,7 +32,7 @@ def global_sum(da):
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    new_distarray = distarray.LocalArray((1,), buf=new_arr)
+    new_distarray = distarray.local.LocalArray((1,), buf=new_arr)
     return new_distarray
 
 
