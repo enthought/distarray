@@ -16,6 +16,7 @@ from six.moves import range
 
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
+from distarray.testing import import_or_skip
 
 
 class TestFlatFileIO(unittest.TestCase):
@@ -35,7 +36,7 @@ class TestFlatFileIO(unittest.TestCase):
     def tearDown(self):
         self.dv.clear()
 
-    def test_flat_file_read_write(self):
+    def test_read_write(self):
         dac = Context(self.dv)
         da = dac.empty((100,), dist={0: 'b'})
 
@@ -65,13 +66,8 @@ class TestHDF5FileIO(unittest.TestCase):
     def tearDown(self):
         self.dv.clear()
 
-    def test_hdf5_file_write_block(self):
-        try:
-            import h5py
-        except ImportError:
-            errmsg = 'h5py not found... skipping'
-            raise unittest.SkipTest(errmsg)
-
+    def test_write_block(self):
+        h5py = import_or_skip('h5py')
         datalen = 33
         dac = Context(self.dv)
         da = dac.empty((datalen,), dist={0: 'b'})
@@ -90,13 +86,8 @@ class TestHDF5FileIO(unittest.TestCase):
             expected = np.arange(datalen)
             assert_equal(expected, fp["buffer"])
 
-    def test_hdf5_file_write_3d(self):
-        try:
-            import h5py
-        except ImportError:
-            errmsg = 'h5py not found... skipping'
-            raise unittest.SkipTest(errmsg)
-
+    def test_write_3d(self):
+        h5py = import_or_skip('h5py')
         shape = (4, 5, 3)
         source = np.random.random(shape)
 
