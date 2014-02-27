@@ -10,6 +10,7 @@ from numpy import random
 
 from util import timer
 
+
 @timer
 def calc_pi(n):
     """Estimate pi using pure NumPy."""

@@ -14,7 +14,7 @@ view = client[:]
 view.execute('import numpy')
 
 
-@interactive
+@interactive  # this runs on the engins
 def calc_pi_on_engines(n):
     x = numpy.random.rand(n)
     y = numpy.random.rand(n)

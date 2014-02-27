@@ -1,6 +1,7 @@
 from timeit import default_timer as clock
 from functools import wraps
 
+
 def timer(fn):
     @wraps(fn)
     def _timer(*args, **kwargs):
