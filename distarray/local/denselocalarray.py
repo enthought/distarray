@@ -147,7 +147,7 @@ class DenseLocalArray(BaseLocalArray):
         LocalArray.from_dim_data
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
-                                       grid_shape=grid_shape)
+                                         grid_shape=grid_shape)
         super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
                                               buf=buf, comm=comm)
 
