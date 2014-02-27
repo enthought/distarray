@@ -23,26 +23,34 @@ from distarray.error import DistArrayError
 class InvalidBaseCommError(DistArrayError):
     pass
 
+
 class InvalidGridShapeError(DistArrayError):
     pass
+
 
 class GridShapeError(DistArrayError):
     pass
 
+
 class DistError(DistArrayError):
     pass
+
 
 class DistMatrixError(DistArrayError):
     pass
 
+
 class IncompatibleArrayError(DistArrayError):
     pass
+
 
 class NullCommError(DistArrayError):
     pass
 
+
 class InvalidMapCodeError(DistArrayError):
     pass
+
 
 class InvalidDimensionError(DistArrayError):
     pass
