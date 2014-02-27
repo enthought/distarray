@@ -86,15 +86,12 @@ class Context(object):
                 assert target in all_targets, "Engine with id %r not registered" % target
                 self.targets.append(target)
 
-        # Keys sent to: all engines, and only engine 0.
-        self.keys = []
-        self.keys0 = []
-
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
         self.view.execute("import distarray.local; import distarray.mpiutils")
 
+        self._setup_key_records()
         self._make_intracomm()
         self._set_engine_rank_mapping()
 
@@ -102,12 +99,12 @@ class Context(object):
         # The MPI intracomm referred to by self._comm_key may have a different
         # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
         # self.ranks to this mapping.
-        rank = self._generate_key_and_save(None)
+        rank = self._generate_key()
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
         self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
-        self.remove_global(rank)
+        self._delete_recorded_key(rank)
 
         # ensure consistency
         assert set(self.targets) == set(self.target_to_rank.keys())
@@ -135,59 +132,116 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        self._comm_key = self._generate_key_and_save(None)
+        # NOT saving this key normally so we do not trash it.
+        self._comm_key = self._generate_key(targets=[])
         print 'comm key:', self._comm_key
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
+    # Keeping track of the keys that we create on each engine.
+    # This allows us to properly clean up after ourselves.
+    # We can also find keys on the engines that are *not* tracked.
+    # These should be kept track of better, but we can also delete them.
+
+    def _setup_key_records(self):
+        """ Create a dictionary, keyed by engine id, for a list of keys
+        that we create. This can be used to properly clean up.
+        """
+        self.key_records = {}
+        for engine in self.targets:
+            self.key_records[engine] = []
+
+    def _dump_key_records(self):
+        """ Print out all the keys that we are tracking. """
+        print ('Tracked keys per engine:')
+        for target in self.targets:
+            print 'Target', target
+            target_keys = self.key_records[target]
+            for i, key in enumerate(target_keys):
+                print i, key
+
     def _generate_key_name(self):
         """ Generate a unique name for a key. """
         uid = uuid.uuid4()
         key = '__distarray_%s' % uid.hex
-        print 'key:', key
+        if False:
+            print 'key:', key
         return key
 
-    def _generate_key_and_save(self, savelist):
+    def _generate_recorded_key(self, targets=None):
+        """ Generate a key name, and note that it will be present on 
+        the specified target engines.
+        """
+        if targets is None:
+            targets = self.targets
         key = self._generate_key_name()
-        if savelist is not None:
-            savelist.append(key)
+        for target in targets:
+            self.key_records[target].append(key)
         return key
 
-    def _generate_key(self):
-        return self._generate_key_and_save(self.keys)
+    def _delete_recorded_key(self, key, targets=None):
+        """ Delete the key from the engines, and our records. """
+        if targets is None:
+            targets = self.targets
+        for target in targets:
+            keys_to_remove = self.key_records[target][:]
+            if key in keys_to_remove:
+                cmd = 'del %s' % key
+                self._execute(cmd, targets=[target])
+                self.key_records[target].remove(key)
+            else:
+                print 'key', key, 'does not exist on engine', target
 
-    def _generate_key0(self, save=True):
-        return self._generate_key_and_save(self.keys0)
+    def _delete_all_recorded_keys(self):
+        """ Delete all the keys we are tracking from all the engines.
+        This should leave no keys on the engines, 
+        if we really kept track of them all.
+        """
+        for target in self.targets:
+            keys_to_remove = self.key_records[target][:]
+            for key in keys_to_remove:
+                self._delete_recorded_key(key, targets=[target])
+        
+    def _generate_key(self, targets=None):
+        key = self._generate_recorded_key(targets)
+        if False:
+            self._dump_key_records()
+        return key
+
+    def _generate_key0(self):
+        return self._generate_key(targets=[self.targets[0]])
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def dump_keys(self):
-        """ Dump all of the object keys that were created through this context. """
-        print 'The following keys have been created [all engines]:'
-        # Reverse the list so we destroy in reverse order of creation.
-        reversed_keys = self.keys[:]
-        reversed_keys.reverse()
-        for i, key in enumerate(reversed_keys):
-            print i, key
-        print 'The following keys have been created [engine 0]:'
-        # Reverse the list so we destroy in reverse order of creation.
-        reversed_keys0 = self.keys0[:]
-        reversed_keys0.reverse()
-        for i, key0 in enumerate(reversed_keys0):
-            print i, key0
+    def get_engine_keys(self):
+        """ Get the keys that exist on each of the engines.
+        
+        They are discovered via globals().
+        Keys that the Context created for itself (i.e. _comm_key) are
+        stripped from the result for clarity.
+        """
+        globals_key = self._generate_recorded_key()
+        prefix = '__distarray'
+        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
+            globals_key, prefix)
+        self._execute(cmd)
+        keylists = self._pull(globals_key)
+        self._delete_recorded_key(globals_key)
+        # Remove keys that this Context uses internally.
+        internal_keys = [self._comm_key]
+        for keylist in keylists:
+            for to_strip in internal_keys:
+                if to_strip in keylist:
+                    keylist.remove(to_strip)
+        return keylists
 
     def dump_globals(self):
-        globals_key = self._generate_key_and_save(None)
-        print 'globals key:', globals_key
-        cmd = '%s = [key for key in globals().keys() if key.startswith("__distarray")]' % (globals_key)
-        self._execute(cmd)
-        result = self._pull(globals_key)
-        self.remove_global(globals_key)
+        result = self.get_engine_keys()
         print 'Globals:'
         for i, globals_list in enumerate(result):
             print 'Engine:', i
@@ -200,45 +254,10 @@ class Context(object):
         cmd = 'del %s' % key
         self._execute(cmd)
 
-    def del_key(self, key):
-        """ Delete the object with the key on all engines. """
-        if key in self.keys:
-            cmd = 'del %s' % key
-            self._execute(cmd)
-            self.keys.remove(key)
-        else:
-            print 'key', key, 'does not exist.'
-
-    def del_key0(self, key0):
-        """ Delete the object with the key on all engines. """
-        if key0 in self.keys0:
-            cmd = 'del %s' % key0
-            self._execute0(cmd)
-            self.keys0.remove(key0)
-        else:
-            print 'key0', key0, 'does not exist.'
-        
-    def purge(self):
-        """ Delete all objects that were created through this context. """
-        # Destroy in reverse order of creation.
-        reversed_keys = self.keys[:]
-        reversed_keys.reverse()
-        for i, key in enumerate(reversed_keys):
-            self.del_key(key)
-        # Now for keys only sent to engine 0.
-        reversed_keys0 = self.keys0[:]
-        reversed_keys0.reverse()
-        for i, key0 in enumerate(reversed_keys0):
-            self.del_key0(key0)
-
     def cleanup(self):
+        """ Calling at test case shutdown... """
         print 'Context.cleanup()...'
-        print 'Initial keys:'
-        self.dump_keys()
-        self.purge()
-        print 'After purge...'
-        self.dump_keys()
-        print 'Engine globals...'
+        self._delete_all_recorded_keys()
         self.dump_globals()
 
     def _execute(self, lines, targets=None):
@@ -525,9 +544,7 @@ class DistArray(object):
         self.context = context
 
     def __del__(self):
-        print 'deleting distarray', self.key
-        ##self.context._execute('del %s' % self.key)
-        self.context.del_key(self.key)
+        self.context._delete_recorded_key(self.key)
 
     def _get_attribute(self, name):
         key = self.context._generate_key0()
