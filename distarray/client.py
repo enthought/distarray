@@ -102,7 +102,7 @@ class Context(object):
         # The MPI intracomm referred to by self._comm_key may have a different
         # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
         # self.ranks to this mapping.
-        rank = self._generate_key(save=False)
+        rank = self._generate_key_and_save(None)
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
@@ -135,28 +135,31 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        self._comm_key = self._generate_key(save=False)
+        self._comm_key = self._generate_key_and_save(None)
         print 'comm key:', self._comm_key
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
-    def _generate_key(self, save=True):
+    def _generate_key_name(self):
+        """ Generate a unique name for a key. """
         uid = uuid.uuid4()
         key = '__distarray_%s' % uid.hex
-        if save:
-            self.keys.append(key)
         print 'key:', key
         return key
 
-    def _generate_key0(self, save=True):
-        uid = uuid.uuid4()
-        key = '__distarray_%s' % uid.hex
-        if save:
-            self.keys0.append(key)
-        print 'key0:', key
+    def _generate_key_and_save(self, savelist):
+        key = self._generate_key_name()
+        if savelist is not None:
+            savelist.append(key)
         return key
+
+    def _generate_key(self):
+        return self._generate_key_and_save(self.keys)
+
+    def _generate_key0(self, save=True):
+        return self._generate_key_and_save(self.keys0)
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
@@ -179,7 +182,7 @@ class Context(object):
             print i, key0
 
     def dump_globals(self):
-        globals_key = self._generate_key(False)
+        globals_key = self._generate_key_and_save(None)
         print 'globals key:', globals_key
         cmd = '%s = [key for key in globals().keys() if key.startswith("__distarray")]' % (globals_key)
         self._execute(cmd)
