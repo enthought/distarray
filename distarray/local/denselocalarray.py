@@ -907,7 +907,7 @@ def save_hdf5(filename, arr, dataset='buffer'):
         import h5py
     except ImportError:
         errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
-        raise ImportError(errsg)
+        raise ImportError(errmsg)
 
     fp = h5py.File(filename, 'w', driver='mpio', comm=arr.comm)
     dset = fp.create_dataset(dataset, arr.shape, dtype=arr.dtype)

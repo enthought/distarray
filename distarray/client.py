@@ -257,7 +257,7 @@ class Context(object):
             import h5py
         except ImportError:
             errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
-            raise ImportError(errsg)
+            raise ImportError(errmsg)
 
         subs = self._key_and_push(filename) + (da.key,) + \
                self._key_and_push(dataset)
@@ -286,7 +286,7 @@ class Context(object):
             import h5py
         except ImportError:
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
-            raise ImportError(errsg)
+            raise ImportError(errmsg)
 
         fp = h5py.File(filename, "r")
         da = self.fromndarray(fp[dataset])
