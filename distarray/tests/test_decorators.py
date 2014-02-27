@@ -1,6 +1,6 @@
 """
-Test decarators, these need a seperate module because we are defining
-functions satically, but decorators need context objects which are
+Test decorators, these need a separate module because we are defining
+functions statically, but decorators need context objects which are
 defined dynamically. To remedy this, we define a global Context, and use
 it throughout this module.
 """
@@ -72,7 +72,7 @@ class TestDecoratorBase(TestCase):
 class TestLocalDecorator(TestCase):
 
     # Functions for @local decorator tests. These are here so we can
-    # garuntee they are pushed to the engines befor we try to use them.
+    # guarantee they are pushed to the engines before we try to use them.
     @local
     def local_add50(da):
         return da + 50
@@ -141,7 +141,7 @@ class TestLocalDecorator(TestCase):
     def test_local(self):
         context = Context()
 
-        """Test the @local decorater"""
+        """Test the @local decorator"""
         da = context.empty((4, 4))
         a = numpy.empty((4, 4))
 
