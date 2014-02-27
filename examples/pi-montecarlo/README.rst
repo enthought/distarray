@@ -18,8 +18,3 @@ The convergence of this method is very slow O(n**-0.5).
 - ``pi_distarray.py`` uses distarray to estimate pi.
 
 - ``benchmark.py`` benchmarks the methods.
-
-The plot resulting from ``python benchmark.py \`python -c
-'print(2**25)'` `` with 6 engines is plotted below:
-
-    .. image :: demo_plot.png
