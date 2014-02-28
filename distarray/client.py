@@ -201,7 +201,7 @@ class Context(object):
         Ideally this should leave no keys remaining on the engines.
         Any leftovers can be removed via purge_keys().
         """
-        keys_to_remove = self.key_records.keys()
+        keys_to_remove = list(self.key_records.keys())
         for key in keys_to_remove:
             self.delete_key(key)
 
