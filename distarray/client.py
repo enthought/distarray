@@ -182,12 +182,11 @@ class Context(object):
     def _delete_recorded_key(self, key):
         """ Delete the key from the engines, and our records. """
         if key in self.key_records:
-            cmd = 'del %s' % key
             targets = self.key_records[key]
-            self._execute(cmd, targets=targets)
+            self.delete_engine_key(key, targets)
             del self.key_records[key]
         else:
-            print 'key', key, 'is not known.'
+            raise KeyError('Key %s is not known by Context.' % (key))
 
     def _delete_all_recorded_keys(self):
         """ Delete all the keys we are tracking from all the engines.
@@ -197,7 +196,15 @@ class Context(object):
         keys_to_remove = self.key_records.keys()
         for key in keys_to_remove:
             self._delete_recorded_key(key)
+
+    def cleanup_keys(self):
+        """ Delete all the keys we are tracking from the engines.
         
+        Ideally this should lave no keys remaining on the engines.
+        Any leftovers can be removed via purge_keys().
+        """
+        self._delete_all_recorded_keys()
+
     def _generate_key(self, targets=None):
         key = self._generate_recorded_key(targets)
         if False:
@@ -212,13 +219,17 @@ class Context(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def get_engine_keys(self):
-        """ Get the keys that exist on each of the engines.
+    # Methods to directly operate on keys on the engines.
+    # These make no consideration for what keys we *expect* to be there.
+
+    def get_engine_keys(self, targets=None):
+        """ Get the keys that exist on each of the engines, via globals().
         
-        They are discovered via globals().
-        Keys that the Context created for itself (i.e. _comm_key) are
-        stripped from the result for clarity.
+        The return value is a dict, keyed by the key, with the value as
+        a list of engines where the key is present.
         """
+        if targets is None:
+            targets = self.targets
         globals_key = self._generate_recorded_key()
         prefix = '__distarray'
         cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
@@ -226,35 +237,69 @@ class Context(object):
         self._execute(cmd)
         keylists = self._pull(globals_key)
         self._delete_recorded_key(globals_key)
-        # Remove keys that this Context uses internally.
+        # Convert nested list to dict with key=key, value=list of engines.
+        engine_keys = {}
+        for iengine, keylist in enumerate(keylists):
+            for key in keylist:
+                if key not in engine_keys:
+                    engine_keys[key] = []
+                engine_keys[key].append(self.targets[iengine])
+        return engine_keys
+
+    def clean_engine_keys(self, engine_keys):
+        """ Clean the keys of engine objects to remove things
+        that this Context created for itself internally.
+        (We do not want to delete those keys!)
+        """
         internal_keys = [self._comm_key]
-        for keylist in keylists:
-            for to_strip in internal_keys:
-                if to_strip in keylist:
-                    keylist.remove(to_strip)
-        return keylists
-
-    def dump_globals(self):
-        result = self.get_engine_keys()
-        print 'Globals:'
-        for i, globals_list in enumerate(result):
-            print 'Engine:', i
-            for global_name in globals_list:
-                print '    ', global_name
-            print
-
-    def remove_global(self, key):
-        """ Delete a global from the engines that is not in our keys. """
+        for internal_key in internal_keys:
+            if internal_key in engine_keys:
+                print 'Cleaning key', internal_key
+                del engine_keys[internal_key]
+            else:
+                # Warning???
+                print 'Internal key:', internal_key, 'not on any engines.'
+    
+    def delete_engine_key(self, key, targets=None):
+        """ Delete the key on the specified engines.
+        No consideration is made of how the Context is aware of the key.
+        """
+        if targets is None:
+            targets = self.targets
         cmd = 'del %s' % key
-        self._execute(cmd)
+        self._execute(cmd, targets=targets)
 
-    def cleanup(self):
-        """ Calling at test case shutdown... """
-        print 'Context.cleanup()...'
-        ##self._dump_key_records()
-        self._delete_all_recorded_keys()
-        ##self._dump_key_records()
-        self.dump_globals()
+    # Cleanup of leftover keys. Normally there should not be any of these.
+
+    def get_leftover_keys(self):
+        """ Get the keys that exist on each of the engines.
+        
+        They are discovered via globals().
+        Keys that the Context created for itself (i.e. _comm_key) are
+        stripped from the result for clarity.
+        The result is a dictionary, keyed by the key, with the value
+        as the list of engine targets where the key exists.
+        """
+        engine_keys = self.get_engine_keys()
+        self.clean_engine_keys(engine_keys)
+        print 'Leftover keys:'
+        return engine_keys
+
+    def purge_keys(self):
+        """ Delete leftover keys from the engines.
+        Return True if any keys were found, False if not. 
+        
+        This is intended to clean up unexpected keys.
+        """
+        leftover_keys = self.get_leftover_keys()
+        leftovers = (len(leftover_keys) > 0)
+        for key in leftover_keys:
+            print 'Leftover key:', key
+            targets = leftover_keys[key]
+            self.delete_engine_key(key, targets)
+        return leftovers
+
+    # End of key management routines.
 
     def _execute(self, lines, targets=None):
         if targets is None:
