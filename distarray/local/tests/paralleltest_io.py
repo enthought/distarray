@@ -40,8 +40,9 @@ class TestHDF5FileIO(MpiTestCase):
         try:
             save_hdf5(output_path, larr0, key=key, mode='w')
 
-            with h5py.File(output_path, 'r') as fp:
-                self.assertTrue("data" in fp)
+            if self.comm.Get_rank() == 0:
+                with h5py.File(output_path, 'r') as fp:
+                    self.assertTrue("data" in fp)
         finally:
             if self.comm.Get_rank() == 0:
                 if os.path.exists(output_path):
