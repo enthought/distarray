@@ -267,8 +267,8 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
             raise ImportError(errmsg)
 
-        subs = self._key_and_push(filename) + (da.key,) + \
-               self._key_and_push(key, mode)
+        subs = (self._key_and_push(filename) + (da.key,) +
+                self._key_and_push(key, mode))
         self._execute(
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
