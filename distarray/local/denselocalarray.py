@@ -889,7 +889,7 @@ def load(filename, comm=None):
     return LocalArray.from_distarray(distbuffer, comm=comm)
 
 
-def save_hdf5(filename, arr, dataset='buffer'):
+def save_hdf5(filename, arr, key='buffer', mode='a'):
     """
     Save a LocalArray to a dataset in an ``.hdf5`` file.
 
@@ -899,8 +899,16 @@ def save_hdf5(filename, arr, dataset='buffer'):
         Name of file to write to.
     arr : LocalArray
         Array to save to a file.
-    dataset : str, optional
-        The dataset to save the LocalArray to (the default is 'buffer').
+    key : str, optional
+        The identifier for the group to save the LocalArray to (the default is
+        'buffer').
+    mode : optional, {'w', 'w-', 'a'}, default 'a'
+        ``'w'``
+            Create file, truncate if exists
+        ``'w-'``
+            Create file, fail if exists
+        ``'a'``
+            Read/write if exists, create otherwise (default)
 
     """
     try:
@@ -909,11 +917,10 @@ def save_hdf5(filename, arr, dataset='buffer'):
         errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
         raise ImportError(errmsg)
 
-    fp = h5py.File(filename, 'w', driver='mpio', comm=arr.comm)
-    dset = fp.create_dataset(dataset, arr.shape, dtype=arr.dtype)
-    for index, value in ndenumerate(arr):
-        dset[index] = value
-    fp.close()
+    with h5py.File(filename, mode, driver='mpio', comm=arr.comm) as fp:
+        dset = fp.create_dataset(key, arr.shape, dtype=arr.dtype)
+        for index, value in ndenumerate(arr):
+            dset[index] = value
 
 
 class GlobalIterator(six.Iterator):

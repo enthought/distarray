@@ -6,17 +6,16 @@ write out temporary files.
 """
 
 import unittest
-import tempfile
+import os
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from os import path
 from six.moves import range
 
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
-from distarray.testing import import_or_skip
+from distarray.testing import import_or_skip, temp_filepath
 
 
 class TestFlatFileIO(unittest.TestCase):
@@ -40,13 +39,17 @@ class TestFlatFileIO(unittest.TestCase):
         dac = Context(self.dv)
         da = dac.empty((100,), dist={0: 'b'})
 
-        output_dir = tempfile.gettempdir()
-        filename = 'outfile'
-        output_path = path.join(output_dir, filename)
-        dac.save(output_path, da)
-        db = dac.load(output_path)
-        self.assertTrue(isinstance(db, DistArray))
-        self.assertEqual(da, db)
+        output_path = temp_filepath()
+        try:
+            dac.save(output_path, da)
+            db = dac.load(output_path)
+            self.assertTrue(isinstance(db, DistArray))
+            self.assertEqual(da, db)
+        finally:
+            for rank in dac.targets:
+                filepath = output_path + "_" + str(rank) + ".dnpy"
+                if os.path.exists(filepath):
+                    os.remove(filepath)
 
 
 class TestHDF5FileIO(unittest.TestCase):
@@ -74,17 +77,21 @@ class TestHDF5FileIO(unittest.TestCase):
         for i in range(datalen):
             da[i] = i
 
-        output_dir = tempfile.gettempdir()
-        filename = 'outfile.hdf5'
-        output_path = path.join(output_dir, filename)
-        dac.save_hdf5(output_path, da)
+        output_path = temp_filepath('.hdf5')
 
-        self.assertTrue(path.exists(output_path))
+        try:
+            dac.save_hdf5(output_path, da)
 
-        with h5py.File(output_path, 'r') as fp:
-            self.assertTrue("buffer" in fp)
-            expected = np.arange(datalen)
-            assert_equal(expected, fp["buffer"])
+            self.assertTrue(os.path.exists(output_path))
+
+            with h5py.File(output_path, 'r') as fp:
+                self.assertTrue("buffer" in fp)
+                expected = np.arange(datalen)
+                assert_equal(expected, fp["buffer"])
+
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
 
     def test_write_3d(self):
         h5py = import_or_skip('h5py')
@@ -100,16 +107,48 @@ class TestHDF5FileIO(unittest.TestCase):
                 for k in range(shape[2]):
                     da[i, j, k] = source[i, j, k]
 
-        output_dir = tempfile.gettempdir()
-        filename = 'outfile.hdf5'
-        output_path = path.join(output_dir, filename)
-        dac.save_hdf5(output_path, da)
+        output_path = temp_filepath('.hdf5')
 
-        self.assertTrue(path.exists(output_path))
+        try:
+            dac.save_hdf5(output_path, da)
 
-        with h5py.File(output_path, 'r') as fp:
-            self.assertTrue("buffer" in fp)
-            assert_allclose(source, fp["buffer"])
+            self.assertTrue(os.path.exists(output_path))
+
+            with h5py.File(output_path, 'r') as fp:
+                self.assertTrue("buffer" in fp)
+                assert_allclose(source, fp["buffer"])
+
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_writing_two_datasets(self):
+        h5py = import_or_skip('h5py')
+
+        datalen = 33
+        dac = Context(self.dv)
+        da = dac.empty((datalen,), dist={0: 'b'})
+
+        for i in range(datalen):
+            da[i] = i
+
+        output_path = temp_filepath('.hdf5')
+
+        try:
+            # make a file, and write to dataset 'foo'
+            with h5py.File(output_path, 'w') as fp:
+                fp['foo'] = np.arange(10)
+
+            # try saving to a different dataset
+            dac.save_hdf5(output_path, da, key='bar')
+
+            with h5py.File(output_path, 'r') as fp:
+                self.assertTrue("foo" in fp)
+                self.assertTrue("bar" in fp)
+
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
 
 
 if __name__ == '__main__':

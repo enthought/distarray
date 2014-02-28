@@ -237,7 +237,7 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def save_hdf5(self, filename, da, dataset='buffer'):
+    def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
         Save a DistArray to a dataset in an ``.hdf5`` file.
 
@@ -247,8 +247,16 @@ class Context(object):
             Name of file to write to.
         da : DistArray
             Array to save to a file.
-        dataset : str, optional
-            The dataset to save the DistArray to (the default is 'buffer').
+        key : str, optional
+            The identifier for the group to save the DistArray to (the default
+            is 'buffer').
+        mode : optional, {'w', 'w-', 'a'}, default 'a'
+            ``'w'``
+                Create file, truncate if exists
+            ``'w-'``
+                Create file, fail if exists
+            ``'a'``
+                Read/write if exists, create otherwise (default)
 
         """
         try:
@@ -260,12 +268,12 @@ class Context(object):
             raise ImportError(errmsg)
 
         subs = self._key_and_push(filename) + (da.key,) + \
-               self._key_and_push(dataset)
+               self._key_and_push(key, mode)
         self._execute(
-            'distarray.local.save_hdf5(%s, %s, %s)' % subs
+            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_hdf5(self, filename, dataset='buffer'):
+    def load_hdf5(self, filename, key='buffer'):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -273,8 +281,9 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dataset : str, optional
-            The dataset to load the DistArray from (the default is 'buffer').
+        key : str, optional
+            The identifier for the group to load the DistArray from (the
+            default is 'buffer').
 
         Returns
         -------
@@ -288,8 +297,9 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        fp = h5py.File(filename, "r")
-        da = self.fromndarray(fp[dataset])
+        with h5py.File(filename, "r") as fp:
+            da = self.fromndarray(fp[key])
+
         return da
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):

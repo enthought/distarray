@@ -1,9 +1,19 @@
 import unittest
 import importlib
+import tempfile
+import os
+from uuid import uuid4
 from functools import wraps
 
 from distarray.error import InvalidCommSizeError
 from distarray.mpiutils import MPI, create_comm_of_size
+
+
+def temp_filepath(extension=''):
+    """Return a random 8-character filename."""
+    tempdir = tempfile.gettempdir()
+    filename = str(uuid4())[:8] + extension
+    return os.path.join(tempdir, filename)
 
 
 def import_or_skip(name):
