@@ -95,9 +95,6 @@ class Context(object):
         self._make_intracomm()
         self._set_engine_rank_mapping()
 
-    def __del__(self):
-        self.close()
-
     def close(self):
         """ Delete our internal _comm_key from the engines. """
         if hasattr(self, '_comm_key'):
