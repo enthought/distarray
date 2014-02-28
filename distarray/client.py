@@ -273,7 +273,8 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_hdf5(self, filename, key='buffer'):
+    def load_hdf5(self, filename, key='buffer', dist={0: 'b'},
+                  grid_shape=None):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -284,6 +285,10 @@ class Context(object):
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
+        dist : dict of int->str, optional
+            Distribution of loaded DistArray.
+        grid_shape : tuple of int, optional
+            Shape of process grid.
 
         Returns
         -------
@@ -298,7 +303,7 @@ class Context(object):
             raise ImportError(errmsg)
 
         with h5py.File(filename, "r") as fp:
-            da = self.fromndarray(fp[key])
+            da = self.fromndarray(fp[key], dist=dist, grid_shape=grid_shape)
 
         return da
 
