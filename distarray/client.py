@@ -96,11 +96,12 @@ class Context(object):
         self._set_engine_rank_mapping()
 
     def __del__(self):
-        """ Delete keys we know about from engines. """
+        self.close()
+
+    def close(self):
+        """ Delete our internal _comm_key from the engines. """
         if hasattr(self, '_comm_key'):
-            print 'Cleaning _comm_key...', self._comm_key
             self.delete_engine_key(self._comm_key)
-        self.cleanup_keys()
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
@@ -141,7 +142,6 @@ class Context(object):
         # involved in the new communicator.
         # NOT saving this key normally so we do not trash it.
         self._comm_key = self._generate_key(targets=[])
-        print 'Created comm key:', self._comm_key
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
@@ -198,7 +198,7 @@ class Context(object):
     def cleanup_keys(self):
         """ Delete all the keys we are tracking from the engines.
         
-        Ideally this should lave no keys remaining on the engines.
+        Ideally this should leave no keys remaining on the engines.
         Any leftovers can be removed via purge_keys().
         """
         keys_to_remove = self.key_records.keys()
@@ -264,7 +264,6 @@ class Context(object):
         """
         engine_keys = self.get_engine_keys()
         self.clean_engine_keys(engine_keys)
-        print 'Leftover keys:'
         return engine_keys
 
     def purge_keys(self):
@@ -276,10 +275,25 @@ class Context(object):
         leftover_keys = self.get_leftover_keys()
         leftovers = (len(leftover_keys) > 0)
         for key in leftover_keys:
-            print 'Leftover key:', key
+            print('Leftover key: %s' % (key))
             targets = leftover_keys[key]
             self.delete_engine_key(key, targets)
         return leftovers
+
+    def cleanup_keys_checked(self, check=True):
+        """ Cleanup all the keys on the engines.
+        
+        This first cleans up the keys we expect to exist.
+        It then notices any remaining keys, and cleans those as well.
+        
+        To make it easy to automatically notice orphaned keys,
+        if check is True, then this will raise an assert if there are
+        any unexpected leftover keys.
+        """
+        self.cleanup_keys()
+        are_leftovers = self.purge_keys()
+        if check:
+            assert (are_leftovers == False), 'Should not be any leftover keys.'
 
     # End of key management routines.
 
