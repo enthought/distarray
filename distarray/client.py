@@ -89,7 +89,8 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local; import distarray.mpiutils")
+        self.view.execute("import distarray.local; import distarray.mpiutils;"
+                          " import numpy")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
