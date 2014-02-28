@@ -189,10 +189,47 @@ class TestDistArrayCreation(unittest.TestCase):
         self.assertEqual(empty_distarray.shape, shape)
 
     def test_fromndarray(self):
-        ndarr = np.arange(16).reshape(4, 4)
+        ndarr = numpy.arange(16).reshape(4, 4)
         distarr = self.context.fromndarray(ndarr)
-        for (i, j), val in np.ndenumerate(ndarr):
+        for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
+
+
+class TestReduceMethods(unittest.TestCase):
+    """Test reduction methods"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.view = cls.client[:]
+        cls.context = Context(cls.view)
+
+        cls.arr = numpy.arange(16).reshape(4, 4)
+        cls.darr = cls.context.fromndarray(cls.arr)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
+
+    def test_sum(self):
+        np_sum = self.arr.sum()
+        da_sum = self.darr.sum()
+        self.assertEqual(da_sum, np_sum)
+
+    def test_mean(self):
+        np_mean = self.arr.mean()
+        da_mean = self.darr.mean()
+        self.assertEqual(da_mean, np_mean)
+
+    def test_var(self):
+        np_var = self.arr.var()
+        da_var = self.darr.var()
+        self.assertEqual(da_var, np_var)
+
+    def test_std(self):
+        np_std = self.arr.std()
+        da_std = self.darr.std()
+        self.assertEqual(da_std, np_std)
 
 
 if __name__ == '__main__':
