@@ -38,9 +38,8 @@ class TestHDF5FileIO(MpiTestCase):
         filename = 'localarray_hdf5test.hdf5'
         output_path = os.path.join(output_dir, filename)
         try:
-            save_hdf5(output_path, larr0, key=key)
+            save_hdf5(output_path, larr0, key=key, mode='w')
 
-            self.assertTrue(os.path.exists(output_path))
             with h5py.File(output_path, 'r') as fp:
                 self.assertTrue("data" in fp)
         finally:

@@ -80,7 +80,7 @@ class TestHDF5FileIO(unittest.TestCase):
         output_path = temp_filepath('.hdf5')
 
         try:
-            dac.save_hdf5(output_path, da)
+            dac.save_hdf5(output_path, da, mode='w')
 
             self.assertTrue(os.path.exists(output_path))
 
@@ -110,7 +110,7 @@ class TestHDF5FileIO(unittest.TestCase):
         output_path = temp_filepath('.hdf5')
 
         try:
-            dac.save_hdf5(output_path, da)
+            dac.save_hdf5(output_path, da, mode='w')
 
             self.assertTrue(os.path.exists(output_path))
 
@@ -140,7 +140,7 @@ class TestHDF5FileIO(unittest.TestCase):
                 fp['foo'] = np.arange(10)
 
             # try saving to a different dataset
-            dac.save_hdf5(output_path, da, key='bar')
+            dac.save_hdf5(output_path, da, key='bar', mode='a')
 
             with h5py.File(output_path, 'r') as fp:
                 self.assertTrue("foo" in fp)
