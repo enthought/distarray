@@ -59,6 +59,34 @@ class TestContextCreation(unittest.TestCase):
         self.assertEqual(set(range(len(dac.targets))),
                          set(dac.target_to_rank.values()))
 
+    # Key management tests.
+
+    def test_create_delete_key(self):
+        """ Check that a key can be created and then destroyed. """
+        dac = Context(self.dv)
+        # Create and push a key/value.
+        key, value = dac._generate_key(), 'test'
+        dac._push({key:value})
+        dac.delete_key(key)
+
+    def test_create_double_delete_key(self):
+        """ Check that a key can be created and then destroyed,
+        but a second delete raises an error. """
+        dac = Context(self.dv)
+        # Create and push a key/value.
+        key, value = dac._generate_key(), 'cheese'
+        dac._push({key:value})
+        dac.delete_key(key)
+        with self.assertRaises(KeyError):
+            dac.delete_key(key)
+
+    def test_delete_invalid_key(self):
+        """ Check that deleting a non-existent key raises an error. """
+        dac = Context(self.dv)
+        bad_key = 'slithery_python'
+        with self.assertRaises(KeyError):
+            dac.delete_key(bad_key)
+
 
 class TestDistArray(unittest.TestCase):
 
@@ -75,6 +103,10 @@ class TestDistArray(unittest.TestCase):
     def tearDownClass(cls):
         cls.client.clear()
         cls.client.close()
+
+    def tearDown(self):
+        # Cleanup keys at the end of each test case.
+        self.dac.cleanup_keys_checked()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -170,6 +202,10 @@ class TestDistArrayCreation(unittest.TestCase):
         """Clear the namespace and close the client connections after
         this class' tests are run."""
         cls.client.close()
+
+    def tearDown(self):
+        # Cleanup keys at the end of each test case.
+        self.context.cleanup_keys_checked()
 
     def test_zeros(self):
         shape = (16, 16)
