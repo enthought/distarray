@@ -6,12 +6,13 @@ Many of these tests require a 4-engine cluster to be running locally.
 
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
 from six.moves import range
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
 
 
-class TestContext(unittest.TestCase):
+class TestContextCreation(unittest.TestCase):
     """Test Context Creation"""
 
     @classmethod
@@ -118,7 +119,7 @@ class TestDistArray(unittest.TestCase):
             self.assertEqual(dap[val], val)
 
     def test_set_and_getitem_nd_block_dist(self):
-        size = 10
+        size = 5
         dap = self.dac.empty((size, size), dist={0: 'b', 1: 'b'})
 
         for row in range(size):
@@ -210,13 +211,13 @@ class TestDistArrayCreation(unittest.TestCase):
         shape = (16, 16)
         zero_distarray = self.context.zeros(shape)
         zero_ndarray = np.zeros(shape)
-        np.testing.assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
+        assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
 
     def test_ones(self):
         shape = (16, 16)
         one_distarray = self.context.ones(shape)
         one_ndarray = np.ones(shape)
-        np.testing.assert_array_equal(one_distarray.tondarray(), one_ndarray)
+        assert_array_equal(one_distarray.tondarray(), one_ndarray)
 
     def test_empty(self):
         shape = (16, 16)
