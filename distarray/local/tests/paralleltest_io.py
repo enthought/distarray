@@ -19,7 +19,16 @@ class TestFlatFileIO(MpiTestCase):
             os.remove(self.output_path)
 
     @comm_null_passes
-    def test_flat_file_save_with_file(self):
+    def test_flat_file_save_with_filename(self):
+        save(self.output_path, self.larr0)
+
+        with open(self.output_path, 'rb') as fp:
+            magic = fp.read(6)
+
+        self.assertTrue(magic == b'\x93DARRY')
+
+    @comm_null_passes
+    def test_flat_file_save_with_file_object(self):
         with open(self.output_path, 'wb') as fp:
             save(fp, self.larr0)
 
@@ -29,33 +38,14 @@ class TestFlatFileIO(MpiTestCase):
         self.assertTrue(magic == b'\x93DARRY')
 
     @comm_null_passes
-    def test_flat_file_save_with_full_filename(self):
-        save(self.output_path, self.larr0)
-
-        with open(self.output_path, 'rb') as fp:
-            magic = fp.read(6)
-
-        self.assertTrue(magic == b'\x93DARRY')
-
-    @comm_null_passes
-    def test_flat_file_save_with_no_ext_filename(self):
-        output_path = self.output_path.replace('.dnpy', '')
-        save(self.output_path, self.larr0)
-
-        with open(self.output_path, 'rb') as fp:
-            magic = fp.read(6)
-
-        self.assertTrue(magic == b'\x93DARRY')
-
-    @comm_null_passes
-    def test_flat_file_save_load_with_full_filename(self):
+    def test_flat_file_save_load_with_filename(self):
         save(self.output_path, self.larr0)
         larr1 = load(self.output_path, comm=self.comm)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
     @comm_null_passes
-    def test_flat_file_save_load_with_file(self):
+    def test_flat_file_save_load_with_file_object(self):
         save(self.output_path, self.larr0)
         with open(self.output_path, 'rb') as fp:
             larr1 = load(fp, comm=self.comm)

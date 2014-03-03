@@ -850,19 +850,14 @@ def save(file, arr):
 
     Parameters
     ----------
-    file : file or str
-        File or filename to which the data is saved.  If file is a file-object,
-        then the filename is unchanged.  If file is a string, a ``.dnpy``
-        extension will be appended to the file name if it does not already have
-        one.
+    file : file-like object or str
+        The file or filename to which the data is to be saved.
     arr : LocalArray
         Array to save to a file.
 
     """
     own_fid = False
     if isinstance(file, six.string_types):
-        if not file.endswith('.dnpy'):
-            file = file + '.dnpy'
         fid = open(file, "wb")
         own_fid = True
     else:
@@ -881,7 +876,7 @@ def load(file, comm=None):
 
     Parameters
     ----------
-    file : file-like object or string
+    file : file-like object or str
         The file to read.  It must support ``seek()`` and ``read()`` methods.
 
     Returns

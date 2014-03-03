@@ -15,6 +15,7 @@ __docformat__ = "restructuredtext en"
 
 import uuid
 import six
+import collections
 
 import numpy as np
 
@@ -222,7 +223,7 @@ class Context(object):
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s + "_" + str(%s.comm_rank), %s)' % subs
+                'distarray.local.save(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -230,7 +231,7 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s[str(%s.comm_rank)], %s)' % subs
+                'distarray.local.save(%s[%s.comm_rank], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -248,8 +249,8 @@ class Context(object):
             engine.  Each engine will load a file named
             ``<name>_<comm_rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its comm_rank.  Having less or more items in this
-            list than processes is an error.
+            corresponding to its rank.  Having less or more items in this list
+            than processes is an error.
 
         Returns
         -------
@@ -273,7 +274,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s[str(%s.Get_rank())], %s)' % subs
+                '%s = distarray.local.load(%s[%s.Get_rank()], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."

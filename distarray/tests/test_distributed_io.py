@@ -35,7 +35,22 @@ class TestFlatFileIO(unittest.TestCase):
     def tearDown(self):
         self.dv.clear()
 
-    def test_read_write(self):
+    def test_save_load_with_filenames(self):
+        dac = Context(self.dv)
+        da = dac.empty((100,), dist={0: 'b'})
+
+        output_paths = [temp_filepath() for target in dac.targets]
+        try:
+            dac.save(output_paths, da)
+            db = dac.load(output_paths)
+            self.assertTrue(isinstance(db, DistArray))
+            self.assertEqual(da, db)
+        finally:
+            for filepath in output_paths:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+
+    def test_save_load_with_prefix(self):
         dac = Context(self.dv)
         da = dac.empty((100,), dist={0: 'b'})
 
