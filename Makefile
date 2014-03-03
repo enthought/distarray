@@ -37,6 +37,7 @@ test_with_coverage: test_client_with_coverage test_engines_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
+	${COVERAGE} combine
 	${COVERAGE} html
 .PHONY: coverage_report
 
