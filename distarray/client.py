@@ -3,7 +3,7 @@
 __docformat__ = "restructuredtext en"
 
 #----------------------------------------------------------------------------
-#  Copyright (C) 2008  The IPython Development Team
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
@@ -72,10 +72,11 @@ class Context(object):
 
     def __init__(self, view=None, targets=None):
         if view is None:
-            c = Client()
-            self.view = c[:]
+            self.client = Client()
+            self.view = self.client[:]
         else:
             self.view = view
+            self.client = view.client
 
         all_targets = self.view.targets
         if targets is None:
@@ -83,13 +84,16 @@ class Context(object):
         else:
             self.targets = []
             for target in targets:
-                assert target in all_targets, "Engine with id %r not registered" % target
-                self.targets.append(target)
+                if target not in all_targets:
+                    raise ValueError("Engine with id %r not registered" % target)
+                else:
+                    self.targets.append(target)
 
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local; import distarray.mpiutils")
+        self.view.execute("import distarray.local; import distarray.mpiutils;"
+                          " import numpy")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()

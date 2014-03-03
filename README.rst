@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/enthought/distarray.png
+.. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
    :target: https://travis-ci.org/enthought/distarray
 
 .. image:: https://coveralls.io/repos/enthought/distarray/badge.png?branch=master
