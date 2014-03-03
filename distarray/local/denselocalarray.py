@@ -844,33 +844,45 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     return la
 
 
-def save(filename, arr):
+def save(file, arr):
     """
     Save a LocalArray to a ``.dnpy`` file.
 
     Parameters
     ----------
-    filename : str
-        Prefix for filename.  File will be saved as
-        ``<filename>_<comm_rank>.dnpy``.
+    file : file or str
+        File or filename to which the data is saved.  If file is a file-object,
+        then the filename is unchanged.  If file is a string, a ``.dnpy``
+        extension will be appended to the file name if it does not already have
+        one.
     arr : LocalArray
         Array to save to a file.
 
     """
-    local_filename = filename + "_" + str(arr.comm_rank) + ".dnpy"
-    with open(local_filename, "wb") as fh:
-        format.write_localarray(fh, arr)
+    own_fid = False
+    if isinstance(file, six.string_types):
+        if not file.endswith('.dnpy'):
+            file = file + '.dnpy'
+        fid = open(file, "wb")
+        own_fid = True
+    else:
+        fid = file
+
+    try:
+        format.write_localarray(fid, arr)
+    finally:
+        if own_fid:
+            fid.close()
 
 
-def load(filename, comm=None):
+def load(file, comm=None):
     """
     Load a LocalArray from a ``.dnpy`` file.
 
     Parameters
     ----------
-    filename : str
-        Prefix for filename.  File loaded will be named
-        ``<filename>_<comm_rank>.dnpy``.
+    file : file-like object or string
+        The file to read.  It must support ``seek()`` and ``read()`` methods.
 
     Returns
     -------
@@ -878,15 +890,20 @@ def load(filename, comm=None):
         A LocalArray encapsulating the data loaded.
 
     """
-    if comm is not None:
-        local_filename = filename + "_" + str(comm.Get_rank()) + ".dnpy"
+    own_fid = False
+    if isinstance(file, six.string_types):
+        fid = open(file, "rb")
+        own_fid = True
     else:
-        local_filename = filename + ".dnpy"
+        fid = file
 
-    with open(local_filename, "rb") as fh:
-        distbuffer = format.read_localarray(fh)
+    try:
+        distbuffer = format.read_localarray(fid)
+        return LocalArray.from_distarray(distbuffer, comm=comm)
 
-    return LocalArray.from_distarray(distbuffer, comm=comm)
+    finally:
+        if own_fid:
+            fid.close()
 
 
 def save_hdf5(filename, arr, key='buffer', mode='a'):
