@@ -65,8 +65,9 @@ class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
-    Overload `get_comm_size` to change the default comm size (default is
-    4).  Overload `more_setUp` to add more to the default `setUp`.
+    Overload `get_comm_size` to change the default comm size (default is 4).
+    Overload `more_setUp` to add more to the default `setUp`.
+    Overload `more_tearDown` to add more to the default `tearDown`.
     """
 
     def get_comm_size(self):
@@ -84,6 +85,10 @@ class MpiTestCase(unittest.TestCase):
         else:
             self.more_setUp()
 
+    def more_tearDown(self):
+        pass
+
     def tearDown(self):
+        self.more_tearDown()
         if self.comm != MPI.COMM_NULL:
             self.comm.Free()
