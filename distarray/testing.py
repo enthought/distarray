@@ -10,7 +10,11 @@ from distarray.mpiutils import MPI, create_comm_of_size
 
 
 def temp_filepath(extension=''):
-    """Return a random 8-character filename."""
+    """Return a randomly generated filename.
+
+    This filename is appended to the directory path returned by
+    `tempfile.gettempdir()` and has `extension` appended to it.
+    """
     tempdir = tempfile.gettempdir()
     filename = str(uuid4())[:8] + extension
     return os.path.join(tempdir, filename)
