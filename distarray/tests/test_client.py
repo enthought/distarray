@@ -10,27 +10,12 @@ from numpy.testing import assert_array_equal
 from six.moves import range
 from IPython.parallel import Client
 from distarray.client import Context, DistArray
+from distarray.testing import IpclusterTestCase
 
 
-class TestContextCreation(unittest.TestCase):
+class TestContextCreation(IpclusterTestCase):
+
     """Test Context Creation"""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Close the client connections"""
-        cls.client.close()
-
-    def tearDown(self):
-        """Clear the namespace on the engines after each test."""
-        self.dv.clear()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
@@ -60,21 +45,10 @@ class TestContextCreation(unittest.TestCase):
                          set(dac.target_to_rank.values()))
 
 
-class TestDistArray(unittest.TestCase):
+class TestDistArray(IpclusterTestCase):
 
-    @classmethod
-    def setUpClass(self):
-        self.client = Client()
-        self.dv = self.client[:]
-        if len(self.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
+    def more_setUp(self):
         self.dac = Context(self.dv)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.clear()
-        cls.client.close()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -153,23 +127,12 @@ class TestDistArray(unittest.TestCase):
         np.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreation(unittest.TestCase):
+class TestDistArrayCreation(IpclusterTestCase):
+
     """Test distarray creation methods"""
 
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-        cls.context = Context(cls.dv)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Clear the namespace and close the client connections after
-        this class' tests are run."""
-        cls.client.close()
+    def more_setUp(self):
+        self.context = Context(self.dv)
 
     def test_zeros(self):
         shape = (16, 16)

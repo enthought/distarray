@@ -8,6 +8,8 @@ from functools import wraps
 from distarray.error import InvalidCommSizeError
 from distarray.mpiutils import MPI, create_comm_of_size
 
+from IPython.parallel import Client
+
 
 def temp_filepath(extension=''):
     """Return a randomly generated filename.
@@ -63,6 +65,38 @@ def comm_null_passes(fn):
             return fn(self, *args, **kwargs)
 
     return wrapper
+
+
+class IpclusterTestCase(unittest.TestCase):
+
+    """Base test class for test cases needing an ipcluster.
+
+    Overload `get_ipcluster_size` to change the default (default is 4).
+    Overload `more_setUp` to add more to the default `setUp`.
+    Overload `more_tearDown` to add more to the default `tearDown`.
+    """
+
+    def get_ipcluster_size(self):
+        return 4
+
+    def more_setUp(self):
+        pass
+
+    def setUp(self):
+        self.client = Client()
+        self.dv = self.client[:]
+        if len(self.dv.targets) < self.get_ipcluster_size():
+            errmsg = 'Must set up an ipcluster with at least {} engines running.'
+            raise unittest.SkipTest(errmsg.format(self.get_ipcluster_size()))
+        self.more_setUp()
+
+    def more_tearDown(self):
+        pass
+
+    def tearDown(self):
+        self.more_tearDown()
+        self.dv.clear()
+        self.client.close()
 
 
 class MpiTestCase(unittest.TestCase):
