@@ -136,7 +136,7 @@ class DistArray(object):
 
     @property
     def shape(self):
-        return self._get_attribute('shape')
+        return self._get_attribute('global_shape')
 
     @property
     def size(self):
