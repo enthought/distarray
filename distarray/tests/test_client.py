@@ -8,7 +8,6 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 from six.moves import range
-from IPython.parallel import Client
 from distarray.client import Context, DistArray
 from distarray.testing import IpclusterTestCase
 
