@@ -99,7 +99,7 @@ class Context(object):
         self._make_intracomm()
         self._set_engine_rank_mapping()
 
-    def close(self):
+    def clear_comm_key(self):
         """ Delete our internal _comm_key from the engines. """
         if hasattr(self, '_comm_key'):
             self.delete_engine_key(self._comm_key)
@@ -141,8 +141,9 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        # NOT saving this key normally so we do not trash it.
-        self._comm_key = self._generate_key(targets=[])
+        # NOT saving this key normally so we do not trash it when cleaning up.
+        # At present this is basically being leaked.
+        self._comm_key = self._generate_key_name()
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
