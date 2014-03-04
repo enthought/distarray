@@ -30,7 +30,7 @@ class TestContextCreation(unittest.TestCase):
 
     def tearDown(self):
         """Clear the namespace on the engines after each test."""
-        self.dv.clear()
+        self.dv.clear(block=True)
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
