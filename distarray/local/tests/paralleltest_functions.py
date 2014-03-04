@@ -3,12 +3,11 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 import distarray.local.denselocalarray as dla
-from distarray.testing import MpiTestCase, comm_null_passes
+from distarray.testing import MpiTestCase
 
 
 class TestFunctions(MpiTestCase):
 
-    @comm_null_passes
     def test_arecompatible(self):
         """Test if two DistArrays are compatible."""
         a = dla.LocalArray((16,16), dtype='int64', comm=self.comm)
@@ -18,7 +17,6 @@ class TestFunctions(MpiTestCase):
         b = dla.LocalArray((16,16), dtype='float32', dist='b', comm=self.comm)
         self.assertEqual(dla.arecompatible(a,b), False)
 
-    @comm_null_passes
     def test_fromfunction(self):
         """Can we build an array using fromfunction and a trivial function?"""
         def f(*global_inds):
@@ -31,7 +29,6 @@ class TestFunctions(MpiTestCase):
         for global_inds, value in dla.ndenumerate(a):
             self.assertEqual(1.0, value)
 
-    @comm_null_passes
     def test_fromfunction_complicated(self):
         """Can we build an array using fromfunction and a nontrivial function."""
         def f(*global_inds):
@@ -47,7 +44,6 @@ class TestFunctions(MpiTestCase):
 
 class TestCreationFuncs(MpiTestCase):
 
-    @comm_null_passes
     def test_zeros(self):
         size = self.get_comm_size()
         nrows = size * 3
@@ -55,7 +51,6 @@ class TestCreationFuncs(MpiTestCase):
         expected = np.zeros((nrows / size, 20))
         assert_array_equal(a.local_array, expected)
 
-    @comm_null_passes
     def test_ones(self):
         size = self.get_comm_size()
         nrows = size * 3

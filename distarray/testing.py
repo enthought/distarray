@@ -2,6 +2,8 @@ import unittest
 import importlib
 import tempfile
 import os
+import six
+import types
 from uuid import uuid4
 from functools import wraps
 
@@ -59,12 +61,55 @@ def comm_null_passes(fn):
 
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        if self.comm == MPI.COMM_NULL:
+        if hasattr(self, 'comm') and (self.comm == MPI.COMM_NULL):
             pass
         else:
             return fn(self, *args, **kwargs)
 
     return wrapper
+
+
+class CommNullPasser(type):
+
+    """Metaclass.
+
+    Applies the `comm_null_passes` decorator to every method on a generated
+    class.
+    """
+
+    def __new__(cls, name, bases, attrs):
+
+        for attr_name, attr_value in six.iteritems(attrs):
+            if isinstance(attr_value, types.FunctionType):
+                attrs[attr_name] = comm_null_passes(attr_value)
+
+        return super(CommNullPasser, cls).__new__(cls, name, bases, attrs)
+
+
+@six.add_metaclass(CommNullPasser)
+class MpiTestCase(unittest.TestCase):
+
+    """Base test class for MPI test cases.
+
+    Overload `get_comm_size` to change the default comm size (default is 4).
+    """
+
+    @classmethod
+    def get_comm_size(cls):
+        return 4
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.comm = create_comm_of_size(cls.get_comm_size())
+        except InvalidCommSizeError:
+            msg = "Must run with comm size >= {}."
+            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.comm != MPI.COMM_NULL:
+            cls.comm.Free()
 
 
 class IpclusterTestCase(unittest.TestCase):
@@ -92,28 +137,3 @@ class IpclusterTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.client.close()
-
-
-class MpiTestCase(unittest.TestCase):
-
-    """Base test class for MPI test cases.
-
-    Overload `get_comm_size` to change the default comm size (default is 4).
-    """
-
-    @classmethod
-    def get_comm_size(cls):
-        return 4
-
-    @classmethod
-    def setUpClass(cls):
-        try:
-            cls.comm = create_comm_of_size(cls.get_comm_size())
-        except InvalidCommSizeError:
-            msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
-
-    @classmethod
-    def tearDownClass(cls):
-        if cls.comm != MPI.COMM_NULL:
-            cls.comm.Free()
