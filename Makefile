@@ -44,6 +44,10 @@ teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 .PHONY: teardown_cluster
 
+purge_cluster:
+	-${PYTHON} distarray/tests/purge_cluster.py
+.PHONY: purge_cluster
+
 clean:
 	-${PYTHON} setup.py clean --all
 	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} -r '{}' +
