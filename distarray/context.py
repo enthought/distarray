@@ -50,10 +50,14 @@ class Context(object):
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
         self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+        self.rank_to_target = {v:k for (k,v) in self.target_to_rank.items()}
 
         # ensure consistency
         assert set(self.targets) == set(self.target_to_rank.keys())
         assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+
+        # reorder self.targets so that the targets are in MPI rank order for the intracomm.
+        self.targets = [self.rank_to_target[i] for i in range(len(self.rank_to_target))]
 
     def _make_intracomm(self):
         def get_rank():
@@ -92,20 +96,14 @@ class Context(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.execute(lines,targets=targets,block=True)
+    def _execute(self, lines):
+        return self.view.execute(lines,targets=self.targets,block=True)
 
-    def _push(self, d, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.push(d,targets=targets,block=True)
+    def _push(self, d):
+        return self.view.push(d,targets=self.targets,block=True)
 
-    def _pull(self, k, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.pull(k,targets=targets,block=True)
+    def _pull(self, k):
+        return self.view.pull(k,targets=self.targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
