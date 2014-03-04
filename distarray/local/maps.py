@@ -97,3 +97,9 @@ class IndexMap(object):
         """Make an IndexMap from a `dimdict` data structure."""
         global_indices_fn = dist_type_to_global_indices[dimdict['dist_type']]
         return IndexMap(global_indices_fn(dimdict))
+
+
+class ClientMap(object):
+
+    def __init__(self, dimdict):
+        pass
