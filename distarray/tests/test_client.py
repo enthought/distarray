@@ -138,14 +138,14 @@ class TestDistArray(IpclusterTestCase):
             dap[20:40] = (11, 12)
 
     def test_get_index_error(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
-            dap[111]
+            dap[11]
 
     def test_set_index_error(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
-            dap[111] = 55
+            dap[11] = 55
 
     def test_iteration(self):
         size = 10
@@ -220,9 +220,19 @@ class TestReduceMethods(unittest.TestCase):
         da_sum = self.darr.sum()
         self.assertEqual(da_sum, np_sum)
 
+    def test_sum_dtype(self):
+        np_sum = self.arr.sum(dtype=int)
+        da_sum = self.darr.sum(dtype=int)
+        self.assertEqual(da_sum, np_sum)
+
     def test_mean(self):
         np_mean = self.arr.mean()
         da_mean = self.darr.mean()
+        self.assertEqual(da_mean, np_mean)
+
+    def test_mean_dtype(self):
+        np_mean = self.arr.mean(dtype=int)
+        da_mean = self.darr.mean(dtype=int)
         self.assertEqual(da_mean, np_mean)
 
     def test_var(self):
@@ -230,9 +240,19 @@ class TestReduceMethods(unittest.TestCase):
         da_var = self.darr.var()
         self.assertEqual(da_var, np_var)
 
+    def test_var_dtype(self):
+        np_var = self.arr.var(dtype=int)
+        da_var = self.darr.var(dtype=int)
+        self.assertEqual(da_var, np_var)
+
     def test_std(self):
         np_std = self.arr.std()
         da_std = self.darr.std()
+        self.assertEqual(da_std, np_std)
+
+    def test_std_dtype(self):
+        np_std = self.arr.std(dtype=int)
+        da_std = self.darr.std(dtype=int)
         self.assertEqual(da_std, np_std)
 
 
