@@ -9,12 +9,12 @@ from distarray.testing import (comm_null_passes, MpiTestCase, import_or_skip,
 class TestFlatFileIO(MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr0 = LocalArray((7,), comm=self.comm)
         self.output_path = temp_filepath(extension='.dnpy')
 
     @comm_null_passes
-    def more_tearDown(self):
+    def tearDown(self):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
 

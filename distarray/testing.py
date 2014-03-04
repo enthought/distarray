@@ -72,23 +72,26 @@ class IpclusterTestCase(unittest.TestCase):
     """Base test class for test cases needing an ipcluster.
 
     Overload `get_ipcluster_size` to change the default (default is 4).
-    Overload `more_setUp` to add more to the default `setUp`.
-    Overload `more_tearDown` to add more to the default `tearDown`.
     """
 
-    def get_ipcluster_size(self):
+    @classmethod
+    def get_ipcluster_size(cls):
         return 4
 
-    def setUp(self):
-        self.client = Client()
-        self.dv = self.client[:]
-        if len(self.dv.targets) < self.get_ipcluster_size():
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.dv = cls.client[:]
+        if len(cls.dv.targets) < cls.get_ipcluster_size():
             errmsg = 'Must set up an ipcluster with at least {} engines running.'
-            raise unittest.SkipTest(errmsg.format(self.get_ipcluster_size()))
+            raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
 
     def tearDown(self):
         self.dv.clear()
-        self.client.close()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
 
 
 class MpiTestCase(unittest.TestCase):
@@ -96,29 +99,21 @@ class MpiTestCase(unittest.TestCase):
     """Base test class for MPI test cases.
 
     Overload `get_comm_size` to change the default comm size (default is 4).
-    Overload `more_setUp` to add more to the default `setUp`.
-    Overload `more_tearDown` to add more to the default `tearDown`.
     """
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 4
 
-    def more_setUp(self):
-        pass
-
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         try:
-            self.comm = create_comm_of_size(self.get_comm_size())
+            cls.comm = create_comm_of_size(cls.get_comm_size())
         except InvalidCommSizeError:
             msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(self.get_comm_size()))
-        else:
-            self.more_setUp()
+            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
 
-    def more_tearDown(self):
-        pass
-
-    def tearDown(self):
-        self.more_tearDown()
-        if self.comm != MPI.COMM_NULL:
-            self.comm.Free()
+    @classmethod
+    def tearDownClass(cls):
+        if cls.comm != MPI.COMM_NULL:
+            cls.comm.Free()

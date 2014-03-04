@@ -16,8 +16,8 @@ class DapTestMixin(object):
 
     """Base test class for DAP test cases.
 
-    You must overload `more_setUp` and add a `self.larr` LocalArray to
-    test.
+    Overload `setUp` and add a `self.larr` LocalArray to run this test suite
+    on.
     """
 
     @comm_null_passes
@@ -121,14 +121,14 @@ class DapTestMixin(object):
 class TestDapBasic(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4,), comm=self.comm)
 
 
 class TestDapUint(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='uint8', grid_shape=(4,),
                                   comm=self.comm, buf=None)
 
@@ -136,7 +136,7 @@ class TestDapUint(DapTestMixin, MpiTestCase):
 class TestDapComplex(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='complex128',
                                   grid_shape=(4,), comm=self.comm, buf=None)
 
@@ -144,7 +144,7 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
 class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
                                   grid_shape=(4,), comm=self.comm)
 
@@ -152,7 +152,7 @@ class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
                                   grid_shape=(4,), comm=self.comm)
 
@@ -160,18 +160,19 @@ class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77), dist={0: 'b', 1: 'b'},
                                   grid_shape=(2, 2), comm=self.comm)
 
 
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 12
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99),
                                   dist={0: 'b', 1: 'b', 2: 'b'},
                                   grid_shape=(2, 2, 3),
@@ -181,7 +182,7 @@ class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 class TestDapCyclicDim(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77),
                                   dist={0: 'c'},
                                   grid_shape=(4,),
@@ -191,7 +192,7 @@ class TestDapCyclicDim(DapTestMixin, MpiTestCase):
 class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77),
                                   dist={0: 'c', 1: 'b'},
                                   grid_shape=(2, 2),
@@ -201,7 +202,7 @@ class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
 class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99), dtype='float64',
                                   dist={0: 'b', 1: 'n', 2: 'c'},
                                   grid_shape=(2, 2),
@@ -210,11 +211,12 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
 class TestDapLopsided(DapTestMixin, MpiTestCase):
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 2
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         if self.comm.Get_rank() == 0:
             arr = np.arange(20)
         elif self.comm.Get_rank() == 1:

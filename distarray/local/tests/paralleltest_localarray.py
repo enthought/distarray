@@ -12,7 +12,7 @@ class TestInit(MpiTestCase):
     """Is the __init__ method working properly?"""
 
     @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr_1d = da.LocalArray((7,), grid_shape=(4,), comm=self.comm,
                                      buf=None)
         self.larr_2d = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
@@ -190,7 +190,8 @@ class TestFromDimData(MpiTestCase):
 
 class TestGridShape(MpiTestCase):
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 12
 
     @comm_null_passes
@@ -212,7 +213,8 @@ class TestDistMatrix(MpiTestCase):
 
     """Test the dist_matrix."""
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 12
 
     @unittest.skip("Plot test.")
