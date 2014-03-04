@@ -47,7 +47,8 @@ class TestContextCreation(IpclusterTestCase):
 
 class TestDistArray(IpclusterTestCase):
 
-    def more_setUp(self):
+    def setUp(self):
+        super(TestDistArray, self).setUp()
         self.dac = Context(self.dv)
 
     def test_set_and_getitem_block_dist(self):
@@ -131,7 +132,8 @@ class TestDistArrayCreation(IpclusterTestCase):
 
     """Test distarray creation methods"""
 
-    def more_setUp(self):
+    def setUp(self):
+        super(TestDistArrayCreation, self).setUp()
         self.context = Context(self.dv)
 
     def test_zeros(self):

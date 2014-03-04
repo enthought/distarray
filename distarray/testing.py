@@ -79,22 +79,14 @@ class IpclusterTestCase(unittest.TestCase):
     def get_ipcluster_size(self):
         return 4
 
-    def more_setUp(self):
-        pass
-
     def setUp(self):
         self.client = Client()
         self.dv = self.client[:]
         if len(self.dv.targets) < self.get_ipcluster_size():
             errmsg = 'Must set up an ipcluster with at least {} engines running.'
             raise unittest.SkipTest(errmsg.format(self.get_ipcluster_size()))
-        self.more_setUp()
-
-    def more_tearDown(self):
-        pass
 
     def tearDown(self):
-        self.more_tearDown()
         self.dv.clear()
         self.client.close()
 
