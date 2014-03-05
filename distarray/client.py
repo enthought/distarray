@@ -318,7 +318,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_hdf5(self, filename, key='buffer', dist={0: 'b'},
+    def load_hdf5(self, filename, dim_data_per_process, key='buffer',
                   grid_shape=None):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
@@ -327,11 +327,12 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
+        dim_data_per_process : iterable of tuples of dict
+            A "dim_data" data structure for every process.  Described here:
+            https://github.com/enthought/distributed-array-protocol
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
-        dist : dict of int->str, optional
-            Distribution of loaded DistArray.
         grid_shape : tuple of int, optional
             Shape of process grid.
 
@@ -347,10 +348,19 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        with h5py.File(filename, "r") as fp:
-            da = self.fromndarray(fp[key], dist=dist, grid_shape=grid_shape)
+        if len(self.targets) != len(dim_data_per_process):
+            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+            raise TypeError(errmsg)
 
-        return da
+        da_key = self._generate_key()
+        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_process) +
+                (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
+
+        self._execute(
+            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
+        )
+
+        return DistArray(da_key, self)
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
         """Convert an ndarray to a distarray."""
