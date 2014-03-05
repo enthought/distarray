@@ -1,3 +1,7 @@
+# encoding: utf-8 ( #135 )
+__docformat__ = "restructuredtext en"
+# Copyright (c) 2008-2014, IPython Development Team and Enthought, Inc.
+
 import unittest
 import numpy
 
