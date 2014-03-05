@@ -27,7 +27,7 @@ class TestDistributedIO(unittest.TestCase):
         cls.client.close()
 
     def tearDown(self):
-        self.dv.clear()
+        self.dv.clear(block=True)
 
     def test_flat_file_read_write(self):
         dac = Context(self.dv)
