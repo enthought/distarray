@@ -101,8 +101,12 @@ class Context(object):
 
     def clear_comm_key(self):
         """ Delete our internal _comm_key from the engines. """
+        # This could perhaps be called in the __exit__ of a context manager
+        # for the Context. This _comm_key is not otherwise cleaned up by
+        # the methods in this class.
         if hasattr(self, '_comm_key'):
             self.delete_engine_key(self._comm_key)
+            self._comm_key = None
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
