@@ -971,13 +971,18 @@ def compact_indices(dim_data):
     def unstructured_index(dd):
         return maps.IndexMap.from_dimdict(dd).global_index
 
-    index_fn = {'n': nodist_index,
-                'b': block_index,
-                'c': cyclic_index,
-                'u': unstructured_index,
-               }
+    index_fn_map = {'n': nodist_index,
+                    'b': block_index,
+                    'c': cyclic_index,
+                    'u': unstructured_index,
+                    }
 
-    return tuple(index_fn[dd['dist_type']](dd) for dd in dim_data)
+    index = []
+    for dd in dim_data:
+        index_fn = index_fn_map[dd['dist_type']]
+        index.append(index_fn(dd))
+
+    return tuple(index)
 
 
 def load_hdf5(filename, dim_data, key='buffer', comm=None):
