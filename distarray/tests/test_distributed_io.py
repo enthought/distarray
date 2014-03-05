@@ -9,7 +9,8 @@ import unittest
 import tempfile
 from os import path
 from IPython.parallel import Client
-from distarray.client import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 
 
 class TestDistributedIO(unittest.TestCase):

@@ -13,4 +13,5 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray.client import *
+from distarray.client import DistArray
+from distarray.context import Context

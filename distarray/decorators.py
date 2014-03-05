@@ -3,7 +3,8 @@ Decorators
 """
 import functools
 
-from distarray.client import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
 
