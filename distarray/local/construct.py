@@ -14,15 +14,17 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
+from itertools import product
+from functools import reduce
 
-import numpy as np
+import numpy
 
 from distarray.mpiutils import MPI
 from distarray.local.error import (DistError, InvalidGridShapeError,
                                    GridShapeError, NullCommError,
                                    InvalidBaseCommError)
 from distarray import utils, mpiutils
-from functools import reduce
+
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
@@ -36,7 +38,6 @@ from functools import reduce
 # of a LocalArray object's lifetime (for example upon a reshape or redist).
 # The simplest and most robust way of insuring this is to get rid of 'self'
 # (which holds all state) and make them standalone functions.
-
 
 def init_base_comm(comm):
     """Sanitize an MPI.comm instance or create one."""
@@ -136,7 +137,7 @@ def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
 
 def optimize_grid_shape(shape, distdims, comm_size):
     ndistdim = len(distdims)
-    if ndistdim==1:
+    if ndistdim == 1:
         grid_shape = (comm_size,)
     else:
         factors = utils.mult_partitions(comm_size, ndistdim)
@@ -146,7 +147,7 @@ def optimize_grid_shape(shape, distdims, comm_size):
             rs_ratio = _compute_grid_ratios(reduced_shape)
             f_ratios = [_compute_grid_ratios(f) for f in factors]
             distances = [rs_ratio-f_ratio for f_ratio in f_ratios]
-            norms = np.array([np.linalg.norm(d,2) for d in distances])
+            norms = numpy.array([numpy.linalg.norm(d, 2) for d in distances])
             index = norms.argmin()
             grid_shape = tuple(factors[index])
         else:
@@ -156,7 +157,9 @@ def optimize_grid_shape(shape, distdims, comm_size):
 
 def _compute_grid_ratios(shape):
     n = len(shape)
-    return np.array([shape[i] / shape[j] for i in range(n)
-                                         for j in range(n)
-                                         if i < j])
+    ratios = []
+    for (i, j) in product(range(n), range(n)):
+        if i < j:
+            ratios.append(shape[i] / shape[j])
 
+    return numpy.array(ratios)

@@ -152,6 +152,12 @@ class TestDistArray(unittest.TestCase):
             dap[i, j] = ndarr[i, j]
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
+    def test_global_tolocal_bug(self):
+        # gh-issue #154
+        dap = self.dac.zeros((3, 3), dist=('n', 'b'))
+        ndarr = numpy.zeros((3, 3))
+        numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
+
 
 class TestDistArrayCreation(unittest.TestCase):
     """Test distarray creation methods"""

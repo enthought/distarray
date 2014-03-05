@@ -141,8 +141,8 @@ def write_localarray(fp, arr, version=(1, 0)):
     fp.write(magic(*version))
 
     distbuffer = arr.__distarray__()
-    metadata  = {'__version__': distbuffer['__version__'],
-                 'dim_data': distbuffer['dim_data'],
+    metadata = {'__version__': distbuffer['__version__'],
+                'dim_data': distbuffer['dim_data'],
                 }
 
     write_array_header_1_0(fp, metadata)
@@ -292,6 +292,6 @@ def _read_bytes(fp, size, error_template="ran out of data"):
             pass
     if len(data) != size:
         msg = "EOF: reading %s, expected %d bytes got %d"
-        raise ValueError(msg %(error_template, size, len(data)))
+        raise ValueError(msg % (error_template, size, len(data)))
     else:
         return data

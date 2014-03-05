@@ -15,11 +15,11 @@ setup_cluster:
 .PHONY: setup_cluster
 
 test_client:
-	${PYTHON} -m unittest discover
+	${PYTHON} -m unittest discover -v
 .PHONY: test_client
 
 test_client_with_coverage:
-	${COVERAGE} run -pm unittest discover
+	${COVERAGE} run -pm unittest discover -v
 .PHONY: test_client_with_coverage
 
 test_engines:
@@ -37,6 +37,7 @@ test_with_coverage: test_client_with_coverage test_engines_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
+	${COVERAGE} combine
 	${COVERAGE} html
 .PHONY: coverage_report
 
