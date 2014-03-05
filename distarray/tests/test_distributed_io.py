@@ -33,7 +33,7 @@ class TestFlatFileIO(unittest.TestCase):
         cls.client.close()
 
     def tearDown(self):
-        self.dv.clear()
+        self.dv.clear(block=True)
 
     def test_save_load_with_filenames(self):
         dac = Context(self.dv)
@@ -82,9 +82,9 @@ class TestHDF5FileIO(unittest.TestCase):
         cls.client.close()
 
     def tearDown(self):
-        self.dv.clear()
+        self.dv.clear(block=True)
 
-    def test_write_block(self):
+    def test_save_block(self):
         h5py = import_or_skip('h5py')
         datalen = 33
         dac = Context(self.dv)
