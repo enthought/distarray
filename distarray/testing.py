@@ -132,7 +132,7 @@ class IpclusterTestCase(unittest.TestCase):
             raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
 
     def tearDown(self):
-        self.dv.clear()
+        self.dv.clear(block=True)
 
     @classmethod
     def tearDownClass(cls):
