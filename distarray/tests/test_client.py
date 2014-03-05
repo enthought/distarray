@@ -9,7 +9,8 @@ import numpy
 from numpy.testing import assert_array_equal
 from six.moves import range
 from IPython.parallel import Client
-from distarray.client import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 
 
 class TestContextCreation(unittest.TestCase):
