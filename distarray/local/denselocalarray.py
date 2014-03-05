@@ -935,6 +935,51 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
             dset[index] = value
 
 
+def compact_indices(dim_data):
+    """Given a `dim_data` structure, return a tuple of compact indices.
+
+    For every dimension in `dim_data`, return a representation of the indicies
+    indicated by that dim_dict; return a slice if possible, else, return the
+    list of global indices.
+
+    Parameters
+    ----------
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol we use only the
+        indexing related keys from this structure here.
+
+    Returns
+    -------
+    index : tuple of slices and/or lists of int
+        Efficient structure usable for indexing into a numpy-array-like data
+        structure.
+
+    """
+    def nodist_index(dd):
+        return slice(None)
+
+    def block_index(dd):
+        return slice(dd['start'], dd['stop'])
+
+    def cyclic_index(dd):
+        if ('block_size' not in dd) or (dd['block_size'] == 1):
+            return slice(dd['start'], None, dd['proc_grid_size'])
+        else:
+            return maps.IndexMap.from_dimdict(dd).global_index
+
+    def unstructured_index(dd):
+        return maps.IndexMap.from_dimdict(dd).global_index
+
+    index_fn = {'n': nodist_index,
+                'b': block_index,
+                'c': cyclic_index,
+                'u': unstructured_index,
+               }
+
+    return tuple(index_fn[dd['dist_type']](dd) for dd in dim_data)
+
+
 def load_hdf5(filename, dim_data, key='buffer', comm=None):
     """
     Load a LocalArray from an ``.hdf5`` file.
@@ -972,29 +1017,7 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
         raise ImportError(errmsg)
 
     #TODO: validate dim_data somehow
-
-    def nodist_index(dd):
-        return slice(None)
-
-    def block_index(dd):
-        return slice(dd['start'], dd['stop'])
-
-    def cyclic_index(dd):
-        if ('block_size' not in dd) or (dd['block_size'] == 1):
-            return slice(dd['start'], None, dd['proc_grid_size'])
-        else:
-            return maps.IndexMap.from_dimdict(dd).global_index
-
-    def unstructured_index(dd):
-        return maps.IndexMap.from_dimdict(dd).global_index
-
-    index_fn = {'n': nodist_index,
-                'b': block_index,
-                'c': cyclic_index,
-                'u': unstructured_index,
-               }
-
-    index = tuple(index_fn[dd['dist_type']](dd) for dd in dim_data)
+    index = compact_indices(dim_data)
 
     with h5py.File(filename, mode='r', driver='mpio', comm=comm) as fp:
         dset = fp[key]
