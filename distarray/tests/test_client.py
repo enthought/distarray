@@ -152,6 +152,12 @@ class TestDistArray(unittest.TestCase):
             dap[i, j] = ndarr[i, j]
         np.testing.assert_array_equal(dap.tondarray(), ndarr)
 
+    def test_global_tolocal_bug(self):
+        # gh-issue #154
+        dap = self.dac.zeros((3, 3), dist=('n', 'b'))
+        ndarr = np.zeros((3, 3))
+        np.testing.assert_array_equal(dap.tondarray(), ndarr)
+
 
 class TestDistArrayCreation(unittest.TestCase):
     """Test distarray creation methods"""
@@ -193,7 +199,6 @@ class TestDistArrayCreation(unittest.TestCase):
         distarr = self.context.fromndarray(ndarr)
         for (i, j), val in np.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

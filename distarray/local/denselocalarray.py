@@ -225,16 +225,14 @@ class DenseLocalArray(BaseLocalArray):
 
     def global_to_local(self, *global_ind):
         local_ind = list(global_ind)
-        for i in range(self.ndistdim):
-            dd = self.distdims[i]
-            local_ind[dd] = self.maps[i].local_index[global_ind[dd]]
+        for dd in self.distdims:
+            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
         return tuple(local_ind)
 
     def local_to_global(self, *local_ind):
         global_ind = list(local_ind)
-        for i in range(self.ndistdim):
-            dd = self.distdims[i]
-            global_ind[dd] = self.maps[i].global_index[local_ind[dd]]
+        for dd in self.distdims:
+            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
         return tuple(global_ind)
 
     def global_limits(self, dim):
