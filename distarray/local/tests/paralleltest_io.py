@@ -61,7 +61,7 @@ class TestHDF5FileIO(MpiTestCase):
         return 2
 
     @comm_null_passes
-    def test_hdf5_file_save(self):
+    def test_save(self):
         h5py = import_or_skip('h5py')
 
         key = "data"
@@ -81,7 +81,7 @@ class TestHDF5FileIO(MpiTestCase):
                     os.remove(output_path)
 
     @comm_null_passes
-    def test_hdf5_file_load_bn(self):
+    def test_load_bn(self):
         h5py = import_or_skip('h5py')
 
         output_dir = tempfile.gettempdir()
@@ -131,7 +131,7 @@ class TestHDF5FileIO(MpiTestCase):
 
 
     @comm_null_passes
-    def test_hdf5_file_load_nc(self):
+    def test_load_nc(self):
         h5py = import_or_skip('h5py')
 
         output_dir = tempfile.gettempdir()
@@ -183,7 +183,7 @@ class TestHDF5FileIO(MpiTestCase):
                     os.remove(output_path)
 
     @comm_null_passes
-    def test_hdf5_file_load_u(self):
+    def test_load_u(self):
         h5py = import_or_skip('h5py')
 
         output_dir = tempfile.gettempdir()
