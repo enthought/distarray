@@ -992,7 +992,7 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
     Parameters
     ----------
     filename : str
-        The file to read.  It must support ``seek()`` and ``read()`` methods.
+        The filename to read.
     dim_data : tuple of dict
         A dict for each dimension, with the data described here:
         https://github.com/enthought/distributed-array-protocol, describing
