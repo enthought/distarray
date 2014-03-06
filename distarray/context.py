@@ -50,15 +50,18 @@ class Context(object):
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
-        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
-        self.rank_to_target = {v:k for (k,v) in self.target_to_rank.items()}
+
+        # mapping target -> rank, rank -> target.
+        target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+        rank_to_target = {v: k for (k, v) in target_to_rank.items()}
 
         # ensure consistency
-        assert set(self.targets) == set(self.target_to_rank.keys())
-        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+        assert set(self.targets) == set(target_to_rank)
+        assert set(range(len(self.targets))) == set(rank_to_target)
 
-        # reorder self.targets so that the targets are in MPI rank order for the intracomm.
-        self.targets = [self.rank_to_target[i] for i in range(len(self.rank_to_target))]
+        # reorder self.targets so that the targets are in MPI rank order for
+        # the intracomm.
+        self.targets = [rank_to_target[i] for i in range(len(rank_to_target))]
 
     def _make_intracomm(self):
         def get_rank():

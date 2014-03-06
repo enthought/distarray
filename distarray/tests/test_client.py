@@ -57,9 +57,7 @@ class TestContextCreation(unittest.TestCase):
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
         dac = Context(self.dv, targets=targets)
-        self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
-        self.assertEqual(set(range(len(dac.targets))),
-                         set(dac.target_to_rank.values()))
+        self.assertEqual(set(dac.targets), set(targets))
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''
