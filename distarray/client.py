@@ -13,16 +13,14 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-import uuid
-from itertools import product
-
 import numpy as np
+
+from itertools import product
 from six import next
 
-from IPython.parallel import Client
 from distarray.utils import has_exactly_one
 
-__all__ = ['DistArray', 'Context']
+__all__ = ['DistArray']
 
 
 #----------------------------------------------------------------------------

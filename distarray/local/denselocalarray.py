@@ -842,33 +842,40 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     return la
 
 
-def save(filename, arr):
+def save(file, arr):
     """
     Save a LocalArray to a ``.dnpy`` file.
 
     Parameters
     ----------
-    filename : str
-        Prefix for filename.  File will be saved as
-        ``<filename>_<comm_rank>.dnpy``.
+    file : file-like object or str
+        The file or filename to which the data is to be saved.
     arr : LocalArray
         Array to save to a file.
 
     """
-    local_filename = filename + "_" + str(arr.comm_rank) + ".dnpy"
-    with open(local_filename, "wb") as fh:
-        format.write_localarray(fh, arr)
+    own_fid = False
+    if isinstance(file, six.string_types):
+        fid = open(file, "wb")
+        own_fid = True
+    else:
+        fid = file
+
+    try:
+        format.write_localarray(fid, arr)
+    finally:
+        if own_fid:
+            fid.close()
 
 
-def load(filename, comm=None):
+def load(file, comm=None):
     """
     Load a LocalArray from a ``.dnpy`` file.
 
     Parameters
     ----------
-    filename : str
-        Prefix for filename.  File loaded will be named
-        ``<filename>_<comm_rank>.dnpy``.
+    file : file-like object or str
+        The file to read.  It must support ``seek()`` and ``read()`` methods.
 
     Returns
     -------
@@ -876,15 +883,54 @@ def load(filename, comm=None):
         A LocalArray encapsulating the data loaded.
 
     """
-    if comm is not None:
-        local_filename = filename + "_" + str(comm.Get_rank()) + ".dnpy"
+    own_fid = False
+    if isinstance(file, six.string_types):
+        fid = open(file, "rb")
+        own_fid = True
     else:
-        local_filename = filename + ".dnpy"
+        fid = file
 
-    with open(local_filename, "rb") as fh:
-        distbuffer = format.read_localarray(fh)
+    try:
+        distbuffer = format.read_localarray(fid)
+        return LocalArray.from_distarray(distbuffer, comm=comm)
 
-    return LocalArray.from_distarray(distbuffer, comm=comm)
+    finally:
+        if own_fid:
+            fid.close()
+
+
+def save_hdf5(filename, arr, key='buffer', mode='a'):
+    """
+    Save a LocalArray to a dataset in an ``.hdf5`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to write to.
+    arr : LocalArray
+        Array to save to a file.
+    key : str, optional
+        The identifier for the group to save the LocalArray to (the default is
+        'buffer').
+    mode : optional, {'w', 'w-', 'a'}, default 'a'
+        ``'w'``
+            Create file, truncate if exists
+        ``'w-'``
+            Create file, fail if exists
+        ``'a'``
+            Read/write if exists, create otherwise (default)
+
+    """
+    try:
+        import h5py
+    except ImportError:
+        errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+        raise ImportError(errmsg)
+
+    with h5py.File(filename, mode, driver='mpio', comm=arr.comm) as fp:
+        dset = fp.create_dataset(key, arr.shape, dtype=arr.dtype)
+        for index, value in ndenumerate(arr):
+            dset[index] = value
 
 
 class GlobalIterator(six.Iterator):
