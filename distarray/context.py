@@ -43,8 +43,9 @@ class Context(object):
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
-        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
-        # self.ranks to this mapping.
+        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  We
+        # reorder self.targets so self.targets[i] is the IPython engine ID that
+        # corresponds to MPI intracomm rank i.
         rank = self._generate_key()
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
