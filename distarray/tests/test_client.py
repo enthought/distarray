@@ -107,7 +107,7 @@ class TestDistArray(unittest.TestCase):
 
     def tearDown(self):
         # Cleanup keys at the end of each test case.
-        self.dac.cleanup_keys_checked()
+        self.dac._cleanup_keys_checked()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -212,7 +212,7 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def tearDown(self):
         # Cleanup keys at the end of each test case.
-        self.context.cleanup_keys_checked()
+        self.context._cleanup_keys_checked()
 
     def test_zeros(self):
         shape = (16, 16)
