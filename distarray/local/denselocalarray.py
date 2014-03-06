@@ -317,7 +317,7 @@ class DenseLocalArray(BaseLocalArray):
     def resize(self, newshape, refcheck=1, order='C'):
         _raise_nie()
 
-    def transpose(self, arg):
+    def transpose(self, axes):
         _raise_nie()
 
     def swapaxes(self, axis1, axis2):
@@ -397,10 +397,10 @@ class DenseLocalArray(BaseLocalArray):
     def take(self, indices, axis=None, out=None, mode='raise'):
         _raise_nie()
 
-    def put(self, values, indices, mode='raise'):
+    def put(self, indices, values, mode='raise'):
         _raise_nie()
 
-    def putmask(self, values, mask):
+    def putmask(self, mask, values):
         _raise_nie()
 
     def repeat(self, repeats, axis=None):
@@ -460,7 +460,6 @@ class DenseLocalArray(BaseLocalArray):
     def trace(self, offset=0, axis1=0, axis2=1, dtype=None, out=None):
         _raise_nie()
 
-    # def sum(self, axis=None, dtype=None, out=None):
     def sum(self, axis=None, dtype=None, out=None):
         return sum(self, dtype)
 
