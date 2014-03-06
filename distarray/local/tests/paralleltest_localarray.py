@@ -4,7 +4,7 @@ import numpy as np
 import distarray.local.denselocalarray as da
 from distarray import utils
 from distarray.testing import comm_null_passes, MpiTestCase
-from distarray.local.error import IncompatibleArrayError
+from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
 class TestInit(MpiTestCase):
@@ -405,6 +405,13 @@ class TestGlobalInd(MpiTestCase):
         answers = 4*[(0,15)]
         limits = a.global_limits(1)
         self.assertEqual(limits, answers[a.comm_rank])
+
+    @comm_null_passes
+    def test_bad_global_limits(self):
+        """ Test that invalid global_limits fails as expected. """
+        a = da.LocalArray((4, 4), comm=self.comm)
+        with self.assertRaises(InvalidDimensionError):
+            a.global_limits(-1)
 
 
 class TestRankCoords(MpiTestCase):
