@@ -1032,6 +1032,42 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
     return LocalArray.from_dim_data(dim_data, dtype=dtype, buf=buf, comm=comm)
 
 
+def load_npy(filename, dim_data, comm=None):
+    """
+    Load a LocalArray from a ``.npy`` file.
+
+    Parameters
+    ----------
+    filename : str
+        The file to read.
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol, describing
+        which portions of the HDF5 file to load into this LocalArray, and with
+        what metadata.
+    comm : MPI comm object, optional
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    """
+    #TODO: validate dim_data somehow
+    index = compact_indices(dim_data)
+    data = np.load(filename, mmap_mode='r')
+    buf = data[index].copy()
+
+    # Apparently there isn't a clean way to close a numpy memmap; it is closed
+    # when the object is garbage-collected.  This stackoverflow question claims
+    # that one can close it with data._mmap.close(), but it seems risky
+    # http://stackoverflow.com/questions/6397495/unmap-of-numpy-memmap
+
+    #data._mmap.close()
+    return LocalArray.from_dim_data(dim_data, dtype=data.dtype, buf=buf,
+                                    comm=comm)
+
+
 class GlobalIterator(six.Iterator):
 
     def __init__(self, arr):
