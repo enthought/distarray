@@ -67,6 +67,70 @@ class TestFlatFileIO(unittest.TestCase):
                     os.remove(filepath)
 
 
+bn_test_data = [
+        ({'size': 2,
+          'dist_type': 'b',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'start': 0,
+          'stop': 1,
+         },
+         {'size': 10,
+          'dist_type': 'n',
+         }),
+        ({'size': 2,
+          'dist_type': 'b',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'start': 1,
+          'stop': 2,
+         },
+         {'size': 10,
+          'dist_type': 'n',
+         })
+     ]
+
+nc_test_data = [
+        ({'size': 10,
+          'dist_type': 'n',
+         },
+         {'size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'start': 0,
+         },),
+
+        ({'size': 10,
+          'dist_type': 'n',
+         },
+         {'size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'start': 1,
+         },)
+     ]
+
+u_test_data = [
+        # Note: indices must be in increasing order
+        #       (restiction of h5py / HDF5)
+
+        ({'size': 20,
+          'dist_type': 'u',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'indices': [0, 3, 4, 6, 8, 10, 13, 15, 18],
+         },),
+        ({'size': 20,
+          'dist_type': 'u',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'indices': [1, 2, 5, 7, 9, 11, 12, 14, 16, 17, 19],
+         },)
+    ]
+
+
 class TestHDF5FileIO(unittest.TestCase):
 
     @classmethod
@@ -177,31 +241,7 @@ class TestHDF5FileIO(unittest.TestCase):
         # load it in with load_hdf5
         dac = Context(self.dv, targets=[0, 1])
 
-        dim_data_0 = (
-            {'size': 2,
-             'dist_type': 'b',
-             'proc_grid_rank': 0,
-             'proc_grid_size': 2,
-             'start': 0,
-             'stop': 1,
-            },
-            {'size': 10,
-             'dist_type': 'n',
-            })
-
-        dim_data_1 = (
-            {'size': 2,
-             'dist_type': 'b',
-             'proc_grid_rank': 1,
-             'proc_grid_size': 2,
-             'start': 1,
-             'stop': 2,
-            },
-            {'size': 10,
-             'dist_type': 'n',
-            })
-
-        dim_datas = [dim_data_0, dim_data_1]
+        dim_datas = bn_test_data
 
         try:
             da = dac.load_hdf5(output_path, dim_datas, key="load_test")
@@ -222,31 +262,7 @@ class TestHDF5FileIO(unittest.TestCase):
         # load it in with load_hdf5
         dac = Context(self.dv, targets=[0, 1])
 
-        dim_data_0 = (
-            {'size': 10,
-             'dist_type': 'n',
-            },
-            {'size': 2,
-             'dist_type': 'c',
-             'proc_grid_rank': 0,
-             'proc_grid_size': 2,
-             'start': 0,
-            },
-            )
-
-        dim_data_1 = (
-            {'size': 10,
-             'dist_type': 'n',
-            },
-            {'size': 2,
-             'dist_type': 'c',
-             'proc_grid_rank': 1,
-             'proc_grid_size': 2,
-             'start': 1,
-            },
-            )
-
-        dim_datas = [dim_data_0, dim_data_1]
+        dim_datas = nc_test_data
 
         try:
             da = dac.load_hdf5(output_path, dim_datas, key="load_test")
@@ -267,25 +283,7 @@ class TestHDF5FileIO(unittest.TestCase):
         # load it in with load_hdf5
         dac = Context(self.dv, targets=[0, 1])
 
-        dim_data_0 = (
-            {'size': 20,
-             'dist_type': 'u',
-             'proc_grid_rank': 0,
-             'proc_grid_size': 2,
-             'indices': [0, 3, 4, 6, 8, 10, 13, 15, 18],
-            },
-            )
-
-        dim_data_1 = (
-            {'size': 20,
-             'dist_type': 'u',
-             'proc_grid_rank': 1,
-             'proc_grid_size': 2,
-             'indices': [1, 2, 5, 7, 9, 11, 12, 14, 16, 17, 19],
-            },
-            )
-
-        dim_datas = [dim_data_0, dim_data_1]
+        dim_datas = u_test_data
 
         try:
             da = dac.load_hdf5(output_path, dim_datas, key="load_test")
