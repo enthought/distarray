@@ -18,7 +18,7 @@ from distarray.client import Context, DistArray
 from distarray.testing import import_or_skip, temp_filepath
 
 
-class TestFlatFileIO(unittest.TestCase):
+class TestDnpyFileIO(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -129,6 +129,79 @@ u_test_data = [
           'indices': [1, 2, 5, 7, 9, 11, 12, 14, 16, 17, 19],
          },)
     ]
+
+
+class TestNpyFileIO(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.dv = cls.client[:]
+        if len(cls.dv.targets) < 2:
+            errmsg = 'Must set up a cluster with at least 4 engines running.'
+            raise unittest.SkipTest(errmsg)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
+
+    def tearDown(self):
+        self.dv.clear(block=True)
+
+    def test_load_bn(self):
+
+        # set up test file
+        output_path = temp_filepath('.npy')
+        expected = np.arange(20).reshape(2, 10)
+        np.save(output_path, expected)
+
+        # load it in with load_npy
+        dac = Context(self.dv, targets=[0, 1])
+        dim_datas = bn_test_data
+
+        try:
+            da = dac.load_npy(output_path, dim_datas)
+            assert_equal(da, expected)
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_load_nc(self):
+
+        # set up test file
+        output_path = temp_filepath('.npy')
+        expected = np.arange(20).reshape(2, 10)
+        np.save(output_path, expected)
+
+        # load it in with load_npy
+        dac = Context(self.dv, targets=[0, 1])
+        dim_datas = nc_test_data
+
+        try:
+            da = dac.load_npy(output_path, dim_datas)
+            assert_equal(da, expected)
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_load_u(self):
+
+        # set up test file
+        output_path = temp_filepath('.npy')
+        expected = np.arange(20)
+        np.save(output_path, expected)
+
+        # load it in with load_npy
+        dac = Context(self.dv, targets=[0, 1])
+
+        dim_datas = u_test_data
+
+        try:
+            da = dac.load_npy(output_path, dim_datas)
+            assert_equal([x for x in da], expected)
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
 
 
 class TestHDF5FileIO(unittest.TestCase):
