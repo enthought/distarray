@@ -76,6 +76,30 @@ class TestInit(MpiTestCase):
         self.larr_2d.set_localarray(la)
         self.larr_2d.get_localarray()
 
+    @comm_null_passes
+    def test_bad_distribution(self):
+        """ Test that invalid distribution type fails as expected. """
+        with self.assertRaises(TypeError):
+            # Invalid distribution type 'x'.
+            larr_bad = da.LocalArray((7,),
+                                     dist={0: 'x'},
+                                     grid_shape=(4,),
+                                     comm=self.comm,
+                                     buf=None)
+
+    @comm_null_passes
+    def test_no_grid_shape(self):
+        """ Create array init when passing no grid_shape. """
+        larr_nogrid = da.LocalArray((7,),
+                                    comm=self.comm,
+                                    buf=None)
+        grid_shape = larr_nogrid.grid_shape
+        # For 1D array as created here, we expect grid_shape
+        # to just be the number of engines as a tuple.
+        max_size = self.comm.Get_size()
+        expected_grid_shape = (max_size,)
+        self.assertEqual(grid_shape, expected_grid_shape)
+
 
 class TestFromDimData(MpiTestCase):
 
