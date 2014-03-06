@@ -31,7 +31,7 @@ class TestDistributedIO(unittest.TestCase):
         self.dv.clear()
 
     def test_flat_file_read_write(self):
-        dac = Context(self.dv)
+        dac = Context(self.client)
         da = dac.empty((100,), dist={0: 'b'})
 
         output_dir = tempfile.gettempdir()

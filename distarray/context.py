@@ -12,14 +12,21 @@ from distarray.client import DistArray
 
 
 class Context(object):
+    '''
+    Context objects manage the setup and communication of the worker processes
+    for DistArray objects.  A DistArray object has a context, and contexts have
+    an MPI intracommunicator that they use to communicate with worker
+    processes.
 
-    def __init__(self, view=None, targets=None):
-        if view is None:
-            self.client = Client()
-            self.view = self.client[:]
-        else:
-            self.view = view
-            self.client = view.client
+    Typically there is just one context object that uses all processes,
+    although it is possible to have more than one context with a different
+    selection of engines.
+
+    '''
+
+    def __init__(self, client=None, targets=None):
+        self.client = client if client is not None else Client()
+        self.view = self.client[:]
 
         all_targets = self.view.targets
         if targets is None:
@@ -35,8 +42,9 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local; import distarray.mpiutils;"
-                          " import numpy")
+        self.view.execute("import distarray.local; "
+                          "import distarray.mpiutils; "
+                          "import numpy")
 
         self._make_intracomm()
         self._set_engine_rank_mapping()
