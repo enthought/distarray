@@ -13,7 +13,8 @@ from numpy.testing import assert_equal, assert_allclose
 
 from six.moves import range
 
-from distarray.client import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
 
 

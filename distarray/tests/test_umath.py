@@ -8,7 +8,7 @@ import unittest
 import warnings
 import numpy as np
 from IPython.parallel import Client
-from distarray.client import Context
+from distarray.context import Context
 from numpy.testing import assert_array_equal
 
 

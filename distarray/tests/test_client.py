@@ -5,10 +5,13 @@ Many of these tests require a 4-engine cluster to be running locally.
 """
 
 import unittest
-import numpy as np
+import numpy
+
 from numpy.testing import assert_array_equal
 from six.moves import range
-from distarray.client import Context, DistArray
+from IPython.parallel import Client
+from distarray.client import DistArray
+from distarray.context import Context
 from distarray.testing import IpclusterTestCase
 
 
@@ -91,7 +94,7 @@ class TestDistArray(IpclusterTestCase):
     @unittest.skip("Slicing not yet implemented.")
     def test_slice_in_setitem_raises_valueerror(self):
         dap = self.dac.empty((100,), dist={0: 'b'})
-        vals = np.random.random(20)
+        vals = numpy.random.random(20)
         with self.assertRaises(NotImplementedError):
             dap[20:40] = vals
 
@@ -120,10 +123,16 @@ class TestDistArray(IpclusterTestCase):
 
     def test_tondarray(self):
         dap = self.dac.empty((3, 3))
-        ndarr = np.arange(9).reshape(3, 3)
-        for (i, j), val in np.ndenumerate(ndarr):
+        ndarr = numpy.arange(9).reshape(3, 3)
+        for (i, j), val in numpy.ndenumerate(ndarr):
             dap[i, j] = ndarr[i, j]
-        np.testing.assert_array_equal(dap.tondarray(), ndarr)
+        numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
+
+    def test_global_tolocal_bug(self):
+        # gh-issue #154
+        dap = self.dac.zeros((3, 3), dist=('n', 'b'))
+        ndarr = numpy.zeros((3, 3))
+        numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
 class TestDistArrayCreation(IpclusterTestCase):
@@ -136,13 +145,13 @@ class TestDistArrayCreation(IpclusterTestCase):
     def test_zeros(self):
         shape = (16, 16)
         zero_distarray = self.context.zeros(shape)
-        zero_ndarray = np.zeros(shape)
+        zero_ndarray = numpy.zeros(shape)
         assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
 
     def test_ones(self):
         shape = (16, 16)
         one_distarray = self.context.ones(shape)
-        one_ndarray = np.ones(shape)
+        one_ndarray = numpy.ones(shape)
         assert_array_equal(one_distarray.tondarray(), one_ndarray)
 
     def test_empty(self):
@@ -151,10 +160,47 @@ class TestDistArrayCreation(IpclusterTestCase):
         self.assertEqual(empty_distarray.shape, shape)
 
     def test_fromndarray(self):
-        ndarr = np.arange(16).reshape(4, 4)
+        ndarr = numpy.arange(16).reshape(4, 4)
         distarr = self.context.fromndarray(ndarr)
-        for (i, j), val in np.ndenumerate(ndarr):
+        for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
+
+
+class TestReduceMethods(unittest.TestCase):
+    """Test reduction methods"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.view = cls.client[:]
+        cls.context = Context(cls.view)
+
+        cls.arr = numpy.arange(16).reshape(4, 4)
+        cls.darr = cls.context.fromndarray(cls.arr)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
+
+    def test_sum(self):
+        np_sum = self.arr.sum()
+        da_sum = self.darr.sum()
+        self.assertEqual(da_sum, np_sum)
+
+    def test_mean(self):
+        np_mean = self.arr.mean()
+        da_mean = self.darr.mean()
+        self.assertEqual(da_mean, np_mean)
+
+    def test_var(self):
+        np_var = self.arr.var()
+        da_var = self.darr.var()
+        self.assertEqual(da_var, np_var)
+
+    def test_std(self):
+        np_std = self.arr.std()
+        da_std = self.darr.std()
+        self.assertEqual(da_std, np_std)
 
 
 if __name__ == '__main__':

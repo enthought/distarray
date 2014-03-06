@@ -48,14 +48,14 @@ class TestCreationFuncs(MpiTestCase):
         size = self.get_comm_size()
         nrows = size * 3
         a = dla.zeros((nrows, 20), comm=self.comm)
-        expected = np.zeros((nrows / size, 20))
+        expected = np.zeros((nrows // size, 20))
         assert_array_equal(a.local_array, expected)
 
     def test_ones(self):
         size = self.get_comm_size()
         nrows = size * 3
         a = dla.ones((nrows, 20), comm=self.comm)
-        expected = np.ones((nrows / size, 20))
+        expected = np.ones((nrows // size, 20))
         assert_array_equal(a.local_array, expected)
 
 
