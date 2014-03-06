@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from IPython.parallel import Client
-from distarray.client import Context
+from distarray.context import Context
 
 
 def purge_cluster_namespaces():
