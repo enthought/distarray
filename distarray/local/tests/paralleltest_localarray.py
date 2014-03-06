@@ -435,6 +435,48 @@ class TestRankCoords(MpiTestCase):
             self.round_trip(la, rank=rank)
 
 
+class TestArrayConversion(MpiTestCase):
+    """ Test array conversion methods. """
+
+    @comm_null_passes
+    def more_setUp(self):
+        self.int_larr = da.LocalArray((4,), dtype=int, comm=self.comm)
+        self.int_larr.fill(3)
+
+    @comm_null_passes
+    def test_astype(self):
+        """ Test that astype() works as expected. """
+        # Convert int array to float.
+        float_larr = self.int_larr.astype(float)
+        for global_inds, value in da.ndenumerate(float_larr):
+            self.assertEqual(value, 3.0)
+            self.assertTrue(isinstance(value, float))
+        # No type specification for a copy.
+        int_larr2 = self.int_larr.astype(None)
+        for global_inds, value in da.ndenumerate(int_larr2):
+            self.assertEqual(value, 3)
+            self.assertTrue(isinstance(value, int))
+
+    @comm_null_passes
+    def test_local_view(self):
+        """ Test that local_views can be created as expected. """
+        # Use dtype=None for same type.
+        self.int_larr.local_view(None)
+        # Use explicit dtype to change type.
+        self.int_larr.local_view(float)
+        # I am not sure what to expect for the values in the view,
+        # so those are not checked here, so this is mainly a coverage test.
+
+    @comm_null_passes
+    def test_view(self):
+        """ Test that views can be created as expected. """
+        # Note this is mainly a coverage test for the same reason as above.
+        # Use dtype=None for same type.
+        self.int_larr.view(None)
+        # Use explicit dtype to change type.
+        self.int_larr.view(float)
+
+
 class TestIndexing(MpiTestCase):
 
     @comm_null_passes
@@ -483,6 +525,101 @@ class TestLocalArrayMethods(MpiTestCase):
         a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         b = da.LocalArray((16,16), dist=('n', 'b'), comm=self.comm)
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
+
+
+class TestNotImplementedArrayMethods(MpiTestCase):
+    """ Test that the not implemented functions can be called,
+    and raise an exception. As these methods get implemented,
+    they will start failing this test, and can be removed from it.
+    Eventually this test case should become empty! """
+
+    @comm_null_passes
+    def more_setUp(self):
+        # These would need real values for a real test,
+        # but since we just check for not implemented,
+        # this is not necessary here.
+        self.larr1 = da.LocalArray((4,), comm=self.comm)
+        self.larr2 = da.LocalArray((4, 4), comm=self.comm)
+        self.larrb = da.LocalArray((4, 4), dtype=bool, comm=self.comm)
+        self.larrc = da.LocalArray((4, 4), dtype=complex, comm=self.comm)
+
+    @comm_null_passes
+    def test_array_shape_manipulation(self):
+        """ Array shape manipulation functions. """
+        with self.assertRaises(NotImplementedError):
+            self.larr2.reshape((8, 2))
+        with self.assertRaises(NotImplementedError):
+            self.larr2.redist((8, 2), newdist={0: 'n'})
+        with self.assertRaises(NotImplementedError):
+            self.larr2.resize((8, 4))
+        with self.assertRaises(NotImplementedError):
+            self.larr2.transpose(None)
+        with self.assertRaises(NotImplementedError):
+            self.larr2.swapaxes(0, 1)
+        with self.assertRaises(NotImplementedError):
+            self.larr2.flatten()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.ravel()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.squeeze()
+
+    @comm_null_passes
+    def test_array_item_selection_323(self):
+        """ Array item selection functions 3.2.3. """
+        with self.assertRaises(NotImplementedError):
+            self.larr2.take([[0, 0], [1, 1]])
+        with self.assertRaises(NotImplementedError):
+            self.larr2.put([0, 3], [42, 27])
+        with self.assertRaises(NotImplementedError):
+            self.larr1.putmask([True, True, False, False], [12, 47])
+        with self.assertRaises(NotImplementedError):
+            self.larr1.repeat(3)
+        with self.assertRaises(NotImplementedError):
+            self.larr1.choose([[1], [2]])
+        with self.assertRaises(NotImplementedError):
+            self.larr1.sort()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.argsort()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.searchsorted([2, 3, 4])
+        with self.assertRaises(NotImplementedError):
+            self.larr1.nonzero()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.compress([False, True, False, True])
+        with self.assertRaises(NotImplementedError):
+            self.larr2.diagonal()
+
+    @comm_null_passes
+    def test_array_item_selection_324(self):
+        """ Array item selection functions 3.2.4. """
+        with self.assertRaises(NotImplementedError):
+            self.larr1.max()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.argmax()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.min()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.argmin()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.ptp()
+        with self.assertRaises(NotImplementedError):
+            self.larr1.clip(2, 5)
+        with self.assertRaises(NotImplementedError):
+            self.larrc.conj()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.round()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.trace()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.cumsum()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.prod()
+        with self.assertRaises(NotImplementedError):
+            self.larr2.cumprod()
+        with self.assertRaises(NotImplementedError):
+            self.larrb.all()
+        with self.assertRaises(NotImplementedError):
+            self.larrb.any()
 
 
 if __name__ == '__main__':
