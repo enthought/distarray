@@ -154,10 +154,10 @@ class Context(object):
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
             engine.  Each engine will save a file named
-            ``<name>_<rank>.dnpy``.
+            ``<name>_<comm_rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  An exception is raised if the length of
-            this list is not the same as the communicator's size.
+            corresponding to its comm_rank.  Having less or more items in this
+            list than processes is an error.
         da : DistArray
             Array to save to files.
 
@@ -186,13 +186,13 @@ class Context(object):
 
         Parameters
         ----------
-        name : str or list of str
+        name : str or list of
             If a str, this is used as the prefix for the filename used by each
             engine.  Each engine will load a file named
-            ``<name>_<rank>.dnpy``.
+            ``<name>_<comm_rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  An exception is raised if the length of
-            this list is not the same as the communicator's size.
+            corresponding to its rank.  Having less or more items in this list
+            than processes is an error.
 
         Returns
         -------
@@ -259,6 +259,40 @@ class Context(object):
         self._execute(
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
+
+    def load_npy(self, filename, dim_data_per_process, grid_shape=None):
+        """
+        Load a DistArray from a dataset in an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to load.
+        dim_data_per_process : iterable of tuples of dict
+            A "dim_data" data structure for every process.  Described here:
+            https://github.com/enthought/distributed-array-protocol
+        grid_shape : tuple of int, optional
+            Shape of process grid.
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded.
+
+        """
+        if len(self.targets) != len(dim_data_per_process):
+            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+            raise TypeError(errmsg)
+
+        da_key = self._generate_key()
+        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_process) +
+                (self._comm_key,) + (self._comm_key,))
+
+        self._execute(
+            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
+        )
+
+        return DistArray(da_key, self)
 
     def load_hdf5(self, filename, dim_data_per_process, key='buffer',
                   grid_shape=None):
