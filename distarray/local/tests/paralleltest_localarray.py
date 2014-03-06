@@ -81,11 +81,8 @@ class TestInit(MpiTestCase):
         """ Test that invalid distribution type fails as expected. """
         with self.assertRaises(TypeError):
             # Invalid distribution type 'x'.
-            larr_bad = da.LocalArray((7,),
-                                     dist={0: 'x'},
-                                     grid_shape=(4,),
-                                     comm=self.comm,
-                                     buf=None)
+            da.LocalArray((7,), dist={0: 'x'}, grid_shape=(4,),
+                          comm=self.comm, buf=None)
 
     @comm_null_passes
     def test_no_grid_shape(self):
@@ -99,6 +96,18 @@ class TestInit(MpiTestCase):
         max_size = self.comm.Get_size()
         expected_grid_shape = (max_size,)
         self.assertEqual(grid_shape, expected_grid_shape)
+
+    @comm_null_passes
+    def test_bad_localarray(self):
+        """ Test that setting a bad local array fails as expected. """
+        self.larr_1d.get_localarray()
+        local_shape = self.larr_1d.local_shape
+        # Double dimension sizes to make an invalid shape.
+        bad_shape = tuple(2 * size for size in local_shape)
+        la = np.random.random(bad_shape)
+        la = np.asarray(la, dtype=self.larr_1d.dtype)
+        with self.assertRaises(ValueError):
+            self.larr_1d.set_localarray(la)
 
 
 class TestFromDimData(MpiTestCase):
@@ -396,6 +405,27 @@ class TestGlobalInd(MpiTestCase):
         answers = 4*[(0,15)]
         limits = a.global_limits(1)
         self.assertEqual(limits, answers[a.comm_rank])
+
+
+class TestRankCoords(MpiTestCase):
+    """ Test the rank <--> coords methods. """
+
+    def round_trip(self, la, rank):
+        """ Test that given a rank, we can get the coords,
+        and then get back to the same rank. """
+        coords = la.rank_to_coords(rank)
+        # I am not sure what to expect for specific values for coords.
+        # Therefore the specific return value is not checked.
+        rank2 = la.coords_to_rank(coords)
+        self.assertEqual(rank, rank2)
+
+    @comm_null_passes
+    def test_rank_coords(self):
+        """ Test that we can go from rank to coords and back. """
+        la = da.LocalArray((4,4), comm=self.comm)
+        max_size = self.comm.Get_size()
+        for rank in range(max_size):
+            self.round_trip(la, rank=rank)
 
 
 class TestIndexing(MpiTestCase):
