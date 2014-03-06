@@ -32,8 +32,10 @@ def start(n=4):
     while True:
         line = cluster.stderr.readline().strip().decode()
         print(line)
-        if (started in line) or (running in line):
+        if (started in line):
             break
+        elif (running in line):
+            raise RuntimeError("ipcluster is already running.")
 
 
 def stop():
@@ -48,6 +50,20 @@ def stop():
         print(line)
         if (stopped in line) or (not_running in line):
             break
+
+
+def restart():
+    """Convenient way to restart an ipcluster."""
+    stop()
+
+    started = False
+    while not started:
+        try:
+            start()
+        except RuntimeError:
+            pass
+        else:
+            started = True
 
 
 if __name__ == '__main__':
