@@ -8,6 +8,7 @@ import unittest
 import numpy
 from numpy.testing import assert_array_equal
 from six.moves import range
+from random import shuffle
 from IPython.parallel import Client
 from distarray.client import DistArray
 from distarray.context import Context
@@ -59,6 +60,13 @@ class TestContextCreation(unittest.TestCase):
         self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
         self.assertEqual(set(range(len(dac.targets))),
                          set(dac.target_to_rank.values()))
+
+    def test_context_target_reordering(self):
+        '''Are contexts' targets reordered in a consistent way?'''
+        orig_targets = self.dv.targets
+        ctx1 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        ctx2 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        self.assertEqual(ctx1.targets, ctx2.targets)
 
 
 class TestDistArray(unittest.TestCase):
