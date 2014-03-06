@@ -237,7 +237,7 @@ class TestHDF5FileIO(MpiTestCase):
         if self.comm.Get_rank() == 0:
             with h5py.File(output_path, 'w') as fp:
                 fp["load_test"] = expected
-        self.comm.Barrier()
+        self.comm.Barrier() # wait until file exists
 
         try:
             la = load_hdf5(output_path, dim_datas[self.comm.Get_rank()],
@@ -266,7 +266,7 @@ class TestHDF5FileIO(MpiTestCase):
         if self.comm.Get_rank() == 0:
             with h5py.File(output_path, 'w') as fp:
                 fp["load_test"] = expected
-        self.comm.Barrier()
+        self.comm.Barrier() # wait until file exists
 
         try:
             la = load_hdf5(output_path, dim_datas[self.comm.Get_rank()],
@@ -294,7 +294,7 @@ class TestHDF5FileIO(MpiTestCase):
         if self.comm.Get_rank() == 0:
             with h5py.File(output_path, 'w') as fp:
                 fp["load_test"] = expected
-        self.comm.Barrier()
+        self.comm.Barrier() # wait until file exists
 
         try:
             rank = self.comm.Get_rank()
