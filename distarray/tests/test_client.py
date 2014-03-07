@@ -8,8 +8,9 @@ import unittest
 
 import numpy
 from numpy.testing import assert_array_equal
-from distarray.externals.six.moves import range
+from random import shuffle
 from IPython.parallel import Client
+from distarray.externals.six.moves import range
 
 from distarray import Context, DistArray
 from distarray.local import LocalArray
@@ -83,9 +84,14 @@ class TestContextCreation(unittest.TestCase):
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
         dac = Context(self.dv, targets=targets)
-        self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
-        self.assertEqual(set(range(len(dac.targets))),
-                         set(dac.target_to_rank.values()))
+        self.assertEqual(set(dac.targets), set(targets))
+
+    def test_context_target_reordering(self):
+        '''Are contexts' targets reordered in a consistent way?'''
+        orig_targets = self.dv.targets
+        ctx1 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        ctx2 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        self.assertEqual(ctx1.targets, ctx2.targets)
 
 
 class TestDistArray(unittest.TestCase):
