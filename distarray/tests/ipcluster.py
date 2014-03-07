@@ -6,7 +6,7 @@ appropriate.
 from __future__ import print_function
 
 import sys
-import six
+from distarray.externals import six
 from time import sleep
 from subprocess import Popen, PIPE
 

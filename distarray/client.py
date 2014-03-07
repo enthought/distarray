@@ -14,9 +14,9 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import numpy as np
+from distarray.externals.six import next
 
 from itertools import product
-from six import next
 
 from distarray.utils import has_exactly_one
 
@@ -136,7 +136,7 @@ class DistArray(object):
 
     @property
     def shape(self):
-        return self._get_attribute('shape')
+        return self._get_attribute('global_shape')
 
     @property
     def size(self):

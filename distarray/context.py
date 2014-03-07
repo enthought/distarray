@@ -4,7 +4,7 @@
 __docformat__ = "restructuredtext en"
 
 import uuid
-import six
+from distarray.externals import six
 import collections
 
 from IPython.parallel import Client
