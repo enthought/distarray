@@ -13,7 +13,12 @@ from distarray.testing import comm_null_passes
 
 
 class TestCreateCommWithList(unittest.TestCase):
-    """ Test creating MPI comm with comm_with_list(). """
+    """ Test creating MPI comm with comm_with_list().
+
+    Note that this is not derived from the usual MpiTestCase.
+    This is so that this can create the MPI communicator using
+    an alternate code path that is otherwise not tested.
+    """
 
     def setUp(self):
         self.nodes = [0, 1, 2, 3]
@@ -34,7 +39,12 @@ class TestCreateCommWithList(unittest.TestCase):
 
 
 class TestCreateInvalidComm(unittest.TestCase):
-    """ Test that invalid MPI comm creation fails as expected. """
+    """ Test that invalid MPI comm creation fails as expected.
+
+    Note that this is not derived from the usual MpiTestCase.
+    This is so that we can exercise some failure cases, which
+    are not triggered by MpiTestCase since it works properly.
+    """
 
     def setUp(self):
         # Get the maximum number of nodes available.
