@@ -8,7 +8,7 @@ import unittest
 import warnings
 import numpy as np
 from IPython.parallel import Client
-from distarray.client import Context
+from distarray.context import Context
 from numpy.testing import assert_array_equal
 
 
@@ -135,6 +135,7 @@ problematic_special_methods = ('__divmod__', '__rdivmod__', '__div__')
 add_checkers(TestDistArrayUfuncs, binary_ops, 'check_binary_op')
 add_checkers(TestDistArrayUfuncs, unary_ops, 'check_unary_op')
 add_checkers(TestSpecialMethods, binary_special_methods, 'check_op')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

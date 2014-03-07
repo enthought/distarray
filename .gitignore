@@ -107,4 +107,4 @@ dist
 
 # Coverage related files #
 ##########################
-.coverage
+.coverage*

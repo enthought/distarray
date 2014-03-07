@@ -2,27 +2,29 @@ from __future__ import print_function
 import numpy
 import distarray
 from distarray.six.moves import input
-from distarray import odin
+from distarray import Context
+from distarray.decorators import local
 from pprint import pprint
 
+context = Context()
 
 numpy.set_printoptions(precision=2, linewidth=1000)
-odin.context.view.execute("import numpy")
+context.view.execute("import numpy")
 
 
-@odin.local
+@local
 def local_sin(da):
     """A simple @local function."""
     return numpy.sin(da)
 
 
-@odin.local
+@local
 def local_sin_plus_50(da):
     """An @local function that calls another."""
     return local_sin(da) + 50
 
 
-@odin.local
+@local
 def global_sum(da):
     """Reproducing the `sum` function in densedistarray."""
     from distarray.mpiutils import MPI
@@ -30,7 +32,7 @@ def global_sum(da):
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    new_distarray = distarray.LocalArray((1,), buf=new_arr)
+    new_distarray = distarray.local.LocalArray((1,), buf=new_arr)
     return new_distarray
 
 
@@ -40,8 +42,8 @@ if __name__ == '__main__':
 
     print()
     input("Basic creation:")
-    dap_b = odin.context.empty((arr_len,), dist={0: 'b'})
-    dap_c = odin.context.empty((arr_len,), dist={0: 'c'})
+    dap_b = context.empty((arr_len,), dist={0: 'b'})
+    dap_c = context.empty((arr_len,), dist={0: 'c'})
     print("dap_b is a ", type(dap_b))
     print("dap_c is a ", type(dap_c))
 

@@ -1,6 +1,6 @@
 import unittest
 
-import distarray as da
+from distarray.local import random as local_random
 from distarray.local import maps
 
 from distarray.testing import MpiTestCase, comm_null_passes
@@ -30,28 +30,28 @@ class TestBasic(MpiTestCase):
 
     @comm_null_passes
     def test_beta(self):
-        la = da.beta(2, 5, size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
     @comm_null_passes
     def test_normal(self):
-        la = da.normal(size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.normal(size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
     @comm_null_passes
     def test_rand(self):
-        la = da.rand(size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.rand(size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
     @comm_null_passes
     def test_randint(self):
-        la = da.randint(0, 10, size=(16, 16), grid_shape=(4,),
+        la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4,),
                         comm=self.comm)
         self.shape_asserts(la)
 
     @comm_null_passes
     def test_randn(self):
-        la = da.randn((16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.randn((16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
 

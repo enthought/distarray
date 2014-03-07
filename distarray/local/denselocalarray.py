@@ -1,10 +1,10 @@
-from __future__ import print_function
 # encoding: utf-8
+from __future__ import print_function, division
 
 __docformat__ = "restructuredtext en"
 
 #----------------------------------------------------------------------------
-#  Copyright (C) 2008  The IPython Development Team
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
@@ -18,11 +18,12 @@ from distarray import six
 import math
 
 import numpy as np
-from distarray.six.moves import zip, range
+from distarray.six.moves import zip
+from collections import Mapping
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct
+from distarray.local import construct, format
 from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -146,7 +147,7 @@ class DenseLocalArray(BaseLocalArray):
         LocalArray.from_dim_data
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
-                                       grid_shape=grid_shape)
+                                         grid_shape=grid_shape)
         super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
                                               buf=buf, comm=comm)
 
@@ -159,7 +160,7 @@ class DenseLocalArray(BaseLocalArray):
 
     @classmethod
     def from_distarray(cls, obj, comm=None):
-        """Make a LocalArray from an `obj` with a `__distarray__` method.
+        """Make a LocalArray from Distributed Array Protocol data structure.
 
         An object that supports the Distributed Array Protocol will have
         a `__distarray__` method that returns the data structure
@@ -169,7 +170,9 @@ class DenseLocalArray(BaseLocalArray):
 
         Parameters
         ----------
-        obj : an object with a `__distarray__` method
+        obj : an object with a `__distarray__` method or a dict
+            If a dict, it must conform to the structure defined by the
+            distributed array protocol.
 
         Returns
         -------
@@ -177,7 +180,10 @@ class DenseLocalArray(BaseLocalArray):
             A LocalArray encapsulating the buffer of the original data.
             No copy is made.
         """
-        distbuffer = obj.__distarray__()
+        if isinstance(obj, Mapping):
+            distbuffer = obj
+        else:
+            distbuffer = obj.__distarray__()
         buf = np.asarray(distbuffer['buffer'])
         dim_data = distbuffer['dim_data']
 
@@ -219,16 +225,14 @@ class DenseLocalArray(BaseLocalArray):
 
     def global_to_local(self, *global_ind):
         local_ind = list(global_ind)
-        for i in range(self.ndistdim):
-            dd = self.distdims[i]
-            local_ind[dd] = self.maps[i].local_index[global_ind[dd]]
+        for dd in self.distdims:
+            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
         return tuple(local_ind)
 
     def local_to_global(self, *local_ind):
         global_ind = list(local_ind)
-        for i in range(self.ndistdim):
-            dd = self.distdims[i]
-            global_ind[dd] = self.maps[i].global_index[local_ind[dd]]
+        for dd in self.distdims:
+            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
         return tuple(global_ind)
 
     def global_limits(self, dim):
@@ -836,6 +840,97 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     la = LocalArray(shape, dtype, dist, grid_shape, comm)
     la.fill(1)
     return la
+
+
+def save(file, arr):
+    """
+    Save a LocalArray to a ``.dnpy`` file.
+
+    Parameters
+    ----------
+    file : file-like object or str
+        The file or filename to which the data is to be saved.
+    arr : LocalArray
+        Array to save to a file.
+
+    """
+    own_fid = False
+    if isinstance(file, six.string_types):
+        fid = open(file, "wb")
+        own_fid = True
+    else:
+        fid = file
+
+    try:
+        format.write_localarray(fid, arr)
+    finally:
+        if own_fid:
+            fid.close()
+
+
+def load(file, comm=None):
+    """
+    Load a LocalArray from a ``.dnpy`` file.
+
+    Parameters
+    ----------
+    file : file-like object or str
+        The file to read.  It must support ``seek()`` and ``read()`` methods.
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    """
+    own_fid = False
+    if isinstance(file, six.string_types):
+        fid = open(file, "rb")
+        own_fid = True
+    else:
+        fid = file
+
+    try:
+        distbuffer = format.read_localarray(fid)
+        return LocalArray.from_distarray(distbuffer, comm=comm)
+
+    finally:
+        if own_fid:
+            fid.close()
+
+
+def save_hdf5(filename, arr, key='buffer', mode='a'):
+    """
+    Save a LocalArray to a dataset in an ``.hdf5`` file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to write to.
+    arr : LocalArray
+        Array to save to a file.
+    key : str, optional
+        The identifier for the group to save the LocalArray to (the default is
+        'buffer').
+    mode : optional, {'w', 'w-', 'a'}, default 'a'
+        ``'w'``
+            Create file, truncate if exists
+        ``'w-'``
+            Create file, fail if exists
+        ``'a'``
+            Read/write if exists, create otherwise (default)
+
+    """
+    try:
+        import h5py
+    except ImportError:
+        errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+        raise ImportError(errmsg)
+
+    with h5py.File(filename, mode, driver='mpio', comm=arr.comm) as fp:
+        dset = fp.create_dataset(key, arr.shape, dtype=arr.dtype)
+        for index, value in ndenumerate(arr):
+            dset[index] = value
 
 
 class GlobalIterator(six.Iterator):
