@@ -2,7 +2,7 @@
 
 import unittest
 
-from distarray.client import Context
+from distarray.context import Context
 from distarray.random import Random
 
 

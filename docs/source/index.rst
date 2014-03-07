@@ -32,6 +32,10 @@ Dependencies for DistArray:
 * Mpi4Py
 * six
 
+Dependencies for optional HDF5 IO:
+
+* h5py built against a parallel-enabled build of HDF5
+
 Dependencies to build the documentation:
 
 * Sphinx
