@@ -14,11 +14,11 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-from distarray import six
+from distarray.externals import six
 import math
 
 import numpy as np
-from distarray.six.moves import zip
+from distarray.externals.six.moves import zip
 from collections import Mapping
 
 from distarray.mpiutils import MPI

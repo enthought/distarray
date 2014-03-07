@@ -14,7 +14,7 @@ __docformat__ = "restructuredtext en"
 #----------------------------------------------------------------------------
 
 import numpy as np
-from distarray.six import next
+from distarray.externals.six import next
 
 from itertools import product
 

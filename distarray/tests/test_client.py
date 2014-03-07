@@ -7,7 +7,7 @@ Many of these tests require a 4-engine cluster to be running locally.
 import unittest
 import numpy
 from numpy.testing import assert_array_equal
-from distarray.six.moves import range
+from distarray.externals.six.moves import range
 from IPython.parallel import Client
 from distarray.client import DistArray
 from distarray.context import Context

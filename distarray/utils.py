@@ -1,5 +1,5 @@
 from math import sqrt
-from distarray.six import next
+from distarray.externals.six import next
 
 
 def divisors(n):
