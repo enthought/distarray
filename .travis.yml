@@ -13,7 +13,6 @@ before_install:
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
     - pip install cython
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git --install-option="--mpi"
-    - pip install six
     - pip install sphinx
     - pip install sphinxcontrib-napoleon
     - pip install coverage

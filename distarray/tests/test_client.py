@@ -8,7 +8,7 @@ import unittest
 
 import numpy
 from numpy.testing import assert_array_equal
-from six.moves import range
+from distarray.externals.six.moves import range
 from IPython.parallel import Client
 
 from distarray import Context, DistArray
