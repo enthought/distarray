@@ -14,11 +14,3 @@ different python packages, including distarray.
 
 - ``bench_dist.py`` Benchmark array distributions and engines numbers
   for calculating the Julia set with Distarray.
-
-The Julia set calculated with c = 0 + .75j and fn = z**2 + c:
-
-    .. image :: julia.png
-
-Output of ``bench_dist.py`` with an i7 and 8GB of ram.
-
-    .. image :: bench.png
