@@ -8,11 +8,38 @@ import unittest
 import numpy
 
 from numpy.testing import assert_array_equal
-from six.moves import range
+from distarray.externals.six.moves import range
 from IPython.parallel import Client
+
 from distarray.client import DistArray
 from distarray.context import Context
+from distarray.local import LocalArray
 from distarray.testing import IpclusterTestCase
+
+
+class TestContext(unittest.TestCase):
+    """Test Context methods"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.view = cls.client[:]
+        cls.context = Context(cls.view)
+        cls.ndarr = numpy.arange(16).reshape(4, 4)
+        cls.darr = cls.context.fromndarray(cls.ndarr)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Close the client connections"""
+        cls.client.close()
+
+    def test_get_localarrays(self):
+        las = self.darr.get_localarrays()
+        self.assertIsInstance(las[0], LocalArray)
+
+    def test_get_ndarrays(self):
+        ndarrs = self.darr.get_ndarrays()
+        self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
 class TestContextCreation(IpclusterTestCase):

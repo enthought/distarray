@@ -61,7 +61,7 @@ module docstring for ``numpy.lib.format``.
 """
 
 import io
-import six
+from distarray.externals import six
 
 import numpy as np
 from numpy.lib.format import write_array_header_1_0

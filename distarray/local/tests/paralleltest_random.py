@@ -8,7 +8,7 @@ class TestBasic(MpiTestCase):
     """Run basic shape/size tests on functions in `random.py`."""
 
     def shape_asserts(self, la):
-        self.assertEqual(la.shape, (16, 16))
+        self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.dist, ('b', 'n'))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.base_comm, self.comm)
@@ -20,7 +20,7 @@ class TestBasic(MpiTestCase):
                          (list(la.grid_shape),
                           [0],[la.comm_rank]))
         self.assertEqual(len(la.maps), 2)
-        self.assertEqual(la.shape, (16, 16))
+        self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (4, 16))
         self.assertEqual(la.local_array.shape, la.local_shape)

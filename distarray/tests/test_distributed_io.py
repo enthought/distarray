@@ -11,7 +11,7 @@ import os
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from six.moves import range
+from distarray.externals.six.moves import range
 
 from distarray.client import DistArray
 from distarray.context import Context

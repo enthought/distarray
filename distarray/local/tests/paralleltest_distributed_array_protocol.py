@@ -1,7 +1,9 @@
 import unittest
-import six
 import numpy as np
+
 import distarray.local
+
+from distarray.externals import six
 from distutils.version import StrictVersion
 from numpy.testing import assert_array_equal
 from distarray.testing import MpiTestCase, CommNullPasser
@@ -73,7 +75,7 @@ class DapTestMixin(object):
 
     def test_round_trip_equality_from_object(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr, comm=self.comm)
-        self.assertEqual(larr.shape, self.larr.shape)
+        self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
@@ -88,7 +90,7 @@ class DapTestMixin(object):
 
     def test_round_trip_equality_from_dict(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr.__distarray__(), comm=self.comm)
-        self.assertEqual(larr.shape, self.larr.shape)
+        self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
