@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import sys
 import six
+from time import sleep
 from subprocess import Popen, PIPE
 
 
@@ -30,8 +31,10 @@ def start(n=4):
     started = "Engines appear to have started successfully"
     running = "CRITICAL | Cluster is already running with"
     while True:
-        line = cluster.stderr.readline().strip().decode()
-        print(line)
+        line = cluster.stderr.readline().decode()
+        if not line:
+            break
+        print(line, end='')
         if (started in line):
             break
         elif (running in line):
@@ -46,8 +49,10 @@ def stop():
     not_running = ("CRITICAL | Could not read pid file, cluster "
                    "is probably not running.")
     while True:
-        line = stopping.stderr.readline().strip().decode()
-        print(line)
+        line = stopping.stderr.readline().decode()
+        if not line:
+            break
+        print(line, end='')
         if (stopped in line) or (not_running in line):
             break
 
@@ -58,6 +63,7 @@ def restart():
 
     started = False
     while not started:
+        sleep(2)
         try:
             start()
         except RuntimeError:
