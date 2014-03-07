@@ -94,7 +94,7 @@ class TestContextCreation(unittest.TestCase):
         dac = Context(self.dv)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
-        dac._push({key:value})
+        dac._push({key: value})
         dac.delete_key(key)
 
     def test_create_double_delete_key(self):
@@ -103,7 +103,7 @@ class TestContextCreation(unittest.TestCase):
         dac = Context(self.dv)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'cheese'
-        dac._push({key:value})
+        dac._push({key: value})
         dac.delete_key(key)
         with self.assertRaises(KeyError):
             dac.delete_key(key)
@@ -121,14 +121,14 @@ class TestContextCreation(unittest.TestCase):
         dac = Context(self.dv)
         # Create and push a tracked key/value.
         key, value = dac._generate_key(), 'test'
-        dac._push({key:value})
+        dac._push({key: value})
         # Create an untracked key.
         key = dac._generate_key_name()
         dac.view.execute('%s = 23' % (key), block=True)
-        # Cleanup. Should print the untracked key.
-        dac._cleanup_all_keys(verbose=True)
+        # Cleanup.
+        dac._cleanup_all_keys()
         # A second cleanup should find nothing left.
-        leftovers = dac._cleanup_all_keys(verbose=True)
+        leftovers = dac._cleanup_all_keys()
         self.assertFalse(leftovers, "Keys left over after cleanup.")
 
 
