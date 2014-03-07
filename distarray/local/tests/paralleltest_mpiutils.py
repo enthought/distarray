@@ -9,47 +9,38 @@ from numpy.testing import assert_array_equal
 import distarray.local.denselocalarray as dla
 from distarray.error import InvalidCommSizeError, InvalidRankError
 from distarray.mpiutils import MPI, create_comm_of_size, create_comm_with_list
-from distarray.testing import comm_null_passes
 
 
-class TestCreateCommWithList(unittest.TestCase):
-    """ Test creating MPI comm with comm_with_list().
+class TestCreateCommAlternate(unittest.TestCase):
+    """ Test alternate code paths for creating the MPI comm.
 
-    Note that this is not derived from the usual MpiTestCase.
-    This is so that this can create the MPI communicator using
-    an alternate code path that is otherwise not tested.
-    """
+    In particular, test creating the comm from a list,
+    and the failure modes for creating the comm.
 
-    def setUp(self):
-        self.nodes = [0, 1, 2, 3]
-        self.comm = create_comm_with_list(self.nodes)
-
-    def tearDown(self):
-        if self.comm != MPI.COMM_NULL:
-            self.comm.Free()
-
-    @comm_null_passes
-    def test_zeros(self):
-        """ A very simple test that really checks the MPI comm. """
-        size = len(self.nodes)
-        nrows = size * 3
-        a = dla.zeros((nrows, 20), comm=self.comm)
-        expected = numpy.zeros((nrows // size, 20))
-        assert_array_equal(a.local_array, expected)
-
-
-class TestCreateInvalidComm(unittest.TestCase):
-    """ Test that invalid MPI comm creation fails as expected.
-
-    Note that this is not derived from the usual MpiTestCase.
-    This is so that we can exercise some failure cases, which
-    are not triggered by MpiTestCase since it works properly.
+    These code paths are not covered normally by MpiTestCase,
+    so this test case does not derive from that usual base class.
     """
 
     def setUp(self):
         # Get the maximum number of nodes available.
         COMM_PRIVATE = MPI.COMM_WORLD.Clone()
         self.max_size = COMM_PRIVATE.Get_size()
+
+    def test_create_comm_with_list(self):
+        """ Test that create_comm_with_list() works correctly. """
+        nodes = [0, 1, 2, 3]
+        comm = create_comm_with_list(nodes)
+        if comm == MPI.COMM_NULL:
+            # Only proceed when not COMM_NULL.
+            return
+        # Run a simple test to confirm this comm works.
+        size = len(nodes)
+        nrows = size * 3
+        a = dla.zeros((nrows, 20), comm=comm)
+        expected = numpy.zeros((nrows // size, 20))
+        assert_array_equal(a.local_array, expected)
+        # Cleanup.
+        comm.Free()
 
     def test_size_too_big(self):
         """ Test that a comm of size with too many nodes will fail. """
