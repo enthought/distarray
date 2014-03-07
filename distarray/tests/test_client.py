@@ -88,6 +88,22 @@ class TestContextCreation(unittest.TestCase):
         with self.assertRaises(KeyError):
             dac.delete_key(bad_key)
 
+    def test_cleanup_keys(self):
+        """ Check the cleanup keys functionality. """
+        # Create a context.
+        dac = Context(self.dv)
+        # Create and push a tracked key/value.
+        key, value = dac._generate_key(), 'test'
+        dac._push({key:value})
+        # Create an untracked key.
+        key = dac._generate_key_name()
+        dac.view.execute('%s = 23' % (key), block=True)
+        # Cleanup. Should print the untracked key.
+        dac._cleanup_all_keys(verbose=True)
+        # A second cleanup should find nothing left.
+        leftovers = dac._cleanup_all_keys(verbose=True)
+        self.assertFalse(leftovers, "Keys left over after cleanup.")
+
 
 class TestDistArray(unittest.TestCase):
 

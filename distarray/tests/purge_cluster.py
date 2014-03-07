@@ -12,7 +12,7 @@ def purge_cluster_namespaces():
     client = Client()
     view = client[:]
     context = Context(view)
-    context._cleanup_keys_checked(False)
+    context._cleanup_all_keys(verbose=True)
 
 
 if __name__ == '__main__':

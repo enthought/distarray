@@ -221,34 +221,37 @@ class Context(object):
         self._clean_engine_keys(engine_keys)
         return engine_keys
 
-    def _purge_keys(self):
+    def _purge_keys(self, verbose=False):
         """ Delete leftover keys from the engines.
         Return True if any keys were found, False if not. 
-        
+
+        If verbose is True, then the leftover keys are
+        printed out as they are found.
+
         This is intended to clean up unexpected keys.
         """
         leftover_keys = self._get_leftover_keys()
         leftovers = (len(leftover_keys) > 0)
         for key in leftover_keys:
-            print('Leftover key: %s' % (key))
+            if verbose:
+                print('Leftover key: %s' % (key))
             targets = leftover_keys[key]
             self._delete_engine_key(key, targets)
         return leftovers
 
-    def _cleanup_keys_checked(self, check=True):
+    def _cleanup_all_keys(self, verbose=False):
         """ Cleanup all the keys on the engines.
-        
+
         This first cleans up the keys we expect to exist.
         It then notices any remaining keys, and cleans those as well.
-        
-        To make it easy to automatically notice orphaned keys,
-        if check is True, then this will raise an assert if there are
-        any unexpected leftover keys.
+
+        This returns True if any unexpected keys were cleaned
+        up, which may indicate that something should be tracked better,
+        or False if nothing unexpected was found.
         """
         self._cleanup_keys()
-        are_leftovers = self._purge_keys()
-        if check:
-            assert (are_leftovers == False), 'Should not be any leftover keys.'
+        are_leftovers = self._purge_keys(verbose=verbose)
+        return are_leftovers
 
     # End of key management routines.
 
