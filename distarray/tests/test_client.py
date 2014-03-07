@@ -105,10 +105,6 @@ class TestDistArray(unittest.TestCase):
         cls.client.clear()
         cls.client.close()
 
-    def tearDown(self):
-        # Cleanup keys at the end of each test case.
-        self.dac._cleanup_keys_checked()
-
     def test_set_and_getitem_block_dist(self):
         size = 10
         dap = self.dac.empty((size,), dist={0: 'b'})
@@ -209,10 +205,6 @@ class TestDistArrayCreation(unittest.TestCase):
         """Clear the namespace and close the client connections after
         this class' tests are run."""
         cls.client.close()
-
-    def tearDown(self):
-        # Cleanup keys at the end of each test case.
-        self.context._cleanup_keys_checked()
 
     def test_zeros(self):
         shape = (16, 16)
