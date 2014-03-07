@@ -21,7 +21,7 @@ class TestInit(MpiTestCase):
     @comm_null_passes
     def test_basic_1d(self):
         """Test basic LocalArray creation."""
-        self.assertEqual(self.larr_1d.shape, (7,))
+        self.assertEqual(self.larr_1d.global_shape, (7,))
         self.assertEqual(self.larr_1d.dist, ('b',))
         self.assertEqual(self.larr_1d.grid_shape, (4,))
         self.assertEqual(self.larr_1d.base_comm, self.comm)
@@ -33,7 +33,7 @@ class TestInit(MpiTestCase):
                          (list(self.larr_1d.grid_shape),
                           [0], [self.larr_1d.comm_rank]))
         self.assertEqual(len(self.larr_1d.maps), 1)
-        self.assertEqual(self.larr_1d.shape, (7,))
+        self.assertEqual(self.larr_1d.global_shape, (7,))
         if self.larr_1d.comm_rank == 3:
             self.assertEqual(self.larr_1d.local_shape, (1,))
         else:
@@ -46,7 +46,7 @@ class TestInit(MpiTestCase):
     @comm_null_passes
     def test_basic_2d(self):
         """Test basic LocalArray creation."""
-        self.assertEqual(self.larr_2d.shape, (16,16))
+        self.assertEqual(self.larr_2d.global_shape, (16,16))
         self.assertEqual(self.larr_2d.dist, ('b', 'n'))
         self.assertEqual(self.larr_2d.grid_shape, (4,))
         self.assertEqual(self.larr_2d.base_comm, self.comm)
@@ -59,7 +59,7 @@ class TestInit(MpiTestCase):
                           [0], [self.larr_2d.comm_rank]))
         self.assertEqual(len(self.larr_2d.maps), 2)
         self.assertEqual(self.larr_2d.grid_shape, (4,))
-        self.assertEqual(self.larr_2d.shape, (16, 16))
+        self.assertEqual(self.larr_2d.global_shape, (16, 16))
         self.assertEqual(self.larr_2d.local_shape, (4, 16))
         self.assertEqual(self.larr_2d.local_size,
                          np.array(self.larr_2d.local_shape).prod())
@@ -113,7 +113,7 @@ class TestInit(MpiTestCase):
 class TestFromDimData(MpiTestCase):
 
     def assert_alike(self, l0, l1):
-        self.assertEqual(l0.shape, l1.shape)
+        self.assertEqual(l0.global_shape, l1.global_shape)
         self.assertEqual(l0.dist, l1.dist)
         self.assertEqual(l0.grid_shape, l1.grid_shape)
         self.assertEqual(l0.base_comm, l1.base_comm)
@@ -123,7 +123,6 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(l0.distdims, l1.distdims)
         self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
         self.assertEqual(len(l0.maps), len(l1.maps))
-        self.assertEqual(l0.shape, l1.shape)
         self.assertEqual(l0.grid_shape, l1.grid_shape)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_array.shape, l1.local_array.shape)
@@ -270,21 +269,21 @@ class TestLocalInd(MpiTestCase):
     def test_block_simple(self):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((4, 4), comm=self.comm)
-        self.assertEqual(la.shape, (4, 4))
+        self.assertEqual(la.global_shape, (4, 4))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (1, 4))
         row_result = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
         row = la.comm_rank
         calc_row_result = [la.global_to_local(row, col) for col in
-                           range(la.shape[1])]
+                           range(la.global_shape[1])]
         self.assertEqual(row_result, calc_row_result)
 
     @comm_null_passes
     def test_block_complex(self):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((8, 2), comm=self.comm)
-        self.assertEqual(la.shape, (8, 2))
+        self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (2, 2))
         expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]
@@ -305,7 +304,7 @@ class TestLocalInd(MpiTestCase):
     def test_cyclic_simple(self):
         """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((10,), dist={0: 'c'}, comm=self.comm)
-        self.assertEqual(la.shape, (10,))
+        self.assertEqual(la.global_shape, (10,))
         self.assertEqual(la.grid_shape, (4,))
 
         if la.comm_rank == 0:
@@ -335,7 +334,7 @@ class TestLocalInd(MpiTestCase):
     def test_cyclic_complex(self):
         """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
-        self.assertEqual(la.shape, (8, 2))
+        self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (2, 2))
 

@@ -79,7 +79,7 @@ class DapTestMixin(object):
     @comm_null_passes
     def test_round_trip_equality_from_object(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr, comm=self.comm)
-        self.assertEqual(larr.shape, self.larr.shape)
+        self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
@@ -95,7 +95,7 @@ class DapTestMixin(object):
     @comm_null_passes
     def test_round_trip_equality_from_dict(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr.__distarray__(), comm=self.comm)
-        self.assertEqual(larr.shape, self.larr.shape)
+        self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
