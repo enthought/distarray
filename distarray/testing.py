@@ -58,7 +58,10 @@ def import_or_skip(name):
 
 
 def comm_null_passes(fn):
-    """Decorator. If `self.comm` is COMM_NULL, pass."""
+    """Decorator. If `self.comm` is COMM_NULL, pass.
+
+    This allows our tests to pass on processes that have nothing to do.
+    """
 
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
