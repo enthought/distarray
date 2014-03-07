@@ -3,14 +3,15 @@ import importlib
 import tempfile
 import os
 import types
+
 from uuid import uuid4
 from functools import wraps
-
 from distarray.externals import six
-from distarray.error import InvalidCommSizeError
-from distarray.mpiutils import MPI, create_comm_of_size
 
 from IPython.parallel import Client
+
+from distarray.error import InvalidCommSizeError
+from distarray.mpiutils import MPI, create_comm_of_size
 
 
 def temp_filepath(extension=''):
