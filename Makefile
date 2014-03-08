@@ -45,6 +45,10 @@ teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 .PHONY: teardown_cluster
 
+restart_cluster:
+	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
+.PHONY: restart_cluster
+
 purge_cluster:
 	-${PYTHON} distarray/tests/purge_cluster.py
 .PHONY: purge_cluster

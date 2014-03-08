@@ -11,7 +11,7 @@ __docformat__ = "restructuredtext en"
 #  the file COPYING, distributed as part of this software.
 #----------------------------------------------------------------------------
 
-from six.moves import range, zip
+from distarray.externals.six.moves import range, zip
 from math import ceil
 
 

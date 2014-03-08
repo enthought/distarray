@@ -1,6 +1,6 @@
 import unittest
 
-from six.moves import range
+from distarray.externals.six.moves import range
 from distarray.local.base import BaseLocalArray
 
 
@@ -26,9 +26,9 @@ class TestBaseLocalArray(unittest.TestCase):
         larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1,))
-        self.assertEqual(larr.shape, (16, 16))
+        self.assertEqual(larr.global_shape, (16, 16))
         self.assertEqual(len(larr.maps), 2)
-        self.assertEqual(larr.local_array.shape, larr.shape)
+        self.assertEqual(larr.local_array.shape, larr.global_shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
         self.assertEqual(larr.dist, ('b', 'n'))
@@ -62,9 +62,9 @@ class TestBaseLocalArray(unittest.TestCase):
         larr = BaseLocalArray(dim_data)
 
         self.assertEqual(larr.grid_shape, (1, 1))
-        self.assertEqual(larr.shape, (16, 16))
+        self.assertEqual(larr.global_shape, (16, 16))
         self.assertEqual(len(larr.maps), 2)
-        self.assertEqual(larr.local_array.shape, larr.shape)
+        self.assertEqual(larr.local_array.shape, larr.global_shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
         self.assertEqual(larr.dist, ('c', 'b'))

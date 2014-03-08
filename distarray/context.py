@@ -4,7 +4,7 @@
 __docformat__ = "restructuredtext en"
 
 import uuid
-import six
+from distarray.externals import six
 import collections
 
 from IPython.parallel import Client
@@ -60,18 +60,27 @@ class Context(object):
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
-        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  Set
-        # self.ranks to this mapping.
+        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  We
+        # reorder self.targets so self.targets[i] is the IPython engine ID that
+        # corresponds to MPI intracomm rank i.
         rank = self._generate_key()
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
-        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+
+        # mapping target -> rank, rank -> target.
+        target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+        rank_to_target = {v: k for (k, v) in target_to_rank.items()}
+        # Probably wont need this...
         self.delete_key(rank)
 
         # ensure consistency
-        assert set(self.targets) == set(self.target_to_rank.keys())
-        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+        assert set(self.targets) == set(target_to_rank)
+        assert set(range(len(self.targets))) == set(rank_to_target)
+
+        # reorder self.targets so that the targets are in MPI rank order for
+        # the intracomm.
+        self.targets = [rank_to_target[i] for i in range(len(rank_to_target))]
 
     def _make_intracomm(self):
         def get_rank():
@@ -255,20 +264,14 @@ class Context(object):
 
     # End of key management routines.
 
-    def _execute(self, lines, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.execute(lines,targets=targets,block=True)
+    def _execute(self, lines):
+        return self.view.execute(lines,targets=self.targets,block=True)
 
-    def _push(self, d, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.push(d,targets=targets,block=True)
+    def _push(self, d):
+        return self.view.push(d,targets=self.targets,block=True)
 
-    def _pull(self, k, targets=None):
-        if targets is None:
-            targets = self.targets
-        return self.view.pull(k,targets=targets,block=True)
+    def _pull(self, k):
+        return self.view.pull(k,targets=self.targets,block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
