@@ -2,8 +2,13 @@ import unittest
 import importlib
 import tempfile
 import os
+import types
+
 from uuid import uuid4
 from functools import wraps
+from distarray.externals import six
+
+from IPython.parallel import Client
 
 from distarray.error import InvalidCommSizeError
 from distarray.mpiutils import MPI, create_comm_of_size
@@ -53,11 +58,14 @@ def import_or_skip(name):
 
 
 def comm_null_passes(fn):
-    """Decorator. If `self.comm` is COMM_NULL, pass."""
+    """Decorator. If `self.comm` is COMM_NULL, pass.
+
+    This allows our tests to pass on processes that have nothing to do.
+    """
 
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        if self.comm == MPI.COMM_NULL:
+        if hasattr(self, 'comm') and (self.comm == MPI.COMM_NULL):
             pass
         else:
             return fn(self, *args, **kwargs)
@@ -65,34 +73,70 @@ def comm_null_passes(fn):
     return wrapper
 
 
+class CommNullPasser(type):
+
+    """Metaclass.
+
+    Applies the `comm_null_passes` decorator to every method on a generated
+    class.
+    """
+
+    def __new__(cls, name, bases, attrs):
+
+        for attr_name, attr_value in six.iteritems(attrs):
+            if isinstance(attr_value, types.FunctionType):
+                attrs[attr_name] = comm_null_passes(attr_value)
+
+        return super(CommNullPasser, cls).__new__(cls, name, bases, attrs)
+
+
+@six.add_metaclass(CommNullPasser)
 class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
     Overload `get_comm_size` to change the default comm size (default is 4).
-    Overload `more_setUp` to add more to the default `setUp`.
-    Overload `more_tearDown` to add more to the default `tearDown`.
     """
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 4
 
-    def more_setUp(self):
-        pass
-
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         try:
-            self.comm = create_comm_of_size(self.get_comm_size())
+            cls.comm = create_comm_of_size(cls.get_comm_size())
         except InvalidCommSizeError:
             msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(self.get_comm_size()))
-        else:
-            self.more_setUp()
+            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
 
-    def more_tearDown(self):
-        pass
+    @classmethod
+    def tearDownClass(cls):
+        if cls.comm != MPI.COMM_NULL:
+            cls.comm.Free()
+
+
+class IpclusterTestCase(unittest.TestCase):
+
+    """Base test class for test cases needing an ipcluster.
+
+    Overload `get_ipcluster_size` to change the default (default is 4).
+    """
+
+    @classmethod
+    def get_ipcluster_size(cls):
+        return 4
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        if len(cls.client) < cls.get_ipcluster_size():
+            errmsg = 'Tests need an ipcluster with at least {} engines running.'
+            raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
 
     def tearDown(self):
-        self.more_tearDown()
-        if self.comm != MPI.COMM_NULL:
-            self.comm.Free()
+        self.client.clear(block=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()

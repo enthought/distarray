@@ -7,15 +7,17 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
 import unittest
-
 import numpy
+
 from numpy.testing import assert_array_equal
 from random import shuffle
 from IPython.parallel import Client
 from distarray.externals.six.moves import range
 
-from distarray import Context, DistArray
+from distarray.client import DistArray
+from distarray.context import Context
 from distarray.local import LocalArray
+from distarray.testing import IpclusterTestCase
 
 
 class TestContext(unittest.TestCase):
@@ -42,24 +44,8 @@ class TestContext(unittest.TestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(unittest.TestCase):
+class TestContextCreation(IpclusterTestCase):
     """Test Context Creation"""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        if len(cls.client) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Close the client connections"""
-        cls.client.close()
-
-    def tearDown(self):
-        """Clear the namespace on the engines after each test."""
-        self.client.clear()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
@@ -85,20 +71,10 @@ class TestContextCreation(unittest.TestCase):
         self.assertEqual(ctx1.targets, ctx2.targets)
 
 
-class TestDistArray(unittest.TestCase):
+class TestDistArray(IpclusterTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        if len(cls.client) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-        cls.dac = Context(cls.client)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.clear()
-        cls.client.close()
+    def setUp(self):
+        self.dac = Context(self.client)
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -183,22 +159,12 @@ class TestDistArray(unittest.TestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreation(unittest.TestCase):
+class TestDistArrayCreation(IpclusterTestCase):
+
     """Test distarray creation methods"""
 
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        if len(cls.client) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-        cls.context = Context(cls.client)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Clear the namespace and close the client connections after
-        this class' tests are run."""
-        cls.client.close()
+    def setUp(self):
+        self.context = Context(self.client)
 
     def test_zeros(self):
         shape = (16, 16)

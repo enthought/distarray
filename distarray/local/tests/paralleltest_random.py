@@ -1,9 +1,7 @@
 import unittest
 
 from distarray.local import random as local_random
-from distarray.local import maps
-
-from distarray.testing import MpiTestCase, comm_null_passes
+from distarray.testing import MpiTestCase
 
 
 class TestBasic(MpiTestCase):
@@ -28,28 +26,23 @@ class TestBasic(MpiTestCase):
         self.assertEqual(la.local_array.shape, la.local_shape)
         self.assertEqual(la.local_array.dtype, la.dtype)
 
-    @comm_null_passes
     def test_beta(self):
         la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
-    @comm_null_passes
     def test_normal(self):
         la = local_random.normal(size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
-    @comm_null_passes
     def test_rand(self):
         la = local_random.rand(size=(16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)
 
-    @comm_null_passes
     def test_randint(self):
         la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4,),
                         comm=self.comm)
         self.shape_asserts(la)
 
-    @comm_null_passes
     def test_randn(self):
         la = local_random.randn((16, 16), grid_shape=(4,), comm=self.comm)
         self.shape_asserts(la)

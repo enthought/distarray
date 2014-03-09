@@ -7,12 +7,11 @@ import distarray.local as dc
 import distarray.local.denselocalarray as da
 from distarray.local import denselocalarray
 from distarray.local.error import IncompatibleArrayError
-from distarray.testing import MpiTestCase, comm_null_passes
+from distarray.testing import MpiTestCase
 
 
 class TestUnaryUFunc(MpiTestCase):
 
-    @comm_null_passes
     def test_negative(self):
         """See if unary ufunc works for a LocalArray."""
         a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
@@ -33,7 +32,6 @@ class TestUnaryUFunc(MpiTestCase):
 
 class TestBinaryUFunc(MpiTestCase):
 
-    @comm_null_passes
     def test_add(self):
         """See if binary ufunc works for a LocalArray."""
         a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
@@ -84,7 +82,6 @@ def add_checkers(cls, ops, bad_ops):
 
 class TestLocalArrayUnaryOperations(MpiTestCase):
 
-    @comm_null_passes
     def check_op(self, op):
         """Check unary operation for success.
 
@@ -102,7 +99,6 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
 
 class TestLocalArrayBinaryOperations(MpiTestCase):
 
-    @comm_null_passes
     def check_op(self, op):
         """Check binary operation for success.
 
