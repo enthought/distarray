@@ -1,7 +1,9 @@
 """
-Tests for distarray.client
+Tests for distarray's client-side API.
 
-Many of these tests require a 4-engine cluster to be running locally.
+Many of these tests require a 4-engine cluster to be running locally.  The
+engines should be launched with MPI, using the MPIEngineSetLauncher.
+
 """
 
 import unittest
