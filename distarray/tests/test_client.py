@@ -20,8 +20,7 @@ class TestContextCreation(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
+        if len(cls.client) < 4:
             errmsg = 'Must set up a cluster with at least 4 engines running.'
             raise unittest.SkipTest(errmsg)
 
@@ -32,7 +31,7 @@ class TestContextCreation(unittest.TestCase):
 
     def tearDown(self):
         """Clear the namespace on the engines after each test."""
-        self.dv.clear()
+        self.client.clear()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
@@ -54,7 +53,7 @@ class TestContextCreation(unittest.TestCase):
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''
-        orig_targets = self.dv.targets
+        orig_targets = self.client.ids
         ctx1 = Context(self.client, targets=shuffle(orig_targets[:]))
         ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
@@ -63,13 +62,12 @@ class TestContextCreation(unittest.TestCase):
 class TestDistArray(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.client = Client()
-        self.dv = self.client[:]
-        if len(self.dv.targets) < 4:
+    def setUpClass(cls):
+        cls.client = Client()
+        if len(cls.client) < 4:
             errmsg = 'Must set up a cluster with at least 4 engines running.'
             raise unittest.SkipTest(errmsg)
-        self.dac = Context(self.client)
+        cls.dac = Context(cls.client)
 
     @classmethod
     def tearDownClass(cls):
@@ -165,8 +163,7 @@ class TestDistArrayCreation(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
+        if len(cls.client) < 4:
             errmsg = 'Must set up a cluster with at least 4 engines running.'
             raise unittest.SkipTest(errmsg)
         cls.context = Context(cls.client)
