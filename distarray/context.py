@@ -4,6 +4,8 @@
 __docformat__ = "restructuredtext en"
 
 import uuid
+from distarray.externals import six
+import collections
 
 from IPython.parallel import Client
 import numpy
@@ -58,15 +60,18 @@ class Context(object):
         self.view.execute(
                 '%s = %s.Get_rank()' % (rank, self._comm_key),
                 block=True, targets=self.targets)
-        self.target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
-        self.rank_to_target = {v:k for (k,v) in self.target_to_rank.items()}
+
+        # mapping target -> rank, rank -> target.
+        target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
+        rank_to_target = {v: k for (k, v) in target_to_rank.items()}
 
         # ensure consistency
-        assert set(self.targets) == set(self.target_to_rank.keys())
-        assert set(range(len(self.targets))) == set(self.target_to_rank.values())
+        assert set(self.targets) == set(target_to_rank)
+        assert set(range(len(self.targets))) == set(rank_to_target)
 
-        # reorder self.targets so that the targets are in MPI rank order for the intracomm.
-        self.targets = [self.rank_to_target[i] for i in range(len(self.rank_to_target))]
+        # reorder self.targets so that the targets are in MPI rank order for
+        # the intracomm.
+        self.targets = [rank_to_target[i] for i in range(len(rank_to_target))]
 
     def _make_intracomm(self):
         def get_rank():
@@ -150,33 +155,54 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def save(self, filename, da):
+    def save(self, name, da):
         """
         Save a distributed array to files in the ``.dnpy`` format.
 
         Parameters
         ----------
-        filename : str
-            Prefix for filename used by each engine.  Each engine will save a
-            file named ``<filename>_<comm_rank>.dnpy``.
+        name : str or list of str
+            If a str, this is used as the prefix for the filename used by each
+            engine.  Each engine will save a file named
+            ``<name>_<rank>.dnpy``.
+            If a list of str, each engine will use the name at the index
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the communicator's size.
         da : DistArray
             Array to save to files.
 
         """
-        subs = self._key_and_push(filename) + (da.key,)
-        self._execute(
-            'distarray.local.save(%s, %s)' % subs
-        )
+        if isinstance(name, six.string_types):
+            subs = self._key_and_push(name) + (da.key, da.key)
+            self._execute(
+                'distarray.local.save(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+            )
+        elif isinstance(name, collections.Iterable):
+            if len(name) != len(self.targets):
+                errmsg = "`name` must be the same length as `self.targets`."
+                raise TypeError(errmsg)
+            subs = self._key_and_push(name) + (da.key, da.key)
+            self._execute(
+                'distarray.local.save(%s[%s.comm_rank], %s)' % subs
+            )
+        else:
+            errmsg = "`name` must be a string or a list."
+            raise TypeError(errmsg)
 
-    def load(self, filename):
+
+    def load(self, name):
         """
         Load a distributed array from ``.dnpy`` files.
 
         Parameters
         ----------
-        filename : str
-            Prefix used for the file saved by each engine.  Each engine will
-            load a file named ``<filename>_<comm_rank>.dnpy``.
+        name : str or list of str
+            If a str, this is used as the prefix for the filename used by each
+            engine.  Each engine will load a file named
+            ``<name>_<rank>.dnpy``.
+            If a list of str, each engine will use the name at the index
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the communicator's size.
 
         Returns
         -------
@@ -185,11 +211,98 @@ class Context(object):
 
         """
         da_key = self._generate_key()
-        subs = (da_key, filename, self._comm_key)
-        self._execute(
-            '%s = distarray.local.load("%s", comm=%s)' % subs
-        )
+        subs = (da_key, name, self._comm_key)
+
+        if isinstance(name, six.string_types):
+            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
+                    self._comm_key)
+            self._execute(
+                '%s = distarray.local.load(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+            )
+        elif isinstance(name, collections.Iterable):
+            if len(name) != len(self.targets):
+                errmsg = "`name` must be the same length as `self.targets`."
+                raise TypeError(errmsg)
+            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
+                    self._comm_key)
+            self._execute(
+                '%s = distarray.local.load(%s[%s.Get_rank()], %s)' % subs
+            )
+        else:
+            errmsg = "`name` must be a string or a list."
+            raise TypeError(errmsg)
+
         return DistArray(da_key, self)
+
+    def save_hdf5(self, filename, da, key='buffer', mode='a'):
+        """
+        Save a DistArray to a dataset in an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of file to write to.
+        da : DistArray
+            Array to save to a file.
+        key : str, optional
+            The identifier for the group to save the DistArray to (the default
+            is 'buffer').
+        mode : optional, {'w', 'w-', 'a'}, default 'a'
+            ``'w'``
+                Create file, truncate if exists
+            ``'w-'``
+                Create file, fail if exists
+            ``'a'``
+                Read/write if exists, create otherwise (default)
+
+        """
+        try:
+            # this is just an early check,
+            # h5py isn't necessary until the local call on the engines
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+            raise ImportError(errmsg)
+
+        subs = (self._key_and_push(filename) + (da.key,) +
+                self._key_and_push(key, mode))
+        self._execute(
+            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
+        )
+
+    def load_hdf5(self, filename, key='buffer', dist={0: 'b'},
+                  grid_shape=None):
+        """
+        Load a DistArray from a dataset in an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to load.
+        key : str, optional
+            The identifier for the group to load the DistArray from (the
+            default is 'buffer').
+        dist : dict of int->str, optional
+            Distribution of loaded DistArray.
+        grid_shape : tuple of int, optional
+            Shape of process grid.
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded.
+
+        """
+        try:
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
+            raise ImportError(errmsg)
+
+        with h5py.File(filename, "r") as fp:
+            da = self.fromndarray(fp[key], dist=dist, grid_shape=grid_shape)
+
+        return da
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
         """Convert an ndarray to a distarray."""

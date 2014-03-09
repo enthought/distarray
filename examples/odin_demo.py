@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy
 import distarray
-from six.moves import input
+from distarray.externals.six.moves import input
 from distarray import Context
 from distarray.decorators import local
 from pprint import pprint

@@ -7,13 +7,39 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
 import unittest
+
 import numpy
 from numpy.testing import assert_array_equal
-from six.moves import range
 from random import shuffle
 from IPython.parallel import Client
-from distarray.client import DistArray
-from distarray.context import Context
+from distarray.externals.six.moves import range
+
+from distarray import Context, DistArray
+from distarray.local import LocalArray
+
+
+class TestContext(unittest.TestCase):
+    """Test Context methods"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = Client()
+        cls.context = Context(cls.client)
+        cls.ndarr = numpy.arange(16).reshape(4, 4)
+        cls.darr = cls.context.fromndarray(cls.ndarr)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Close the client connections"""
+        cls.client.close()
+
+    def test_get_localarrays(self):
+        las = self.darr.get_localarrays()
+        self.assertIsInstance(las[0], LocalArray)
+
+    def test_get_ndarrays(self):
+        ndarrs = self.darr.get_ndarrays()
+        self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
 class TestContextCreation(unittest.TestCase):
@@ -49,9 +75,7 @@ class TestContextCreation(unittest.TestCase):
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
         dac = Context(self.client, targets=targets)
-        self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
-        self.assertEqual(set(range(len(dac.targets))),
-                         set(dac.target_to_rank.values()))
+        self.assertEqual(set(dac.targets), set(targets))
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''

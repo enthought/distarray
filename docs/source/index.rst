@@ -30,7 +30,10 @@ Dependencies for DistArray:
 * NumPy
 * IPython
 * Mpi4Py
-* six
+
+Dependencies for optional HDF5 IO:
+
+* h5py built against a parallel-enabled build of HDF5
 
 Dependencies to build the documentation:
 
@@ -85,6 +88,7 @@ Other Documentation
    Notes on building environment-modules <environment-modules-notes.rst>
    Notes on building HDF5 and h5py <hdf5-notes.rst>
    API Reference <modules.rst>
+   Licensing for bundled `six` module (Python 2 / 3 compatibility) <six-license.rst>
 
 
 Indices and tables
