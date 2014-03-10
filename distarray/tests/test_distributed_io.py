@@ -76,20 +76,20 @@ bn_test_data = [
      ]
 
 nc_test_data = [
-        ({'size': 10,
+        ({'size': 2,
           'dist_type': 'n',
          },
-         {'size': 2,
+         {'size': 10,
           'dist_type': 'c',
           'proc_grid_rank': 0,
           'proc_grid_size': 2,
           'start': 0,
          },),
 
-        ({'size': 10,
+        ({'size': 2,
           'dist_type': 'n',
          },
-         {'size': 2,
+         {'size': 10,
           'dist_type': 'c',
           'proc_grid_rank': 1,
           'proc_grid_size': 2,
@@ -97,232 +97,170 @@ nc_test_data = [
          },)
      ]
 
-u_test_data = [
-        # Note: indices must be in increasing order
+nu_test_data = [
+        # Note: unstructured indices must be in increasing order
         #       (restiction of h5py / HDF5)
 
-        ({'size': 20,
+        (
+         {'size': 2,
+          'dist_type': 'n',
+         },
+         {'size': 10,
           'dist_type': 'u',
           'proc_grid_rank': 0,
           'proc_grid_size': 2,
-          'indices': [0, 3, 4, 6, 8, 10, 13, 15, 18],
-         },),
-        ({'size': 20,
+          'indices': [0, 3, 4, 6, 8],
+         },
+        ),
+        (
+         {'size': 2,
+          'dist_type': 'n',
+         },
+         {'size': 10,
           'dist_type': 'u',
           'proc_grid_rank': 1,
           'proc_grid_size': 2,
-          'indices': [1, 2, 5, 7, 9, 11, 12, 14, 16, 17, 19],
-         },)
+          'indices': [1, 2, 5, 7, 9],
+         },
+        )
     ]
 
 
-class TestNpyFileIO(IpclusterTestCase):
+class TestNpyFileLoad(IpclusterTestCase):
 
     @classmethod
     def get_ipcluster_size(cls):
         return 2
 
+    def setUp(self):
+        self.dac = Context(self.client, targets=[0, 1])
+
+        # make a test file
+        self.output_path = temp_filepath('.npy')
+        self.expected = np.arange(20).reshape(2, 10)
+        np.save(self.output_path, self.expected)
+
+    def tearDown(self):
+        # delete the test file
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+        super(TestNpyFileLoad, self).tearDown()
+
     def test_load_bn(self):
-
-        # set up test file
-        output_path = temp_filepath('.npy')
-        expected = np.arange(20).reshape(2, 10)
-        np.save(output_path, expected)
-
-        # load it in with load_npy
-        dac = Context(self.client, targets=[0, 1])
         dim_datas = bn_test_data
-
-        try:
-            da = dac.load_npy(output_path, dim_datas)
-            assert_equal(da, expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+        da = self.dac.load_npy(self.output_path, dim_datas)
+        for i in range(da.shape[0]):
+            for j in range(da.shape[1]):
+                self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nc(self):
-
-        # set up test file
-        output_path = temp_filepath('.npy')
-        expected = np.arange(20).reshape(2, 10)
-        np.save(output_path, expected)
-
-        # load it in with load_npy
-        dac = Context(self.client, targets=[0, 1])
         dim_datas = nc_test_data
+        da = self.dac.load_npy(self.output_path, dim_datas)
+        for i in range(da.shape[0]):
+            for j in range(da.shape[1]):
+                self.assertEqual(da[i, j], self.expected[i, j])
 
-        try:
-            da = dac.load_npy(output_path, dim_datas)
-            assert_equal(da, expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
-
-    def test_load_u(self):
-
-        # set up test file
-        output_path = temp_filepath('.npy')
-        expected = np.arange(20)
-        np.save(output_path, expected)
-
-        # load it in with load_npy
-        dac = Context(self.client, targets=[0, 1])
-
-        dim_datas = u_test_data
-
-        try:
-            da = dac.load_npy(output_path, dim_datas)
-            assert_equal([x for x in da], expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+    def test_load_nu(self):
+        dim_datas = nu_test_data
+        da = self.dac.load_npy(self.output_path, dim_datas)
+        for i in range(da.shape[0]):
+            for j in range(da.shape[1]):
+                self.assertEqual(da[i, j], self.expected[i, j])
 
 
-class TestHDF5FileIO(IpclusterTestCase):
+class TestHdf5FileSave(IpclusterTestCase):
+
+    def setUp(self):
+        self.h5py = import_or_skip('h5py')
+        self.output_path = temp_filepath('.hdf5')
+        self.dac = Context(self.client)
+
+    def tearDown(self): 
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+        super(TestHdf5FileSave, self).tearDown()
 
     def test_save_block(self):
-        h5py = import_or_skip('h5py')
         datalen = 33
-        dac = Context(self.client)
-        da = dac.empty((datalen,), dist={0: 'b'})
+        da = self.dac.empty((datalen,), dist={0: 'b'})
         for i in range(datalen):
             da[i] = i
 
-        output_path = temp_filepath('.hdf5')
-
-        try:
-            dac.save_hdf5(output_path, da, mode='w')
-
-            self.assertTrue(os.path.exists(output_path))
-
-            with h5py.File(output_path, 'r') as fp:
-                self.assertTrue("buffer" in fp)
-                expected = np.arange(datalen)
-                assert_equal(expected, fp["buffer"])
-
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+        self.dac.save_hdf5(self.output_path, da, mode='w')
+        with self.h5py.File(self.output_path, 'r') as fp:
+            self.assertTrue("buffer" in fp)
+            expected = np.arange(datalen)
+            assert_equal(expected, fp["buffer"])
 
     def test_save_3d(self):
-        h5py = import_or_skip('h5py')
         shape = (4, 5, 3)
         source = np.random.random(shape)
 
-        dac = Context(self.client)
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        da = dac.empty(shape, dist=dist)
+        da = self.dac.empty(shape, dist=dist)
 
         for i in range(shape[0]):
             for j in range(shape[1]):
                 for k in range(shape[2]):
                     da[i, j, k] = source[i, j, k]
 
-        output_path = temp_filepath('.hdf5')
-
-        try:
-            dac.save_hdf5(output_path, da, mode='w')
-
-            self.assertTrue(os.path.exists(output_path))
-
-            with h5py.File(output_path, 'r') as fp:
-                self.assertTrue("buffer" in fp)
-                assert_allclose(source, fp["buffer"])
-
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+        self.dac.save_hdf5(self.output_path, da, mode='w')
+        with self.h5py.File(self.output_path, 'r') as fp:
+            self.assertTrue("buffer" in fp)
+            assert_allclose(source, fp["buffer"])
 
     def test_save_two_datasets(self):
-        h5py = import_or_skip('h5py')
-
         datalen = 33
-        dac = Context(self.client)
-        da = dac.empty((datalen,), dist={0: 'b'})
+        da = self.dac.empty((datalen,), dist={0: 'b'})
 
         for i in range(datalen):
             da[i] = i
 
-        output_path = temp_filepath('.hdf5')
+        # make a file, and write to dataset 'foo'
+        with self.h5py.File(self.output_path, 'w') as fp:
+            fp['foo'] = np.arange(10)
 
-        try:
-            # make a file, and write to dataset 'foo'
-            with h5py.File(output_path, 'w') as fp:
-                fp['foo'] = np.arange(10)
+        # try saving to a different dataset
+        self.dac.save_hdf5(self.output_path, da, key='bar', mode='a')
 
-            # try saving to a different dataset
-            dac.save_hdf5(output_path, da, key='bar', mode='a')
+        with self.h5py.File(self.output_path, 'r') as fp:
+            self.assertTrue("foo" in fp)
+            self.assertTrue("bar" in fp)
 
-            with h5py.File(output_path, 'r') as fp:
-                self.assertTrue("foo" in fp)
-                self.assertTrue("bar" in fp)
 
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+class TestHdf5FileLoad(IpclusterTestCase):
+
+    @classmethod
+    def get_ipcluster_size(cls):
+        return 2
+
+    def setUp(self):
+        self.h5py = import_or_skip('h5py')
+        self.dac = Context(self.client, targets=[0, 1])
+        self.output_path = temp_filepath('.hdf5')
+        self.expected = np.arange(20).reshape(2, 10)
+        with self.h5py.File(self.output_path, 'w') as fp:
+            fp["test"] = self.expected
+
+    def tearDown(self): 
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+        super(TestHdf5FileLoad, self).tearDown()
 
     def test_load_bn(self):
-        h5py = import_or_skip('h5py')
-
-        # set up test file
-        output_path = temp_filepath()
-        expected = np.arange(20).reshape(2, 10)
-        with h5py.File(output_path, 'w') as fp:
-            fp["load_test"] = expected
-
-        # load it in with load_hdf5
-        dac = Context(self.client, targets=[0, 1])
-
-        dim_datas = bn_test_data
-
-        try:
-            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
-            assert_equal(da, expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+        da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")
+        for i, v in np.ndenumerate(self.expected):
+            self.assertEqual(v, da[i])
 
     def test_load_nc(self):
-        h5py = import_or_skip('h5py')
+        da = self.dac.load_hdf5(self.output_path, nc_test_data, key="test")
+        for i, v in np.ndenumerate(self.expected):
+            self.assertEqual(v, da[i])
 
-        # set up test file
-        output_path = temp_filepath()
-        expected = np.arange(20).reshape(2, 10)
-        with h5py.File(output_path, 'w') as fp:
-            fp["load_test"] = expected
-
-        # load it in with load_hdf5
-        dac = Context(self.client, targets=[0, 1])
-
-        dim_datas = nc_test_data
-
-        try:
-            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
-            assert_equal(da, expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
-
-    def test_load_u(self):
-        h5py = import_or_skip('h5py')
-
-        # set up test file
-        output_path = temp_filepath()
-        expected = np.arange(20)
-        with h5py.File(output_path, 'w') as fp:
-            fp["load_test"] = expected
-
-        # load it in with load_hdf5
-        dac = Context(self.client, targets=[0, 1])
-
-        dim_datas = u_test_data
-
-        try:
-            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
-            assert_equal([x for x in da], expected)
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
+    def test_load_nu(self):
+        da = self.dac.load_hdf5(self.output_path, nu_test_data, key="test")
+        for i, v in np.ndenumerate(self.expected):
+            self.assertEqual(v, da[i])
 
 
 if __name__ == '__main__':
