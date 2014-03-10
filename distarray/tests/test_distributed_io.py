@@ -130,7 +130,7 @@ class TestNpyFileIO(IpclusterTestCase):
         np.save(output_path, expected)
 
         # load it in with load_npy
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
         dim_datas = bn_test_data
 
         try:
@@ -148,7 +148,7 @@ class TestNpyFileIO(IpclusterTestCase):
         np.save(output_path, expected)
 
         # load it in with load_npy
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
         dim_datas = nc_test_data
 
         try:
@@ -166,7 +166,7 @@ class TestNpyFileIO(IpclusterTestCase):
         np.save(output_path, expected)
 
         # load it in with load_npy
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
 
         dim_datas = u_test_data
 
