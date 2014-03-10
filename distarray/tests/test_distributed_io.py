@@ -145,7 +145,7 @@ class TestHDF5FileIO(IpclusterTestCase):
             fp["load_test"] = expected
 
         # load it in with load_hdf5
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
 
         dim_data_0 = (
             {'size': 2,
@@ -190,7 +190,7 @@ class TestHDF5FileIO(IpclusterTestCase):
             fp["load_test"] = expected
 
         # load it in with load_hdf5
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
 
         dim_data_0 = (
             {'size': 10,
@@ -235,7 +235,7 @@ class TestHDF5FileIO(IpclusterTestCase):
             fp["load_test"] = expected
 
         # load it in with load_hdf5
-        dac = Context(self.dv, targets=[0, 1])
+        dac = Context(self.client, targets=[0, 1])
 
         dim_data_0 = (
             {'size': 20,
