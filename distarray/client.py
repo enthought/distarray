@@ -192,7 +192,10 @@ class DistArray(object):
         self.context._push({value_key:value})
         self.context._execute('%s.fill(%s)' % (self.key, value_key))
 
+    #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -201,6 +204,8 @@ class DistArray(object):
         return result
 
     def mean(self, axis=None, dtype=float, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -209,6 +214,8 @@ class DistArray(object):
         return result
 
     def var(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -217,6 +224,8 @@ class DistArray(object):
         return result
 
     def std(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys

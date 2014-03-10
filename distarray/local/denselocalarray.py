@@ -460,23 +460,32 @@ class DenseLocalArray(BaseLocalArray):
     def trace(self, offset=0, axis1=0, axis2=1, dtype=None, out=None):
         _raise_nie()
 
+    #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         return sum(self, dtype=dtype)
 
     def mean(self, axis=None, dtype=float, out=None):
-        if dtype is not None:
+        if axis or out is not None:
+            _raise_nie()
+        elif dtype is not None:
             dtype = np.dtype(dtype)
             return dtype.type((np.divide(self.sum(dtype=dtype), self.size)))
         else:
             return np.divide(self.sum(dtype=dtype), self.size)
 
     def var(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         mu = self.mean()
         temp = (self - mu)**2
         return temp.mean(dtype=dtype)
 
     def std(self, axis=None, dtype=None, out=None):
-        if dtype is not None:
+        if axis or out is not None:
+            _raise_nie()
+        elif dtype is not None:
             dtype = np.dtype(dtype)
             return dtype.type((math.sqrt(self.var())))
         else:
