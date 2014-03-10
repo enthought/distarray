@@ -21,7 +21,7 @@ from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
 class TestFlatFileIO(IpclusterTestCase):
 
     def test_save_load_with_filenames(self):
-        dac = Context(self.dv)
+        dac = Context(self.client)
         da = dac.empty((100,), dist={0: 'b'})
 
         output_paths = [temp_filepath() for target in dac.targets]
@@ -36,7 +36,7 @@ class TestFlatFileIO(IpclusterTestCase):
                     os.remove(filepath)
 
     def test_save_load_with_prefix(self):
-        dac = Context(self.dv)
+        dac = Context(self.client)
         da = dac.empty((100,), dist={0: 'b'})
 
         output_path = temp_filepath()
@@ -57,7 +57,7 @@ class TestHDF5FileIO(IpclusterTestCase):
     def test_write_block(self):
         h5py = import_or_skip('h5py')
         datalen = 33
-        dac = Context(self.dv)
+        dac = Context(self.client)
         da = dac.empty((datalen,), dist={0: 'b'})
         for i in range(datalen):
             da[i] = i
@@ -83,7 +83,7 @@ class TestHDF5FileIO(IpclusterTestCase):
         shape = (4, 5, 3)
         source = np.random.random(shape)
 
-        dac = Context(self.dv)
+        dac = Context(self.client)
         dist = {0: 'b', 1: 'c', 2: 'n'}
         da = dac.empty(shape, dist=dist)
 
@@ -111,7 +111,7 @@ class TestHDF5FileIO(IpclusterTestCase):
         h5py = import_or_skip('h5py')
 
         datalen = 33
-        dac = Context(self.dv)
+        dac = Context(self.client)
         da = dac.empty((datalen,), dist={0: 'b'})
 
         for i in range(datalen):

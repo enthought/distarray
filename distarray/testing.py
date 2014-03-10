@@ -130,13 +130,12 @@ class IpclusterTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < cls.get_ipcluster_size():
+        if len(cls.client) < cls.get_ipcluster_size():
             errmsg = 'Tests need an ipcluster with at least {} engines running.'
             raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
 
     def tearDown(self):
-        self.dv.clear(block=True)
+        self.client.clear(block=True)
 
     @classmethod
     def tearDownClass(cls):
