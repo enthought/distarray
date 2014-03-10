@@ -460,23 +460,39 @@ class DenseLocalArray(BaseLocalArray):
     def trace(self, offset=0, axis1=0, axis2=1, dtype=None, out=None):
         _raise_nie()
 
-    # def sum(self, axis=None, dtype=None, out=None):
+    #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
-        return sum(self, dtype)
+        if axis or out is not None:
+            _raise_nie()
+        return sum(self, dtype=dtype)
+
+    def mean(self, axis=None, dtype=float, out=None):
+        if axis or out is not None:
+            _raise_nie()
+        elif dtype is not None:
+            dtype = np.dtype(dtype)
+            return dtype.type((np.divide(self.sum(dtype=dtype), self.size)))
+        else:
+            return np.divide(self.sum(dtype=dtype), self.size)
+
+    def var(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
+        mu = self.mean()
+        temp = (self - mu)**2
+        return temp.mean(dtype=dtype)
+
+    def std(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
+        elif dtype is not None:
+            dtype = np.dtype(dtype)
+            return dtype.type((math.sqrt(self.var())))
+        else:
+            return math.sqrt(self.var())
 
     def cumsum(self, axis=None, dtype=None, out=None):
         _raise_nie()
-
-    def mean(self, axis=None, dtype=None, out=None):
-        return self.sum(dtype=dtype)/self.size
-
-    def var(self, axis=None, dtype=None, out=None):
-        mu = self.mean()
-        temp = (self - mu)**2
-        return temp.mean()
-
-    def std(self, axis=None, dtype=None, out=None):
-        return math.sqrt(self.var())
 
     def prod(self, axis=None, dtype=None, out=None):
         _raise_nie()
@@ -1142,7 +1158,7 @@ can_cast = np.can_cast
 
 
 def sum(a, dtype=None):
-    local_sum = a.local_array.sum(dtype)
+    local_sum = a.local_array.sum(dtype=dtype)
     global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
     return global_sum
 
