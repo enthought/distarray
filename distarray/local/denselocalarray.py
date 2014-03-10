@@ -14,12 +14,12 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-import six
+from distarray.externals import six
 import math
 
 import numpy as np
+from distarray.externals.six.moves import zip
 from collections import Mapping
-from six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
@@ -255,14 +255,14 @@ class DenseLocalArray(BaseLocalArray):
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.shape, dtype=newdtype, dist=self.dist,
+            new_da = LocalArray(self.global_shape, dtype=newdtype, dist=self.dist,
                                 grid_shape=self.grid_shape,
                                 comm=self.base_comm, buf=local_copy)
             return new_da
 
     def copy(self):
         local_copy = self.local_array.copy()
-        return LocalArray(self.shape, dtype=self.dtype, dist=self.dist,
+        return LocalArray(self.global_shape, dtype=self.dtype, dist=self.dist,
                           grid_shape=self.grid_shape, comm=self.base_comm,
                           buf=local_copy)
 
@@ -274,10 +274,10 @@ class DenseLocalArray(BaseLocalArray):
 
     def view(self, dtype=None):
         if dtype is None:
-            new_da = LocalArray(self.shape, self.dtype, self.dist,
+            new_da = LocalArray(self.global_shape, self.dtype, self.dist,
                                 self.grid_shape, self.base_comm, buf=self.data)
         else:
-            new_da = LocalArray(self.shape, dtype, self.dist,
+            new_da = LocalArray(self.global_shape, dtype, self.dist,
                                 self.grid_shape, self.base_comm, buf=self.data)
         return new_da
 
@@ -298,7 +298,7 @@ class DenseLocalArray(BaseLocalArray):
 
         This is used to construct return arrays for ufuncs.
         """
-        return self.__class__(self.shape, obj.dtype, self.dist,
+        return self.__class__(self.global_shape, obj.dtype, self.dist,
                               self.grid_shape, self.base_comm, buf=obj)
 
     def fill(self, scalar):
@@ -540,7 +540,7 @@ class DenseLocalArray(BaseLocalArray):
     #-------------------------------------------------------------------------
 
     def __len__(self):
-        return self.shape[0]
+        return self.global_shape[0]
 
     def checked_getitem(self, global_inds):
         try:
@@ -587,15 +587,15 @@ class DenseLocalArray(BaseLocalArray):
 
     def pack_index(self, inds):
         inds_array = np.array(inds)
-        strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
+        strides_array = np.cumprod([1] + list(self.global_shape)[:0:-1])[::-1]
         return np.sum(inds_array*strides_array)
 
     def unpack_index(self, packed_ind):
-        if packed_ind > np.prod(self.shape)-1 or packed_ind < 0:
+        if packed_ind > np.prod(self.global_shape)-1 or packed_ind < 0:
             raise ValueError("Invalid index, must be 0 <= x <= number of"
                              "elements.")
-        strides_array = np.cumprod([1] + list(self.shape)[:0:-1])[::-1]
-        return tuple(packed_ind//strides_array % self.shape)
+        strides_array = np.cumprod([1] + list(self.global_shape)[:0:-1])[::-1]
+        return tuple(packed_ind//strides_array % self.global_shape)
 
     #--------------------------------------------------------------------------
     # 3.3.4 Arithmetic customization - binary
@@ -813,10 +813,10 @@ def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 def empty_like(arr, dtype=None):
     if isinstance(arr, DenseLocalArray):
         if dtype is None:
-            return empty(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
+            return empty(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
         else:
-            return empty(arr.shape, dtype, arr.dist, arr.grid_shape,
+            return empty(arr.global_shape, dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
     else:
         raise TypeError("A DenseLocalArray or subclass is expected")
@@ -830,7 +830,7 @@ def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 def zeros_like(arr):
     if isinstance(arr, DenseLocalArray):
-        return zeros(arr.shape, arr.dtype, arr.dist, arr.grid_shape,
+        return zeros(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                      arr.base_comm)
     else:
         raise TypeError("A DenseLocalArray or subclass is expected")
@@ -928,7 +928,7 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         raise ImportError(errmsg)
 
     with h5py.File(filename, mode, driver='mpio', comm=arr.comm) as fp:
-        dset = fp.create_dataset(key, arr.shape, dtype=arr.dtype)
+        dset = fp.create_dataset(key, arr.global_shape, dtype=arr.dtype)
         for index, value in ndenumerate(arr):
             dset[index] = value
 
@@ -1100,7 +1100,7 @@ def fromlocalarray_like(local_arr, like_arr):
     """
     Create a new LocalArray using a given local array (+its dtype).
     """
-    res = LocalArray(like_arr.shape, local_arr.dtype, like_arr.dist,
+    res = LocalArray(like_arr.global_shape, local_arr.dtype, like_arr.dist,
                      like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
     return res
 

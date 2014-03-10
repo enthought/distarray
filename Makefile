@@ -15,11 +15,11 @@ setup_cluster:
 .PHONY: setup_cluster
 
 test_client:
-	${PYTHON} -m unittest discover
+	${PYTHON} -m unittest discover -v
 .PHONY: test_client
 
 test_client_with_coverage:
-	${COVERAGE} run -pm unittest discover
+	${COVERAGE} run -pm unittest discover -v
 .PHONY: test_client_with_coverage
 
 test_engines:
@@ -44,6 +44,10 @@ coverage_report:
 teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 .PHONY: teardown_cluster
+
+restart_cluster:
+	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
+.PHONY: restart_cluster
 
 clean:
 	-${PYTHON} setup.py clean --all

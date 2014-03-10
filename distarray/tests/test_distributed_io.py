@@ -11,30 +11,14 @@ import os
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from six.moves import range
+from distarray.externals.six.moves import range
 
-from IPython.parallel import Client
 from distarray.client import DistArray
 from distarray.context import Context
-from distarray.testing import import_or_skip, temp_filepath
+from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
 
 
-class TestDnpyFileIO(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
-
-    def tearDown(self):
-        self.dv.clear(block=True)
+class TestDnpyFileIO(IpclusterTestCase):
 
     def test_save_load_with_filenames(self):
         dac = Context(self.dv)
@@ -132,22 +116,11 @@ u_test_data = [
     ]
 
 
-class TestNpyFileIO(unittest.TestCase):
+class TestNpyFileIO(IpclusterTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 2:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
-
-    def tearDown(self):
-        self.dv.clear(block=True)
+    def get_ipcluster_size(cls):
+        return 2
 
     def test_load_bn(self):
 
@@ -205,22 +178,7 @@ class TestNpyFileIO(unittest.TestCase):
                 os.remove(output_path)
 
 
-class TestHDF5FileIO(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
-
-    def tearDown(self):
-        self.dv.clear(block=True)
+class TestHDF5FileIO(IpclusterTestCase):
 
     def test_save_block(self):
         h5py = import_or_skip('h5py')
