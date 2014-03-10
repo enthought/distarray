@@ -13,12 +13,12 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-import numpy as np
-from distarray.externals.six import next
-
 from itertools import product
 
-from distarray.utils import has_exactly_one
+import numpy as np
+
+from distarray.externals.six import next
+from distarray.utils import has_exactly_one, _raise_nie
 
 __all__ = ['DistArray']
 
