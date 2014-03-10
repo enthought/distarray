@@ -12,6 +12,8 @@ class TestDnpyFileIO(MpiTestCase):
 
     def setUp(self):
         self.larr0 = LocalArray((7,), comm=self.comm)
+
+        # a different file on every engine
         self.output_path = temp_filepath(extension='.dnpy')
 
     def tearDown(self):
@@ -189,7 +191,11 @@ class TestHDF5FileSave(MpiTestCase):
 
     def test_save_1d(self):
         la = LocalArray((51,), comm=self.comm)
+        np_arr = numpy.random.random(la.local_shape)
+        la.set_localarray(np_arr)
         save_hdf5(self.output_path, la, key=self.key, mode='w')
+
+        # check saved file
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:
             for i, v in ndenumerate(la):
@@ -197,6 +203,8 @@ class TestHDF5FileSave(MpiTestCase):
 
     def test_save_2d(self):
         la = LocalArray((11, 15), comm=self.comm)
+        np_arr = numpy.random.random(la.local_shape)
+        la.set_localarray(np_arr)
         save_hdf5(self.output_path, la, key=self.key, mode='w')
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:
