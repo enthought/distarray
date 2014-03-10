@@ -38,7 +38,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.context = Context(cls.client[:])
+        cls.context = Context(cls.client)
 
         # Standard data
         cls.a = np.arange(1, 99)
@@ -87,7 +87,7 @@ class TestSpecialMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.context = Context(cls.client[:])
+        cls.context = Context(cls.client)
         # Standard data
         cls.a = np.arange(1, 33)
         cls.b = np.ones_like(cls.a)*2

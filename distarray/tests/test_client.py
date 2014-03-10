@@ -1,7 +1,9 @@
 """
-Tests for distarray.client
+Tests for distarray's client-side API.
 
-Many of these tests require a 4-engine cluster to be running locally.
+Many of these tests require a 4-engine cluster to be running locally.  The
+engines should be launched with MPI, using the MPIEngineSetLauncher.
+
 """
 
 import unittest
@@ -24,8 +26,7 @@ class TestContext(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.view = cls.client[:]
-        cls.context = Context(cls.view)
+        cls.context = Context(cls.client)
         cls.ndarr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.ndarr)
 
@@ -44,46 +45,36 @@ class TestContext(unittest.TestCase):
 
 
 class TestContextCreation(IpclusterTestCase):
-
     """Test Context Creation"""
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
-        dac = Context(self.dv)
-        self.assertIs(dac.view, self.dv)
+        dac = Context(self.client)
+        self.assertIs(dac.client, self.client)
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        dac = Context(self.dv, targets=[0, 1])
-        self.assertIs(dac.view, self.dv)
-
-    def test_create_Context_with_sub_view(self):
-        """Context's view must encompass all ranks in the MPI communicator."""
-        subview = self.client[:1]
-        if not set(subview.targets) < set(self.dv.targets):
-            msg = 'Must set up a cluster with at least 2 engines running.'
-            raise unittest.SkipTest(msg)
-        with self.assertRaises(ValueError):
-            Context(subview)
+        dac = Context(self.client, targets=[0, 1])
+        self.assertIs(dac.client, self.client)
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
-        dac = Context(self.dv, targets=targets)
+        dac = Context(self.client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''
-        orig_targets = self.dv.targets
-        ctx1 = Context(self.dv, targets=shuffle(orig_targets[:]))
-        ctx2 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        orig_targets = self.client.ids
+        ctx1 = Context(self.client, targets=shuffle(orig_targets[:]))
+        ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
 
 
 class TestDistArray(IpclusterTestCase):
 
     def setUp(self):
-        self.dac = Context(self.dv)
+        self.dac = Context(self.client)
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -138,14 +129,14 @@ class TestDistArray(IpclusterTestCase):
             dap[20:40] = (11, 12)
 
     def test_get_index_error(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
-            dap[111]
+            dap[11]
 
     def test_set_index_error(self):
-        dap = self.dac.empty((100,), dist={0: 'c'})
+        dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
-            dap[111] = 55
+            dap[11] = 55
 
     def test_iteration(self):
         size = 10
@@ -173,7 +164,7 @@ class TestDistArrayCreation(IpclusterTestCase):
     """Test distarray creation methods"""
 
     def setUp(self):
-        self.context = Context(self.dv)
+        self.context = Context(self.client)
 
     def test_zeros(self):
         shape = (16, 16)
@@ -205,8 +196,7 @@ class TestReduceMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.view = cls.client[:]
-        cls.context = Context(cls.view)
+        cls.context = Context(cls.client)
 
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
@@ -220,9 +210,19 @@ class TestReduceMethods(unittest.TestCase):
         da_sum = self.darr.sum()
         self.assertEqual(da_sum, np_sum)
 
+    def test_sum_dtype(self):
+        np_sum = self.arr.sum(dtype=int)
+        da_sum = self.darr.sum(dtype=int)
+        self.assertEqual(da_sum, np_sum)
+
     def test_mean(self):
         np_mean = self.arr.mean()
         da_mean = self.darr.mean()
+        self.assertEqual(da_mean, np_mean)
+
+    def test_mean_dtype(self):
+        np_mean = self.arr.mean(dtype=int)
+        da_mean = self.darr.mean(dtype=int)
         self.assertEqual(da_mean, np_mean)
 
     def test_var(self):
@@ -230,9 +230,19 @@ class TestReduceMethods(unittest.TestCase):
         da_var = self.darr.var()
         self.assertEqual(da_var, np_var)
 
+    def test_var_dtype(self):
+        np_var = self.arr.var(dtype=int)
+        da_var = self.darr.var(dtype=int)
+        self.assertEqual(da_var, np_var)
+
     def test_std(self):
         np_std = self.arr.std()
         da_std = self.darr.std()
+        self.assertEqual(da_std, np_std)
+
+    def test_std_dtype(self):
+        np_std = self.arr.std(dtype=int)
+        da_std = self.darr.std(dtype=int)
         self.assertEqual(da_std, np_std)
 
 

@@ -13,12 +13,12 @@ __docformat__ = "restructuredtext en"
 # Imports
 #----------------------------------------------------------------------------
 
-import numpy as np
-from distarray.externals.six import next
-
 from itertools import product
 
-from distarray.utils import has_exactly_one
+import numpy as np
+
+from distarray.externals.six import next
+from distarray.utils import has_exactly_one, _raise_nie
 
 __all__ = ['DistArray']
 
@@ -192,7 +192,10 @@ class DistArray(object):
         self.context._push({value_key:value})
         self.context._execute('%s.fill(%s)' % (self.key, value_key))
 
+    #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -200,15 +203,19 @@ class DistArray(object):
         result = self.context._pull0(result_key)
         return result
 
-    def mean(self, axis=None, dtype=None, out=None):
+    def mean(self, axis=None, dtype=float, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(%s,%s)' % subs)
+        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs)
         result = self.context._pull0(result_key)
         return result
 
     def var(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -217,6 +224,8 @@ class DistArray(object):
         return result
 
     def std(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
