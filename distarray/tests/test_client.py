@@ -6,32 +6,46 @@ Many of these tests require a 4-engine cluster to be running locally.
 
 import unittest
 import numpy
+
 from numpy.testing import assert_array_equal
-from six.moves import range
+from random import shuffle
 from IPython.parallel import Client
+from distarray.externals.six.moves import range
+
 from distarray.client import DistArray
 from distarray.context import Context
+from distarray.local import LocalArray
+from distarray.testing import IpclusterTestCase
 
 
-class TestContextCreation(unittest.TestCase):
-    """Test Context Creation"""
+class TestContext(unittest.TestCase):
+    """Test Context methods"""
 
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
+        cls.view = cls.client[:]
+        cls.context = Context(cls.view)
+        cls.ndarr = numpy.arange(16).reshape(4, 4)
+        cls.darr = cls.context.fromndarray(cls.ndarr)
 
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
         cls.client.close()
 
-    def tearDown(self):
-        """Clear the namespace on the engines after each test."""
-        self.dv.clear()
+    def test_get_localarrays(self):
+        las = self.darr.get_localarrays()
+        self.assertIsInstance(las[0], LocalArray)
+
+    def test_get_ndarrays(self):
+        ndarrs = self.darr.get_ndarrays()
+        self.assertIsInstance(ndarrs[0], numpy.ndarray)
+
+
+class TestContextCreation(IpclusterTestCase):
+
+    """Test Context Creation"""
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
@@ -56,26 +70,20 @@ class TestContextCreation(unittest.TestCase):
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
         dac = Context(self.dv, targets=targets)
-        self.assertEqual(set(dac.targets), set(dac.target_to_rank.keys()))
-        self.assertEqual(set(range(len(dac.targets))),
-                         set(dac.target_to_rank.values()))
+        self.assertEqual(set(dac.targets), set(targets))
+
+    def test_context_target_reordering(self):
+        '''Are contexts' targets reordered in a consistent way?'''
+        orig_targets = self.dv.targets
+        ctx1 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        ctx2 = Context(self.dv, targets=shuffle(orig_targets[:]))
+        self.assertEqual(ctx1.targets, ctx2.targets)
 
 
-class TestDistArray(unittest.TestCase):
+class TestDistArray(IpclusterTestCase):
 
-    @classmethod
-    def setUpClass(self):
-        self.client = Client()
-        self.dv = self.client[:]
-        if len(self.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
+    def setUp(self):
         self.dac = Context(self.dv)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.clear()
-        cls.client.close()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -160,23 +168,12 @@ class TestDistArray(unittest.TestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreation(unittest.TestCase):
+class TestDistArrayCreation(IpclusterTestCase):
+
     """Test distarray creation methods"""
 
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-        cls.context = Context(cls.dv)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Clear the namespace and close the client connections after
-        this class' tests are run."""
-        cls.client.close()
+    def setUp(self):
+        self.context = Context(self.dv)
 
     def test_zeros(self):
         shape = (16, 16)

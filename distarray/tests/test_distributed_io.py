@@ -11,30 +11,14 @@ import os
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from six.moves import range
+from distarray.externals.six.moves import range
 
-from IPython.parallel import Client
 from distarray.client import DistArray
 from distarray.context import Context
-from distarray.testing import import_or_skip, temp_filepath
+from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
 
 
-class TestFlatFileIO(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
-
-    def tearDown(self):
-        self.dv.clear(block=True)
+class TestFlatFileIO(IpclusterTestCase):
 
     def test_save_load_with_filenames(self):
         dac = Context(self.dv)
@@ -68,22 +52,7 @@ class TestFlatFileIO(unittest.TestCase):
                     os.remove(filepath)
 
 
-class TestHDF5FileIO(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < 4:
-            errmsg = 'Must set up a cluster with at least 4 engines running.'
-            raise unittest.SkipTest(errmsg)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
-
-    def tearDown(self):
-        self.dv.clear(block=True)
+class TestHDF5FileIO(IpclusterTestCase):
 
     def test_save_block(self):
         h5py = import_or_skip('h5py')

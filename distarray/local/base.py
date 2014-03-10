@@ -17,7 +17,7 @@ import numpy as np
 import operator
 
 from functools import reduce
-from six import next
+from distarray.externals.six import next
 
 from distarray.local import construct, maps
 
@@ -100,7 +100,7 @@ class BaseLocalArray(object):
         self.dim_data = dim_data
         self.base_comm = construct.init_base_comm(comm)
 
-        self.grid_shape = construct.init_grid_shape(self.shape,
+        self.grid_shape = construct.init_grid_shape(self.global_shape,
                                                     self.distdims,
                                                     self.comm_size,
                                                     self.grid_shape)
@@ -135,7 +135,7 @@ class BaseLocalArray(object):
                 dd['proc_grid_size'] = next(grid_size)
 
     @property
-    def shape(self):
+    def global_shape(self):
         return tuple(dd['size'] for dd in self.dim_data)
 
     @property
@@ -144,7 +144,7 @@ class BaseLocalArray(object):
 
     @property
     def size(self):
-        return reduce(operator.mul, self.shape)
+        return reduce(operator.mul, self.global_shape)
 
     @property
     def comm_size(self):
@@ -223,7 +223,7 @@ class BaseLocalArray(object):
                     pass
 
     def compatibility_hash(self):
-        return hash((self.shape, self.dist, self.grid_shape, True))
+        return hash((self.global_shape, self.dist, self.grid_shape, True))
 
 
 def arecompatible(a, b):

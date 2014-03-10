@@ -3,24 +3,21 @@ import os
 import numpy
 
 from numpy.testing import assert_allclose, assert_equal
+
 from distarray.local import LocalArray, save, load, save_hdf5, load_hdf5
-from distarray.testing import (comm_null_passes, MpiTestCase, import_or_skip,
-                               temp_filepath)
+from distarray.testing import MpiTestCase, import_or_skip, temp_filepath
 
 
 class TestFlatFileIO(MpiTestCase):
 
-    @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr0 = LocalArray((7,), comm=self.comm)
         self.output_path = temp_filepath(extension='.dnpy')
 
-    @comm_null_passes
-    def more_tearDown(self):
+    def tearDown(self):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
 
-    @comm_null_passes
     def test_flat_file_save_with_filename(self):
         save(self.output_path, self.larr0)
 
@@ -29,7 +26,6 @@ class TestFlatFileIO(MpiTestCase):
 
         self.assertTrue(magic == b'\x93DARRY')
 
-    @comm_null_passes
     def test_flat_file_save_with_file_object(self):
         with open(self.output_path, 'wb') as fp:
             save(fp, self.larr0)
@@ -39,14 +35,12 @@ class TestFlatFileIO(MpiTestCase):
 
         self.assertTrue(magic == b'\x93DARRY')
 
-    @comm_null_passes
     def test_flat_file_save_load_with_filename(self):
         save(self.output_path, self.larr0)
         larr1 = load(self.output_path, comm=self.comm)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
-    @comm_null_passes
     def test_flat_file_save_load_with_file_object(self):
         save(self.output_path, self.larr0)
         with open(self.output_path, 'rb') as fp:
@@ -57,10 +51,10 @@ class TestFlatFileIO(MpiTestCase):
 
 class TestHDF5FileIO(MpiTestCase):
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 2
 
-    @comm_null_passes
     def test_save(self):
         h5py = import_or_skip('h5py')
 
@@ -80,7 +74,6 @@ class TestHDF5FileIO(MpiTestCase):
                 if os.path.exists(output_path):
                     os.remove(output_path)
 
-    @comm_null_passes
     def test_load_bn(self):
         h5py = import_or_skip('h5py')
 
@@ -130,8 +123,6 @@ class TestHDF5FileIO(MpiTestCase):
                 if os.path.exists(output_path):
                     os.remove(output_path)
 
-
-    @comm_null_passes
     def test_load_nc(self):
         h5py = import_or_skip('h5py')
 
@@ -184,7 +175,6 @@ class TestHDF5FileIO(MpiTestCase):
                 if os.path.exists(output_path):
                     os.remove(output_path)
 
-    @comm_null_passes
     def test_load_u(self):
         h5py = import_or_skip('h5py')
 
