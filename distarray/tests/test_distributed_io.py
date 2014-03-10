@@ -54,7 +54,7 @@ class TestFlatFileIO(IpclusterTestCase):
 
 class TestHDF5FileIO(IpclusterTestCase):
 
-    def test_write_block(self):
+    def test_save_block(self):
         h5py = import_or_skip('h5py')
         datalen = 33
         dac = Context(self.client)
@@ -78,7 +78,7 @@ class TestHDF5FileIO(IpclusterTestCase):
             if os.path.exists(output_path):
                 os.remove(output_path)
 
-    def test_write_3d(self):
+    def test_save_3d(self):
         h5py = import_or_skip('h5py')
         shape = (4, 5, 3)
         source = np.random.random(shape)
@@ -107,7 +107,7 @@ class TestHDF5FileIO(IpclusterTestCase):
             if os.path.exists(output_path):
                 os.remove(output_path)
 
-    def test_writing_two_datasets(self):
+    def test_save_two_datasets(self):
         h5py = import_or_skip('h5py')
 
         datalen = 33
@@ -131,6 +131,135 @@ class TestHDF5FileIO(IpclusterTestCase):
                 self.assertTrue("foo" in fp)
                 self.assertTrue("bar" in fp)
 
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_load_bn(self):
+        h5py = import_or_skip('h5py')
+
+        # set up test file
+        output_path = temp_filepath()
+        expected = np.arange(20).reshape(2, 10)
+        with h5py.File(output_path, 'w') as fp:
+            fp["load_test"] = expected
+
+        # load it in with load_hdf5
+        dac = Context(self.client, targets=[0, 1])
+
+        dim_data_0 = (
+            {'size': 2,
+             'dist_type': 'b',
+             'proc_grid_rank': 0,
+             'proc_grid_size': 2,
+             'start': 0,
+             'stop': 1,
+            },
+            {'size': 10,
+             'dist_type': 'n',
+            })
+
+        dim_data_1 = (
+            {'size': 2,
+             'dist_type': 'b',
+             'proc_grid_rank': 1,
+             'proc_grid_size': 2,
+             'start': 1,
+             'stop': 2,
+            },
+            {'size': 10,
+             'dist_type': 'n',
+            })
+
+        dim_datas = [dim_data_0, dim_data_1]
+
+        try:
+            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
+            assert_equal(da, expected)
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_load_nc(self):
+        h5py = import_or_skip('h5py')
+
+        # set up test file
+        output_path = temp_filepath()
+        expected = np.arange(20).reshape(2, 10)
+        with h5py.File(output_path, 'w') as fp:
+            fp["load_test"] = expected
+
+        # load it in with load_hdf5
+        dac = Context(self.client, targets=[0, 1])
+
+        dim_data_0 = (
+            {'size': 10,
+             'dist_type': 'n',
+            },
+            {'size': 2,
+             'dist_type': 'c',
+             'proc_grid_rank': 0,
+             'proc_grid_size': 2,
+             'start': 0,
+            },
+            )
+
+        dim_data_1 = (
+            {'size': 10,
+             'dist_type': 'n',
+            },
+            {'size': 2,
+             'dist_type': 'c',
+             'proc_grid_rank': 1,
+             'proc_grid_size': 2,
+             'start': 1,
+            },
+            )
+
+        dim_datas = [dim_data_0, dim_data_1]
+
+        try:
+            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
+            assert_equal(da, expected)
+        finally:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
+    def test_load_u(self):
+        h5py = import_or_skip('h5py')
+
+        # set up test file
+        output_path = temp_filepath()
+        expected = np.arange(20)
+        with h5py.File(output_path, 'w') as fp:
+            fp["load_test"] = expected
+
+        # load it in with load_hdf5
+        dac = Context(self.client, targets=[0, 1])
+
+        dim_data_0 = (
+            {'size': 20,
+             'dist_type': 'u',
+             'proc_grid_rank': 0,
+             'proc_grid_size': 2,
+             'indices': [0, 3, 4, 6, 8, 10, 13, 15, 18],
+            },
+            )
+
+        dim_data_1 = (
+            {'size': 20,
+             'dist_type': 'u',
+             'proc_grid_rank': 1,
+             'proc_grid_size': 2,
+             'indices': [1, 2, 5, 7, 9, 11, 12, 14, 16, 17, 19],
+            },
+            )
+
+        dim_datas = [dim_data_0, dim_data_1]
+
+        try:
+            da = dac.load_hdf5(output_path, dim_datas, key="load_test")
+            assert_equal([x for x in da], expected)
         finally:
             if os.path.exists(output_path):
                 os.remove(output_path)

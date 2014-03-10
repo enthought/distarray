@@ -23,7 +23,7 @@ from collections import Mapping
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct, format
+from distarray.local import construct, format, maps
 from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -947,6 +947,75 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         dset = fp.create_dataset(key, arr.global_shape, dtype=arr.dtype)
         for index, value in ndenumerate(arr):
             dset[index] = value
+
+
+def load_hdf5(filename, dim_data, key='buffer', comm=None):
+    """
+    Load a LocalArray from an ``.hdf5`` file.
+
+    Parameters
+    ----------
+    filename : str
+        The file to read.  It must support ``seek()`` and ``read()`` methods.
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol, describing
+        which portions of the HDF5 file to load into this LocalArray, and with
+        what metadata.
+    key : str, optional
+        The identifier for the group to load the LocalArray from (the default
+        is 'buffer').
+    comm : MPI comm object, optional
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    Note
+    ----
+    For `dim_data` dimension dictionaries containing unstructured ('u')
+    distribution types, the indices selected by the `'indices'` key must be in
+    increasing order.  This is a limitation of h5py / hdf5.
+
+    """
+    try:
+        import h5py
+    except ImportError:
+        errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+        raise ImportError(errmsg)
+
+    #TODO: validate dim_data somehow
+
+    def nodist_index(dd):
+        return slice(None)
+
+    def block_index(dd):
+        return slice(dd['start'], dd['stop'])
+
+    def cyclic_index(dd):
+        if ('block_size' not in dd) or (dd['block_size'] == 1):
+            return slice(dd['start'], None, dd['proc_grid_size'])
+        else:
+            return maps.IndexMap.from_dimdict(dd).global_index
+
+    def unstructured_index(dd):
+        return maps.IndexMap.from_dimdict(dd).global_index
+
+    index_fn = {'n': nodist_index,
+                'b': block_index,
+                'c': cyclic_index,
+                'u': unstructured_index,
+               }
+
+    index = tuple(index_fn[dd['dist_type']](dd) for dd in dim_data)
+
+    with h5py.File(filename, mode='r', driver='mpio', comm=comm) as fp:
+        dset = fp[key]
+        buf = dset[index]
+        dtype = dset.dtype
+
+    return LocalArray.from_dim_data(dim_data, dtype=dtype, buf=buf, comm=comm)
 
 
 class GlobalIterator(six.Iterator):

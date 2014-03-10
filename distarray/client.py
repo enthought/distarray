@@ -90,7 +90,7 @@ class DistArray(object):
 
     def __getitem__(self, index):
         #TODO: FIXME: major performance improvements possible here,
-        # especially for special casese like `index == slice(None)`.
+        # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
         if isinstance(index, int) or isinstance(index, slice):
