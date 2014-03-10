@@ -175,7 +175,7 @@ class TestNpyFileLoad(MpiTestCase):
         assert_equal(la, self.expected[:, expected_indices[self.rank]])
 
 
-class TestHDF5FileSave(MpiTestCase):
+class TestHdf5FileSave(MpiTestCase):
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
@@ -218,7 +218,7 @@ class TestHDF5FileSave(MpiTestCase):
                 os.remove(self.output_path)
 
 
-class TestHDF5FileLoad(MpiTestCase):
+class TestHdf5FileLoad(MpiTestCase):
 
     @classmethod
     def get_comm_size(cls):
