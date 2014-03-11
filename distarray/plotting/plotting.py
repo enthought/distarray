@@ -8,8 +8,6 @@
 Plotting functions for distarrays.
 """
 
-__docformat__ = "restructuredtext en"
-
 from matplotlib import pyplot
 
 from distarray.decorators import local

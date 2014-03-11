@@ -14,7 +14,6 @@ from distarray.error import ContextError
 from distarray.client import DistArray
 
 
-__docformat__ = "restructuredtext en"
 __all__ = []  # unary_names and binary_names added to __all__ below.
 
 # numpy unary operations to wrap
