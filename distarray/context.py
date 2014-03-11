@@ -46,7 +46,13 @@ class Context(object):
 
     def __del__(self):
         """ Clean up keys we have put on the engines. """
-        self._cleanup_keys()
+        # There is an order-of-ops problem here.
+        # We sometimes call Client.close() explicitly, while leaving
+        # this call to run when garbage is collected.
+        # BUT, once we call close(), we cannot clean up the keys anymore.
+        return    # leak!
+        ##self._cleanup_keys()
+        self.purge_keys()
         self._clear_comm_key()
 
     def _clear_comm_key(self):
@@ -55,6 +61,7 @@ class Context(object):
         # for the Context. This _comm_key is not otherwise cleaned up by
         # the methods in this class.
         if hasattr(self, '_comm_key'):
+            print 'deleting comm key', self._comm_key
             self._delete_engine_key(self._comm_key)
             self._comm_key = None
 
@@ -105,7 +112,7 @@ class Context(object):
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
         # This key is not added to key_records so it is not wrongly removed.
-        self._comm_key = self._generate_key_name()
+        self._comm_key = self._generate_key_name(subprefix='comm')
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
@@ -124,11 +131,26 @@ class Context(object):
         This can be used to properly clean up.
         """
         self.key_records = {}
+        # Create a unique prefix for the keys for this context.
+        # Full length seems excessively verbose so use 16 characters.
+        uid = uuid.uuid4()
+        self.key_prefix = uid.hex[:16]
+        print 'key_prefix', self.key_prefix
 
-    def _generate_key_name(self):
+    def _key_prefix(self, subprefix=''):
+        """ Get the prefix, unique for this Context, used by all keys. """
+        prefix = '__distarray_%s_%s_' % (subprefix, self.key_prefix)
+        return prefix
+
+    def _generate_key_name(self, subprefix=''):
         """ Generate a unique name for a key. """
         uid = uuid.uuid4()
-        key = '__distarray_%s' % uid.hex
+        ##key = '__distarray_%s_%s' % (self.key_prefix, uid.hex)
+        #if prefix is None:
+        #    prefix = self._key_prefix() + '_'
+        key = '%s_%s' % (self._key_prefix(subprefix), uid.hex)
+        #key = '%s_%s' % (prefix, uid.hex)
+        print 'generated key:', key
         return key
 
     def _generate_key(self, targets=None):
@@ -138,20 +160,46 @@ class Context(object):
         if targets is None:
             targets = self.targets
         key = self._generate_key_name()
+        ##print 'generated key', key, 'for targets', targets
         self.key_records[key] = targets
         return key
 
     def _generate_key0(self):
         """ Generate a key for only target 0. """
-        return self._generate_key(targets=[self.targets[0]])
+        ##return self._generate_key(targets=[self.targets[0]])
+        # temporary workaround- this leaks the key but wont ask for invalid delete.
+        return self._generate_key_name()
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
+    def dump_keys(self, prefix=None):
+        """ Print out a listing of all names on the engines. """
+        engine_keys = self._get_engine_names(prefix)
+        print 'engine keys:'
+        print engine_keys
+        for key in sorted(engine_keys.keys()):
+            targets = engine_keys[key]
+            print key, targets
+
+    def purge_keys(self):
+        """ Delete keys that this context created from all the engines. """
+        cmd = """for k in globals().keys():
+                     if k.startswith('__dist'):
+                         print('%s IS DIST' % (k))
+                         del globals()[k]
+                     else:
+                         print('%s is not' % (k))"""
+        print 'cmd:', cmd
+        self._execute(cmd)
+
     def delete_key(self, key):
         """ Delete the key from the engines, and our records. """
+        self._delete_engine_key(key)
+        return
+        ##print 'deleting key', key
         if key in self.key_records:
             targets = self.key_records[key]
             self._delete_engine_key(key, targets)
@@ -159,7 +207,7 @@ class Context(object):
         else:
             raise KeyError('Key %s is not known by Context.' % (key))
 
-    def _cleanup_keys(self):
+    def XXX_cleanup_keys(self):
         """ Delete all the keys we are tracking from the engines.
         
         Ideally this should leave no keys remaining on the engines.
@@ -172,7 +220,7 @@ class Context(object):
     # Methods to directly operate on keys on the engines.
     # These make no consideration for what keys we *expect* to be there.
 
-    def _get_engine_keys(self, targets=None):
+    def XXX_get_engine_keys(self, targets=None):
         """ Get the keys that exist on each of the engines, via globals().
         
         The return value is a dict, keyed by the key, with the value as
@@ -196,7 +244,35 @@ class Context(object):
                 engine_keys[key].append(self.targets[iengine])
         return engine_keys
 
-    def _clean_engine_keys(self, engine_keys):
+    def _get_engine_names(self, prefix=None):
+        """ Get the keys that exist on each of the engines, via globals().
+        
+        The return value is a dict, keyed by the key, with the value as
+        a list of engines where the key is present.
+        """
+        globals_key = self._generate_key()
+        prefix = '__distarray'
+        ##prefix = ''
+        ##prefix = self._key_prefix()
+        if prefix is None:
+            prefix = self._key_prefix()
+
+        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
+            globals_key, prefix)
+        print 'cmd:', cmd
+        self._execute(cmd)
+        keylists = self._pull(globals_key)
+        self.delete_key(globals_key)
+        # Convert nested list to dict with key=key, value=list of engines.
+        engine_keys = {}
+        for iengine, keylist in enumerate(keylists):
+            for key in keylist:
+                if key not in engine_keys:
+                    engine_keys[key] = []
+                engine_keys[key].append(self.targets[iengine])
+        return engine_keys
+
+    def XXX_clean_engine_keys(self, engine_keys):
         """ Clean the keys of engine objects to remove things
         that this Context created for itself internally.
         (We do not want to delete those keys!)
@@ -213,11 +289,13 @@ class Context(object):
         if targets is None:
             targets = self.targets
         cmd = 'del %s' % key
-        self._execute(cmd, targets=targets)
+        # No more targets...
+        #self._execute(cmd, targets=targets)
+        self._execute(cmd)
 
     # Cleanup of leftover keys. Normally there should not be any of these.
 
-    def _get_leftover_keys(self):
+    def XXX_get_leftover_keys(self):
         """ Get the keys that exist on each of the engines.
         
         They are discovered via globals().
@@ -230,7 +308,7 @@ class Context(object):
         self._clean_engine_keys(engine_keys)
         return engine_keys
 
-    def _purge_keys(self, verbose=False):
+    def XXX_purge_keys(self, verbose=False):
         """ Delete leftover keys from the engines.
         Return True if any keys were found, False if not. 
 
@@ -245,10 +323,12 @@ class Context(object):
             if verbose:
                 print('Leftover key: %s' % (key))
             targets = leftover_keys[key]
-            self._delete_engine_key(key, targets)
+            # No more targets arg...
+            #self._delete_engine_key(key, targets)
+            self._delete_engine_key(key)
         return leftovers
 
-    def _cleanup_all_keys(self, verbose=False):
+    def XXX_cleanup_all_keys(self, verbose=False):
         """ Cleanup all the keys on the engines.
 
         This first cleans up the keys we expect to exist.
