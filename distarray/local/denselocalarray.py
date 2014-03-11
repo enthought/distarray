@@ -23,7 +23,7 @@ from collections import Mapping
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct, format
+from distarray.local import construct, format, maps
 from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -947,6 +947,139 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         dset = fp.create_dataset(key, arr.global_shape, dtype=arr.dtype)
         for index, value in ndenumerate(arr):
             dset[index] = value
+
+
+def compact_indices(dim_data):
+    """Given a `dim_data` structure, return a tuple of compact indices.
+
+    For every dimension in `dim_data`, return a representation of the indicies
+    indicated by that dim_dict; return a slice if possible, else, return the
+    list of global indices.
+
+    Parameters
+    ----------
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol we use only the
+        indexing related keys from this structure here.
+
+    Returns
+    -------
+    index : tuple of slices and/or lists of int
+        Efficient structure usable for indexing into a numpy-array-like data
+        structure.
+
+    """
+    def nodist_index(dd):
+        return slice(None)
+
+    def block_index(dd):
+        return slice(dd['start'], dd['stop'])
+
+    def cyclic_index(dd):
+        if ('block_size' not in dd) or (dd['block_size'] == 1):
+            return slice(dd['start'], None, dd['proc_grid_size'])
+        else:
+            return maps.IndexMap.from_dimdict(dd).global_index
+
+    def unstructured_index(dd):
+        return maps.IndexMap.from_dimdict(dd).global_index
+
+    index_fn_map = {'n': nodist_index,
+                    'b': block_index,
+                    'c': cyclic_index,
+                    'u': unstructured_index,
+                    }
+
+    index = []
+    for dd in dim_data:
+        index_fn = index_fn_map[dd['dist_type']]
+        index.append(index_fn(dd))
+
+    return tuple(index)
+
+
+def load_hdf5(filename, dim_data, key='buffer', comm=None):
+    """
+    Load a LocalArray from an ``.hdf5`` file.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to read.
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol, describing
+        which portions of the HDF5 file to load into this LocalArray, and with
+        what metadata.
+    key : str, optional
+        The identifier for the group to load the LocalArray from (the default
+        is 'buffer').
+    comm : MPI comm object, optional
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    Note
+    ----
+    For `dim_data` dimension dictionaries containing unstructured ('u')
+    distribution types, the indices selected by the `'indices'` key must be in
+    increasing order.  This is a limitation of h5py / hdf5.
+
+    """
+    try:
+        import h5py
+    except ImportError:
+        errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+        raise ImportError(errmsg)
+
+    #TODO: validate dim_data somehow
+    index = compact_indices(dim_data)
+
+    with h5py.File(filename, mode='r', driver='mpio', comm=comm) as fp:
+        dset = fp[key]
+        buf = dset[index]
+        dtype = dset.dtype
+
+    return LocalArray.from_dim_data(dim_data, dtype=dtype, buf=buf, comm=comm)
+
+
+def load_npy(filename, dim_data, comm=None):
+    """
+    Load a LocalArray from a ``.npy`` file.
+
+    Parameters
+    ----------
+    filename : str
+        The file to read.
+    dim_data : tuple of dict
+        A dict for each dimension, with the data described here:
+        https://github.com/enthought/distributed-array-protocol, describing
+        which portions of the HDF5 file to load into this LocalArray, and with
+        what metadata.
+    comm : MPI comm object, optional
+
+    Returns
+    -------
+    result : LocalArray
+        A LocalArray encapsulating the data loaded.
+
+    """
+    #TODO: validate dim_data somehow
+    index = compact_indices(dim_data)
+    data = np.load(filename, mmap_mode='r')
+    buf = data[index].copy()
+
+    # Apparently there isn't a clean way to close a numpy memmap; it is closed
+    # when the object is garbage-collected.  This stackoverflow question claims
+    # that one can close it with data._mmap.close(), but it seems risky
+    # http://stackoverflow.com/questions/6397495/unmap-of-numpy-memmap
+
+    #data._mmap.close()
+    return LocalArray.from_dim_data(dim_data, dtype=data.dtype, buf=buf,
+                                    comm=comm)
 
 
 class GlobalIterator(six.Iterator):
