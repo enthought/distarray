@@ -166,8 +166,8 @@ class Context(object):
             engine.  Each engine will save a file named
             ``<name>_<comm_rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its comm_rank.  Having less or more items in this
-            list than processes is an error.
+            corresponding to its comm_rank.  An exception is raised if the
+            length of this list is not the same as the communicator's size.
         da : DistArray
             Array to save to files.
 
@@ -201,8 +201,8 @@ class Context(object):
             engine.  Each engine will load a file named
             ``<name>_<comm_rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  Having less or more items in this list
-            than processes is an error.
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the communicator's size.
 
         Returns
         -------
