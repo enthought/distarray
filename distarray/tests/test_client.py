@@ -77,10 +77,15 @@ class TestContextCreation(IpclusterTestCase):
         self.assertEqual(ctx1.targets, ctx2.targets)
 
 
+
 class TestDistArray(IpclusterTestCase):
 
     def setUp(self):
         self.dac = Context(self.client)
+
+    def test_create_client_map(self):
+        dap = self.dac.zeros((100, 100), dist=('b', 'b'))
+        cfromr = dap._get_coords_from_rank()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
