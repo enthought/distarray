@@ -1,8 +1,15 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 '''
 To run this file, you need to start a cluster with the following command:
 
     $ ipcluster start -n <n> --engines=MPIEngineSetLauncher
 '''
+
 from __future__ import print_function
 
 import numpy as np

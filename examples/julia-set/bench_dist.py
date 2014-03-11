@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Benchmark calculating the Julia set with Distarray for various array
 distributions and number of engines. Usage:
@@ -5,6 +11,7 @@ distributions and number of engines. Usage:
     ...
     $ python bench_dist.py
 """
+
 from timeit import default_timer as clock
 
 from IPython.parallel import Client
