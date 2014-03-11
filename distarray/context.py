@@ -40,7 +40,7 @@ class Context(object):
         self.view.execute("import distarray.local; import distarray.mpiutils;"
                           " import numpy")
 
-        self._setup_key_records()
+        self._setup_key_context()
         self._make_intracomm()
         self._set_engine_rank_mapping()
 
@@ -110,56 +110,69 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        # This key is not added to key_records so it is not wrongly removed.
-        self._comm_key = self._generate_key_name(subprefix='comm')
+        # Apply a prefix to this key name so it is not wrongly removed.
+        self._comm_key = self._generate_key(prefix='comm')
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
         )
 
-    # Keeping track of the keys that we create on each engine.
-    # This allows us to properly clean up after ourselves.
-    # We store these as a dict, with the key as the key.
-    # The value is the list of engines where the key has been pushed.
-    # We can also find keys on the engines that are *not* tracked.
-    # These should be kept track of better, but we can also delete them.
+    # Key management routines:
 
-    def _setup_key_records(self):
-        """ Create a dictionary, keyed by key name, with values as the
-        set of targets the key is sent to.
-        This can be used to properly clean up.
+    def _setup_key_context(self):
+        """ Generate a unique string for this context.
+
+        This will be included in the names of all keys we create.
+        This prefix allows us to delete only keys from this context.
         """
-        # Create a unique prefix for the keys for this context.
         # Full length seems excessively verbose so use 16 characters.
         uid = uuid.uuid4()
-        self.key_prefix = uid.hex[:16]
-        print 'key_prefix', self.key_prefix
+        self.key_context = uid.hex[:16]
 
-    def _key_prefix(self, subprefix=''):
-        """ Get the prefix, unique for this Context, used by all keys. """
-        prefix = '__distarray_%s_%s_' % (subprefix, self.key_prefix)
-        return prefix
+    def _key_header(self, prefix=None):
+        """ Generate a header for a key name for this context.
+        
+        The key name will start as: '__distarray_[prefix]_[key_context]_'.
+        The prefix is used to give the comm_key a name that will not be
+        inadvertently deleted.
+        """
+        if prefix is None:
+            prefix = ''
+        header = '__distarray_%s_%s_' % (prefix, self.key_context)
+        return header
 
-    def _generate_key_name(self, subprefix=''):
-        """ Generate a unique name for a key. """
+    def _generate_key(self, prefix=None):
+        """ Generate a unique key name, including an identifier for this context. """
         uid = uuid.uuid4()
         ##key = '__distarray_%s_%s' % (self.key_prefix, uid.hex)
         #if prefix is None:
         #    prefix = self._key_prefix() + '_'
-        key = '%s_%s' % (self._key_prefix(subprefix), uid.hex)
+        #key = '%s_%s' % (self._key_header(subprefix), uid.hex)
         #key = '%s_%s' % (prefix, uid.hex)
+        key = self._key_header(prefix) + uid.hex
         print 'generated key:', key
-        return key
-
-    def _generate_key(self):
-        """ Generate a key name. """
-        key = self._generate_key_name()
         return key
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
         self._push(dict(zip(keys, values)))
         return tuple(keys)
+
+    def delete_key(self, key):
+        """ Delete the specific key from all the engines. """
+        cmd = 'del %s' % key
+        self._execute(cmd)
+
+    def purge_keys(self):
+        """ Delete keys that this context created from all the engines. """
+        cmd = """for k in globals().keys():
+                     if k.startswith('__dist'):
+                         print('%s IS DIST' % (k))
+                         del globals()[k]
+                     else:
+                         print('%s is not' % (k))"""
+        print 'cmd:', cmd
+        self._execute(cmd)
 
     def dump_keys(self, prefix=None):
         """ Return a list of all key names present on the engines.
@@ -196,27 +209,6 @@ class Context(object):
             targets = engine_keys[key]
             keylist.append((key, targets))
         return keylist
-
-    def purge_keys(self):
-        """ Delete keys that this context created from all the engines. """
-        cmd = """for k in globals().keys():
-                     if k.startswith('__dist'):
-                         print('%s IS DIST' % (k))
-                         del globals()[k]
-                     else:
-                         print('%s is not' % (k))"""
-        print 'cmd:', cmd
-        self._execute(cmd)
-
-    # Methods to directly operate on keys on the engines.
-    # These make no consideration for what keys we *expect* to be there.
-
-    def delete_key(self, key):
-        """ Delete the key from all the engines. """
-        cmd = 'del %s' % key
-        self._execute(cmd)
-
-    # Cleanup of leftover keys. Normally there should not be any of these.
 
     # End of key management routines.
 
