@@ -51,14 +51,14 @@ class Context(object):
         # this call to run when garbage is collected.
         # BUT, once we call close(), we cannot clean up the keys anymore.
         return    # leak!
-        self.purge_keys()
-        self._clear_comm_key()
+        self._cleanup_keys()
 
-    def _clear_comm_key(self):
-        """ Delete our internal _comm_key from the engines. """
-        # This could perhaps be called in the __exit__ of a context manager
-        # for the Context. This _comm_key is not otherwise cleaned up by
-        # the methods in this class.
+    def _cleanup_keys(self):
+        """ Delete all the keys we have created from all the engines. """
+        print ('cleanup keys...')
+        # Cleanup normal keys.
+        self.purge_keys()
+        # And the comm_key.
         if hasattr(self, '_comm_key'):
             print 'deleting comm key', self._comm_key
             self.delete_key(self._comm_key)
@@ -77,8 +77,8 @@ class Context(object):
         # mapping target -> rank, rank -> target.
         target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
         rank_to_target = {v: k for (k, v) in target_to_rank.items()}
-        # Probably wont need this...
-        self.delete_key(rank)
+#         # Probably wont need this...
+#         self.delete_key(rank)
 
         # ensure consistency
         assert set(self.targets) == set(target_to_rank)
@@ -112,6 +112,7 @@ class Context(object):
         # involved in the new communicator.
         # Apply a prefix to this key name so it is not wrongly removed.
         self._comm_key = self._generate_key(prefix='comm')
+        print 'comm key:', self._comm_key
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
@@ -140,7 +141,7 @@ class Context(object):
             header = base + '_' + prefix
         else:
             header = base
-        return base
+        return header
 
     def _key_header(self, prefix=None):
         """ Generate a header for a key name for this context.
@@ -156,7 +157,7 @@ class Context(object):
         """ Generate a unique key name, including an identifier for this context. """
         uid = uuid.uuid4()
         key = self._key_header(prefix) + '_' + uid.hex
-        print 'generated key:', key
+        #print 'generated key:', key
         return key
 
     def _key_and_push(self, *values):
