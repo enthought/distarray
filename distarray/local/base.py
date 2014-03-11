@@ -46,12 +46,13 @@ def distribute_indices(dim_data):
     for supported dist_types.
     """
     distribute_fn = {
+        'n': lambda dd: None,
         'b': distribute_block_indices,
         'c': distribute_cyclic_indices,
+        'u': lambda dd: None,
     }
     for dim in dim_data:
-        if dim['dist_type'] != 'n':
-            distribute_fn[dim['dist_type']](dim)
+        distribute_fn[dim['dist_type']](dim)
 
 
 class BaseLocalArray(object):
