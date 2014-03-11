@@ -155,7 +155,7 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def save(self, name, da):
+    def save_dnpy(self, name, da):
         """
         Save a distributed array to files in the ``.dnpy`` format.
 
@@ -175,7 +175,7 @@ class Context(object):
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -183,14 +183,14 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s[%s.comm_rank], %s)' % subs
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
 
-    def load(self, name):
+    def load_dnpy(self, name):
         """
         Load a distributed array from ``.dnpy`` files.
 
@@ -217,7 +217,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -226,7 +226,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s[%s.Get_rank()], %s)' % subs
+                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."

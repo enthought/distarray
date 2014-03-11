@@ -26,8 +26,8 @@ class TestDnpyFileIO(IpclusterTestCase):
 
         output_paths = [temp_filepath() for target in dac.targets]
         try:
-            dac.save(output_paths, da)
-            db = dac.load(output_paths)
+            dac.save_dnpy(output_paths, da)
+            db = dac.load_dnpy(output_paths)
             self.assertTrue(isinstance(db, DistArray))
             self.assertEqual(da, db)
         finally:
@@ -41,8 +41,8 @@ class TestDnpyFileIO(IpclusterTestCase):
 
         output_path = temp_filepath()
         try:
-            dac.save(output_path, da)
-            db = dac.load(output_path)
+            dac.save_dnpy(output_path, da)
+            db = dac.load_dnpy(output_path)
             self.assertTrue(isinstance(db, DistArray))
             self.assertEqual(da, db)
         finally:

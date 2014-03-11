@@ -858,7 +858,7 @@ def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     return la
 
 
-def save(file, arr):
+def save_dnpy(file, arr):
     """
     Save a LocalArray to a ``.dnpy`` file.
 
@@ -884,7 +884,7 @@ def save(file, arr):
             fid.close()
 
 
-def load(file, comm=None):
+def load_dnpy(file, comm=None):
     """
     Load a LocalArray from a ``.dnpy`` file.
 
