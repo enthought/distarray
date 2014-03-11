@@ -196,7 +196,7 @@ class Context(object):
 
         Parameters
         ----------
-        name : str or list of
+        name : str or list of str
             If a str, this is used as the prefix for the filename used by each
             engine.  Each engine will load a file named
             ``<name>_<comm_rank>.dnpy``.
@@ -272,7 +272,7 @@ class Context(object):
 
     def load_npy(self, filename, dim_data_per_process, grid_shape=None):
         """
-        Load a DistArray from a dataset in an ``.hdf5`` file.
+        Load a DistArray from a dataset in a ``.npy`` file.
 
         Parameters
         ----------
