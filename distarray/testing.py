@@ -95,20 +95,19 @@ class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
-    Overload `get_comm_size` to change the default comm size (default is 4).
+    Overload the `comm_size` class attribute to change the default
+    (default is 4).
     """
 
-    @classmethod
-    def get_comm_size(cls):
-        return 4
+    comm_size = 4
 
     @classmethod
     def setUpClass(cls):
         try:
-            cls.comm = create_comm_of_size(cls.get_comm_size())
+            cls.comm = create_comm_of_size(cls.comm_size)
         except InvalidCommSizeError:
             msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
+            raise unittest.SkipTest(msg.format(cls.comm_size))
 
     @classmethod
     def tearDownClass(cls):
@@ -120,19 +119,17 @@ class IpclusterTestCase(unittest.TestCase):
 
     """Base test class for test cases needing an ipcluster.
 
-    Overload `get_ipcluster_size` to change the default (default is 4).
+    Overload the `ipcluster_size` class attribute to change the default (default is 4).
     """
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 4
+    ipcluster_size = 4
 
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        if len(cls.client) < cls.get_ipcluster_size():
+        if len(cls.client) < cls.ipcluster_size:
             errmsg = 'Tests need an ipcluster with at least {} engines running.'
-            raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
+            raise unittest.SkipTest(errmsg.format(cls.ipcluster_size))
 
     def tearDown(self):
         self.client.clear(block=True)

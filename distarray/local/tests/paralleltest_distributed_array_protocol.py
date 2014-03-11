@@ -155,9 +155,7 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 12
+    comm_size = 12
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99),
@@ -195,9 +193,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
 class TestDapLopsided(DapTestMixin, MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         if self.comm.Get_rank() == 0:

@@ -127,9 +127,7 @@ nu_test_data = [
 
 class TestNpyFileLoad(MpiTestCase):
 
-    @classmethod
-    def get_comm_size(self):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
@@ -220,9 +218,7 @@ class TestHdf5FileSave(MpiTestCase):
 
 class TestHdf5FileLoad(MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         self.rank = self.comm.Get_rank()

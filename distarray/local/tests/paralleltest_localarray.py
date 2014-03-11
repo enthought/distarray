@@ -182,9 +182,7 @@ class TestFromDimData(MpiTestCase):
 
 class TestGridShape(MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 12
+    comm_size = 12
 
     def test_grid_shape(self):
         """Test various ways of setting the grid_shape."""
@@ -204,9 +202,7 @@ class TestDistMatrix(MpiTestCase):
 
     """Test the dist_matrix."""
 
-    @classmethod
-    def get_comm_size(cls):
-        return 12
+    comm_size = 12
 
     @unittest.skip("Plot test.")
     def test_plot_dist_matrix(self):
