@@ -129,9 +129,17 @@ class Context(object):
         uid = uuid.uuid4()
         self.key_context = uid.hex[:16]
 
-    def _key_base(self):
-        """ Get the base name for all keys. """
+    def _key_base(self, prefix=None):
+        """ Get the base name for all keys.
+        
+        The prefix is used to give the comm_key a name that will not be
+        inadvertently deleted.
+        """
         base = '__distarray_'
+        if prefix is not None:
+            header = base + '_' + prefix
+        else:
+            header = base
         return base
 
     def _key_header(self, prefix=None):
@@ -141,10 +149,7 @@ class Context(object):
         The prefix is used to give the comm_key a name that will not be
         inadvertently deleted.
         """
-        if prefix is not None:
-            header = self._key_base() + '_' + prefix + '_' + self.key_context
-        else:
-            header = self._key_base() + '_' + self.key_context
+        header = self._key_base(prefix) + '_' + self.key_context
         return header
 
     def _generate_key(self, prefix=None):
@@ -168,7 +173,7 @@ class Context(object):
         """ Delete keys that this context created from all the engines. """
         if all_contexts:
             # Delete distarray keys from all contexts.
-            header = self._key_base()    ##(prefix)
+            header = self._key_base(prefix)
         else:
             # Delete keys only from this context.
             header = self._key_header(prefix)
@@ -188,7 +193,7 @@ class Context(object):
         """
         if all_contexts:
             # Dump distarray keys from all contexts.
-            header = self._key_base()    ##(prefix)
+            header = self._key_base(prefix)
         else:
             # Dump keys only from this context.
             header = self._key_header(prefix)
