@@ -129,27 +129,28 @@ class Context(object):
         uid = uuid.uuid4()
         self.key_context = uid.hex[:16]
 
+    def _key_base(self):
+        """ Get the base name for all keys. """
+        base = '__distarray_'
+        return base
+
     def _key_header(self, prefix=None):
         """ Generate a header for a key name for this context.
         
-        The key name will start as: '__distarray_[prefix]_[key_context]_'.
+        The key name will start as: '__distarray__[prefix]_[key_context]_'.
         The prefix is used to give the comm_key a name that will not be
         inadvertently deleted.
         """
-        if prefix is None:
-            prefix = ''
-        header = '__distarray_%s_%s_' % (prefix, self.key_context)
+        if prefix is not None:
+            header = self._key_base() + '_' + prefix + '_' + self.key_context
+        else:
+            header = self._key_base() + '_' + self.key_context
         return header
 
     def _generate_key(self, prefix=None):
         """ Generate a unique key name, including an identifier for this context. """
         uid = uuid.uuid4()
-        ##key = '__distarray_%s_%s' % (self.key_prefix, uid.hex)
-        #if prefix is None:
-        #    prefix = self._key_prefix() + '_'
-        #key = '%s_%s' % (self._key_header(subprefix), uid.hex)
-        #key = '%s_%s' % (prefix, uid.hex)
-        key = self._key_header(prefix) + uid.hex
+        key = self._key_header(prefix) + '_' + uid.hex
         print 'generated key:', key
         return key
 
@@ -163,35 +164,40 @@ class Context(object):
         cmd = 'del %s' % key
         self._execute(cmd)
 
-    def purge_keys(self):
+    def purge_keys(self, prefix=None, all_contexts=False):
         """ Delete keys that this context created from all the engines. """
+        if all_contexts:
+            # Delete distarray keys from all contexts.
+            header = self._key_base()    ##(prefix)
+        else:
+            # Delete keys only from this context.
+            header = self._key_header(prefix)
+        print 'purge key header:', header
         cmd = """for k in globals().keys():
-                     if k.startswith('__dist'):
-                         print('%s IS DIST' % (k))
-                         del globals()[k]
-                     else:
-                         print('%s is not' % (k))"""
+                     if k.startswith('%s'):
+                         del globals()[k]""" % (header)
         print 'cmd:', cmd
         self._execute(cmd)
 
-    def dump_keys(self, prefix=None):
+    def dump_keys(self, prefix=None, all_contexts=False):
         """ Return a list of all key names present on the engines.
 
         The list is a list of tuples (key name, list of targets),
         and is sorted by key name. This is intended to be convenient
         and readable to print out.
         """
-
-        # TODO: correct prefix
-        prefix = '__distarray'
-        ##prefix = ''
-        ##prefix = self._key_prefix()
-        if prefix is None:
-            prefix = self._key_prefix()
+        if all_contexts:
+            # Dump distarray keys from all contexts.
+            header = self._key_base()    ##(prefix)
+        else:
+            # Dump keys only from this context.
+            header = self._key_header(prefix)
+        print 'dump key header:', header
         # Get the keys from all the engines.
         dump_key = self._generate_key()
         cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
-            dump_key, prefix)
+            dump_key, header)
+        print 'cmd:', cmd
         self._execute(cmd)
         keylists = self._pull(dump_key)
         # The values returned by the engines are a nested list,
