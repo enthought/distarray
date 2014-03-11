@@ -164,9 +164,9 @@ class Context(object):
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
             engine.  Each engine will save a file named
-            ``<name>_<comm_rank>.dnpy``.
+            ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its comm_rank.  An exception is raised if the
+            corresponding to its rank.  An exception is raised if the
             length of this list is not the same as the communicator's size.
         da : DistArray
             Array to save to files.
@@ -199,7 +199,7 @@ class Context(object):
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
             engine.  Each engine will load a file named
-            ``<name>_<comm_rank>.dnpy``.
+            ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
             corresponding to its rank.  An exception is raised if the length of
             this list is not the same as the communicator's size.
