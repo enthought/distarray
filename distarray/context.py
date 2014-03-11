@@ -61,7 +61,7 @@ class Context(object):
         # the methods in this class.
         if hasattr(self, '_comm_key'):
             print 'deleting comm key', self._comm_key
-            self._delete_engine_key(self._comm_key)
+            self.delete_key(self._comm_key)
             self._comm_key = None
 
     def _set_engine_rank_mapping(self):
@@ -162,13 +162,40 @@ class Context(object):
         return tuple(keys)
 
     def dump_keys(self, prefix=None):
-        """ Print out a listing of all names on the engines. """
-        engine_keys = self._get_engine_names(prefix)
-        print 'engine keys:'
-        print engine_keys
+        """ Return a list of all key names present on the engines.
+
+        The list is a list of tuples (key name, list of targets),
+        and is sorted by key name. This is intended to be convenient
+        and readable to print out.
+        """
+
+        # TODO: correct prefix
+        prefix = '__distarray'
+        ##prefix = ''
+        ##prefix = self._key_prefix()
+        if prefix is None:
+            prefix = self._key_prefix()
+        # Get the keys from all the engines.
+        dump_key = self._generate_key()
+        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
+            dump_key, prefix)
+        self._execute(cmd)
+        keylists = self._pull(dump_key)
+        # The values returned by the engines are a nested list,
+        # the outer per engine, and the inner listing each key name.
+        # Convert to dict with key=key, value=list of targets.
+        engine_keys = {}
+        for iengine, keylist in enumerate(keylists):
+            for key in keylist:
+                if key not in engine_keys:
+                    engine_keys[key] = []
+                engine_keys[key].append(self.targets[iengine])
+        # Convert to sorted list of tuples (key name, list of targets).
+        keylist = []
         for key in sorted(engine_keys.keys()):
             targets = engine_keys[key]
-            print key, targets
+            keylist.append((key, targets))
+        return keylist
 
     def purge_keys(self):
         """ Delete keys that this context created from all the engines. """
@@ -181,42 +208,10 @@ class Context(object):
         print 'cmd:', cmd
         self._execute(cmd)
 
-    def delete_key(self, key):
-        """ Delete the key from the engines, and our records. """
-        self._delete_engine_key(key)
-
     # Methods to directly operate on keys on the engines.
     # These make no consideration for what keys we *expect* to be there.
 
-    def _get_engine_names(self, prefix=None):
-        """ Get the keys that exist on each of the engines, via globals().
-        
-        The return value is a dict, keyed by the key, with the value as
-        a list of engines where the key is present.
-        """
-        globals_key = self._generate_key()
-        prefix = '__distarray'
-        ##prefix = ''
-        ##prefix = self._key_prefix()
-        if prefix is None:
-            prefix = self._key_prefix()
-
-        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
-            globals_key, prefix)
-        print 'cmd:', cmd
-        self._execute(cmd)
-        keylists = self._pull(globals_key)
-        self.delete_key(globals_key)
-        # Convert nested list to dict with key=key, value=list of engines.
-        engine_keys = {}
-        for iengine, keylist in enumerate(keylists):
-            for key in keylist:
-                if key not in engine_keys:
-                    engine_keys[key] = []
-                engine_keys[key].append(self.targets[iengine])
-        return engine_keys
-
-    def _delete_engine_key(self, key):
+    def delete_key(self, key):
         """ Delete the key from all the engines. """
         cmd = 'del %s' % key
         self._execute(cmd)

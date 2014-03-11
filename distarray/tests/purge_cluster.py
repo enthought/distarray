@@ -13,7 +13,10 @@ def dump():
     client = Client()
     view = client[:]
     context = Context(view)
-    context.dump_keys()
+    keylist = context.dump_keys()
+    print('*** ENGINE KEYS ***')
+    for key, targets in keylist:
+        print('%s : %r' % (key, targets))
 
 
 def purge():
