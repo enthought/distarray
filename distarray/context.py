@@ -51,7 +51,6 @@ class Context(object):
         # this call to run when garbage is collected.
         # BUT, once we call close(), we cannot clean up the keys anymore.
         return    # leak!
-        ##self._cleanup_keys()
         self.purge_keys()
         self._clear_comm_key()
 
@@ -130,7 +129,6 @@ class Context(object):
         set of targets the key is sent to.
         This can be used to properly clean up.
         """
-        self.key_records = {}
         # Create a unique prefix for the keys for this context.
         # Full length seems excessively verbose so use 16 characters.
         uid = uuid.uuid4()
@@ -153,22 +151,10 @@ class Context(object):
         print 'generated key:', key
         return key
 
-    def _generate_key(self, targets=None):
-        """ Generate a key name, and record that it will be present
-        on the specified target engines.
-        """
-        if targets is None:
-            targets = self.targets
+    def _generate_key(self):
+        """ Generate a key name. """
         key = self._generate_key_name()
-        ##print 'generated key', key, 'for targets', targets
-        self.key_records[key] = targets
         return key
-
-    def _generate_key0(self):
-        """ Generate a key for only target 0. """
-        ##return self._generate_key(targets=[self.targets[0]])
-        # temporary workaround- this leaks the key but wont ask for invalid delete.
-        return self._generate_key_name()
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
@@ -198,51 +184,9 @@ class Context(object):
     def delete_key(self, key):
         """ Delete the key from the engines, and our records. """
         self._delete_engine_key(key)
-        return
-        ##print 'deleting key', key
-        if key in self.key_records:
-            targets = self.key_records[key]
-            self._delete_engine_key(key, targets)
-            del self.key_records[key]
-        else:
-            raise KeyError('Key %s is not known by Context.' % (key))
-
-    def XXX_cleanup_keys(self):
-        """ Delete all the keys we are tracking from the engines.
-        
-        Ideally this should leave no keys remaining on the engines.
-        Any leftovers can be removed via purge_keys().
-        """
-        keys_to_remove = list(self.key_records.keys())
-        for key in keys_to_remove:
-            self.delete_key(key)
 
     # Methods to directly operate on keys on the engines.
     # These make no consideration for what keys we *expect* to be there.
-
-    def XXX_get_engine_keys(self, targets=None):
-        """ Get the keys that exist on each of the engines, via globals().
-        
-        The return value is a dict, keyed by the key, with the value as
-        a list of engines where the key is present.
-        """
-        if targets is None:
-            targets = self.targets
-        globals_key = self._generate_key()
-        prefix = '__distarray'
-        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
-            globals_key, prefix)
-        self._execute(cmd)
-        keylists = self._pull(globals_key)
-        self.delete_key(globals_key)
-        # Convert nested list to dict with key=key, value=list of engines.
-        engine_keys = {}
-        for iengine, keylist in enumerate(keylists):
-            for key in keylist:
-                if key not in engine_keys:
-                    engine_keys[key] = []
-                engine_keys[key].append(self.targets[iengine])
-        return engine_keys
 
     def _get_engine_names(self, prefix=None):
         """ Get the keys that exist on each of the engines, via globals().
@@ -272,75 +216,12 @@ class Context(object):
                 engine_keys[key].append(self.targets[iengine])
         return engine_keys
 
-    def XXX_clean_engine_keys(self, engine_keys):
-        """ Clean the keys of engine objects to remove things
-        that this Context created for itself internally.
-        (We do not want to delete those keys!)
-        """
-        internal_keys = [self._comm_key]
-        for internal_key in internal_keys:
-            if internal_key in engine_keys:
-                del engine_keys[internal_key]
-    
-    def _delete_engine_key(self, key, targets=None):
-        """ Delete the key on the specified engines.
-        No consideration is made of how the Context is aware of the key.
-        """
-        if targets is None:
-            targets = self.targets
+    def _delete_engine_key(self, key):
+        """ Delete the key from all the engines. """
         cmd = 'del %s' % key
-        # No more targets...
-        #self._execute(cmd, targets=targets)
         self._execute(cmd)
 
     # Cleanup of leftover keys. Normally there should not be any of these.
-
-    def XXX_get_leftover_keys(self):
-        """ Get the keys that exist on each of the engines.
-        
-        They are discovered via globals().
-        Keys that the Context created for itself (i.e. _comm_key) are
-        stripped from the result for clarity.
-        The result is a dictionary, keyed by the key, with the value
-        as the list of engine targets where the key exists.
-        """
-        engine_keys = self._get_engine_keys()
-        self._clean_engine_keys(engine_keys)
-        return engine_keys
-
-    def XXX_purge_keys(self, verbose=False):
-        """ Delete leftover keys from the engines.
-        Return True if any keys were found, False if not. 
-
-        If verbose is True, then the leftover keys are
-        printed out as they are found.
-
-        This is intended to clean up unexpected keys.
-        """
-        leftover_keys = self._get_leftover_keys()
-        leftovers = (len(leftover_keys) > 0)
-        for key in leftover_keys:
-            if verbose:
-                print('Leftover key: %s' % (key))
-            targets = leftover_keys[key]
-            # No more targets arg...
-            #self._delete_engine_key(key, targets)
-            self._delete_engine_key(key)
-        return leftovers
-
-    def XXX_cleanup_all_keys(self, verbose=False):
-        """ Cleanup all the keys on the engines.
-
-        This first cleans up the keys we expect to exist.
-        It then notices any remaining keys, and cleans those as well.
-
-        This returns True if any unexpected keys were cleaned
-        up, which may indicate that something should be tracked better,
-        or False if nothing unexpected was found.
-        """
-        self._cleanup_keys()
-        are_leftovers = self._purge_keys(verbose=verbose)
-        return are_leftovers
 
     # End of key management routines.
 
