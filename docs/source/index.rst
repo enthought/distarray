@@ -19,6 +19,9 @@ DistArray is targeting users who
 * want easy parallel computation on distributed arrays with the interactivity
   of IPython and the familiar interface of NumPy arrays.
 
+DistArray is designed to work with other packages that implement the
+`Distributed Array Protocol <http://distributed-array-protocol.readthedocs.org>`_.
+
 .. _NumPy: http://www.numpy.org
 
 
@@ -85,6 +88,7 @@ Other Documentation
 .. toctree::
    :maxdepth: 2
 
+   The Distributed Array Protocol <http://distributed-array-protocol.readthedocs.org>
    Notes on building environment-modules <environment-modules-notes.rst>
    Notes on building HDF5 and h5py <hdf5-notes.rst>
    API Reference <modules.rst>
