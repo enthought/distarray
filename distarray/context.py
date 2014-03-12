@@ -284,6 +284,7 @@ class Context(object):
             The identifier for the group to save the DistArray to (the default
             is 'buffer').
         mode : optional, {'w', 'w-', 'a'}, default 'a'
+
             ``'w'``
                 Create file, truncate if exists
             ``'w-'``
