@@ -6,8 +6,22 @@
 
 import unittest
 from distarray.local import maps
+from distarray import client_map
+from random import randrange
 
 from distarray.externals.six.moves import range
+
+class TestClientMap(unittest.TestCase):
+
+    def test_1D(self):
+        cm = client_map.ClientMap((31, 53), {0:'b'}, (3,))
+        self.assertEqual(cm.dim_bounds[1], [(0, 53)])
+        self.assertEqual(cm.dim_bounds[0], [(0, 11), (11, 22), (22, 31)])
+        for _ in range(100):
+            r, c = randrange(31), randrange(53)
+            rank = r // 11
+            self.assertEqual(cm.possibly_owning_ranks((r,c)), [rank])
+
 
 
 class TestNotDistMap(unittest.TestCase):

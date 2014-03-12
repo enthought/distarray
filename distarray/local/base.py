@@ -12,24 +12,31 @@ from distarray.externals.six import next
 
 from distarray.local import construct, maps
 
+def _start_stop_block(size, proc_grid_size, proc_grid_rank):
+    nelements = size // proc_grid_size
+    if size % proc_grid_size != 0:
+        nelements += 1
+
+    start = proc_grid_rank * nelements
+    if start > size:
+        start = size
+        stop = size
+
+    stop = start + nelements
+    if stop > size:
+        stop = size
+
+    return start, stop
 
 def distribute_block_indices(dd):
     """Fill in `start` and `stop` in dimdict `dd`."""
     if ('start' in dd) and ('stop' in dd):
         return
 
-    nelements = dd['size'] // dd['proc_grid_size']
-    if dd['size'] % dd['proc_grid_size'] != 0:
-        nelements += 1
-
-    dd['start'] = dd['proc_grid_rank'] * nelements
-    if dd['start'] > dd['size']:
-        dd['start'] = dd['size']
-        dd['stop'] = dd['size']
-
-    dd['stop'] = dd['start'] + nelements
-    if dd['stop'] > dd['size']:
-        dd['stop'] = dd['size']
+    start, stop = _start_stop_block(dd['size'],
+                          dd['proc_grid_size'],
+                          dd['proc_grid_rank'])
+    dd['start'], dd['stop'] = start, stop
 
 
 def distribute_cyclic_indices(dd):
