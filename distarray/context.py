@@ -157,27 +157,44 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def save(self, name, da):
+    def save_dnpy(self, name, da):
         """
         Save a distributed array to files in the ``.dnpy`` format.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
 
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will save a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will save a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  An exception is raised if the
-            length of this list is not the same as the communicator's size.
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the context's communicator's size.
         da : DistArray
             Array to save to files.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        load_dnpy : Loading files saved with save_dnpy.
 
         """
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -185,31 +202,48 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s[%s.comm_rank], %s)' % subs
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
 
-    def load(self, name):
+    def load_dnpy(self, name):
         """
         Load a distributed array from ``.dnpy`` files.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
 
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will load a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will load a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
             corresponding to its rank.  An exception is raised if the length of
-            this list is not the same as the communicator's size.
+            this list is not the same as the context's communicator's size.
 
         Returns
         -------
         result : DistArray
             A DistArray encapsulating the file loaded on each engine.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        save_dnpy : Saving files to load with with load_dnpy.
 
         """
         da_key = self._generate_key()
@@ -219,7 +253,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -228,7 +262,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s[%s.Get_rank()], %s)' % subs
+                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
