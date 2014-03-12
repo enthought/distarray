@@ -13,12 +13,31 @@ from distarray.externals.six.moves import range
 
 class TestClientMap(unittest.TestCase):
 
-    def test_1D(self):
+    def test_2D_bn(self):
         cm = client_map.ClientMDMap((31, 53), {0:'b'}, (3,))
         for _ in range(100):
             r, c = randrange(31), randrange(53)
             rank = r // 11
             self.assertEqual(cm.owning_ranks((r,c)), [rank])
+
+    def test_2D_bb(self):
+        cm = client_map.ClientMDMap((3,5), ('b', 'b'), (2,3))
+        row_chunks = 2
+        col_chunks = 2
+        for r in range(3):
+            for c in range(5):
+                rank = (r // row_chunks) * 3 + (c // col_chunks)
+                actual = cm.owning_ranks((r,c))
+                self.assertEqual(actual, [rank])
+
+    def test_2D_cc(self):
+        cm = client_map.ClientMDMap((3,5), ('c', 'c'), (2,3))
+        for r in range(3):
+            for c in range(5):
+                rank = (r % 2) * 3 + (c % 3)
+                actual = cm.owning_ranks((r,c))
+                self.assertEqual(actual, [rank])
+
 
 
 class TestNotDistMap(unittest.TestCase):

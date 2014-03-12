@@ -83,11 +83,12 @@ class ClientMDMap(object):
         self.shape = shape
         self.grid_shape = tuple(grid_shape) + (1,) * (len(shape) - len(grid_shape))
         if isinstance(dist, (list, tuple)):
-            self.dist = dist + ['n'] * (self.ndim - len(dist))
+            self.dist = list(dist) + ['n'] * (self.ndim - len(dist))
         elif isinstance(dist, dict):
             self.dist = ['n'] * self.ndim
             for i, d in dist.items():
                 self.dist[i] = d
+        self.dist = tuple(self.dist)
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
