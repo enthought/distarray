@@ -77,49 +77,43 @@ class TestContextCreation(IpclusterTestCase):
         ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
 
-    # Key management tests.
-
-    def XXXtest_create_delete_key(self):
+    def test_create_delete_key(self):
         """ Check that a key can be created and then destroyed. """
-        dac = Context(self.dv)
+        dac = Context(self.client)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
         dac._push({key: value})
         dac.delete_key(key)
 
-    def XXXtest_create_double_delete_key(self):
-        """ Check that a key can be created and then destroyed,
-        but a second delete raises an error. """
-        dac = Context(self.dv)
-        # Create and push a key/value.
-        key, value = dac._generate_key(), 'cheese'
-        dac._push({key: value})
-        dac.delete_key(key)
-        with self.assertRaises(KeyError):
-            dac.delete_key(key)
+    def test_purge_all_keys(self):
+        """ Test that we can purge the keys from all contexts. """
+        dac = Context(self.client)
+        dac.purge_keys(all_contexts=True)
+        # Should be no keys left.
+        # FIXME: This gives one key, the comm key for this context.
+        keys_in_use = dac.dump_keys(all_contexts=True)
+        num_keys = len(keys_in_use)
+        print 'keys in use:'
+        print keys_in_use
+        print 'num_keys:', num_keys
+        self.assertLessEqual(num_keys, 1)
 
-    def XXXtest_delete_invalid_key(self):
-        """ Check that deleting a non-existent key raises an error. """
-        dac = Context(self.dv)
-        bad_key = 'slithery_python'
-        with self.assertRaises(KeyError):
-            dac.delete_key(bad_key)
-
-    def XXXtest_cleanup_keys(self):
-        """ Check the cleanup keys functionality. """
-        # Create a context.
-        dac = Context(self.dv)
-        # Create and push a tracked key/value.
-        key, value = dac._generate_key(), 'test'
-        dac._push({key: value})
-        # Create an untracked key.
-        key = dac._generate_key_name()
-        dac.view.execute('%s = 23' % (key), block=True)
-        # Cleanup.
-        dac._cleanup_all_keys()
-        # A second cleanup should find nothing left.
-        leftovers = dac._cleanup_all_keys()
-        self.assertFalse(leftovers, "Keys left over after cleanup.")
+    def test_dump_keys(self):
+        """ Check that we can get a list of the existing keys. """
+        dac = Context(self.client)
+        keys_in_use = dac.dump_keys()
+        num_keys0 = len(keys_in_use)
+        print 'keys in use:'
+        print keys_in_use
+        # Explicitly push a key to the engines.
+        key = dac._generate_key()
+        dac._execute('%s = 42' % (key))
+        # Size of list of keys should have grown.
+        keys_in_use = dac.dump_keys()
+        num_keys1 = len(keys_in_use)
+        print 'keys in use:'
+        print keys_in_use
+        self.assertGreater(num_keys1, num_keys0)
 
 
 class TestDistArray(IpclusterTestCase):
