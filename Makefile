@@ -6,6 +6,7 @@
 PYTHON = python
 MPIEXEC = mpiexec
 COVERAGE = coverage
+MPI_OUT_PREFIX = unittest.out
 
 develop:
 	${PYTHON} setup.py develop
@@ -28,11 +29,14 @@ test_client_with_coverage:
 .PHONY: test_client_with_coverage
 
 test_engines:
-	${MPIEXEC} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+	-${RM} ${MPI_OUT_PREFIX}*
+	${MPIEXEC} --output-filename ${MPI_OUT_PREFIX} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+	tail -1 unittest.out*
 .PHONY: test_engines
 
 test_engines_with_coverage:
-	${MPIEXEC} -n 12 ${COVERAGE} run -pm unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+	-${RM} ${MPI_OUT_PREFIX}*
+	${MPIEXEC} --output-filename ${MPI_OUT_PREFIX} -n 12 ${COVERAGE} run -pm unittest discover -s distarray/local/tests -p 'paralleltest*.py'
 .PHONY: test_engines_with_coverage
 
 test: test_client test_engines
@@ -57,5 +61,5 @@ restart_cluster:
 clean:
 	-${PYTHON} setup.py clean --all
 	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} -r '{}' +
-	-${RM} -r build MANIFEST dist distarray.egg-info coverage_report
+	-${RM} -r build MANIFEST dist distarray.egg-info coverage_report ${MPI_OUT_PREFIX}*
 .PHONY: clean
