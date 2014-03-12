@@ -50,7 +50,7 @@ class Context(object):
         # We sometimes call Client.close() explicitly, while leaving
         # this call to run when garbage is collected.
         # BUT, once we call close(), we cannot clean up the keys anymore.
-        return    # leak!
+        #return    # leak!
         self._cleanup_keys()
 
     def _cleanup_keys(self):
@@ -174,14 +174,21 @@ class Context(object):
         """ Delete keys that this context created from all the engines. """
         if all_contexts:
             # Delete distarray keys from all contexts.
+            # But we need to skip our comm key. 
             header = self._key_base(prefix)
+            comm_header = self._key_header('comm')
+            print 'purge key header:', header
+            print 'our comm header:', comm_header 
+            cmd = """for k in globals().keys():
+                         if k.startswith('%s') and not k.startswith('%s'):
+                             del globals()[k]""" % (header, comm_header)
         else:
             # Delete keys only from this context.
             header = self._key_header(prefix)
-        print 'purge key header:', header
-        cmd = """for k in globals().keys():
-                     if k.startswith('%s'):
-                         del globals()[k]""" % (header)
+            print 'purge key header:', header
+            cmd = """for k in globals().keys():
+                         if k.startswith('%s'):
+                             del globals()[k]""" % (header)
         print 'cmd:', cmd
         self._execute(cmd)
 

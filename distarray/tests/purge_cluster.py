@@ -13,7 +13,7 @@ def dump():
     client = Client()
     view = client[:]
     context = Context(view)
-    keylist = context.dump_keys()
+    keylist = context.dump_keys(all_contexts=True)
     print('*** ENGINE KEYS ***')
     for key, targets in keylist:
         print('%s : %r' % (key, targets))
@@ -21,11 +21,15 @@ def dump():
 
 def purge():
     """ Remove all keys from the engine namespaces. """
-    print('Purging namespaces on engines...')
+    print('Purging keys from engines...')
     client = Client()
     view = client[:]
     context = Context(view)
-    context.purge_keys()
+    print('Purge context:')
+    print('    key context:', context.key_context)
+    print(''     'comm key:', context._comm_key)
+    context.purge_keys(all_contexts=True)
+    print('Did purge_keys...')
 
 
 if __name__ == '__main__':
