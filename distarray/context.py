@@ -56,23 +56,16 @@ class Context(object):
 
     def __del__(self):
         """ Clean up keys we have put on the engines. """
-        # There is an order-of-ops problem here.
-        # We sometimes call Client.close() explicitly, while leaving
-        # this call to run when garbage is collected.
-        # BUT, once we call close(), we cannot clean up the keys anymore.
-        #return    # leak!
+        print('start Context.__del__() ...')
         self._cleanup_keys()
+        print('done Context.__del__() ...')
 
     def _cleanup_keys(self):
         """ Delete all the keys we have created from all the engines. """
-        print ('cleanup keys...')
-        # Cleanup normal keys.
         self.purge_keys()
         # And the comm_key.
-        if hasattr(self, '_comm_key'):
-            print 'deleting comm key', self._comm_key
-            self.delete_key(self._comm_key)
-            self._comm_key = None
+        self.delete_key(self._comm_key)
+        self._comm_key = None
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
@@ -87,8 +80,6 @@ class Context(object):
         # mapping target -> rank, rank -> target.
         target_to_rank = self.view.pull(rank, targets=self.targets).get_dict()
         rank_to_target = {v: k for (k, v) in target_to_rank.items()}
-#         # Probably wont need this...
-#         self.delete_key(rank)
 
         # ensure consistency
         assert set(self.targets) == set(target_to_rank)
@@ -167,7 +158,6 @@ class Context(object):
         """ Generate a unique key name, including an identifier for this context. """
         uid = uuid.uuid4()
         key = self._key_header(prefix) + '_' + uid.hex
-        #print 'generated key:', key
         return key
 
     def _key_and_push(self, *values):
@@ -177,8 +167,9 @@ class Context(object):
 
     def delete_key(self, key):
         """ Delete the specific key from all the engines. """
-        cmd = 'del %s' % key
-        self._execute(cmd)
+        if key is not None:
+            cmd = 'del %s' % key
+            self._execute(cmd)
 
     def purge_keys(self, prefix=None, all_contexts=False):
         """ Delete keys that this context created from all the engines. """
@@ -199,7 +190,7 @@ class Context(object):
             cmd = """for k in globals().keys():
                          if k.startswith('%s'):
                              del globals()[k]""" % (header)
-        print 'cmd:', cmd
+        ##print 'cmd:', cmd
         self._execute(cmd)
 
     def dump_keys(self, prefix=None, all_contexts=False):
