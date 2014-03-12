@@ -11,8 +11,7 @@ from distarray.context import Context
 def dump():
     """ Print out all names that exist on the engines. """
     client = Client()
-    view = client[:]
-    context = Context(view)
+    context = Context(client)
     keylist = context.dump_keys(all_contexts=True)
     print('*** ENGINE KEYS ***')
     for key, targets in keylist:
@@ -23,8 +22,7 @@ def purge():
     """ Remove all keys from the engine namespaces. """
     print('Purging keys from engines...')
     client = Client()
-    view = client[:]
-    context = Context(view)
+    context = Context(client)
     print('Purge context:')
     print('    key context:', context.key_context)
     print(''     'comm key:', context._comm_key)
