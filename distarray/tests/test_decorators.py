@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Test decorators, these need a separate module because we are defining
 functions statically, but decorators need context objects which are

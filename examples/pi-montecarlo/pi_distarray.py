@@ -1,8 +1,15 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Estimate pi using a Monte Carlo method with distarray.
 Usage:
     $ python pi_distarray.py <number of points>
 """
+
 import sys
 
 from distarray.random import Random

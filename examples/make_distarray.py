@@ -1,10 +1,12 @@
 # encoding: utf-8
-# Copyright (c) 2008-2014, IPython Development Team and Enthought, Inc.
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Create a distarray, then plot its array distribution.
 """
-
-__docformat__ = "restructuredtext en"
 
 import distarray
 

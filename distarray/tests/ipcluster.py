@@ -1,6 +1,11 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
-Simple runner for `ipcluster start` or `ipcluster stop` on Python 2 or 3, as
-appropriate.
+Functions for starting and stopping ipclusters.
 """
 
 from __future__ import print_function
