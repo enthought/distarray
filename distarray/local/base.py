@@ -1,16 +1,7 @@
 # encoding: utf-8
-
-__docformat__ = "restructuredtext en"
-
 #----------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
-#
-#  Distributed under the terms of the BSD License.  The full license is in
-#  the file COPYING, distributed as part of this software.
-#----------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------
-# Imports
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
 import numpy as np
@@ -169,8 +160,8 @@ class BaseLocalArray(object):
     @property
     def cart_coords(self):
         rval = tuple(dd.get('proc_grid_rank') for dd in self.dim_data
-                     if dd.get('proc_grid_rank'))
-        assert rval == self.comm.Get_coords(self.comm_rank)
+                     if 'proc_grid_rank' in dd)
+        assert rval == tuple(self.comm.Get_coords(self.comm_rank))
         return rval
 
     @property

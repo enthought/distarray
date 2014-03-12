@@ -1,5 +1,9 @@
 # encoding: utf-8
-# Copyright (c) 2008-2014, IPython Development Team and Enthought, Inc.
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Our adaptation of NumPy's ufuncs.
 """
@@ -10,7 +14,6 @@ from distarray.error import ContextError
 from distarray.client import DistArray
 
 
-__docformat__ = "restructuredtext en"
 __all__ = []  # unary_names and binary_names added to __all__ below.
 
 # numpy unary operations to wrap
