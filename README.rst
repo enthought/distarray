@@ -7,6 +7,8 @@
 DistArray
 =========
 
+*"Think globally, act locally."*
+
 The DistArray package provides dense, multidimensional, distributed-memory
 arrays for Python.  These arrays are designed to look and feel just like
 `NumPy`_ arrays but to take advantage of parallel architectures with

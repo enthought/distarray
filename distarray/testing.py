@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 import unittest
 import importlib
 import tempfile
@@ -130,13 +136,12 @@ class IpclusterTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.dv = cls.client[:]
-        if len(cls.dv.targets) < cls.get_ipcluster_size():
+        if len(cls.client) < cls.get_ipcluster_size():
             errmsg = 'Tests need an ipcluster with at least {} engines running.'
             raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
 
     def tearDown(self):
-        self.dv.clear(block=True)
+        self.client.clear(block=True)
 
     @classmethod
     def tearDownClass(cls):

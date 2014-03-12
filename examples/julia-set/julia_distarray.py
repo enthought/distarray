@@ -1,8 +1,15 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Calculate the Julia set for a given z <- z**2 + c with
 distarray passed via command line args. Usage:
     $ python julia_distarray.py <c real component> <c imaginary component>
 """
+
 import sys
 
 from matplotlib import pyplot

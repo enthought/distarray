@@ -1,16 +1,7 @@
 # encoding: utf-8
-
-__docformat__ = "restructuredtext en"
-
 #----------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
-#
-#  Distributed under the terms of the BSD License.  The full license is in
-#  the file COPYING, distributed as part of this software.
-#----------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------
-# Imports
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
 import numpy as np
@@ -55,12 +46,13 @@ def distribute_indices(dim_data):
     for supported dist_types.
     """
     distribute_fn = {
+        'n': lambda dd: None,
         'b': distribute_block_indices,
         'c': distribute_cyclic_indices,
+        'u': lambda dd: None,
     }
     for dim in dim_data:
-        if dim['dist_type'] != 'n':
-            distribute_fn[dim['dist_type']](dim)
+        distribute_fn[dim['dist_type']](dim)
 
 
 class BaseLocalArray(object):

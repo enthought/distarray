@@ -1,6 +1,8 @@
 # encoding: utf-8
-
-__docformat__ = "restructuredtext en"
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
 
 """
 Define a simple format for saving LocalArrays to disk with full information

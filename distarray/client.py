@@ -1,24 +1,21 @@
 # encoding: utf-8
-
-__docformat__ = "restructuredtext en"
-
 #----------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
-#
-#  Distributed under the terms of the BSD License.  The full license is in
-#  the file COPYING, distributed as part of this software.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
 # Imports
 #----------------------------------------------------------------------------
 
-import numpy as np
-from distarray.externals.six import next
-
 from itertools import product
 
-from distarray.utils import has_exactly_one
+import numpy as np
+from IPython.parallel import Client
+
+import distarray
+from distarray.externals.six import next
+from distarray.utils import has_exactly_one, _raise_nie
 
 __all__ = ['DistArray']
 
@@ -90,7 +87,7 @@ class DistArray(object):
 
     def __getitem__(self, index):
         #TODO: FIXME: major performance improvements possible here,
-        # especially for special casese like `index == slice(None)`.
+        # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
         if isinstance(index, int) or isinstance(index, slice):
@@ -192,7 +189,10 @@ class DistArray(object):
         self.context._push({value_key:value})
         self.context._execute('%s.fill(%s)' % (self.key, value_key))
 
+    #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -200,15 +200,19 @@ class DistArray(object):
         result = self.context._pull0(result_key)
         return result
 
-    def mean(self, axis=None, dtype=None, out=None):
+    def mean(self, axis=None, dtype=float, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(%s,%s)' % subs)
+        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs)
         result = self.context._pull0(result_key)
         return result
 
     def var(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -217,6 +221,8 @@ class DistArray(object):
         return result
 
     def std(self, axis=None, dtype=None, out=None):
+        if axis or out is not None:
+            _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
@@ -273,113 +279,113 @@ class DistArray(object):
         return func(other, self, *args, **kwargs)
 
     def __add__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.add, '__radd__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.add, '__radd__', *args, **kwargs)
 
     def __sub__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.subtract, '__rsub__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.subtract, '__rsub__', *args, **kwargs)
 
     def __mul__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.multiply, '__rmul__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.multiply, '__rmul__', *args, **kwargs)
 
     def __div__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.divide, '__rdiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.divide, '__rdiv__', *args, **kwargs)
 
     def __truediv__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.true_divide, '__rtruediv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.true_divide, '__rtruediv__', *args, **kwargs)
 
     def __floordiv__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.floor_divide, '__rfloordiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.floor_divide, '__rfloordiv__', *args, **kwargs)
 
     def __mod__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.mod, '__rdiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.mod, '__rdiv__', *args, **kwargs)
 
     def __pow__(self, other, modulo=None, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.power, '__rpower__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.power, '__rpower__', *args, **kwargs)
 
     def __lshift__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.left_shift, '__rlshift__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.left_shift, '__rlshift__', *args, **kwargs)
 
     def __rshift__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.right_shift, '__rrshift__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.right_shift, '__rrshift__', *args, **kwargs)
 
     def __and__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.bitwise_and, '__rand__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.bitwise_and, '__rand__', *args, **kwargs)
 
     def __or__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.bitwise_or, '__ror__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.bitwise_or, '__ror__', *args, **kwargs)
 
     def __xor__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.bitwise_xor, '__rxor__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.bitwise_xor, '__rxor__', *args, **kwargs)
 
     # Binary - right versions
 
     def __radd__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.add, '__add__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.add, '__add__', *args, **kwargs)
 
     def __rsub__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.subtract, '__sub__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.subtract, '__sub__', *args, **kwargs)
 
     def __rmul__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.multiply, '__mul__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.multiply, '__mul__', *args, **kwargs)
 
     def __rdiv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.divide, '__div__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.divide, '__div__', *args, **kwargs)
 
     def __rtruediv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.true_divide, '__truediv__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.true_divide, '__truediv__', *args, **kwargs)
 
     def __rfloordiv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.floor_divide, '__floordiv__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.floor_divide, '__floordiv__', *args, **kwargs)
 
     def __rmod__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.mod, '__mod__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.mod, '__mod__', *args, **kwargs)
 
     def __rpow__(self, other, modulo=None, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.power, '__pow__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.power, '__pow__', *args, **kwargs)
 
     def __rlshift__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.left_shift, '__lshift__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.left_shift, '__lshift__', *args, **kwargs)
 
     def __rrshift__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.right_shift, '__rshift__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.right_shift, '__rshift__', *args, **kwargs)
 
     def __rand__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.bitwise_and, '__and__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.bitwise_and, '__and__', *args, **kwargs)
 
     def __ror__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.bitwise_or, '__or__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.bitwise_or, '__or__', *args, **kwargs)
 
     def __rxor__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, self.context.bitwise_xor, '__xor__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.bitwise_xor, '__xor__', *args, **kwargs)
 
     def __neg__(self, *args, **kwargs):
-        return self.context.negative(self, *args, **kwargs)
+        return distarray.negative(self, *args, **kwargs)
 
     def __pos__(self, *args, **kwargs):
         return self
 
     def __abs__(self, *args, **kwargs):
-        return self.context.abs(self, *args, **kwargs)
+        return distarray.abs(self, *args, **kwargs)
 
     def __invert__(self, *args, **kwargs):
-        return self.context.invert(self, *args, **kwargs)
+        return distarray.invert(self, *args, **kwargs)
 
     # Boolean comparisons
 
     def __lt__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.less, '__lt__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.less, '__lt__', *args, **kwargs)
 
     def __le__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.less_equal, '__le__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.less_equal, '__le__', *args, **kwargs)
 
     def __eq__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.equal, '__eq__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.equal, '__eq__', *args, **kwargs)
 
     def __ne__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.not_equal, '__ne__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.not_equal, '__ne__', *args, **kwargs)
 
     def __gt__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.greater, '__gt__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.greater, '__gt__', *args, **kwargs)
 
     def __ge__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, self.context.greater_equal, '__ge__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.greater_equal, '__ge__', *args, **kwargs)
