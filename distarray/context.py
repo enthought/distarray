@@ -161,17 +161,34 @@ class Context(object):
         """
         Save a distributed array to files in the ``.dnpy`` format.
 
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
+
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will save a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will save a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  An exception is raised if the
-            length of this list is not the same as the communicator's size.
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the context's communicator's size.
         da : DistArray
             Array to save to files.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        load_dnpy : Loading files saved with save_dnpy.
 
         """
         if isinstance(name, six.string_types):
@@ -196,20 +213,37 @@ class Context(object):
         """
         Load a distributed array from ``.dnpy`` files.
 
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
+
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will load a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will load a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
             corresponding to its rank.  An exception is raised if the length of
-            this list is not the same as the communicator's size.
+            this list is not the same as the context's communicator's size.
 
         Returns
         -------
         result : DistArray
             A DistArray encapsulating the file loaded on each engine.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        save_dnpy : Saving files to load with with load_dnpy.
 
         """
         da_key = self._generate_key()
