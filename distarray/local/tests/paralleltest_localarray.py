@@ -78,6 +78,15 @@ class TestInit(MpiTestCase):
         self.larr_2d.set_localarray(la)
         self.larr_2d.get_localarray()
 
+    def test_cart_coords(self):
+        """Test getting the cart_coords attribute"""
+        actual_1d = self.larr_1d.cart_coords
+        expected_1d = tuple(self.larr_1d.comm.Get_coords(self.larr_1d.comm_rank))
+        self.assertEqual(actual_1d, expected_1d)
+        actual_2d = self.larr_2d.cart_coords
+        expected_2d = tuple(self.larr_2d.comm.Get_coords(self.larr_2d.comm_rank))
+        self.assertEqual(actual_2d, expected_2d)
+
 
 class TestFromDimData(MpiTestCase):
 
