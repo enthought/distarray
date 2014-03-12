@@ -34,9 +34,10 @@ Dependencies for DistArray:
 * IPython
 * Mpi4Py
 
-Dependencies for optional HDF5 IO:
+Optional dependencies:
 
-* h5py built against a parallel-enabled build of HDF5
+* For HDF5 IO: h5py built against a parallel-enabled build of HDF5
+* For plotting: matplotlib
 
 Dependencies to build the documentation:
 
