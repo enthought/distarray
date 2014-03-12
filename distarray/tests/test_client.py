@@ -258,6 +258,9 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.darr
+        del cls.arr
+        del cls.context
         cls.client.close()
 
     def test_sum(self):
