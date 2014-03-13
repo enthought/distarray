@@ -88,10 +88,10 @@ class TestContextCreation(IpclusterTestCase):
     def test_purge_all_keys(self):
         """ Test that we can purge the keys from all contexts. """
         dac = Context(self.client)
-        dac.purge_keys(all_contexts=True)
+        dac.purge_keys(all_other_contexts=True)
         # Should be no keys left.
         # FIXME: This gives one key, the comm key for this context.
-        keys_in_use = dac.dump_keys(all_contexts=True)
+        keys_in_use = dac.dump_keys(all_other_contexts=True)
         num_keys = len(keys_in_use)
         print 'keys in use:'
         print keys_in_use

@@ -56,15 +56,12 @@ class Context(object):
 
     def __del__(self):
         """ Clean up keys we have put on the engines. """
-        print('start Context.__del__() ...')
         self._cleanup_keys()
-        print('done Context.__del__() ...')
 
     def _cleanup_keys(self):
         """ Delete all the keys we have created from all the engines. """
         self.purge_keys()
-        # And the comm_key.
-        self.delete_key(self._comm_key)
+        # comm_key is now invalid.
         self._comm_key = None
 
     def _set_engine_rank_mapping(self):
@@ -111,9 +108,7 @@ class Context(object):
         # create a new communicator with the subset of engines note that
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
-        # Apply a prefix to this key name so it is not wrongly removed.
-        self._comm_key = self._generate_key(prefix='comm')
-        print 'comm key:', self._comm_key
+        self._comm_key = self._generate_key()
         self.view.execute(
             '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
             block=True
@@ -131,33 +126,19 @@ class Context(object):
         uid = uuid.uuid4()
         self.key_context = uid.hex[:16]
 
-    def _key_base(self, prefix=None):
-        """ Get the base name for all keys.
-        
-        The prefix is used to give the comm_key a name that will not be
-        inadvertently deleted.
-        """
-        base = '__distarray_'
-        if prefix is not None:
-            header = base + '_' + prefix
-        else:
-            header = base
+    def _key_basename(self):
+        """ Get the base name for all keys. """
+        return '__distarray_'
+
+    def _key_header(self):
+        """ Generate a header for a key name for this context. """
+        header = self._key_basename() + '_' + self.key_context
         return header
 
-    def _key_header(self, prefix=None):
-        """ Generate a header for a key name for this context.
-        
-        The key name will start as: '__distarray__[prefix]_[key_context]_'.
-        The prefix is used to give the comm_key a name that will not be
-        inadvertently deleted.
-        """
-        header = self._key_base(prefix) + '_' + self.key_context
-        return header
-
-    def _generate_key(self, prefix=None):
-        """ Generate a unique key name, including an identifier for this context. """
+    def _generate_key(self):
+        """ Generate a unique key name for this context. """
         uid = uuid.uuid4()
-        key = self._key_header(prefix) + '_' + uid.hex
+        key = self._key_header() + '_' + uid.hex
         return key
 
     def _key_and_push(self, *values):
@@ -171,55 +152,60 @@ class Context(object):
             cmd = 'del %s' % key
             self._execute(cmd)
 
-    def purge_keys(self, prefix=None, all_contexts=False):
-        """ Delete keys that this context created from all the engines. """
-        if all_contexts:
-            # Delete distarray keys from all contexts.
-            # But we need to skip our comm key. 
-            header = self._key_base(prefix)
-            comm_header = self._key_header('comm')
-            print 'purge key header:', header
-            print 'our comm header:', comm_header 
+    def purge_keys(self, all_other_contexts=False):
+        """ Delete keys that this context created from all the engines.
+
+        If all_other_contexts is False (the default), then this
+        deletes from the engines all the keys from only this context.
+        Otherwise, it deletes all keys from all other contexts.
+
+        """
+        basename = self._key_basename()
+        header = self._key_header()
+        if all_other_contexts:
+            # Delete distarray keys from all contexts except this one.
             cmd = """for k in globals().keys():
-                         if k.startswith('%s') and not k.startswith('%s'):
-                             del globals()[k]""" % (header, comm_header)
+                         if (k.startswith('%s')) and (not k.startswith('%s')):
+                             del globals()[k]""" % (basename, header)
         else:
             # Delete keys only from this context.
-            header = self._key_header(prefix)
-            print 'purge key header:', header
             cmd = """for k in globals().keys():
                          if k.startswith('%s'):
                              del globals()[k]""" % (header)
-        ##print 'cmd:', cmd
         self._execute(cmd)
 
-    def dump_keys(self, prefix=None, all_contexts=False):
-        """ Return a list of all key names present on the engines.
+    def dump_keys(self, all_other_contexts=False):
+        """ Return a list of the key names present on the engines.
+
+        If all_other_contexts is False (the default), then this
+        returns only the keys for this context.
+        Otherwise, it returns the keys for all other contexts.
 
         The list is a list of tuples (key name, list of targets),
         and is sorted by key name. This is intended to be convenient
         and readable to print out.
         """
-        if all_contexts:
-            # Dump distarray keys from all contexts.
-            header = self._key_base(prefix)
-        else:
-            # Dump keys only from this context.
-            header = self._key_header(prefix)
-        print 'dump key header:', header
-        # Get the keys from all the engines.
         dump_key = self._generate_key()
         cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
-            dump_key, header)
-        print 'cmd:', cmd
+            dump_key, self._key_basename())
         self._execute(cmd)
         keylists = self._pull(dump_key)
         # The values returned by the engines are a nested list,
         # the outer per engine, and the inner listing each key name.
         # Convert to dict with key=key, value=list of targets.
         engine_keys = {}
+        header = self._key_header()
         for iengine, keylist in enumerate(keylists):
             for key in keylist:
+                # Limit to the keys we care about.
+                if not all_other_contexts:
+                    # Skip keys not from this context.
+                    if not key.startswith(header):
+                        continue
+                else:
+                    # Skip keys from this context.
+                    if key.startswith(header):
+                        continue
                 if key not in engine_keys:
                     engine_keys[key] = []
                 engine_keys[key].append(self.targets[iengine])
