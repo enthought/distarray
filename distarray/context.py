@@ -163,12 +163,12 @@ class Context(object):
         header = self._key_header()
         if all_other_contexts:
             # Delete distarray keys from all contexts except this one.
-            cmd = """for k in globals().keys():
+            cmd = """for k in list(globals().keys()):
                          if (k.startswith('%s')) and (not k.startswith('%s')):
                              del globals()[k]""" % (basename, header)
         else:
             # Delete keys only from this context.
-            cmd = """for k in globals().keys():
+            cmd = """for k in list(globals().keys()):
                          if k.startswith('%s'):
                              del globals()[k]""" % (header)
         self._execute(cmd)
