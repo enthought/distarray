@@ -148,9 +148,8 @@ class Context(object):
 
     def delete_key(self, key):
         """ Delete the specific key from all the engines. """
-        if key is not None:
-            cmd = 'del %s' % key
-            self._execute(cmd)
+        cmd = 'del %s' % key
+        self._execute(cmd)
 
     def purge_keys(self, all_other_contexts=False):
         """ Delete keys that this context created from all the engines.
