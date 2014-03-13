@@ -6,7 +6,7 @@
 
 """
 Define a simple format for saving LocalArrays to disk with full information
-about them.  This format, ``.dap``, draws heavily from the ``.npy`` format
+about them.  This format, ``.dnpy``, draws heavily from the ``.npy`` format
 specification from NumPy and from the data structure defined in the Distributed
 Array Protocol.
 
@@ -110,7 +110,7 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
 
 def write_localarray(fp, arr, version=(1, 0)):
     """
-    Write a LocalArray to a .dap file, including a header.
+    Write a LocalArray to a .dnpy file, including a header.
 
     The ``__version__`` and ``dim_data`` keys from the Distributed Array
     Protocol are written to a header, then ``numpy.save`` is used to write the
@@ -232,7 +232,7 @@ def read_array_header_1_0(fp):
 
 def read_localarray(fp):
     """
-    Read a LocalArray from an .dap file.
+    Read a LocalArray from an .dnpy file.
 
     Parameters
     ----------

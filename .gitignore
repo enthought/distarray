@@ -108,3 +108,8 @@ dist
 # Coverage related files #
 ##########################
 .coverage*
+
+# Nose related files #
+######################
+
+.noseids
