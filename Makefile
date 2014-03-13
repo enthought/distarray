@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 PYTHON = python
 MPIEXEC = mpiexec
 COVERAGE = coverage
@@ -44,6 +49,10 @@ coverage_report:
 teardown_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
 .PHONY: teardown_cluster
+
+restart_cluster:
+	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
+.PHONY: restart_cluster
 
 clean:
 	-${PYTHON} setup.py clean --all

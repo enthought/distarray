@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Benchmark all the scripts. Usage:
     $ python benchmark.py <n>
@@ -5,6 +11,7 @@ Benchmark all the scripts. Usage:
 Where in is the power of 2 for the maximum number of points
 benchmarked. i.e. N = 2**n where N is the number of points used.
 """
+
 import sys
 import timeit
 

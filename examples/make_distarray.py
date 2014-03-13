@@ -4,11 +4,12 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-from __future__ import print_function
+"""
+Create a distarray, then plot its array distribution.
+"""
 
 import distarray
 
 
-a = distarray.zeros((16,16))
-print(a.comm_rank, a.global_limits(0))
-print(a.comm_rank, a.global_limits(1))
+c = distarray.Context()
+a = c.zeros((10, 10, 10), dtype='int32', dist=('b', 'n', 'c'))

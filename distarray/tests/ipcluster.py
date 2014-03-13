@@ -1,12 +1,18 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
-Simple runner for `ipcluster start` or `ipcluster stop` on Python 2 or 3, as
-appropriate.
+Functions for starting and stopping ipclusters.
 """
 
 from __future__ import print_function
 
 import sys
 from distarray.externals import six
+from time import sleep
 from subprocess import Popen, PIPE
 
 
@@ -30,10 +36,14 @@ def start(n=4):
     started = "Engines appear to have started successfully"
     running = "CRITICAL | Cluster is already running with"
     while True:
-        line = cluster.stderr.readline().strip().decode()
-        print(line)
-        if (started in line) or (running in line):
+        line = cluster.stderr.readline().decode()
+        if not line:
             break
+        print(line, end='')
+        if (started in line):
+            break
+        elif (running in line):
+            raise RuntimeError("ipcluster is already running.")
 
 
 def stop():
@@ -44,10 +54,27 @@ def stop():
     not_running = ("CRITICAL | Could not read pid file, cluster "
                    "is probably not running.")
     while True:
-        line = stopping.stderr.readline().strip().decode()
-        print(line)
+        line = stopping.stderr.readline().decode()
+        if not line:
+            break
+        print(line, end='')
         if (stopped in line) or (not_running in line):
             break
+
+
+def restart():
+    """Convenient way to restart an ipcluster."""
+    stop()
+
+    started = False
+    while not started:
+        sleep(2)
+        try:
+            start()
+        except RuntimeError:
+            pass
+        else:
+            started = True
 
 
 if __name__ == '__main__':

@@ -4,11 +4,8 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-from __future__ import print_function
+"""
+Plotting functions for distarrays.
+"""
 
-import distarray
-
-
-a = distarray.zeros((16,16))
-print(a.comm_rank, a.global_limits(0))
-print(a.comm_rank, a.global_limits(1))
+from distarray.plotting.plotting import *

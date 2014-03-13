@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 import unittest
 import numpy as np
 
@@ -11,14 +17,12 @@ class TestInit(MpiTestCase):
 
     """Is the __init__ method working properly?"""
 
-    @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.larr_1d = da.LocalArray((7,), grid_shape=(4,), comm=self.comm,
                                      buf=None)
         self.larr_2d = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
                                      buf=None)
 
-    @comm_null_passes
     def test_basic_1d(self):
         """Test basic LocalArray creation."""
         self.assertEqual(self.larr_1d.global_shape, (7,))
@@ -43,7 +47,6 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr_1d.local_size, self.larr_1d.local_shape[0])
         self.assertEqual(self.larr_1d.local_array.dtype, self.larr_1d.dtype)
 
-    @comm_null_passes
     def test_basic_2d(self):
         """Test basic LocalArray creation."""
         self.assertEqual(self.larr_2d.global_shape, (16,16))
@@ -67,7 +70,6 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr_2d.local_array.size, self.larr_2d.local_size)
         self.assertEqual(self.larr_2d.local_array.dtype, self.larr_2d.dtype)
 
-    @comm_null_passes
     def test_localarray(self):
         """Can the local_array be set and get?"""
         self.larr_2d.get_localarray()
@@ -109,6 +111,15 @@ class TestInit(MpiTestCase):
         with self.assertRaises(ValueError):
             self.larr_1d.set_localarray(la)
 
+    def test_cart_coords(self):
+        """Test getting the cart_coords attribute"""
+        actual_1d = self.larr_1d.cart_coords
+        expected_1d = tuple(self.larr_1d.comm.Get_coords(self.larr_1d.comm_rank))
+        self.assertEqual(actual_1d, expected_1d)
+        actual_2d = self.larr_2d.cart_coords
+        expected_2d = tuple(self.larr_2d.comm.Get_coords(self.larr_2d.comm_rank))
+        self.assertEqual(actual_2d, expected_2d)
+
 
 class TestFromDimData(MpiTestCase):
 
@@ -134,7 +145,6 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(list(l0.maps[0].local_index),
                          list(l1.maps[0].local_index))
 
-    @comm_null_passes
     def test_block(self):
         dim0 = {
             "dist_type": 'b',
@@ -156,7 +166,6 @@ class TestFromDimData(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
-    @comm_null_passes
     def test_cyclic(self):
         dim0 = {
             "dist_type": 'n',
@@ -178,7 +187,6 @@ class TestFromDimData(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
-    @comm_null_passes
     def test_cyclic_and_block(self):
         dim0 = {
             "dist_type": 'c',
@@ -222,10 +230,10 @@ class TestFromDimData(MpiTestCase):
 
 class TestGridShape(MpiTestCase):
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 12
 
-    @comm_null_passes
     def test_grid_shape(self):
         """Test various ways of setting the grid_shape."""
         self.larr = da.LocalArray((20,20), dist='b', comm=self.comm)
@@ -244,11 +252,11 @@ class TestDistMatrix(MpiTestCase):
 
     """Test the dist_matrix."""
 
-    def get_comm_size(self):
+    @classmethod
+    def get_comm_size(cls):
         return 12
 
     @unittest.skip("Plot test.")
-    @comm_null_passes
     def test_plot_dist_matrix(self):
         """Can we create and possibly plot a dist_matrix?"""
         la = da.LocalArray((10,10), dist=('c','c'), comm=self.comm)
@@ -265,7 +273,6 @@ class TestLocalInd(MpiTestCase):
 
     """Test the computation of local indices."""
 
-    @comm_null_passes
     def test_block_simple(self):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((4, 4), comm=self.comm)
@@ -279,7 +286,6 @@ class TestLocalInd(MpiTestCase):
                            range(la.global_shape[1])]
         self.assertEqual(row_result, calc_row_result)
 
-    @comm_null_passes
     def test_block_complex(self):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((8, 2), comm=self.comm)
@@ -300,7 +306,6 @@ class TestLocalInd(MpiTestCase):
         result = [la.global_to_local(*gi) for gi in gis]
         self.assertEqual(result, expected_lis)
 
-    @comm_null_passes
     def test_cyclic_simple(self):
         """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((10,), dist={0: 'c'}, comm=self.comm)
@@ -330,7 +335,6 @@ class TestLocalInd(MpiTestCase):
 
         self.assertEqual(result, calc_result)
 
-    @comm_null_passes
     def test_cyclic_complex(self):
         """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
@@ -363,25 +367,21 @@ class TestGlobalInd(MpiTestCase):
             li = la.global_to_local(*gi)
             self.assertEqual(li,indices)
 
-    @comm_null_passes
     def test_block(self):
         """Can we go from global to local indices and back for block?"""
         la = da.LocalArray((4,4), comm=self.comm)
         self.round_trip(la)
 
-    @comm_null_passes
     def test_cyclic(self):
         """Can we go from global to local indices and back for cyclic?"""
         la = da.LocalArray((8,8), dist=('c', 'n'), comm=self.comm)
         self.round_trip(la)
 
-    @comm_null_passes
     def test_crazy(self):
         """Can we go from global to local indices and back for a complex case?"""
         la = da.LocalArray((10,100,20), dist=('b', 'c', 'n'), comm=self.comm)
         self.round_trip(la)
 
-    @comm_null_passes
     def test_global_limits_block(self):
         """Find the boundaries of a block distribution"""
         a = da.LocalArray((16, 16), dist=('b', 'n'), comm=self.comm)
@@ -394,7 +394,6 @@ class TestGlobalInd(MpiTestCase):
         limits = a.global_limits(1)
         self.assertEqual(limits, answers[a.comm_rank])
 
-    @comm_null_passes
     def test_global_limits_cyclic(self):
         """Find the boundaries of a cyclic distribution"""
         a = da.LocalArray((16,16), dist=('c', 'n'), comm=self.comm)
@@ -478,7 +477,6 @@ class TestArrayConversion(MpiTestCase):
 
 class TestIndexing(MpiTestCase):
 
-    @comm_null_passes
     def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
         a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
@@ -491,7 +489,6 @@ class TestIndexing(MpiTestCase):
             self.assertEqual(b[global_inds],a[global_inds])
             self.assertEqual(a[global_inds],0.0)
 
-    @comm_null_passes
     def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
         a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
@@ -504,7 +501,6 @@ class TestIndexing(MpiTestCase):
             self.assertEqual(b[global_inds],a[global_inds])
             self.assertEqual(a[global_inds],0.0)
 
-    @comm_null_passes
     def test_pack_unpack_index(self):
         a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
         for global_inds, value in da.ndenumerate(a):
@@ -514,7 +510,6 @@ class TestIndexing(MpiTestCase):
 
 class TestLocalArrayMethods(MpiTestCase):
 
-    @comm_null_passes
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
         a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
@@ -626,4 +621,3 @@ if __name__ == '__main__':
         unittest.main()
     except SystemExit:
         pass
-

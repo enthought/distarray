@@ -1,3 +1,9 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Tests for distarray ufuncs.
 
@@ -6,10 +12,13 @@ Many of these tests require a 4-engine cluster to be running locally.
 
 import unittest
 import warnings
+
 import numpy as np
-from IPython.parallel import Client
-from distarray.context import Context
 from numpy.testing import assert_array_equal
+from IPython.parallel import Client
+
+import distarray
+from distarray import Context
 
 
 def add_checkers(cls, ops, checker_name):
@@ -38,10 +47,10 @@ class TestDistArrayUfuncs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.context = Context(cls.client[:])
+        cls.context = Context(cls.client)
 
         # Standard data
-        cls.a = np.arange(1, 99)
+        cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
         cls.da = cls.context.fromndarray(cls.a)
@@ -57,7 +66,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(self.context, op_name)
+        op = getattr(distarray, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             # ignore inf, NaN warnings etc.
@@ -72,7 +81,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(self.context, op_name)
+        op = getattr(distarray, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -87,9 +96,9 @@ class TestSpecialMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Client()
-        cls.context = Context(cls.client[:])
+        cls.context = Context(cls.client)
         # Standard data
-        cls.a = np.arange(1, 33)
+        cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
         cls.da = cls.context.fromndarray(cls.a)
