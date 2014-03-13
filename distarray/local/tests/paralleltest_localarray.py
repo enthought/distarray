@@ -9,7 +9,7 @@ import numpy as np
 
 import distarray.local.denselocalarray as da
 from distarray import utils
-from distarray.testing import comm_null_passes, MpiTestCase
+from distarray.testing import MpiTestCase
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
@@ -78,7 +78,6 @@ class TestInit(MpiTestCase):
         self.larr_2d.set_localarray(la)
         self.larr_2d.get_localarray()
 
-    @comm_null_passes
     def test_bad_distribution(self):
         """ Test that invalid distribution type fails as expected. """
         with self.assertRaises(TypeError):
@@ -86,7 +85,6 @@ class TestInit(MpiTestCase):
             da.LocalArray((7,), dist={0: 'x'}, grid_shape=(4,),
                           comm=self.comm, buf=None)
 
-    @comm_null_passes
     def test_no_grid_shape(self):
         """ Create array init when passing no grid_shape. """
         larr_nogrid = da.LocalArray((7,),
@@ -99,7 +97,6 @@ class TestInit(MpiTestCase):
         expected_grid_shape = (max_size,)
         self.assertEqual(grid_shape, expected_grid_shape)
 
-    @comm_null_passes
     def test_bad_localarray(self):
         """ Test that setting a bad local array fails as expected. """
         self.larr_1d.get_localarray()
@@ -404,7 +401,6 @@ class TestGlobalInd(MpiTestCase):
         limits = a.global_limits(1)
         self.assertEqual(limits, answers[a.comm_rank])
 
-    @comm_null_passes
     def test_bad_global_limits(self):
         """ Test that invalid global_limits fails as expected. """
         a = da.LocalArray((4, 4), comm=self.comm)
@@ -424,7 +420,6 @@ class TestRankCoords(MpiTestCase):
         rank2 = la.coords_to_rank(coords)
         self.assertEqual(rank, rank2)
 
-    @comm_null_passes
     def test_rank_coords(self):
         """ Test that we can go from rank to coords and back. """
         la = da.LocalArray((4,4), comm=self.comm)
@@ -436,12 +431,10 @@ class TestRankCoords(MpiTestCase):
 class TestArrayConversion(MpiTestCase):
     """ Test array conversion methods. """
 
-    @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         self.int_larr = da.LocalArray((4,), dtype=int, comm=self.comm)
         self.int_larr.fill(3)
 
-    @comm_null_passes
     def test_astype(self):
         """ Test that astype() works as expected. """
         # Convert int array to float.
@@ -455,7 +448,6 @@ class TestArrayConversion(MpiTestCase):
             self.assertEqual(value, 3)
             self.assertTrue(isinstance(value, int))
 
-    @comm_null_passes
     def test_local_view(self):
         """ Test that local_views can be created as expected. """
         # Use dtype=None for same type.
@@ -465,7 +457,6 @@ class TestArrayConversion(MpiTestCase):
         # I am not sure what to expect for the values in the view,
         # so those are not checked here, so this is mainly a coverage test.
 
-    @comm_null_passes
     def test_view(self):
         """ Test that views can be created as expected. """
         # Note this is mainly a coverage test for the same reason as above.
@@ -527,8 +518,7 @@ class TestNotImplementedArrayMethods(MpiTestCase):
     they will start failing this test, and can be removed from it.
     Eventually this test case should become empty! """
 
-    @comm_null_passes
-    def more_setUp(self):
+    def setUp(self):
         # These would need real values for a real test,
         # but since we just check for not implemented,
         # this is not necessary here.
@@ -537,7 +527,6 @@ class TestNotImplementedArrayMethods(MpiTestCase):
         self.larrb = da.LocalArray((4, 4), dtype=bool, comm=self.comm)
         self.larrc = da.LocalArray((4, 4), dtype=complex, comm=self.comm)
 
-    @comm_null_passes
     def test_array_shape_manipulation(self):
         """ Array shape manipulation functions. """
         with self.assertRaises(NotImplementedError):
@@ -557,7 +546,6 @@ class TestNotImplementedArrayMethods(MpiTestCase):
         with self.assertRaises(NotImplementedError):
             self.larr2.squeeze()
 
-    @comm_null_passes
     def test_array_item_selection_323(self):
         """ Array item selection functions 3.2.3. """
         with self.assertRaises(NotImplementedError):
@@ -583,7 +571,6 @@ class TestNotImplementedArrayMethods(MpiTestCase):
         with self.assertRaises(NotImplementedError):
             self.larr2.diagonal()
 
-    @comm_null_passes
     def test_array_item_selection_324(self):
         """ Array item selection functions 3.2.4. """
         with self.assertRaises(NotImplementedError):
