@@ -8,7 +8,8 @@
 Plotting functions for distarrays.
 """
 
-from matplotlib import pyplot
+from matplotlib import pyplot, colors, cm
+from numpy import concatenate, linspace
 
 from distarray.decorators import local
 
@@ -26,15 +27,73 @@ def _get_ranks(arr):
     return out
 
 
-def plot_array_distribution_2d(darr, *args, **kwargs):
+def cmap_discretize(cmap, N):
+    """Return a discrete colormap from the continuous colormap cmap.
+
+        cmap: colormap instance, eg. cm.jet. 
+        N: number of colors.
+
+    Example
+        x = resize(arange(100), (5,100))
+        djet = cmap_discretize(cm.jet, 5)
+        imshow(x, cmap=djet)
+    """
+    # This is copied from:
+    # http://wiki.scipy.org/Cookbook/Matplotlib/ColormapTransformations
+
+    if type(cmap) == str:
+        cmap = cm.get_cmap(cmap)
+    colors_i = concatenate((linspace(0, 1., N), (0.,0.,0.,0.)))
+    colors_rgba = cmap(colors_i)
+    indices = linspace(0, 1., N+1)
+    cdict = {}
+    for ki,key in enumerate(('red','green','blue')):
+        cdict[key] = [ (indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki]) for i in xrange(N+1) ]
+    # Return colormap object.
+    return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
+
+
+def plot_array_distribution_2d(darr, draw_legend=False, *args, **kwargs):
     """
     Plot a 2D distarray's memory layout. Elements are colored according
     to the process they are on.
+
+    If draw_legend is True, then a colorbar 'legend' is made to label
+    which color is which processor.
     """
     out = _get_ranks(darr)
-    pyplot.matshow(out.toarray(), *args, **kwargs)
+    arr = out.toarray()
+
+    if draw_legend:
+        # Add a 'legend', really a colorbar,
+        # to annotate which color is which processor.
+        # This is a bit complicated, and based somewhat on:
+        # http://matplotlib.org/examples/api/colorbar_only.html
+        
+        num_processors = arr.max() + 1
+        cmap = cmap_discretize(cm.jet, num_processors)
+        
+        bounds = range(num_processors + 1)
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+
+        ticks = [0.5 + p for p in range(num_processors)]
+        tick_labels = [str(p) for p in range(num_processors)]
+
+        img = pyplot.matshow(arr, cmap=cmap, norm=norm, *args, **kwargs)
+        cbar = pyplot.colorbar(img)
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels(tick_labels)
+        cbar.set_label('Processor')
+    else:
+        # Simple unlabeled plot.
+        pyplot.matshow(arr, *args, **kwargs)
+    
     return out
 
 
-def show(*args, **kwargs):
+def show(title=None, filename=None, *args, **kwargs):
+    if title is not None:
+        pyplot.title(title)
+    if filename is not None:
+        pyplot.savefig(filename)
     pyplot.show(*args, **kwargs)
