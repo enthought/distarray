@@ -128,7 +128,7 @@ class Context(object):
 
     def _key_basename(self):
         """ Get the base name for all keys. """
-        return '_distarray_key_'
+        return '_distarray_key'
 
     def _key_prefix(self):
         """ Generate a prefix for a key name for this context. """
