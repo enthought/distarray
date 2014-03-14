@@ -3,10 +3,26 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-PYTHON = python
-MPIEXEC = mpiexec
-COVERAGE = coverage
-MPI_OUT_PREFIX = unittest.out
+PYTHON := python
+PYTHON_VERSION := $(shell ${PYTHON} --version 2>&1 | cut -f 2 -d ' ')
+
+COVERAGE := coverage
+
+MPIEXEC := mpiexec
+
+PARALLEL_UNITTEST_ARGS := -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+PARALLEL_TEST_REGULAR := ${PYTHON} ${PARALLEL_UNITTEST_ARGS}
+PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
+
+MPI_OUT_PREFIX := unittest-${PYTHON_VERSION}.out
+MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n 12
+
+# Inside MPI_EXEC_CMD, PARALLEL_TEST is meant to be substituted with either
+# PARALLEL_TEST_REGULAR or PARALLEL_TEST_COVERAGE from above.  See the
+# `test_engines` and `test_engines_with_coverage` targets.
+MPI_EXEC_CMD = (${MPIEXEC} ${MPIEXEC_ARGS} ${PARALLEL_TEST} ; OUT=$$? ; \
+			   for f in ${MPI_OUT_PREFIX}* ; do echo "====> " $$f ; cat $$f ; done ; \
+			   exit $$OUT)
 
 develop:
 	${PYTHON} setup.py develop
@@ -30,14 +46,14 @@ test_client_with_coverage:
 
 test_engines:
 	-${RM} ${MPI_OUT_PREFIX}*
-	${MPIEXEC} --output-filename ${MPI_OUT_PREFIX} -n 12 ${PYTHON} -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
-	tail -1 unittest.out*
+	$(eval PARALLEL_TEST := ${PARALLEL_TEST_REGULAR})
+	${MPI_EXEC_CMD}
 .PHONY: test_engines
 
 test_engines_with_coverage:
 	-${RM} ${MPI_OUT_PREFIX}*
-	${MPIEXEC} --output-filename ${MPI_OUT_PREFIX} -n 12 ${COVERAGE} run -pm unittest discover -s distarray/local/tests -p 'paralleltest*.py'
-.PHONY: test_engines_with_coverage
+	$(eval PARALLEL_TEST := ${PARALLEL_TEST_COVERAGE})
+	${MPI_EXEC_CMD}
 
 test: test_client test_engines
 .PHONY: test

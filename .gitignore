@@ -104,7 +104,7 @@ doc/source/generated
 # Things specific to this project #
 ###################################
 dist
-unittest.out*
+unittest*.out*
 
 # Coverage related files #
 ##########################
