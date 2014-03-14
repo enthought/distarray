@@ -55,11 +55,11 @@ restart_cluster:
 .PHONY: restart_cluster
 
 purge_cluster:
-	-${PYTHON} distarray/tests/purge_cluster.py 'purge()'
+	-${PYTHON} distarray/tests/purge_cluster.py 'purge'
 .PHONY: purge_cluster
 
 dump_cluster:
-	-${PYTHON} distarray/tests/purge_cluster.py 'dump()'
+	-${PYTHON} distarray/tests/purge_cluster.py 'dump'
 .PHONY: purge_cluster
 
 clean:

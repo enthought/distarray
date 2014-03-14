@@ -29,4 +29,9 @@ def purge():
 
 if __name__ == '__main__':
     cmd = sys.argv[1]
-    fn = eval(cmd)
+    if cmd == 'dump':
+        dump()
+    elif cmd == 'purge':
+        purge()
+    else:
+        raise ValueError("%s command not found" % (cmd,))
