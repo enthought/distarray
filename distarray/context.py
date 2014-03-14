@@ -128,17 +128,17 @@ class Context(object):
 
     def _key_basename(self):
         """ Get the base name for all keys. """
-        return '__distarray_'
+        return '_distarray_key_'
 
-    def _key_header(self):
-        """ Generate a header for a key name for this context. """
+    def _key_prefix(self):
+        """ Generate a prefix for a key name for this context. """
         header = self._key_basename() + '_' + self.key_context
         return header
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
         uid = uuid.uuid4()
-        key = self._key_header() + '_' + uid.hex
+        key = self._key_prefix() + '_' + uid.hex
         return key
 
     def _key_and_push(self, *values):
@@ -160,17 +160,17 @@ class Context(object):
 
         """
         basename = self._key_basename()
-        header = self._key_header()
+        prefix = self._key_prefix()
         if all_other_contexts:
             # Delete distarray keys from all contexts except this one.
             cmd = """for k in list(globals().keys()):
                          if (k.startswith('%s')) and (not k.startswith('%s')):
-                             del globals()[k]""" % (basename, header)
+                             del globals()[k]""" % (basename, prefix)
         else:
             # Delete keys only from this context.
             cmd = """for k in list(globals().keys()):
                          if k.startswith('%s'):
-                             del globals()[k]""" % (header)
+                             del globals()[k]""" % (prefix)
         self._execute(cmd)
 
     def dump_keys(self, all_other_contexts=False):
@@ -193,17 +193,17 @@ class Context(object):
         # the outer per engine, and the inner listing each key name.
         # Convert to dict with key=key, value=list of targets.
         engine_keys = {}
-        header = self._key_header()
+        prefix = self._key_prefix()
         for iengine, keylist in enumerate(keylists):
             for key in keylist:
                 # Limit to the keys we care about.
                 if not all_other_contexts:
                     # Skip keys not from this context.
-                    if not key.startswith(header):
+                    if not key.startswith(prefix):
                         continue
                 else:
                     # Skip keys from this context.
-                    if key.startswith(header):
+                    if key.startswith(prefix):
                         continue
                 if key not in engine_keys:
                     engine_keys[key] = []
