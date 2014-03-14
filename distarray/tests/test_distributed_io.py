@@ -134,9 +134,7 @@ nu_test_data = [
 
 class TestNpyFileLoad(IpclusterTestCase):
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 2
+    ipcluster_size = 2
 
     def setUp(self):
         self.dac = Context(self.client, targets=[0, 1])
@@ -236,9 +234,7 @@ class TestHdf5FileSave(IpclusterTestCase):
 
 class TestHdf5FileLoad(IpclusterTestCase):
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 2
+    ipcluster_size = 2
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
