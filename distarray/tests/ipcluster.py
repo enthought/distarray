@@ -76,6 +76,24 @@ def restart():
         else:
             started = True
 
+_DRELOAD_ENGINE = '''
+from sys import modules
+for m in modules.copy():
+    if m.startswith('distarray'):
+        del modules[m]
+mm = sorted(modules.keys())
+'''
+
+def reset():
+    from IPython.parallel import Client
+    from pprint import pprint
+    c = Client()
+    dv = c[:]
+    dv.execute(_DRELOAD_ENGINE, block=True)
+    mods = dv['mm']
+    pprint(mods[0])
+
+
 
 if __name__ == '__main__':
     cmd = sys.argv[1]

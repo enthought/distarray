@@ -54,6 +54,10 @@ restart_cluster:
 	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
 .PHONY: restart_cluster
 
+reset_cluster:
+	-${PYTHON} distarray/tests/ipcluster.py 'reset()'
+.PHONY: reset_cluster
+
 purge_cluster:
 	-${PYTHON} distarray/tests/purge_cluster.py 'purge'
 .PHONY: purge_cluster
@@ -61,6 +65,7 @@ purge_cluster:
 dump_cluster:
 	-${PYTHON} distarray/tests/purge_cluster.py 'dump'
 .PHONY: purge_cluster
+
 
 clean:
 	-${PYTHON} setup.py clean --all
