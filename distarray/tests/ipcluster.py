@@ -76,7 +76,7 @@ def restart():
         else:
             started = True
 
-_DRELOAD_ENGINE = '''
+_RESET_ENGINE_DISTARRAY = '''
 from sys import modules
 for m in modules.copy():
     if m.startswith('distarray'):
@@ -89,7 +89,7 @@ def reset():
     from pprint import pprint
     c = Client()
     dv = c[:]
-    dv.execute(_DRELOAD_ENGINE, block=True)
+    dv.execute(_RESET_ENGINE_DISTARRAY, block=True)
     mods = dv['mm']
     pprint(mods[0])
 
