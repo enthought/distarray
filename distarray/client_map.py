@@ -7,6 +7,8 @@
 from itertools import product
 from distarray.local.base import _start_stop_block
 
+from distarray.externals.six.moves import range, reduce
+
 import numpy as np
 
 def client_map_factory(size, dist, grid_size):
