@@ -11,6 +11,7 @@ import distarray.local.denselocalarray as da
 from distarray import utils
 from distarray.testing import MpiTestCase
 from distarray.local.error import IncompatibleArrayError
+from distarray.externals.six.moves import reduce
 
 
 class TestInit(MpiTestCase):
@@ -208,30 +209,30 @@ class TestGridShape(MpiTestCase):
 
     def test_ones_in_grid_shape(self):
         """Test not-distributed dimensions in grid_shape."""
-        self.dist = ('n', 'b', 'n', 'c', 'n')
-        self.glb_shape = (2,6,2,8,2)
-        self.grid_shape = (1,3,1,4,1)
-        self.larr_5d = da.LocalArray(self.glb_shape,
-                                     grid_shape=self.grid_shape,
-                                     dist=self.dist,
-                                     comm=self.comm,
-                                     buf=None)
-        self.assertEqual(self.larr_5d.global_shape, self.glb_shape)
-        self.assertEqual(self.larr_5d.dist, self.dist)
-        self.assertEqual(self.larr_5d.grid_shape, self.grid_shape)
-        self.assertEqual(self.larr_5d.base_comm, self.comm)
-        self.assertEqual(self.larr_5d.comm_size, 12)
-        self.assertTrue(self.larr_5d.comm_rank in range(12))
-        self.assertEqual(self.larr_5d.comm.Get_topo(),
-                         (list(self.larr_5d.grid_shape),
-                          [0]*5, list(self.larr_5d.cart_coords)))
-        self.assertEqual(len(self.larr_5d.maps), 5)
-        self.assertEqual(self.larr_5d.global_shape, self.glb_shape)
-        self.assertEqual(self.larr_5d.local_shape, (2,2,2,2,2))
-        self.assertEqual(self.larr_5d.local_array.shape, self.larr_5d.local_shape)
-        self.assertEqual(self.larr_5d.local_array.size, self.larr_5d.local_size)
-        self.assertEqual(self.larr_5d.local_size, reduce(int.__mul__, self.glb_shape) // self.comm_size)
-        self.assertEqual(self.larr_5d.local_array.dtype, self.larr_5d.dtype)
+        dist = ('n', 'b', 'n', 'c', 'n')
+        glb_shape = (2,6,2,8,2)
+        grid_shape = (1,3,1,4,1)
+        larr_5d = da.LocalArray(glb_shape,
+                                grid_shape=grid_shape,
+                                dist=dist,
+                                comm=self.comm,
+                                buf=None)
+        self.assertEqual(larr_5d.global_shape, glb_shape)
+        self.assertEqual(larr_5d.dist, dist)
+        self.assertEqual(larr_5d.grid_shape, grid_shape)
+        self.assertEqual(larr_5d.base_comm, self.comm)
+        self.assertEqual(larr_5d.comm_size, 12)
+        self.assertTrue(larr_5d.comm_rank in range(12))
+        self.assertEqual(larr_5d.comm.Get_topo(),
+                         (list(larr_5d.grid_shape),
+                          [0]*5, list(larr_5d.cart_coords)))
+        self.assertEqual(len(larr_5d.maps), 5)
+        self.assertEqual(larr_5d.global_shape, glb_shape)
+        self.assertEqual(larr_5d.local_shape, (2,2,2,2,2))
+        self.assertEqual(larr_5d.local_array.shape, larr_5d.local_shape)
+        self.assertEqual(larr_5d.local_array.size, larr_5d.local_size)
+        self.assertEqual(larr_5d.local_size, reduce(int.__mul__, glb_shape) // self.comm_size)
+        self.assertEqual(larr_5d.local_array.dtype, larr_5d.dtype)
 
 
 class TestDistMatrix(MpiTestCase):
