@@ -14,6 +14,7 @@ import numpy as np
 from IPython.parallel import Client
 
 import distarray
+from distarray.client_map import ClientMDMap
 from distarray.externals.six import next
 from distarray.utils import has_exactly_one, _raise_nie
 
@@ -24,7 +25,7 @@ __all__ = ['DistArray']
 # Code
 #----------------------------------------------------------------------------
 
-def process_return_value(subcontext, result_key):
+def process_return_value(subcontext, result_key, targets):
     """Figure out what to return on the Client.
 
     Parameters
@@ -41,8 +42,8 @@ def process_return_value(subcontext, result_key):
     """
     type_key = subcontext._generate_key()
     type_statement = "{} = str(type({}))".format(type_key, result_key)
-    subcontext._execute(type_statement)
-    result_type_str = subcontext._pull(type_key)
+    subcontext._execute(type_statement, targets=targets)
+    result_type_str = subcontext._pull(type_key, targets=targets)
 
     def is_NoneType(typestring):
         return (typestring == "<type 'NoneType'>" or
@@ -67,9 +68,14 @@ class DistArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, key, context):
+    def __init__(self, key, context, mdmap=None):
+        # TODO: make this a classmethod named `fromlocalarray`
         self.key = key
         self.context = context
+        # self.mdmap = ClientMDMap(self, shape, dist, grid_shape)
+        if mdmap is None:
+            mdmap = ClientMDMap(self.shape, self.dist, self.grid_shape)
+        self.mdmap = mdmap
 
     def __del__(self):
         self.context._execute('del %s' % self.key)
@@ -101,11 +107,16 @@ class DistArray(object):
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
+            if self.mdmap:
+                ranks = self.mdmap.owning_ranks(index)
+            else:
+                ranks = range(len(self.context.targets))
+            targets = [self.context.targets[i] for i in ranks]
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_getitem(%s)'
             statement = fmt % (result_key, self.key, index)
-            self.context._execute(statement)
-            result = process_return_value(self.context, result_key)
+            self.context._execute(statement, targets=targets)
+            result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
                 raise IndexError
             else:

@@ -112,14 +112,16 @@ class Context(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        targets = targets or self.targets
+        return self.view.execute(lines, targets=targets, block=True)
 
     def _push(self, d):
         return self.view.push(d,targets=self.targets,block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        targets = targets or self.targets
+        return self.view.pull(k, targets=targets, block=True)
 
     def _execute0(self, lines):
         return self.view.execute(lines,targets=self.targets[0],block=True)
