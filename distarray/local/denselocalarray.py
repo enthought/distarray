@@ -14,7 +14,7 @@ from distarray.externals import six
 import math
 
 import numpy as np
-from distarray.externals.six.moves import zip
+from distarray.externals.six.moves import zip, range
 from collections import Mapping
 
 from distarray.mpiutils import MPI
@@ -220,16 +220,12 @@ class DenseLocalArray(BaseLocalArray):
         return self.comm.Get_cart_rank(coords)
 
     def global_to_local(self, *global_ind):
-        local_ind = list(global_ind)
-        for dd in self.distdims:
-            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
-        return tuple(local_ind)
+        return tuple(self.maps[dim].local_index[global_ind[dim]]
+                     for dim in range(self.ndim))
 
     def local_to_global(self, *local_ind):
-        global_ind = list(local_ind)
-        for dd in self.distdims:
-            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
-        return tuple(global_ind)
+        return tuple(self.maps[dim].global_index[local_ind[dim]]
+                     for dim in range(self.ndim))
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:

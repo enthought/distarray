@@ -31,11 +31,9 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr_1d.base_comm, self.comm)
         self.assertEqual(self.larr_1d.comm_size, 4)
         self.assertTrue(self.larr_1d.comm_rank in range(4))
-        self.assertEqual(self.larr_1d.ndistdim, 1)
-        self.assertEqual(self.larr_1d.distdims, (0,))
         self.assertEqual(self.larr_1d.comm.Get_topo(),
                          (list(self.larr_1d.grid_shape),
-                          [0], [self.larr_1d.comm_rank]))
+                          [0], list(self.larr_1d.cart_coords)))
         self.assertEqual(len(self.larr_1d.maps), 1)
         self.assertEqual(self.larr_1d.global_shape, (7,))
         if self.larr_1d.comm_rank == 3:
@@ -51,17 +49,15 @@ class TestInit(MpiTestCase):
         """Test basic LocalArray creation."""
         self.assertEqual(self.larr_2d.global_shape, (16,16))
         self.assertEqual(self.larr_2d.dist, ('b', 'n'))
-        self.assertEqual(self.larr_2d.grid_shape, (4,))
+        self.assertEqual(self.larr_2d.grid_shape, (4, 1))
         self.assertEqual(self.larr_2d.base_comm, self.comm)
         self.assertEqual(self.larr_2d.comm_size, 4)
         self.assertTrue(self.larr_2d.comm_rank in range(4))
-        self.assertEqual(self.larr_2d.ndistdim, 1)
-        self.assertEqual(self.larr_2d.distdims, (0,))
         self.assertEqual(self.larr_2d.comm.Get_topo(),
                          (list(self.larr_2d.grid_shape),
-                          [0], [self.larr_2d.comm_rank]))
+                          [0,0], list(self.larr_2d.cart_coords)))
         self.assertEqual(len(self.larr_2d.maps), 2)
-        self.assertEqual(self.larr_2d.grid_shape, (4,))
+        self.assertEqual(self.larr_2d.grid_shape, (4, 1))
         self.assertEqual(self.larr_2d.global_shape, (16, 16))
         self.assertEqual(self.larr_2d.local_shape, (4, 16))
         self.assertEqual(self.larr_2d.local_size,
@@ -97,8 +93,6 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(l0.base_comm, l1.base_comm)
         self.assertEqual(l0.comm_size, l1.comm_size)
         self.assertEqual(l0.comm_rank, l1.comm_rank)
-        self.assertEqual(l0.ndistdim, l1.ndistdim)
-        self.assertEqual(l0.distdims, l1.distdims)
         self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
         self.assertEqual(len(l0.maps), len(l1.maps))
         self.assertEqual(l0.grid_shape, l1.grid_shape)
@@ -208,9 +202,36 @@ class TestGridShape(MpiTestCase):
         self.larr = da.LocalArray((6*10,2*10), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (6,2))
         self.larr = da.LocalArray((100,10,300), dist=('b', 'n', 'c'), comm=self.comm)
-        self.assertEqual(self.larr.grid_shape, (2,6))
+        self.assertEqual(self.larr.grid_shape, (2,1,6))
         self.larr = da.LocalArray((100,50,300), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,2,3))
+
+    def test_ones_in_grid_shape(self):
+        """Test not-distributed dimensions in grid_shape."""
+        self.dist = ('n', 'b', 'n', 'c', 'n')
+        self.glb_shape = (2,6,2,8,2)
+        self.grid_shape = (1,3,1,4,1)
+        self.larr_5d = da.LocalArray(self.glb_shape,
+                                     grid_shape=self.grid_shape,
+                                     dist=self.dist,
+                                     comm=self.comm,
+                                     buf=None)
+        self.assertEqual(self.larr_5d.global_shape, self.glb_shape)
+        self.assertEqual(self.larr_5d.dist, self.dist)
+        self.assertEqual(self.larr_5d.grid_shape, self.grid_shape)
+        self.assertEqual(self.larr_5d.base_comm, self.comm)
+        self.assertEqual(self.larr_5d.comm_size, 12)
+        self.assertTrue(self.larr_5d.comm_rank in range(12))
+        self.assertEqual(self.larr_5d.comm.Get_topo(),
+                         (list(self.larr_5d.grid_shape),
+                          [0]*5, list(self.larr_5d.cart_coords)))
+        self.assertEqual(len(self.larr_5d.maps), 5)
+        self.assertEqual(self.larr_5d.global_shape, self.glb_shape)
+        self.assertEqual(self.larr_5d.local_shape, (2,2,2,2,2))
+        self.assertEqual(self.larr_5d.local_array.shape, self.larr_5d.local_shape)
+        self.assertEqual(self.larr_5d.local_array.size, self.larr_5d.local_size)
+        self.assertEqual(self.larr_5d.local_size, reduce(int.__mul__, self.glb_shape) // self.comm_size)
+        self.assertEqual(self.larr_5d.local_array.dtype, self.larr_5d.dtype)
 
 
 class TestDistMatrix(MpiTestCase):
@@ -240,7 +261,7 @@ class TestLocalInd(MpiTestCase):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((4, 4), comm=self.comm)
         self.assertEqual(la.global_shape, (4, 4))
-        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.grid_shape, (4, 1))
         self.assertEqual(la.local_shape, (1, 4))
         row_result = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
@@ -253,7 +274,7 @@ class TestLocalInd(MpiTestCase):
         """Can we compute local indices for a block distribution?"""
         la = da.LocalArray((8, 2), comm=self.comm)
         self.assertEqual(la.global_shape, (8, 2))
-        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.grid_shape, (4, 1))
         self.assertEqual(la.local_shape, (2, 2))
         expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]
 
@@ -302,7 +323,7 @@ class TestLocalInd(MpiTestCase):
         """Can we compute local indices for a cyclic distribution?"""
         la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
         self.assertEqual(la.global_shape, (8, 2))
-        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.grid_shape, (4, 1))
         self.assertEqual(la.local_shape, (2, 2))
 
         expected_lis = [(0, 0), (0, 1), (1, 0), (1, 1)]

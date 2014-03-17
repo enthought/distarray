@@ -54,6 +54,14 @@ def distribute_indices(dim_data):
     for dim in dim_data:
         distribute_fn[dim['dist_type']](dim)
 
+def _normalize_dim_data(dim_data):
+    ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
+    for dd in dim_data:
+        if dd['dist_type'] == 'n':
+            dd['proc_grid_size'] = 1
+            dd['proc_grid_rank'] = 0
+    return dim_data
+
 
 class BaseLocalArray(object):
 
@@ -88,21 +96,17 @@ class BaseLocalArray(object):
             A BaseLocalArray encapsulating `buf`, or else an empty
             (uninitialized) BaseLocalArray.
         """
-        self.dim_data = dim_data
+        self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
 
-        self.grid_shape = construct.init_grid_shape(self.global_shape,
-                                                    self.distdims,
-                                                    self.comm_size,
-                                                    self.grid_shape)
+        self.grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
 
-        self.comm = construct.init_comm(self.base_comm, self.grid_shape,
-                                        self.ndistdim)
+        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dim_data)
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) 
+                          for dimdict in dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -115,8 +119,7 @@ class BaseLocalArray(object):
 
     @property
     def grid_shape(self):
-        return tuple(dd.get('proc_grid_size') for dd in self.dim_data
-                     if dd.get('proc_grid_size'))
+        return tuple(dd['proc_grid_size'] for dd in self.dim_data)
 
     @grid_shape.setter
     def grid_shape(self, grid_shape):
@@ -150,17 +153,8 @@ class BaseLocalArray(object):
         return tuple(dd['dist_type'] for dd in self.dim_data)
 
     @property
-    def distdims(self):
-        return tuple(i for (i, v) in enumerate(self.dist) if v != 'n')
-
-    @property
-    def ndistdim(self):
-        return len(self.distdims)
-
-    @property
     def cart_coords(self):
-        rval = tuple(dd.get('proc_grid_rank') for dd in self.dim_data
-                     if 'proc_grid_rank' in dd)
+        rval = tuple(dd['proc_grid_rank'] for dd in self.dim_data)
         assert rval == tuple(self.comm.Get_coords(self.comm_rank))
         return rval
 
@@ -186,8 +180,8 @@ class BaseLocalArray(object):
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        dist_data = (self.dim_data[i] for i in self.distdims)
-        for dim, cart_rank in zip(dist_data, cart_coords):
+        assert len(cart_coords) == len(self.dim_data)
+        for dim, cart_rank in zip(self.dim_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 
     def _make_local_array(self, buf=None, dtype=None):

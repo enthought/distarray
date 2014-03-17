@@ -43,9 +43,9 @@ def init_base_comm(comm):
         raise InvalidBaseCommError("Not an MPI.Comm instance")
 
 
-def init_comm(base_comm, grid_shape, ndistdim):
+def init_comm(base_comm, grid_shape):
     """Create an MPI communicator with a cartesian topology."""
-    return base_comm.Create_cart(grid_shape, ndistdim * (False,),
+    return base_comm.Create_cart(grid_shape, len(grid_shape) * (False,),
                                  reorder=False)
 
 
@@ -77,39 +77,17 @@ def init_dist(dist, ndim):
         DistError("Dist must be a string, tuple, list or dict")
 
 
-def init_distdims(dist, ndim):
-    """Return a tuple containing indices of distributed dimensions.
-
-    Parameters
-    ----------
-    dist : tuple of str as returned from `init_dist`
-    ndim : int
-
-    Returns
-    -------
-    tuple of int
-
-    Examples
-    --------
-    >>> init_distdims(('b', 'n', 'n', 'c'), 4)
-    (0, 3)
-    """
-    reduced_dist = [d for d in dist if d != 'n']
-    ndistdim = len(reduced_dist)
-    if ndistdim > ndim:
-        raise DistError("Too many distributed dimensions")
-    distdims = [i for i in range(ndim) if dist[i] != 'n']
-    return tuple(distdims)
-
-
-def init_grid_shape(shape, distdims, comm_size, grid_shape=None):
+def init_grid_shape(dim_data, comm_size, grid_shape=None):
     """Generate or validate a `grid_shape`.
 
     If `grid_shape` is None, generate a `grid_shape` using
     `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape`
     given.
     """
+    dist = tuple(dd['dist_type'] for dd in dim_data)
+    distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)
+    shape = tuple(dd['size'] for dd in dim_data)
     if grid_shape is None or grid_shape == tuple():
         grid_shape = optimize_grid_shape(shape, distdims, comm_size)
     else:
@@ -131,6 +109,8 @@ def optimize_grid_shape(shape, distdims, comm_size):
     ndistdim = len(distdims)
     if ndistdim == 1:
         grid_shape = (comm_size,)
+    elif comm_size == 1:
+        grid_shape = (1,) * len(distdims)
     else:
         factors = utils.mult_partitions(comm_size, ndistdim)
         if factors != []:

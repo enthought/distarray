@@ -31,15 +31,13 @@ class TestBaseLocalArray(unittest.TestCase):
 
         larr = BaseLocalArray(dim_data)
 
-        self.assertEqual(larr.grid_shape, (1,))
+        self.assertEqual(larr.grid_shape, (1,1))
         self.assertEqual(larr.global_shape, (16, 16))
         self.assertEqual(len(larr.maps), 2)
         self.assertEqual(larr.local_array.shape, larr.global_shape)
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
         self.assertEqual(larr.dist, ('b', 'n'))
-        self.assertEqual(larr.distdims, (0,))
-        self.assertEqual(larr.ndistdim, 1)
         self.assertEqual(larr.local_size, 16*16)
 
         self.assertEqual([x for x in larr.maps[0].global_index],
@@ -74,8 +72,6 @@ class TestBaseLocalArray(unittest.TestCase):
         self.assertEqual(larr.ndim, 2)
         self.assertEqual(larr.size, 16*16)
         self.assertEqual(larr.dist, ('c', 'b'))
-        self.assertEqual(larr.distdims, (0, 1))
-        self.assertEqual(larr.ndistdim, 2)
         self.assertEqual(larr.local_size, 16*16)
 
         self.assertEqual([x for x in larr.maps[0].global_index],
