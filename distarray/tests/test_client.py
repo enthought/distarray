@@ -57,6 +57,7 @@ class TestContextCreation(IpclusterTestCase):
         """Can we create a plain vanilla context?"""
         dac = Context(self.client)
         self.assertIs(dac.client, self.client)
+        del dac
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
@@ -76,11 +77,57 @@ class TestContextCreation(IpclusterTestCase):
         ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
 
+    def test_create_delete_key(self):
+        """ Check that a key can be created and then destroyed. """
+        dac = Context(self.client)
+        # Create and push a key/value.
+        key, value = dac._generate_key(), 'test'
+        dac._push({key: value})
+        # Delete the key.
+        dac.delete_key(key)
+
+    def test_purge_and_dump_keys(self):
+        """ Check that we can get the existing keys and purge them. """
+        # Get initial key count (probably 0).
+        context0 = Context(self.client)
+        num_keys0 = len(context0.dump_keys(all_other_contexts=True))
+        # Create a context get the count on the new context.
+        dac = Context(self.client)
+        num_keys1 = len(dac.dump_keys())
+        # Create and push a key.
+        key = dac._generate_key()
+        dac._execute('%s = 42' % (key))
+        # Size of list of keys should have grown, both from the
+        # all other context, and just the one context, point of view.
+        num_keys2 = len(context0.dump_keys(all_other_contexts=True))
+        self.assertGreater(num_keys2, num_keys0)
+        num_keys3 = len(dac.dump_keys())
+        self.assertGreater(num_keys3, num_keys1)
+        # Delete the context.
+        del dac
+        # Key count should return to start.
+        num_keys2 = len(context0.dump_keys(all_other_contexts=True))
+        self.assertEqual(num_keys2, num_keys0)
+
+    def test_purge_all_keys(self):
+        """ Test that we can purge the keys from all contexts. """
+        dac = Context(self.client)
+        dac.purge_keys(all_other_contexts=True)
+        # Should be no keys left.
+        keys_in_use = dac.dump_keys(all_other_contexts=True)
+        num_keys = len(keys_in_use)
+        self.assertEqual(num_keys, 0)
+
 
 class TestDistArray(IpclusterTestCase):
 
     def setUp(self):
         self.dac = Context(self.client)
+
+     # overloads base class... 
+    def tearDown(self):
+        del self.dac
+        super(TestDistArray, self).tearDown()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -172,6 +219,11 @@ class TestDistArrayCreation(IpclusterTestCase):
     def setUp(self):
         self.context = Context(self.client)
 
+     # overloads base class... 
+    def tearDown(self):
+        del self.context
+        super(TestDistArrayCreation, self).tearDown()
+
     def test_zeros(self):
         shape = (16, 16)
         zero_distarray = self.context.zeros(shape)
@@ -209,6 +261,9 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.darr
+        del cls.arr
+        del cls.context
         cls.client.close()
 
     def test_sum(self):
