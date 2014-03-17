@@ -35,10 +35,6 @@ install:
 	${PYTHON} setup.py install
 .PHONY: install
 
-setup_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'start()'
-.PHONY: setup_cluster
-
 test_client:
 	${PYTHON} -m unittest discover -v
 .PHONY: test_client
@@ -62,6 +58,7 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 	$(eval PARALLEL_TEST := ${PARALLEL_TEST_COVERAGE})
 	@echo "Running '${PARALLEL_TEST}' on each engine..."
 	@${MPI_EXEC_CMD}
+.PHONY: test_engines_with_coverage
 
 test: test_client test_engines
 .PHONY: test
@@ -74,12 +71,16 @@ coverage_report:
 	${COVERAGE} html
 .PHONY: coverage_report
 
+setup_cluster:
+	${PYTHON} distarray/tests/ipcluster.py 'start()'
+.PHONY: setup_cluster
+
 teardown_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
+	${PYTHON} distarray/tests/ipcluster.py 'stop()'
 .PHONY: teardown_cluster
 
 restart_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
+	${PYTHON} distarray/tests/ipcluster.py 'restart()'
 .PHONY: restart_cluster
 
 clean:
