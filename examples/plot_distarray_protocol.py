@@ -8,10 +8,13 @@
 Plot distributions for some distarrays for the protocol documentation.
 """
 
+from __future__ import print_function
+
 import matplotlib
+from pprint import pprint
+
 import distarray
 from distarray import plotting
-
 
 # Use 2 processors to match examples.
 #context = distarray.Context(targets=[0, 1])
@@ -30,6 +33,47 @@ def plot_distribution(a, title, filename, interactive=True):
         matplotlib.pyplot.show()
 
 
+def print_engine_array(context, array, title):
+    """ Print some properties of the array on each engine.
+
+    This is formatted to fit nicely into the documentation.
+    """
+    # Examine the array on all the engines.
+    cmd = 'distbuffer = %s.__distarray__()' % (array.key)
+    context._execute(cmd)
+    cmd = 'db_keys = distbuffer.keys()'
+    context._execute(cmd)
+    cmd = 'db_version = distbuffer["__version__"]'
+    context._execute(cmd)
+    cmd = 'db_buffer = distbuffer["buffer"]'
+    context._execute(cmd)
+    cmd = 'db_dim_data = distbuffer["dim_data"]'
+    context._execute(cmd)
+    # Get data from each engine.
+    db_keys = context.view['db_keys']
+    db_version = context.view['db_version']
+    db_buffer = context.view['db_buffer']
+    db_dim_data = context.view['db_dim_data']
+    # Print
+    print("")
+    print("Engine properties for: %s" % (title))
+    print("")
+    for p, (keys, version, buffer, dim_data) in enumerate(
+            zip(db_keys, db_version, db_buffer, db_dim_data)):
+        print("In process %d:" % (p))
+        print("")
+        print(">>> distbuffer = a%d.__distarray__()" % (p))
+        print(">>> distbuffer.keys()")
+        pprint(keys)
+        print(">>> distbuffer['__version__']")
+        pprint(version)
+        print(">>> distbuffer['buffer']")
+        pprint(buffer)
+        print(">>> distbuffer['dim_data']")
+        pprint(dim_data)
+        print('')
+
+
 def create_distribution_plot(params):
     """ Create an array distribution plot,
     suitable for the protocol documentation. """
@@ -40,6 +84,8 @@ def create_distribution_plot(params):
     # Create a nice title.
     full_title = title + ' %d-by-%d' % (shape[0], shape[1]) + '\n'
     plot_distribution(array, full_title, filename, False)
+    # Print properties on engines.
+    print_engine_array(context, array, title)
 
 
 def create_distributed_protocol_documentation_plots():
@@ -77,6 +123,7 @@ def create_distributed_protocol_documentation_plots():
 #         },
     ]
     for params in params_list:
+    #for params in [params_list[0]]:
         create_distribution_plot(params)
 
 
