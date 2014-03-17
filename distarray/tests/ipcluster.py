@@ -94,7 +94,8 @@ def reset():
     pprint(mods[0])
 
 
-
 if __name__ == '__main__':
     cmd = sys.argv[1]
-    fn = eval(cmd)
+    if cmd not in 'start stop restart reset'.split():
+        sys.exit("Error: %r not a valid command." % cmd)
+    globals()[cmd]()

@@ -16,7 +16,7 @@ install:
 .PHONY: install
 
 setup_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'start()'
+	-${PYTHON} distarray/tests/ipcluster.py 'start'
 .PHONY: setup_cluster
 
 test_client:
@@ -47,15 +47,15 @@ coverage_report:
 .PHONY: coverage_report
 
 teardown_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'stop()'
+	-${PYTHON} distarray/tests/ipcluster.py 'stop'
 .PHONY: teardown_cluster
 
 restart_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'restart()'
+	-${PYTHON} distarray/tests/ipcluster.py 'restart'
 .PHONY: restart_cluster
 
 reset_cluster:
-	-${PYTHON} distarray/tests/ipcluster.py 'reset()'
+	-${PYTHON} distarray/tests/ipcluster.py 'reset'
 .PHONY: reset_cluster
 
 purge_cluster:
