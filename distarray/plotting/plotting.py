@@ -28,15 +28,25 @@ def _get_ranks(arr):
 
 
 def cmap_discretize(cmap, N):
-    """Return a discrete colormap from the continuous colormap cmap.
+    """Create a discrete colormap from the continuous colormap cmap.
 
-        cmap: colormap instance, eg. cm.jet. 
-        N: number of colors.
+    Parameters
+    ----------
+    cmap : colormap instance, or string
+        The continuous colormap, as object or name, to make discrete.
+        For example, matplotlib.cm.jet, or 'jet'.
+    N : int
+        The number of discrete colors desired.
 
-    Example
-        x = resize(arange(100), (5,100))
-        djet = cmap_discretize(cm.jet, 5)
-        imshow(x, cmap=djet)
+    Returns
+    -------
+    colormap
+        The desired discrete colormap.
+
+    Example usage:
+    >>> x = resize(arange(100), (5,100))
+    >>> djet = cmap_discretize(cm.jet, 5)
+    >>> imshow(x, cmap=djet)
     """
     # This is copied from:
     # http://wiki.scipy.org/Cookbook/Matplotlib/ColormapTransformations
