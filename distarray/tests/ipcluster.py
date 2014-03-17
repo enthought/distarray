@@ -78,20 +78,23 @@ def restart():
 
 _RESET_ENGINE_DISTARRAY = '''
 from sys import modules
+orig_mods = set(modules)
 for m in modules.copy():
     if m.startswith('distarray'):
         del modules[m]
-mm = sorted(modules.keys())
+deleted_mods = sorted(orig_mods - set(modules))
 '''
 
 def reset():
     from IPython.parallel import Client
-    from pprint import pprint
     c = Client()
     dv = c[:]
     dv.execute(_RESET_ENGINE_DISTARRAY, block=True)
-    mods = dv['mm']
-    pprint(mods[0])
+    mods = dv['deleted_mods']
+    print("The following modules were removed from the engines' namespaces:")
+    for mod in mods[0]:
+        print('    ' + mod)
+    dv.clear()
 
 
 if __name__ == '__main__':
