@@ -72,7 +72,7 @@ class DistArray(object):
         self.context = context
 
     def __del__(self):
-        self.context._execute('del %s' % self.key)
+        self.context.delete_key(self.key)
 
     def _get_attribute(self, name):
         key = self.context._generate_key()
