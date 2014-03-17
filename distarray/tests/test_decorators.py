@@ -139,10 +139,31 @@ class TestLocalDecorator(TestCase):
         return None
 
     @classmethod
-    def setUpClass(self):
-        self.context = Context()
-        self.da = self.context.empty((5, 5))
-        self.da.fill(2 * numpy.pi)
+    def setUpClass(cls):
+        cls.context = Context()
+        cls.da = cls.context.empty((5, 5))
+        cls.da.fill(2 * numpy.pi)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Release references to the local functions.
+        del cls.local_add50
+        del cls.local_add_num
+        del cls.assert_allclose
+        del cls.local_sin
+        del cls.local_sum
+        del cls.call_barrier
+        del cls.local_add_nums
+        del cls.local_add_distarrayproxies
+        del cls.local_add_mixed
+        del cls.local_add_ndarray
+        del cls.local_add_kwargs
+        del cls.local_add_supermix
+        del cls.local_none
+        del cls.parameterless
+        # Release other resources.
+        del cls.da
+        del cls.context
 
     def test_local(self):
         context = Context()
@@ -264,6 +285,7 @@ class TestVectorizeDecorator(TestCase):
         a = a_fn(a, a, 6)
         db = da_fn(da, da, 6)
         assert_array_equal(db.toarray(), a)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

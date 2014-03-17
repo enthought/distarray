@@ -26,7 +26,10 @@ class TestRandom(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
-        cls.context.view.client.close()
+        client = cls.context.view.client
+        del cls.random
+        del cls.context
+        client.close()
 
     def test_rand(self):
         shape = (3, 4)
