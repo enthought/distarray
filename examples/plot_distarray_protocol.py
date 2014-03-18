@@ -6,6 +6,10 @@
 
 """
 Plot distributions for some distarrays for the protocol documentation.
+
+The output from this example program should be directly usable in the
+distributed array protocol documentation, if saved as examples.rst.
+The output .png files should be copied to the images folder as well.
 """
 
 from __future__ import print_function
@@ -33,7 +37,7 @@ def plot_distribution(a, title, xlabel, ylabel, filename, interactive=True):
         matplotlib.pyplot.show()
 
 
-def print_engine_array(context, array, title, filename):
+def print_engine_array(context, array, title, text, filename):
     """ Print some properties of the array on each engine.
 
     This is formatted to fit nicely into the documentation.
@@ -54,27 +58,43 @@ def print_engine_array(context, array, title, filename):
     db_version = context.view['db_version']
     db_buffer = context.view['db_buffer']
     db_dim_data = context.view['db_dim_data']
+    # Get the full array.
+    full_array = array.toarray()
 
-    # Print
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
-    print("")
-    print("Engine properties for: %s" % (title))
-    print("")
+    print()
+    print(text)
+    print()
+
+    # Full (undistributed) array:
+    print("The full (undistributed) array:")
+    print()
+    print(">>> full_array")
+    pprint(full_array)
+    print()
+
+    # Properties that are the same on all processes:
+    print("In all processes:")
+    print()
+    print(">>> distbuffer = local_array.__distarray__()")
+    print(">>> distbuffer.keys()")
+    pprint(db_keys[0])
+    print(">>> distbuffer['__version__']")
+    pprint(db_version[0])
+    print()
+
+    # Properties that change per-process:
     for p, (keys, version, buffer, dim_data) in enumerate(
             zip(db_keys, db_version, db_buffer, db_dim_data)):
         print("In process %d:" % (p))
-        print("")
-        print(">>> distbuffer = a%d.__distarray__()" % (p))
-        print(">>> distbuffer.keys()")
-        pprint(keys)
-        print(">>> distbuffer['__version__']")
-        pprint(version)
+        print()
         print(">>> distbuffer['buffer']")
         pprint(buffer)
         print(">>> distbuffer['dim_data']")
         pprint(dim_data)
-        print('')
+        print()
+
     # Link to image
     print(".. image:: ../images/%s" % (filename))
     print("")
@@ -99,9 +119,14 @@ def create_distribution_plot(params):
     # Nice labels for axes.
     xlabel = 'Processor 0.%s' % (dist[0])
     ylabel = 'Processor 1.%s' % (dist[1])
+    # Text description for documentation.
+    if 'text' in params:
+        text = params['text']
+    else:
+        text = "Engine properties for: %s." % (title)
     plot_distribution(array, full_title, xlabel, ylabel, filename, False)
     # Print properties on engines.
-    print_engine_array(context, array, title, filename)
+    print_engine_array(context, array, title, text, filename)
 
 
 def create_distributed_protocol_documentation_plots():
@@ -111,6 +136,7 @@ def create_distributed_protocol_documentation_plots():
          'dist': ('b', 'n'),
          'title': 'Block, Nondistributed',
          'filename': 'plot_block_nondist.png',
+         'text': '''Some description of Block, Nondistributed.''',
         },
         {'shape': (4, 8),
          'dist': ('n', 'b'),
@@ -140,6 +166,7 @@ def create_distributed_protocol_documentation_plots():
     print()
 
     for params in params_list:
+    #for params in [params_list[0]]:
     #for params in [params_list[4]]:
         create_distribution_plot(params)
 
