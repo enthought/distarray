@@ -152,7 +152,7 @@ def optimize_grid_shape(shape, distdims, comm_size):
         norms = numpy.array([numpy.linalg.norm(d, 2) for d in distances])
         index = norms.argmin()
         # we now have the grid shape for the distributed dimensions.
-        dist_grid_shape = tuple(factors[index])
+        dist_grid_shape = tuple(int(i) for i in factors[index])
 
     # Create the grid_shape, all 1's for now.
     grid_shape = [1] * len(shape)
