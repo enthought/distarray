@@ -249,7 +249,8 @@ class Context(object):
         Returns
         -------
         result : DistArray
-            A DistArray encapsulating the file loaded.
+            An empty DistArray of the specified size, dimensionality, and
+            distribution.
 
         """
         if len(self.targets) != len(dim_data_per_process):
