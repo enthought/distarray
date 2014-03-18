@@ -33,7 +33,7 @@ def plot_distribution(a, title, xlabel, ylabel, filename, interactive=True):
         matplotlib.pyplot.show()
 
 
-def print_engine_array(context, array, title):
+def print_engine_array(context, array, title, filename):
     """ Print some properties of the array on each engine.
 
     This is formatted to fit nicely into the documentation.
@@ -54,7 +54,10 @@ def print_engine_array(context, array, title):
     db_version = context.view['db_version']
     db_buffer = context.view['db_buffer']
     db_dim_data = context.view['db_dim_data']
+
     # Print
+    print("%s" % (title))
+    print("%s" % ('`' * len(title)))
     print("")
     print("Engine properties for: %s" % (title))
     print("")
@@ -72,6 +75,10 @@ def print_engine_array(context, array, title):
         print(">>> distbuffer['dim_data']")
         pprint(dim_data)
         print('')
+    # Link to image
+    print(".. image:: ../images/%s" % (filename))
+    print("")
+    print("")
 
 
 def create_distribution_plot(params):
@@ -94,7 +101,7 @@ def create_distribution_plot(params):
     ylabel = 'Processor 1.%s' % (dist[1])
     plot_distribution(array, full_title, xlabel, ylabel, filename, False)
     # Print properties on engines.
-    print_engine_array(context, array, title)
+    print_engine_array(context, array, title, filename)
 
 
 def create_distributed_protocol_documentation_plots():
@@ -102,35 +109,36 @@ def create_distributed_protocol_documentation_plots():
     params_list = [
         {'shape': (4, 8),
          'dist': ('b', 'n'),
-         'title': 'Block-Nondistributed',
+         'title': 'Block, Nondistributed',
          'filename': 'plot_block_nondist.png',
         },
         {'shape': (4, 8),
          'dist': ('n', 'b'),
-         'title': 'Nondistributed-Block',
+         'title': 'Nondistributed, Block',
          'filename': 'plot_nondist_block.png',
         },
         {'shape': (4, 8),
          'dist': ('b', 'b'),
-         'title': 'Block-Block',
+         'title': 'Block, Block',
          'filename': 'plot_block_block.png',
         },
         {'shape': (4, 8),
          'dist': ('b', 'c'),
-         'title': 'Block-Cyclic',
+         'title': 'Block, Cyclic',
          'filename': 'plot_block_cyclic.png',
         },
         {'shape': (4, 8),
          'dist': ('c', 'c'),
-         'title': 'Cyclic-Cyclic',
+         'title': 'Cyclic, Cyclic',
          'filename': 'plot_cyclic_cyclic.png',
         },
-#         {'shape': (),
-#          'dist': (),
-#          'title': '',
-#          'filename': 'plot_.png',
-#         },
     ]
+
+    # Document section header
+    print('Automatically Generated Examples')
+    print('--------------------------------')
+    print()
+
     for params in params_list:
     #for params in [params_list[4]]:
         create_distribution_plot(params)
