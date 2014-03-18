@@ -23,8 +23,8 @@ from distarray import plotting
 context = distarray.Context()
 
 
-def plot_distribution(a, title, filename, interactive=True):
-    plotting.plot_array_distribution_2d(a, draw_legend=True)
+def plot_distribution(a, title, xlabel, ylabel, filename, interactive=True):
+    plotting.plot_array_distribution_2d(a, draw_legend=True, xlabel=xlabel, ylabel=ylabel)
     if title is not None:
         matplotlib.pyplot.title(title)
     if filename is not None:
@@ -78,12 +78,21 @@ def create_distribution_plot(params):
     """ Create an array distribution plot,
     suitable for the protocol documentation. """
     shape, dist = params['shape'], params['dist']
-    array = context.zeros(shape, dist=dist)
+    array = context.empty(shape, dist=dist)
+    # Fill the array [slow].
+    value = 1.0
+    for row in range(shape[0]):
+        for col in range(shape[1]):
+            array[row, col] = value
+            value += 1.0
     # Add newline to title for better spacing.
     title, filename = params['title'], params['filename']
     # Create a nice title.
     full_title = title + ' %d-by-%d' % (shape[0], shape[1]) + '\n'
-    plot_distribution(array, full_title, filename, False)
+    # Nice labels for axes.
+    xlabel = 'Processor 0.%s' % (dist[0])
+    ylabel = 'Processor 1.%s' % (dist[1])
+    plot_distribution(array, full_title, xlabel, ylabel, filename, False)
     # Print properties on engines.
     print_engine_array(context, array, title)
 
@@ -91,27 +100,27 @@ def create_distribution_plot(params):
 def create_distributed_protocol_documentation_plots():
     """ Create plots for the distributed array protocol documentation. """ 
     params_list = [
-        {'shape': (2, 10),
+        {'shape': (4, 8),
          'dist': ('b', 'n'),
          'title': 'Block-Nondistributed',
          'filename': 'plot_block_nondist.png',
         },
-        {'shape': (2, 10),
+        {'shape': (4, 8),
          'dist': ('n', 'b'),
          'title': 'Nondistributed-Block',
          'filename': 'plot_nondist_block.png',
         },
-        {'shape': (10, 10),
+        {'shape': (4, 8),
          'dist': ('b', 'b'),
          'title': 'Block-Block',
          'filename': 'plot_block_block.png',
         },
-        {'shape': (10, 10),
+        {'shape': (4, 8),
          'dist': ('b', 'c'),
          'title': 'Block-Cyclic',
          'filename': 'plot_block_cyclic.png',
         },
-        {'shape': (10, 10),
+        {'shape': (4, 8),
          'dist': ('c', 'c'),
          'title': 'Cyclic-Cyclic',
          'filename': 'plot_cyclic_cyclic.png',
@@ -123,12 +132,13 @@ def create_distributed_protocol_documentation_plots():
 #         },
     ]
     for params in params_list:
-    #for params in [params_list[0]]:
+    #for params in [params_list[4]]:
         create_distribution_plot(params)
 
 
 if __name__ == '__main__':
-    create_distributed_protocol_documentation_plots()
+    if True:
+        create_distributed_protocol_documentation_plots()
 
     if False:
         # Current working test...

@@ -63,7 +63,7 @@ def cmap_discretize(cmap, N):
     return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
 
 
-def plot_array_distribution_2d(darr, draw_legend=False, *args, **kwargs):
+def plot_array_distribution_2d(darr, draw_legend=False, xlabel=None, ylabel=None, *args, **kwargs):
     """
     Plot a 2D distarray's memory layout. Elements are colored according
     to the process they are on.
@@ -90,6 +90,17 @@ def plot_array_distribution_2d(darr, draw_legend=False, *args, **kwargs):
         tick_labels = [str(p) for p in range(num_processors)]
 
         img = pyplot.matshow(arr, cmap=cmap, norm=norm, *args, **kwargs)
+
+        # Label axes.
+        if xlabel is not None:
+            pyplot.xlabel(xlabel)
+        if ylabel is not None:
+            pyplot.ylabel(ylabel)
+        # Put tick labels at the bottom, not the top.
+        for tick in pyplot.gca().xaxis.iter_ticks():
+            tick[0].label1On = True
+            tick[0].label2On = False
+        # Add colorbar as legend.
         cbar = pyplot.colorbar(img)
         cbar.set_ticks(ticks)
         cbar.set_ticklabels(tick_labels)
