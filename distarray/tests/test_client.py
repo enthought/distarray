@@ -15,7 +15,7 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 import unittest
 import numpy
 
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_allclose
 from random import shuffle
 from IPython.parallel import Client
 from distarray.externals.six.moves import range
@@ -247,6 +247,35 @@ class TestDistArrayCreation(IpclusterTestCase):
         for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
 
+    def test_from_dim_data(self):
+        total_size = 40
+        ddpp = [
+            ({'dist_type': 'u',
+              'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+              'proc_grid_rank': 0,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+              'proc_grid_rank': 1,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+              'proc_grid_rank': 2,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+              'proc_grid_rank': 3,
+              'proc_grid_size': 4,
+              'size': 40},)]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(total_size):
+            distarr[i] = i
+        localarrays = distarr.get_localarrays()
+        for i, arr in enumerate(localarrays):
+            assert_allclose(arr, ddpp[i][0]['indices'])
 
 class TestReduceMethods(unittest.TestCase):
     """Test reduction methods"""
