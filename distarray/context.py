@@ -235,6 +235,38 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k,targets=self.targets[0],block=True)
 
+    def from_dim_data(self, dim_data_per_process, dtype=float):
+        """Make a DistArray from dim_data structures.
+
+        Parameters
+        ----------
+        dim_data_per_process : iterable of tuples of dict
+            A "dim_data" data structure for every process.  Described here:
+            https://github.com/enthought/distributed-array-protocol
+        dtype : numpy dtype, optional
+            dtype for underlying arrays
+
+        Returns
+        -------
+        result : DistArray
+            An empty DistArray of the specified size, dimensionality, and
+            distribution.
+
+        """
+        if len(self.targets) != len(dim_data_per_process):
+            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+            raise TypeError(errmsg)
+
+        da_key = self._generate_key()
+        subs = ((da_key,) + self._key_and_push(dim_data_per_process) +
+                (self._comm_key,) + self._key_and_push(dtype) + (self._comm_key,))
+
+        cmd = ('%s = distarray.local.DenseLocalArray.'
+               'from_dim_data(%s[%s.Get_rank()], dtype=%s, comm=%s)')
+        self._execute(cmd % subs)
+
+        return DistArray(da_key, self)
+
     def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)
         da_key = self._generate_key()
