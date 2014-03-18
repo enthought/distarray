@@ -137,8 +137,8 @@ class DecoratorBase(object):
                     typestring == "<class 'NoneType'>")
 
         def is_LocalArray(typestring):
-            return (typestring == "<class 'distarray.local.denselocalarray"
-                                  ".DenseLocalArray'>")
+            return (typestring == "<class 'distarray.local.localarray."
+                                  "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
             result = DistArray(result_key, context)
