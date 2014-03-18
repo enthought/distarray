@@ -76,54 +76,91 @@ def init_dist(dist, ndim):
     else:
         DistError("Dist must be a string, tuple, list or dict")
 
+def init_grid_shape(dim_data, comm_size):
+    """ Generate a `grid_shape` from dim_data.
 
-def init_grid_shape(dim_data, comm_size, grid_shape=None):
-    """Generate or validate a `grid_shape`.
-
-    If `grid_shape` is None, generate a `grid_shape` using
-    `optimize_grid_shape`.  Else, validate and sanitize the `grid_shape`
-    given.
+    `dim_data` may not have `proc_grid_size` set for each dimension.
+    
     """
+    shape = tuple(dd['size'] for dd in dim_data)
     dist = tuple(dd['dist_type'] for dd in dim_data)
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
-    ndistdim = len(distdims)
-    shape = tuple(dd['size'] for dd in dim_data)
-    if grid_shape is None or grid_shape == tuple():
-        grid_shape = optimize_grid_shape(shape, distdims, comm_size)
-    else:
-        try:
-            grid_shape = tuple(grid_shape)
-        except:
-            msg = "grid_shape is not castable to a tuple."
-            raise InvalidGridShapeError(msg)
-    if len(grid_shape) != ndistdim:
-        raise InvalidGridShapeError("grid_shape has the wrong length.")
-    ngriddim = reduce(lambda x, y: x * y, grid_shape)
-    if ngriddim != comm_size:
-        msg = "grid_shape is incompatible with the number of processors."
-        raise InvalidGridShapeError(msg)
-    return tuple(int(s) for s in grid_shape)
+    grid_shape = optimize_grid_shape(shape, distdims, comm_size)
+    return validate_grid_shape(grid_shape, dim_data, comm_size)
+
+def validate_grid_shape(grid_shape, dim_data, comm_size):
+    ''' Extracts the grid_shape from dim_data and validates it.'''
+    # check that if dim_data[i]['dist_type'] == 'n' then grid_shape[i] == 1
+    for dim, (gs, dd) in enumerate(zip(grid_shape, dim_data)):
+        if dd['dist_type'] == 'n' and gs != 1:
+            msg = "dimension %d is not distributed but has a grid size of %d"
+            raise InvalidGridShapeError(msg % (dim, gs))
+    if reduce(int.__mul__, grid_shape) != comm_size:
+        msg = "grid shape %r not compatible with comm size of %d."
+        raise InvalidGridShapeError(msg % (grid_shape, comm_size))
+    return grid_shape
 
 
 def optimize_grid_shape(shape, distdims, comm_size):
+    ''' Attempts to allocate processes optimally for distributed dimensions.
+
+    Parameters
+    ----------
+        shape : tuple of int
+            The global shape of the array.
+        distdims : sequence of int
+            The indices of the distributed dimensions.
+        comm_size : int
+            Total number of processes to distribute.
+
+    Returns
+    -------
+        dist_grid_shape : tuple of int
+
+    Raises
+    ------
+        GridShapeError if not possible to distribute `comm_size` processes over
+        number of dimensions.
+    
+    '''
     ndistdim = len(distdims)
+
     if ndistdim == 1:
-        grid_shape = (comm_size,)
+        # Trivial case: all processes used for the one distributed dimension.
+        dist_grid_shape = (comm_size,)
+
     elif comm_size == 1:
-        grid_shape = (1,) * len(distdims)
-    else:
+        # Trivial case: only one process to distribute over!
+        dist_grid_shape = (1,) * ndistdim
+
+    else: # Main case: comm_size > 1, ndistdim > 1.
         factors = utils.mult_partitions(comm_size, ndistdim)
-        if factors != []:
-            reduced_shape = [shape[i] for i in distdims]
-            factors = [utils.mirror_sort(f, reduced_shape) for f in factors]
-            rs_ratio = _compute_grid_ratios(reduced_shape)
-            f_ratios = [_compute_grid_ratios(f) for f in factors]
-            distances = [rs_ratio-f_ratio for f_ratio in f_ratios]
-            norms = numpy.array([numpy.linalg.norm(d, 2) for d in distances])
-            index = norms.argmin()
-            grid_shape = tuple(factors[index])
-        else:
+        if not factors: # Can't factorize appropriately.
             raise GridShapeError("Cannot distribute array over processors.")
+
+        reduced_shape = [shape[i] for i in distdims]
+
+        # Reorder factors so they match the relative ordering in reduced_shape
+        factors = [utils.mirror_sort(f, reduced_shape) for f in factors]
+
+        # Pick the "best" factoring from `factors` according to which matches the
+        # ratios among the dimensions in `shape`
+        rs_ratio = _compute_grid_ratios(reduced_shape)
+        f_ratios = [_compute_grid_ratios(f) for f in factors]
+        distances = [rs_ratio-f_ratio for f_ratio in f_ratios]
+        norms = numpy.array([numpy.linalg.norm(d, 2) for d in distances])
+        index = norms.argmin()
+        # we now have the grid shape for the distributed dimensions.
+        dist_grid_shape = tuple(factors[index])
+
+    # Create the grid_shape, all 1's for now.
+    grid_shape = [1] * len(shape)
+
+    # Fill grid_shape in the distdim slots using dist_grid_shape
+    it = iter(dist_grid_shape)
+    for distdim in distdims:
+        grid_shape[distdim] = it.next()
+
     return grid_shape
 
 
@@ -135,3 +172,5 @@ def _compute_grid_ratios(shape):
             ratios.append(shape[i] / shape[j])
 
     return numpy.array(ratios)
+
+

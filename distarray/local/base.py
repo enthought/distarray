@@ -99,9 +99,12 @@ class BaseLocalArray(object):
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
 
-        self.grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
+        grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
 
-        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
+        for gs, dd in zip(grid_shape, self.dim_data):
+            dd['proc_grid_size'] = gs
+
+        self.comm = construct.init_comm(self.base_comm, grid_shape)
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
@@ -120,13 +123,6 @@ class BaseLocalArray(object):
     @property
     def grid_shape(self):
         return tuple(dd['proc_grid_size'] for dd in self.dim_data)
-
-    @grid_shape.setter
-    def grid_shape(self, grid_shape):
-        grid_size = iter(grid_shape)
-        for dist, dd in zip(self.dist, self.dim_data):
-            if dist != 'n':
-                dd['proc_grid_size'] = next(grid_size)
 
     @property
     def global_shape(self):
@@ -180,7 +176,7 @@ class BaseLocalArray(object):
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        assert len(cart_coords) == len(self.dim_data)
+        assert len(cart_coords) == len(self.dim_data), repr((cart_coords, self.dim_data))
         for dim, cart_rank in zip(self.dim_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 
