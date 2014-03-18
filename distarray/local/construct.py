@@ -16,6 +16,7 @@ from distarray.local.error import (DistError, InvalidGridShapeError,
                                    GridShapeError, NullCommError,
                                    InvalidBaseCommError)
 from distarray import utils, mpiutils
+from distarray.externals.six import next
 
 
 #----------------------------------------------------------------------------
@@ -159,7 +160,7 @@ def optimize_grid_shape(shape, distdims, comm_size):
     # Fill grid_shape in the distdim slots using dist_grid_shape
     it = iter(dist_grid_shape)
     for distdim in distdims:
-        grid_shape[distdim] = it.next()
+        grid_shape[distdim] = next(it)
 
     return grid_shape
 
