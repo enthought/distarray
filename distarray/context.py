@@ -261,7 +261,7 @@ class Context(object):
         subs = ((da_key,) + self._key_and_push(dim_data_per_process) +
                 (self._comm_key,) + self._key_and_push(dtype) + (self._comm_key,))
 
-        cmd = ('%s = distarray.local.DenseLocalArray.'
+        cmd = ('%s = distarray.local.LocalArray.'
                'from_dim_data(%s[%s.Get_rank()], dtype=%s, comm=%s)')
         self._execute(cmd % subs)
 
