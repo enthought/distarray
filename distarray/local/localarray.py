@@ -23,15 +23,54 @@ from distarray.externals.six import next
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import construct, format, maps
-from distarray.local.base import arecompatible, distribute_indices
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-# Base LocalArray class
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+def arecompatible(a, b):
+    """Do these arrays have the same compatibility hash?"""
+    return a.compatibility_hash() == b.compatibility_hash()
+
+
+def distribute_indices(dim_data):
+    """Fill in missing index related keys...
+
+    for supported dist_types.
+    """
+    distribute_fn = {
+        'n': lambda dd: None,
+        'b': distribute_block_indices,
+        'c': distribute_cyclic_indices,
+        'u': lambda dd: None,
+        }
+    for dim in dim_data:
+        distribute_fn[dim['dist_type']](dim)
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` given dimdict `dd`."""
+    if 'start' in dd:
+        return
+    else:
+        dd['start'] = dd['proc_grid_rank']
+
+
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dimdict `dd`."""
+    if ('start' in dd) and ('stop' in dd):
+        return
+
+    nelements = dd['size'] // dd['proc_grid_size']
+    if dd['size'] % dd['proc_grid_size'] != 0:
+        nelements += 1
+
+    dd['start'] = dd['proc_grid_rank'] * nelements
+    if dd['start'] > dd['size']:
+        dd['start'] = dd['size']
+        dd['stop'] = dd['size']
+
+    dd['stop'] = dd['start'] + nelements
+    if dd['stop'] > dd['size']:
+        dd['stop'] = dd['size']
 
 
 def make_partial_dim_data(shape, dist=None, grid_shape=None):
@@ -75,6 +114,12 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
 
     return tuple(dim_data)
 
+
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+# Base LocalArray class
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 
 class BaseLocalArray(object):
 
