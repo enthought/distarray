@@ -171,7 +171,7 @@ def create_distributed_protocol_documentation_plots():
          'filename': 'plot_cyclic_cyclic.png',
         },
         # Examples requiring custom dimdata.
-        # Like cyclic-cyclic.
+        # Like cyclic-cyclic but with block_size=2 in second dimension.
         {'shape': (4, 8),
          'dimdata': [
             ({'block_size': 1,
@@ -185,8 +185,7 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_rank': 0,
               'proc_grid_size': 2,
               'size': 8,
-              'start': 0,
-              'stop': 2}),
+              'start': 0}),
             ({'block_size': 1,
               'dist_type': 'c',
               'proc_grid_rank': 1,
@@ -198,8 +197,7 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_rank': 1,
               'proc_grid_size': 2,
               'size': 8,
-              'start': 2,
-              'stop': 4,}),
+              'start': 2}),
             ({'block_size': 1,
               'dist_type': 'c',
               'proc_grid_rank': 0,
@@ -211,8 +209,7 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_rank': 0,
               'proc_grid_size': 2,
               'size': 8,
-              'start': 0,
-              'stop': 2,}),
+              'start': 0}),
             ({'block_size': 1,
               'dist_type': 'c',
               'proc_grid_rank': 1,
@@ -224,8 +221,7 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_rank': 1,
               'proc_grid_size': 2,
               'size': 8,
-              'start': 2,
-              'stop': 4,}),
+              'start': 2}),
           ],
          'title': 'Slithery, Python',
          'filename': 'plot_slithery_python.png',
