@@ -9,16 +9,16 @@ from __future__ import print_function, division
 #----------------------------------------------------------------------------
 # Imports
 #----------------------------------------------------------------------------
-from functools import reduce
+import math
 import operator
+import numpy as np
+
+from functools import reduce
+from collections import Mapping
 
 from distarray.externals import six
-import math
-
-import numpy as np
-from distarray.externals.six.moves import zip
-from collections import Mapping
 from distarray.externals.six import next
+from distarray.externals.six.moves import zip
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
