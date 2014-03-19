@@ -11,10 +11,10 @@ from __future__ import print_function, division
 #----------------------------------------------------------------------------
 import math
 import operator
-import numpy as np
-
 from functools import reduce
 from collections import Mapping
+
+import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six import next
