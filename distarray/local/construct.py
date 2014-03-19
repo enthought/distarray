@@ -77,17 +77,19 @@ def init_dist(dist, ndim):
     else:
         DistError("Dist must be a string, tuple, list or dict")
 
+
 def init_grid_shape(dim_data, comm_size):
     """ Generate a `grid_shape` from dim_data.
 
-    `dim_data` may not have `proc_grid_size` set for each dimension.
-    
+    Does not assume that `dim_data` has `proc_grid_size` set for each
+    dimension.
     """
     shape = tuple(dd['size'] for dd in dim_data)
     dist = tuple(dd['dist_type'] for dd in dim_data)
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     grid_shape = optimize_grid_shape(shape, distdims, comm_size)
     return validate_grid_shape(grid_shape, dim_data, comm_size)
+
 
 def validate_grid_shape(grid_shape, dim_data, comm_size):
     ''' Extracts the grid_shape from dim_data and validates it.'''
@@ -122,7 +124,6 @@ def optimize_grid_shape(shape, distdims, comm_size):
     ------
         GridShapeError if not possible to distribute `comm_size` processes over
         number of dimensions.
-    
     '''
     ndistdim = len(distdims)
 
@@ -134,9 +135,9 @@ def optimize_grid_shape(shape, distdims, comm_size):
         # Trivial case: only one process to distribute over!
         dist_grid_shape = (1,) * ndistdim
 
-    else: # Main case: comm_size > 1, ndistdim > 1.
+    else:  # Main case: comm_size > 1, ndistdim > 1.
         factors = utils.mult_partitions(comm_size, ndistdim)
-        if not factors: # Can't factorize appropriately.
+        if not factors:  # Can't factorize appropriately.
             raise GridShapeError("Cannot distribute array over processors.")
 
         reduced_shape = [shape[i] for i in distdims]
@@ -144,8 +145,8 @@ def optimize_grid_shape(shape, distdims, comm_size):
         # Reorder factors so they match the relative ordering in reduced_shape
         factors = [utils.mirror_sort(f, reduced_shape) for f in factors]
 
-        # Pick the "best" factoring from `factors` according to which matches the
-        # ratios among the dimensions in `shape`
+        # Pick the "best" factoring from `factors` according to which matches
+        # the ratios among the dimensions in `shape`.
         rs_ratio = _compute_grid_ratios(reduced_shape)
         f_ratios = [_compute_grid_ratios(f) for f in factors]
         distances = [rs_ratio-f_ratio for f_ratio in f_ratios]
@@ -173,5 +174,3 @@ def _compute_grid_ratios(shape):
             ratios.append(shape[i] / shape[j])
 
     return numpy.array(ratios)
-
-

@@ -54,6 +54,7 @@ def distribute_indices(dim_data):
     for dim in dim_data:
         distribute_fn[dim['dist_type']](dim)
 
+
 def _normalize_dim_data(dim_data):
     ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
     for dd in dim_data:
@@ -108,7 +109,7 @@ class BaseLocalArray(object):
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) 
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
                           for dimdict in dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
@@ -176,7 +177,7 @@ class BaseLocalArray(object):
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        assert len(cart_coords) == len(self.dim_data), repr((cart_coords, self.dim_data))
+        assert len(cart_coords) == len(self.dim_data)
         for dim, cart_rank in zip(self.dim_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 
