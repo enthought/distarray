@@ -73,7 +73,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     return tuple(dim_data)
 
 
-class DenseLocalArray(BaseLocalArray):
+class LocalArray(BaseLocalArray):
 
     """Distributed memory Python arrays."""
 
@@ -110,8 +110,8 @@ class DenseLocalArray(BaseLocalArray):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                              buf=buf, comm=comm)
+        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
+                                         buf=buf, comm=comm)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -144,11 +144,11 @@ class DenseLocalArray(BaseLocalArray):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                              buf=buf, comm=comm)
+        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
+                                         buf=buf, comm=comm)
 
     def __del__(self):
-        super(DenseLocalArray, self).__del__()
+        super(LocalArray, self).__del__()
 
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
@@ -251,8 +251,8 @@ class DenseLocalArray(BaseLocalArray):
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.global_shape, dtype=newdtype, dist=self.dist,
-                                grid_shape=self.grid_shape,
+            new_da = LocalArray(self.global_shape, dtype=newdtype,
+                                dist=self.dist, grid_shape=self.grid_shape,
                                 comm=self.base_comm, buf=local_copy)
             return new_da
 
@@ -771,9 +771,6 @@ class DenseLocalArray(BaseLocalArray):
         return invert(self)
 
 
-LocalArray = DenseLocalArray
-
-
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 # Functions that are friends of LocalArray
@@ -803,11 +800,6 @@ LocalArray = DenseLocalArray
 #----------------------------------------------------------------------------
 
 
-def localarray(object, dtype=None, copy=True, order=None, subok=False,
-               ndmin=0):
-    _raise_nie()
-
-
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
@@ -823,7 +815,7 @@ def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 
 def empty_like(arr, dtype=None):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, LocalArray):
         if dtype is None:
             return empty(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
@@ -831,7 +823,7 @@ def empty_like(arr, dtype=None):
             return empty(arr.global_shape, dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A LocalArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
@@ -841,11 +833,11 @@ def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 
 def zeros_like(arr):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, LocalArray):
         return zeros(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                      arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A LocalArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
@@ -1381,8 +1373,8 @@ class LocalArrayUnaryOperation(object):
 
     def __call__(self, x1, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, LocalArray)
+        y_isdla = isinstance(y, LocalArray)
         assert x1_isdla or isscalar(x1), "Invalid type for unary ufunc"
         assert y is None or y_isdla, "Invalid return array type"
         if y is None:
@@ -1409,9 +1401,9 @@ class LocalArrayBinaryOperation(object):
 
     def __call__(self, x1, x2, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        x2_isdla = isinstance(x2, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, LocalArray)
+        x2_isdla = isinstance(x2, LocalArray)
+        y_isdla = isinstance(y, LocalArray)
         assert x1_isdla or isscalar(x1), "Invalid type for binary ufunc"
         assert x2_isdla or isscalar(x2), "Invalid type for binary ufunc"
         assert y is None or y_isdla

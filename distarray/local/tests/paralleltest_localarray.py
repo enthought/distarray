@@ -7,7 +7,7 @@
 import unittest
 import numpy as np
 
-import distarray.local.denselocalarray as da
+from distarray.local.localarray import LocalArray, ndenumerate
 from distarray import utils
 from distarray.testing import MpiTestCase
 from distarray.local.error import IncompatibleArrayError
@@ -18,9 +18,9 @@ class TestInit(MpiTestCase):
     """Is the __init__ method working properly?"""
 
     def setUp(self):
-        self.larr_1d = da.LocalArray((7,), grid_shape=(4,), comm=self.comm,
+        self.larr_1d = LocalArray((7,), grid_shape=(4,), comm=self.comm,
                                      buf=None)
-        self.larr_2d = da.LocalArray((16,16), grid_shape=(4,), comm=self.comm,
+        self.larr_2d = LocalArray((16,16), grid_shape=(4,), comm=self.comm,
                                      buf=None)
 
     def test_basic_1d(self):
@@ -127,8 +127,8 @@ class TestFromDimData(MpiTestCase):
 
         dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
+        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
+        expected = LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
                                  comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -148,8 +148,8 @@ class TestFromDimData(MpiTestCase):
 
         dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
+        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
+        expected = LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
                                  comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -169,8 +169,8 @@ class TestFromDimData(MpiTestCase):
 
         dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={0: 'c', 1: 'b'},
+        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
+        expected = LocalArray((16,16), dist={0: 'c', 1: 'b'},
                                  grid_shape=(2, 2), comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -188,8 +188,8 @@ class TestFromDimData(MpiTestCase):
 
         dim_data = (dim0, dim1)
 
-        larr = da.LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = da.LocalArray((16,16), dist={0: 'c'}, block_size=2,
+        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
+        expected = LocalArray((16,16), dist={0: 'c'}, block_size=2,
                                  grid_shape=(2, 2), comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -201,15 +201,15 @@ class TestGridShape(MpiTestCase):
 
     def test_grid_shape(self):
         """Test various ways of setting the grid_shape."""
-        self.larr = da.LocalArray((20,20), dist='b', comm=self.comm)
+        self.larr = LocalArray((20,20), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (3,4))
-        self.larr = da.LocalArray((2*10,6*10), dist='b', comm=self.comm)
+        self.larr = LocalArray((2*10,6*10), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,6))
-        self.larr = da.LocalArray((6*10,2*10), dist='b', comm=self.comm)
+        self.larr = LocalArray((6*10,2*10), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (6,2))
-        self.larr = da.LocalArray((100,10,300), dist=('b', 'n', 'c'), comm=self.comm)
+        self.larr = LocalArray((100,10,300), dist=('b', 'n', 'c'), comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,6))
-        self.larr = da.LocalArray((100,50,300), dist='b', comm=self.comm)
+        self.larr = LocalArray((100,50,300), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2,2,3))
 
 
@@ -222,7 +222,7 @@ class TestDistMatrix(MpiTestCase):
     @unittest.skip("Plot test.")
     def test_plot_dist_matrix(self):
         """Can we create and possibly plot a dist_matrix?"""
-        la = da.LocalArray((10,10), dist=('c','c'), comm=self.comm)
+        la = LocalArray((10,10), dist=('c','c'), comm=self.comm)
         if self.comm.Get_rank() == 0:
             import pylab
             pylab.ion()
@@ -238,7 +238,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_block_simple(self):
         """Can we compute local indices for a block distribution?"""
-        la = da.LocalArray((4, 4), comm=self.comm)
+        la = LocalArray((4, 4), comm=self.comm)
         self.assertEqual(la.global_shape, (4, 4))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (1, 4))
@@ -251,7 +251,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_block_complex(self):
         """Can we compute local indices for a block distribution?"""
-        la = da.LocalArray((8, 2), comm=self.comm)
+        la = LocalArray((8, 2), comm=self.comm)
         self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (2, 2))
@@ -271,7 +271,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_cyclic_simple(self):
         """Can we compute local indices for a cyclic distribution?"""
-        la = da.LocalArray((10,), dist={0: 'c'}, comm=self.comm)
+        la = LocalArray((10,), dist={0: 'c'}, comm=self.comm)
         self.assertEqual(la.global_shape, (10,))
         self.assertEqual(la.grid_shape, (4,))
 
@@ -300,7 +300,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_cyclic_complex(self):
         """Can we compute local indices for a cyclic distribution?"""
-        la = da.LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
+        la = LocalArray((8, 2), dist={0: 'c'}, comm=self.comm)
         self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4,))
         self.assertEqual(la.local_shape, (2, 2))
@@ -332,22 +332,22 @@ class TestGlobalInd(MpiTestCase):
 
     def test_block(self):
         """Can we go from global to local indices and back for block?"""
-        la = da.LocalArray((4,4), comm=self.comm)
+        la = LocalArray((4,4), comm=self.comm)
         self.round_trip(la)
 
     def test_cyclic(self):
         """Can we go from global to local indices and back for cyclic?"""
-        la = da.LocalArray((8,8), dist=('c', 'n'), comm=self.comm)
+        la = LocalArray((8,8), dist=('c', 'n'), comm=self.comm)
         self.round_trip(la)
 
     def test_crazy(self):
         """Can we go from global to local indices and back for a complex case?"""
-        la = da.LocalArray((10,100,20), dist=('b', 'c', 'n'), comm=self.comm)
+        la = LocalArray((10,100,20), dist=('b', 'c', 'n'), comm=self.comm)
         self.round_trip(la)
 
     def test_global_limits_block(self):
         """Find the boundaries of a block distribution"""
-        a = da.LocalArray((16, 16), dist=('b', 'n'), comm=self.comm)
+        a = LocalArray((16, 16), dist=('b', 'n'), comm=self.comm)
 
         answers = [(0, 3), (4, 7), (8, 11), (12, 15)]
         limits = a.global_limits(0)
@@ -359,7 +359,7 @@ class TestGlobalInd(MpiTestCase):
 
     def test_global_limits_cyclic(self):
         """Find the boundaries of a cyclic distribution"""
-        a = da.LocalArray((16,16), dist=('c', 'n'), comm=self.comm)
+        a = LocalArray((16,16), dist=('c', 'n'), comm=self.comm)
         answers = [(0,12),(1,13),(2,14),(3,15)]
         limits = a.global_limits(0)
         self.assertEqual(limits, answers[a.comm_rank])
@@ -372,31 +372,31 @@ class TestIndexing(MpiTestCase):
 
     def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
-        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
-        b = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
-        for global_inds, value in da.ndenumerate(a):
+        a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        for global_inds, value in ndenumerate(a):
             a[global_inds] = 0.0
-        for global_inds, value in da.ndenumerate(a):
+        for global_inds, value in ndenumerate(a):
             b[global_inds] = a[global_inds]
-        for global_inds, value in da.ndenumerate(a):
+        for global_inds, value in ndenumerate(a):
             self.assertEqual(b[global_inds],a[global_inds])
             self.assertEqual(a[global_inds],0.0)
 
     def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
-        a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
-        b = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
-        for global_inds, value in da.ndenumerate(a):
+        a = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
+        b = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
+        for global_inds, value in ndenumerate(a):
             a[global_inds] = 0.0
-        for global_inds, value in da.ndenumerate(a):
+        for global_inds, value in ndenumerate(a):
             b[global_inds] = a[global_inds]
-        for global_inds, value in da.ndenumerate(a):
+        for global_inds, value in ndenumerate(a):
             self.assertEqual(b[global_inds],a[global_inds])
             self.assertEqual(a[global_inds],0.0)
 
     def test_pack_unpack_index(self):
-        a = da.LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
-        for global_inds, value in da.ndenumerate(a):
+        a = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
+        for global_inds, value in ndenumerate(a):
             packed_ind = a.pack_index(global_inds)
             self.assertEqual(global_inds, a.unpack_index(packed_ind))
 
@@ -405,12 +405,12 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
-        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
-        b = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         new_a = a.asdist_like(b)
         self.assertEqual(id(a),id(new_a))
-        a = da.LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
-        b = da.LocalArray((16,16), dist=('n', 'b'), comm=self.comm)
+        a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
+        b = LocalArray((16,16), dist=('n', 'b'), comm=self.comm)
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
 
 
