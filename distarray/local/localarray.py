@@ -800,11 +800,6 @@ class LocalArray(BaseLocalArray):
 #----------------------------------------------------------------------------
 
 
-def localarray(object, dtype=None, copy=True, order=None, subok=False,
-               ndmin=0):
-    _raise_nie()
-
-
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
