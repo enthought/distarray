@@ -258,9 +258,10 @@ class LocalArray(BaseLocalArray):
 
     def copy(self):
         local_copy = self.local_array.copy()
-        return LocalArray(self.global_shape, dtype=self.dtype, dist=self.dist,
-                          grid_shape=self.grid_shape, comm=self.base_comm,
-                          buf=local_copy)
+        return self.__class__.from_dim_data(dim_data=self.dim_data,
+                                            dtype=self.dtype,
+                                            comm=self.base_comm,
+                                            buf=local_copy)
 
     def local_view(self, dtype=None):
         if dtype is None:
