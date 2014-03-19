@@ -26,11 +26,6 @@ from distarray.local import construct, format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-def arecompatible(a, b):
-    """Do these arrays have the same compatibility hash?"""
-    return a.compatibility_hash() == b.compatibility_hash()
-
-
 def distribute_indices(dim_data):
     """Fill in missing index related keys...
 
@@ -1009,7 +1004,6 @@ class LocalArray(BaseLocalArray):
 # 4.1 Creating arrays
 #----------------------------------------------------------------------------
 
-
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
@@ -1330,6 +1324,11 @@ def where(condition, x=None, y=None):
 #----------------------------------------------------------------------------
 # 4.2 Operations on two or more arrays
 #----------------------------------------------------------------------------
+
+def arecompatible(a, b):
+    """Do these arrays have the same compatibility hash?"""
+    return a.compatibility_hash() == b.compatibility_hash()
+
 
 def concatenate(seq, axis=0):
     _raise_nie()
