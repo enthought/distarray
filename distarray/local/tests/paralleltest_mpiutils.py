@@ -8,7 +8,7 @@ import unittest
 import numpy
 from numpy.testing import assert_array_equal
 
-import distarray.local.denselocalarray as dla
+from distarray.local.localarray import zeros
 from distarray.error import InvalidCommSizeError, InvalidRankError
 from distarray.mpiutils import MPI, create_comm_of_size, create_comm_with_list
 
@@ -38,7 +38,7 @@ class TestCreateCommAlternate(unittest.TestCase):
         # Run a simple test to confirm this comm works.
         size = len(nodes)
         nrows = size * 3
-        a = dla.zeros((nrows, 20), comm=comm)
+        a = zeros((nrows, 20), comm=comm)
         expected = numpy.zeros((nrows // size, 20))
         assert_array_equal(a.local_array, expected)
         # Cleanup.
