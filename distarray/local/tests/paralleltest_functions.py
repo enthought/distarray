@@ -8,8 +8,8 @@ import unittest
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from distarray.local import arecompatible
 
+from distarray.local import arecompatible
 import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
 from distarray.testing import MpiTestCase
