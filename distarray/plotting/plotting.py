@@ -93,13 +93,16 @@ def plot_array_distribution_2d(darr, draw_legend=False, xlabel=None, ylabel=None
         if ylabel is not None:
             pyplot.ylabel(ylabel)
 
-        # Invert y-axis.
-        pyplot.gca().invert_yaxis()
-
-        # Put tick labels at the bottom, not the top.
-        for tick in pyplot.gca().xaxis.iter_ticks():
-            tick[0].label1On = True
-            tick[0].label2On = False
+        # Either invert y-axis, and put tick labels at bottom, not the top,
+        # or put the x-axis label at the top.
+        axis = pyplot.gca()
+        if False:
+            axis.invert_yaxis()
+            for tick in axis.xaxis.iter_ticks():
+                tick[0].label1On = True
+                tick[0].label2On = False
+        else:
+            axis.xaxis.set_label_position('top')
 
         # Add colorbar legend.
         cbar = pyplot.colorbar(img)

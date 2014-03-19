@@ -60,6 +60,7 @@ def print_engine_array(context, array, title, text, filename):
     db_dim_data = context.view['db_dim_data']
     # Get the full array.
     full_array = array.toarray()
+    local_arrays = array.get_localarrays()
 
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
@@ -78,6 +79,13 @@ def print_engine_array(context, array, title, text, filename):
     print()
     print(">>> full_array")
     pprint(full_array)
+    print()
+
+    # Local arrays.
+    print("get_localarrays():")
+    print()
+    print(">>> get_localarrays()")
+    pprint(local_arrays)
     print()
 
     # Properties that are the same on all processes:
@@ -130,9 +138,9 @@ def create_distribution_plot(params):
     xlabel = 'Axis 1, %s' % (dist[1])
     ylabel = 'Axis 0, %s' % (dist[0])
     # Text description for documentation.
-    # I am not sure how to determine the process grid shape.
-    text = '%d X %d array, %s distribution, distributed over a 2 X 2 process grid.' % (
-        shape[0], shape[1], title)
+    grid_shape = array.grid_shape
+    text = '%d X %d array, %s distribution, distributed over a %d X %d process grid.' % (
+        shape[0], shape[1], title, grid_shape[0], grid_shape[1])
     if 'text' in params:
         text = text + "\n\n" + params['text']
     plot_distribution(array, full_title, xlabel, ylabel, filename, False)
