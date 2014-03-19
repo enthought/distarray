@@ -93,7 +93,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
 
     dist_tuple = construct.init_dist(dist, len(shape))
 
-    if grid_shape:  # if None, BaseLocalArray will initialize
+    if grid_shape:  # if None, LocalArray will initialize
         grid_gen = iter(grid_shape)
 
     dim_data = []
@@ -110,45 +110,18 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     return tuple(dim_data)
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-# Base LocalArray class
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-
-class BaseLocalArray(object):
+class LocalArray(object):
 
     """Distributed memory Python arrays."""
 
     __array_priority__ = 20.0
 
-    def __init__(self, dim_data, dtype=None, buf=None, comm=None):
-        """Make a BaseLocalArray from a `dim_data` tuple.
+    #-------------------------------------------------------------------------
+    # Methods used for initialization
+    #-------------------------------------------------------------------------
 
-        Parameters
-        ----------
-        dim_data : tuple of dictionaries
-            A dict for each dimension, with the data described here:
-            https://github.com/enthought/distributed-array-protocol
-        dtype : numpy dtype, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `dtype` is given, an empty array of that dtype will be
-            created.
-        buf : buffer object, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `buf` is given, `self.dtype` will be set to its dtype.
-        comm : MPI communicator object, optional
-
-        Returns
-        -------
-        BaseLocalArray
-            A BaseLocalArray encapsulating `buf`, or else an empty
-            (uninitialized) BaseLocalArray.
-        """
+    def _init(self, dim_data, dtype=None, buf=None, comm=None):
+        """Private init method."""
         self.dim_data = dim_data
         self.base_comm = construct.init_base_comm(comm)
 
@@ -169,6 +142,80 @@ class BaseLocalArray(object):
 
         self.base = None
         self.ctypes = None
+
+    @classmethod
+    def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
+        """Make a LocalArray from a `dim_data` tuple.
+
+        Parameters
+        ----------
+        dim_data : tuple of dictionaries
+            A dict for each dimension, with the data described here:
+            https://github.com/enthought/distributed-array-protocol
+        dtype : numpy dtype, optional
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `dtype` is given, an empty array of that dtype will be
+            created.
+        buf : buffer object, optional
+            If both `dtype` and `buf` are provided, `buf` will be
+            encapsulated and interpreted with the given dtype.  If neither
+            are, an empty array will be created with a dtype of 'float'.  If
+            only `buf` is given, `self.dtype` will be set to its dtype.
+        comm : MPI comm object, optional
+
+        Returns
+        -------
+        LocalArray
+            A LocalArray encapsulating `buf`, or else an empty
+            (uninitialized) LocalArray.
+        """
+        self = cls.__new__(cls)
+        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+        return self
+
+    def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
+                 comm=None, buf=None):
+        """Create a LocalArray from a simple set of parameters.
+
+        This initializer restricts you to 'b' and 'c' dist_types and evenly
+        distributed data.  See `LocalArray.from_dim_data` for a more general
+        method.
+
+        Parameters
+        ----------
+        shape : tuple of int
+            Number of elements in each dimension.
+        dtype : numpy dtype, optional
+        dist : dict mapping int -> str, default is {0: 'b'}, optional
+            Keys are dimension number, values are dist_type, e.g 'b', 'c', or
+            'n'.
+        grid_shape : tuple of int, optional
+            A size of each dimension of the process grid.
+            There should be a dimension size for each distributed
+            dimension in `dist`.
+        comm : MPI communicator object, optional
+        buf : buffer object, optional
+            If not given, an empty array is created.
+
+        See also
+        --------
+        LocalArray.from_dim_data
+        """
+        dim_data = make_partial_dim_data(shape=shape, dist=dist,
+                                         grid_shape=grid_shape)
+        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+
+    def __del__(self):
+        # If the __init__ method fails, we may not have a valid comm
+        # attribute and this needs to be protected against.
+        if hasattr(self, 'comm'):
+            if self.comm is not None:
+                try:
+                    self.comm.Free()
+                except:
+                    pass
 
     @property
     def local_shape(self):
@@ -264,97 +311,8 @@ class BaseLocalArray(object):
             mv = memoryview(buf)
             return np.asarray(mv, dtype=dtype)
 
-    def __del__(self):
-        # If the __init__ method fails, we may not have a valid comm
-        # attribute and this needs to be protected against.
-        if hasattr(self, 'comm'):
-            if self.comm is not None:
-                try:
-                    self.comm.Free()
-                except:
-                    pass
-
     def compatibility_hash(self):
         return hash((self.global_shape, self.dist, self.grid_shape, True))
-
-
-class LocalArray(BaseLocalArray):
-
-    """Distributed memory Python arrays."""
-
-    #-------------------------------------------------------------------------
-    # Methods used for initialization
-    #-------------------------------------------------------------------------
-
-    @classmethod
-    def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
-        """Make a LocalArray from a `dim_data` tuple.
-
-        Parameters
-        ----------
-        dim_data : tuple of dictionaries
-            A dict for each dimension, with the data described here:
-            https://github.com/enthought/distributed-array-protocol
-        dtype : numpy dtype, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `dtype` is given, an empty array of that dtype will be
-            created.
-        buf : buffer object, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `buf` is given, `self.dtype` will be set to its dtype.
-        comm : MPI comm object, optional
-
-        Returns
-        -------
-        LocalArray
-            A LocalArray encapsulating `buf`, or else an empty
-            (uninitialized) LocalArray.
-        """
-        self = cls.__new__(cls)
-        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                         buf=buf, comm=comm)
-        return self
-
-    def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
-                 comm=None, buf=None):
-        """Create a LocalArray from a simple set of parameters.
-
-        This initializer restricts you to 'b' and 'c' dist_types and evenly
-        distributed data.  See `LocalArray.from_dim_data` for a more general
-        method.
-
-        Parameters
-        ----------
-        shape : tuple of int
-            Number of elements in each dimension.
-        dtype : numpy dtype, optional
-        dist : dict mapping int -> str, default is {0: 'b'}, optional
-            Keys are dimension number, values are dist_type, e.g 'b', 'c', or
-            'n'.
-        grid_shape : tuple of int, optional
-            A size of each dimension of the process grid.
-            There should be a dimension size for each distributed
-            dimension in `dist`.
-        comm : MPI communicator object, optional
-        buf : buffer object, optional
-            If not given, an empty array is created.
-
-        See also
-        --------
-        LocalArray.from_dim_data
-        """
-        dim_data = make_partial_dim_data(shape=shape, dist=dist,
-                                         grid_shape=grid_shape)
-        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                         buf=buf, comm=comm)
-
-    def __del__(self):
-        super(LocalArray, self).__del__()
-
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
     #-------------------------------------------------------------------------
