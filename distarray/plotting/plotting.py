@@ -75,20 +75,16 @@ def plot_array_distribution_2d(darr, draw_legend=False, xlabel=None, ylabel=None
     arr = out.toarray()
 
     if draw_legend:
-        # Add a 'legend', really a colorbar,
-        # to annotate which color is which processor.
         # This is a bit complicated, and based somewhat on:
-        # http://matplotlib.org/examples/api/colorbar_only.html
-        
+        #   http://matplotlib.org/examples/api/colorbar_only.html
         num_processors = arr.max() + 1
+
+        # Create discrete colormap for plot and colorbar.
         cmap = cmap_discretize(cm.jet, num_processors)
-        
         bounds = range(num_processors + 1)
         norm = colors.BoundaryNorm(bounds, cmap.N)
 
-        ticks = [0.5 + p for p in range(num_processors)]
-        tick_labels = [str(p) for p in range(num_processors)]
-
+        # Plot the array.
         img = pyplot.matshow(arr, cmap=cmap, norm=norm, *args, **kwargs)
 
         # Label axes.
@@ -96,19 +92,26 @@ def plot_array_distribution_2d(darr, draw_legend=False, xlabel=None, ylabel=None
             pyplot.xlabel(xlabel)
         if ylabel is not None:
             pyplot.ylabel(ylabel)
+
+        # Invert y-axis.
+        pyplot.gca().invert_yaxis()
+
         # Put tick labels at the bottom, not the top.
         for tick in pyplot.gca().xaxis.iter_ticks():
             tick[0].label1On = True
             tick[0].label2On = False
-        # Add colorbar as legend.
+
+        # Add colorbar legend.
         cbar = pyplot.colorbar(img)
-        cbar.set_ticks(ticks)
-        cbar.set_ticklabels(tick_labels)
+        cbar_ticks = [0.5 + p for p in range(num_processors)]
+        cbar_labels = [str(p) for p in range(num_processors)]
+        cbar.set_ticks(cbar_ticks)
+        cbar.set_ticklabels(cbar_labels)
         cbar.set_label('Processor')
     else:
         # Simple unlabeled plot.
         pyplot.matshow(arr, *args, **kwargs)
-    
+
     return out
 
 

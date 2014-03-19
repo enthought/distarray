@@ -67,6 +67,12 @@ def print_engine_array(context, array, title, text, filename):
     print(text)
     print()
 
+    # Add image.
+    print(".. image:: ../images/%s" % (filename))
+    # align right does not work as I want.
+    #print("   :align: right")
+    print()
+
     # Full (undistributed) array:
     print("The full (undistributed) array:")
     print()
@@ -95,11 +101,6 @@ def print_engine_array(context, array, title, text, filename):
         pprint(dim_data)
         print()
 
-    # Link to image
-    print(".. image:: ../images/%s" % (filename))
-    print("")
-    print("")
-
 
 def create_distribution_plot(params):
     """ Create an array distribution plot,
@@ -117,13 +118,14 @@ def create_distribution_plot(params):
     # Create a nice title.
     full_title = title + ' %d-by-%d' % (shape[0], shape[1]) + '\n'
     # Nice labels for axes.
-    xlabel = 'Processor 0.%s' % (dist[0])
-    ylabel = 'Processor 1.%s' % (dist[1])
+    xlabel = 'Axis 0, %s' % (dist[0])
+    ylabel = 'Axis 1, %s' % (dist[1])
     # Text description for documentation.
+    # I am not sure how to determine the process grid shape.
+    text = '%d X %d array, %s distribution, distributed over a 2 X 2 process grid.' % (
+        shape[0], shape[1], title)
     if 'text' in params:
-        text = params['text']
-    else:
-        text = "Engine properties for: %s." % (title)
+        text = text + "\n\n" + params['text']
     plot_distribution(array, full_title, xlabel, ylabel, filename, False)
     # Print properties on engines.
     print_engine_array(context, array, title, text, filename)
@@ -171,7 +173,44 @@ def create_distributed_protocol_documentation_plots():
         create_distribution_plot(params)
 
 
+from numpy.testing import assert_allclose
+
+
+def test_from_dim_data():
+    total_size = 40
+    ddpp = [
+        ({'dist_type': 'u',
+          'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+          'proc_grid_rank': 0,
+          'proc_grid_size': 4,
+          'size': 40},),
+        ({'dist_type': 'u',
+          'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+          'proc_grid_rank': 1,
+          'proc_grid_size': 4,
+          'size': 40},),
+        ({'dist_type': 'u',
+          'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+          'proc_grid_rank': 2,
+          'proc_grid_size': 4,
+          'size': 40},),
+        ({'dist_type': 'u',
+          'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+          'proc_grid_rank': 3,
+          'proc_grid_size': 4,
+          'size': 40},)]
+    distarr = context.from_dim_data(ddpp)
+    for i in range(total_size):
+        distarr[i] = i
+    localarrays = distarr.get_localarrays()
+    for i, arr in enumerate(localarrays):
+        assert_allclose(arr, ddpp[i][0]['indices'])
+
+
 if __name__ == '__main__':
+    if True:
+        test_from_dim_data()
+    
     if True:
         create_distributed_protocol_documentation_plots()
 
