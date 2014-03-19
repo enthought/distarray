@@ -9,11 +9,11 @@ import uuid
 from distarray.externals import six
 import collections
 
-from IPython.parallel import Client
 import numpy
 
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
+from distarray.ipython_utils import IPythonClient
 
 
 class Context(object):
@@ -30,7 +30,7 @@ class Context(object):
     '''
 
     def __init__(self, client=None, targets=None):
-        self.client = client if client is not None else Client()
+        self.client = client if client is not None else IPythonClient()
         self.view = self.client[:]
 
         all_targets = self.view.targets

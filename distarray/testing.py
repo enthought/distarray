@@ -14,9 +14,8 @@ from uuid import uuid4
 from functools import wraps
 from distarray.externals import six
 
-from IPython.parallel import Client
-
 from distarray.error import InvalidCommSizeError
+from distarray.ipython_utils import IPythonClient
 from distarray.mpiutils import MPI, create_comm_of_size
 
 
@@ -133,7 +132,7 @@ class IpclusterTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
+        cls.client = IPythonClient()
         if len(cls.client) < cls.ipcluster_size:
             errmsg = ('Tests need an ipcluster with at least {} engines '
                       'running.')

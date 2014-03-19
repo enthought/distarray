@@ -15,7 +15,6 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 import unittest
 from random import shuffle
 
-from IPython.parallel import Client
 import numpy
 
 from distarray import Context
@@ -28,8 +27,7 @@ class TestContext(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
-        cls.context = Context(cls.client)
+        cls.context = Context()
         cls.ndarr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.ndarr)
 

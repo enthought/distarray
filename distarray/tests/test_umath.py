@@ -15,7 +15,6 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from IPython.parallel import Client
 
 import distarray
 from distarray import Context
@@ -46,8 +45,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
-        cls.context = Context(cls.client)
+        cls.context = Context()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
@@ -57,13 +55,12 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.context.client.close()
         del cls.db
         del cls.da
         del cls.b
         del cls.a
         del cls.context
-        cls.client.close()
-        del cls.client
 
     def check_binary_op(self, op_name):
         """Check binary operation for success.
@@ -100,8 +97,7 @@ class TestSpecialMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
-        cls.context = Context(cls.client)
+        cls.context = Context()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
@@ -111,13 +107,12 @@ class TestSpecialMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.context.client.close()
         del cls.db
         del cls.da
         del cls.b
         del cls.a
         del cls.context
-        cls.client.close()
-        del cls.client
 
     def check_op(self, op_name):
         distop = getattr(self.da, op_name)

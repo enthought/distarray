@@ -13,10 +13,9 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
 import unittest
-import numpy
 
+import numpy
 from numpy.testing import assert_array_equal, assert_allclose
-from IPython.parallel import Client
 
 from distarray.externals.six.moves import range
 from distarray.client import DistArray
@@ -321,18 +320,17 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
-        cls.context = Context(cls.client)
+        cls.context = Context()
 
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
 
     @classmethod
     def tearDownClass(cls):
+        cls.context.close()
         del cls.darr
         del cls.arr
         del cls.context
-        cls.client.close()
 
     def test_sum(self):
         np_sum = self.arr.sum()
