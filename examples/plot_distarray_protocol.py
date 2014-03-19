@@ -105,10 +105,19 @@ def print_engine_array(context, array, title, text, filename):
 def create_distribution_plot(params):
     """ Create an array distribution plot,
     suitable for the protocol documentation. """
-    shape, dist = params['shape'], params['dist']
-    array = context.empty(shape, dist=dist)
+#     if 'dimdata' in params:
+#         print('Skipping %s...' % (params['title']))
+#         return
+    if 'dimdata' not in params:
+        shape, dist = params['shape'], params['dist']
+        array = context.empty(shape, dist=dist)
+    else:
+        shape, dimdata = params['shape'], params['dimdata']
+        dist = ('x', 'x')
+        array = context.from_dim_data(dimdata)
+    
     # Fill the array [slow].
-    value = 1.0
+    value = 0.0
     for row in range(shape[0]):
         for col in range(shape[1]):
             array[row, col] = value
@@ -118,8 +127,8 @@ def create_distribution_plot(params):
     # Create a nice title.
     full_title = title + ' %d-by-%d' % (shape[0], shape[1]) + '\n'
     # Nice labels for axes.
-    xlabel = 'Axis 0, %s' % (dist[0])
-    ylabel = 'Axis 1, %s' % (dist[1])
+    xlabel = 'Axis 1, %s' % (dist[1])
+    ylabel = 'Axis 0, %s' % (dist[0])
     # Text description for documentation.
     # I am not sure how to determine the process grid shape.
     text = '%d X %d array, %s distribution, distributed over a 2 X 2 process grid.' % (
@@ -134,6 +143,7 @@ def create_distribution_plot(params):
 def create_distributed_protocol_documentation_plots():
     """ Create plots for the distributed array protocol documentation. """ 
     params_list = [
+        # Examples using simple dist specification.
         {'shape': (4, 8),
          'dist': ('b', 'n'),
          'title': 'Block, Nondistributed',
@@ -160,6 +170,177 @@ def create_distributed_protocol_documentation_plots():
          'title': 'Cyclic, Cyclic',
          'filename': 'plot_cyclic_cyclic.png',
         },
+        # Examples requiring custom dimdata.
+        # Like cyclic-cyclic.
+        {'shape': (4, 8),
+         'dimdata': [
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0,
+              'stop': 2}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 2,
+              'stop': 4,}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 1},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0,
+              'stop': 2,}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 1},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 2,
+              'stop': 4,}),
+          ],
+         'title': 'Slithery, Python',
+         'filename': 'plot_slithery_python.png',
+        },
+    ]
+        
+    bogus_list = [
+        # Like block-block.
+        {'shape': (4, 8),
+         'dimdata': [
+            ({'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0,
+              'stop': 2},
+             {'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0,
+              'stop': 4}),
+            ({'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0,
+              'stop': 2},
+             {'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 4,
+              'stop': 8}),
+            ({'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 2,
+              'stop': 4},
+             {'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0,
+              'stop': 4}),
+            ({'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 2,
+              'stop': 4},
+             {'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 4,
+              'stop': 8}),
+          ],
+         'title': 'Slithery, Python',
+         'filename': 'plot_slithery_python.png',
+        },
+        {'shape': (40, 40),
+         'dimdata': [
+             (
+              {'dist_type': 'u',
+               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 40},
+              {'dist_type': 'u',
+               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 40},
+             ),
+             (
+              {'dist_type': 'u',
+               'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 40},
+              {'dist_type': 'u',
+               'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 40},
+             ),
+             (
+              {'dist_type': 'u',
+               'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 40},
+              {'dist_type': 'u',
+               'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 40},
+             ),
+             (
+              {'dist_type': 'u',
+               'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 40},
+              {'dist_type': 'u',
+               'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 40},
+             )],
+         'title': 'Slithery, Python',
+         'filename': 'plot_slithery_python.png',
+        },
     ]
 
     # Document section header
@@ -167,9 +348,9 @@ def create_distributed_protocol_documentation_plots():
     print('--------------------------------')
     print()
 
-    for params in params_list:
+    #for params in params_list:
     #for params in [params_list[0]]:
-    #for params in [params_list[4]]:
+    for params in [params_list[-1]]:
         create_distribution_plot(params)
 
 
@@ -208,7 +389,7 @@ def test_from_dim_data():
 
 
 if __name__ == '__main__':
-    if True:
+    if False:
         test_from_dim_data()
     
     if True:
