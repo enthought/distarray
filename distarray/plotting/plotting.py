@@ -65,7 +65,7 @@ def cmap_discretize(cmap, N):
     return colors.LinearSegmentedColormap(cmap.name + "_%d" % N, cdict, 1024)
 
 
-def plot_array_distribution(darr,
+def plot_array_distribution(darray,
                             title=None,
                             xlabel=None,
                             ylabel=None,
@@ -96,26 +96,31 @@ def plot_array_distribution(darr,
     Returns
     -------
     out
-        The memory layout array, as a DistArray.
+        The process assignment array, as a DistArray.
     """
     # This is based somewhat on:
     #   http://matplotlib.org/examples/api/colorbar_only.html
 
-    out = _get_ranks(darr)
-    arr = out.toarray()
+    # Process per element.
+    process_darray = _get_ranks(darray)
+    process_array = process_darray.toarray()
+
+    # Values per element.
+    values_array = darray.toarray()
 
     # Coerce to 2D if needed.
-    if len(arr.shape) == 1:
-        arr.shape = (1, arr.shape[0])
+    if len(process_array.shape) == 1:
+        process_array.shape = (1, process_array.shape[0])
+        values_array.shape = process_array.shape
 
     # Create discrete colormap.
-    num_processors = arr.max() + 1
+    num_processors = process_array.max() + 1
     cmap = cmap_discretize(cm.jet, num_processors)
     bounds = range(num_processors + 1)
     norm = colors.BoundaryNorm(bounds, cmap.N)
 
     # Plot the array.
-    img = pyplot.matshow(arr, cmap=cmap, norm=norm, *args, **kwargs)
+    img = pyplot.matshow(process_array, cmap=cmap, norm=norm, *args, **kwargs)
 
     # Add title and labels.
     if title is not None:
@@ -136,6 +141,23 @@ def plot_array_distribution(darr,
     else:
         axis.xaxis.set_label_position('top')
 
+    # Label each cell.
+    for row in range(values_array.shape[0]):
+        for col in range(values_array.shape[1]):
+            process = process_array[row, col]
+            value = values_array[row, col]
+            label = '%d' % (value)
+            color = 'white'
+            if process == 2:
+                # Black on yellow is more readable.
+                # Assumes that process=2 is colored yellow!
+                color = 'black'
+            pyplot.text(
+                col, row, label,
+                horizontalalignment='center',
+                verticalalignment='center',
+                color=color)
+
     # Add colorbar legend.
     if legend:
         cbar = pyplot.colorbar(img)
@@ -153,4 +175,4 @@ def plot_array_distribution(darr,
     if filename is not None:
         pyplot.savefig(filename, dpi=100)
 
-    return out
+    return process_darray
