@@ -27,6 +27,7 @@ from distarray.utils import _raise_nie
 from distarray.local import construct, format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
+
 def _start_stop_block(size, proc_grid_size, proc_grid_rank):
     nelements = size // proc_grid_size
     if size % proc_grid_size != 0:
@@ -42,6 +43,69 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
         stop = size
 
     return start, stop
+
+class GlobalIndex(object):
+    """Object which provides access to global indexing on
+    LocalArrays.
+    """
+    def __init__(self, dim_data, ndarray):
+        self.dim_data = dim_data
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
+                          for dimdict in dim_data)
+        self.local_array = ndarray
+
+    @property
+    def ndim(self):
+        return len(self.dim_data)
+
+    @property
+    def local_shape(self):
+        return tuple(m.size for m in self.maps)
+
+    def _sanitize_indices(self, indices):
+        if isinstance(indices, int) or isinstance(indices, slice):
+            return (indices,)
+        elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+            return indices
+        else:
+            raise TypeError("Index must be a sequence of ints and slices")
+
+    def checked_getitem(self, global_inds):
+        try:
+            return self.__getitem__(global_inds)
+        except IndexError:
+            return None
+
+    def checked_setitem(self, global_inds, value):
+        try:
+            self.__setitem__(global_inds, value)
+            return True
+        except IndexError:
+            return None
+
+    def global_to_local(self, *global_ind):
+        return tuple(self.maps[dim].local_index[global_ind[dim]]
+                     for dim in range(self.ndim))
+
+    def local_to_global(self, *local_ind):
+        return tuple(self.maps[dim].global_index[local_ind[dim]]
+                     for dim in range(self.ndim))
+
+    def __getitem__(self, global_inds):
+        global_inds = self._sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            return self.local_array[local_inds]
+        except KeyError as err:
+            raise IndexError(err)
+
+    def __setitem__(self, global_inds, value):
+        global_inds = self._sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            self.local_array[local_inds] = value
+        except KeyError as err:
+            raise IndexError(err)
 
 def distribute_indices(dim_data):
     """Fill in missing index related keys...
@@ -160,6 +224,7 @@ class LocalArray(object):
                           for dimdict in dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
+        self.global_index = GlobalIndex(dim_data, self.local_array.view())
 
         self.base = None
         self.ctypes = None
@@ -745,18 +810,19 @@ class LocalArray(object):
     # 3.3.3 Container customization
     #-------------------------------------------------------------------------
 
+
     def __len__(self):
         return self.global_shape[0]
 
     def checked_getitem(self, global_inds):
         try:
-            return self.__getitem__(global_inds)
+            return self.global_index[global_inds]
         except IndexError:
             return None
 
     def checked_setitem(self, global_inds, value):
         try:
-            self.__setitem__(global_inds, value)
+            self.global_index[global_inds] = value
             return True
         except IndexError:
             return None
@@ -769,21 +835,13 @@ class LocalArray(object):
         else:
             raise TypeError("Index must be a sequence of ints and slices")
 
-    def __getitem__(self, global_inds):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.local_from_global(*global_inds)
-            return self.local_array[local_inds]
-        except KeyError as err:
-            raise IndexError(err)
+    def __getitem__(self, index):
+        """Get a local item."""
+        return self.local_array.__getitem__(index)
 
-    def __setitem__(self, global_inds, value):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.local_from_global(*global_inds)
-            self.local_array[local_inds] = value
-        except KeyError as err:
-            raise IndexError(err)
+    def __setitem__(self, index, value):
+        """Set a local item."""
+        return self.local_array.__setitem__(index, value)
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
@@ -1290,7 +1348,7 @@ def fromfunction(function, shape, **kwargs):
     comm = kwargs.pop('comm', None)
     da = empty(shape, dtype, dist, grid_shape, comm)
     for global_inds, x in ndenumerate(da):
-        da[global_inds] = function(*global_inds, **kwargs)
+        da.global_index[global_inds] = function(*global_inds, **kwargs)
     return da
 
 
