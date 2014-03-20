@@ -106,15 +106,6 @@ class TestContextCreation(IpclusterTestCase):
         num_keys2 = len(context0.dump_keys(all_other_contexts=True))
         self.assertEqual(num_keys2, num_keys0)
 
-    def test_purge_all_keys(self):
-        """ Test that we can purge the keys from all contexts. """
-        dac = Context(self.client)
-        dac.purge_keys(all_other_contexts=True)
-        # Should be no keys left.
-        keys_in_use = dac.dump_keys(all_other_contexts=True)
-        num_keys = len(keys_in_use)
-        self.assertEqual(num_keys, 0)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
