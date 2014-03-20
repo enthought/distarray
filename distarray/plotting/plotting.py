@@ -74,6 +74,10 @@ def plot_array_distribution_2d(darr, draw_legend=False, xlabel=None, ylabel=None
     out = _get_ranks(darr)
     arr = out.toarray()
 
+    # Coerce to 2D if needed.
+    if len(arr.shape) == 1:
+        arr.shape = (1, arr.shape[0])
+
     if draw_legend:
         # This is a bit complicated, and based somewhat on:
         #   http://matplotlib.org/examples/api/colorbar_only.html

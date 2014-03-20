@@ -113,9 +113,13 @@ def print_engine_array(context, array, title, text, filename):
 def create_distribution_plot(params):
     """ Create an array distribution plot,
     suitable for the protocol documentation. """
-#     if 'dimdata' in params:
-#         print('Skipping %s...' % (params['title']))
-#         return
+
+    def shape_text(shape):
+        """ Get a text string describing the array shape. """
+        shape_labels = ['%d' % (s) for s in shape]
+        shape_text = ' X '.join(shape_labels)
+        return shape_text
+
     if 'dimdata' not in params:
         shape, dist = params['shape'], params['dist']
         array = context.empty(shape, dist=dist)
@@ -123,13 +127,25 @@ def create_distribution_plot(params):
         shape, dimdata = params['shape'], params['dimdata']
         dist = ('x', 'x')
         array = context.from_dim_data(dimdata)
-    
+
     # Fill the array [slow].
     value = 0.0
-    for row in range(shape[0]):
-        for col in range(shape[1]):
-            array[row, col] = value
+    if len(shape) == 1:
+        for i in range(shape[0]):
+            array[i] = value
             value += 1.0
+    elif len(shape) == 2:
+        for row in range(shape[0]):
+            for col in range(shape[1]):
+                array[row, col] = value
+                value += 1.0
+    else:
+        raise ValueError('Array must be 1 or 2 dimensional.')
+
+    # Fixup shape
+    if len(shape) == 1:
+        shape = (1, shape[0])
+
     # Add newline to title for better spacing.
     title, filename = params['title'], params['filename']
     # Create a nice title.
@@ -139,8 +155,8 @@ def create_distribution_plot(params):
     ylabel = 'Axis 0, %s' % (dist[0])
     # Text description for documentation.
     grid_shape = array.grid_shape
-    text = '%d X %d array, %s distribution, distributed over a %d X %d process grid.' % (
-        shape[0], shape[1], title, grid_shape[0], grid_shape[1])
+    text = '%s array, %s distribution, distributed over %s process grid.' % (
+        shape_text(shape), title, shape_text(grid_shape))
     if 'text' in params:
         text = text + "\n\n" + params['text']
     plot_distribution(array, full_title, xlabel, ylabel, filename, False)
@@ -179,10 +195,10 @@ def create_distributed_protocol_documentation_plots():
          'filename': 'plot_cyclic_cyclic.png',
         },
         # Examples requiring custom dimdata.
-        # Like cyclic-cyclic but with block_size=2 in second dimension.
+        # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (4, 8),
          'dimdata': [
-            ({'block_size': 1,
+            ({'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 0,
               'proc_grid_size': 2,
@@ -194,7 +210,7 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_size': 2,
               'size': 8,
               'start': 0}),
-            ({'block_size': 1,
+            ({'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 1,
               'proc_grid_size': 2,
@@ -206,24 +222,24 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_size': 2,
               'size': 8,
               'start': 2}),
-            ({'block_size': 1,
+            ({'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 0,
               'proc_grid_size': 2,
               'size': 4,
-              'start': 1},
+              'start': 2},
              {'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 0,
               'proc_grid_size': 2,
               'size': 8,
               'start': 0}),
-            ({'block_size': 1,
+            ({'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 1,
               'proc_grid_size': 2,
               'size': 4,
-              'start': 1},
+              'start': 2},
              {'block_size': 2,
               'dist_type': 'c',
               'proc_grid_rank': 1,
@@ -231,12 +247,100 @@ def create_distributed_protocol_documentation_plots():
               'size': 8,
               'start': 2}),
           ],
-         'title': 'Slithery, Python',
-         'filename': 'plot_slithery_python.png',
+         'title': 'BlockCyclic[2], BlockCyclic[2]',
+         'filename': 'plot_blockcyclic_blockcyclic.png',
+        },
+        # 1D unstructured example.
+        {'shape': (40,),
+         'dimdata': [
+            ({'dist_type': 'u',
+              'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+              'proc_grid_rank': 0,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+              'proc_grid_rank': 1,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+              'proc_grid_rank': 2,
+              'proc_grid_size': 4,
+              'size': 40},),
+            ({'dist_type': 'u',
+              'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+              'proc_grid_rank': 3,
+              'proc_grid_size': 4,
+              'size': 40},)],
+         'title': 'Unstructured',
+         'filename': 'plot_unstructured.png',
         },
     ]
         
     bogus_list = [
+        {'shape': (3, 3),
+         #'dist': ('c', 'c'),
+         'dimdata': [
+             (
+              {'dist_type': 'u',
+               #'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+               'indices': [0, 1],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 3},
+              {'dist_type': 'u',
+               #'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+               'indices': [0, 1],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 3},
+             ),
+             (
+              {'dist_type': 'u',
+               #'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+               'indices': [2],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 3},
+              {'dist_type': 'u',
+               #'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+               'indices': [2],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 3},
+             ),
+             (
+              {'dist_type': 'u',
+               #'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+               'indices': [],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 3},
+              {'dist_type': 'u',
+               #'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+               'indices': [],
+               'proc_grid_rank': 0,
+               'proc_grid_size': 2,
+               'size': 3},
+             ),
+             (
+              {'dist_type': 'u',
+               #'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+               'indices': [],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 3},
+              {'dist_type': 'u',
+               #'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+               'indices': [],
+               'proc_grid_rank': 1,
+               'proc_grid_size': 2,
+               'size': 3},
+             )],
+         'title': 'Unstructured, Unstructured',
+         'filename': 'plot_unstruct_unstruct.png',
+        },
         # Like block-block.
         {'shape': (4, 8),
          'dimdata': [
@@ -352,9 +456,9 @@ def create_distributed_protocol_documentation_plots():
     print('--------------------------------')
     print()
 
-    #for params in params_list:
+    for params in params_list:
     #for params in [params_list[0]]:
-    for params in [params_list[-1]]:
+    #for params in [params_list[-1]]:
         create_distribution_plot(params)
 
 
