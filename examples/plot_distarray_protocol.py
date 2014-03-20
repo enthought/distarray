@@ -19,12 +19,6 @@ from pprint import pprint
 import distarray
 from distarray import plotting
 
-# Use 2 processors to match examples.
-#context = distarray.Context(targets=[0, 1])
-
-# All 4 for less GridShapeError.
-context = distarray.Context()
-
 
 def print_array_documentation(context,
                               array,
@@ -127,7 +121,7 @@ def print_array_documentation(context,
         print()
 
 
-def create_distribution_plot_and_documentation(params):
+def create_distribution_plot_and_documentation(context, params):
     """ Create an array distribution plot,
     and the related .rst documentation.
     """
@@ -154,6 +148,15 @@ def create_distribution_plot_and_documentation(params):
         print('Skipping %s...' % (title))
         return
 
+    # Skip if dimdata count does not match context.
+    if dimdata is not None:
+        num_dimdata = len(dimdata)
+        num_targets = len(context.targets)
+        if num_dimdata != num_targets:
+            print('Skipping %s, num_dimdata %d != num_targets %d' % (
+                title, num_dimdata, num_targets))
+            return
+
     # Create array, either from dist or dimdata.
     if dist is not None:
         array = context.empty(shape, dist=dist)
@@ -178,6 +181,9 @@ def create_distribution_plot_and_documentation(params):
 
     # Plot title and axis labels.
     plot_title = title + ' ' + shape_text(shape) + '\n'
+    if len(shape) == 1:
+        # add more space for cramped plot.
+        plot_title += '\n'
     xlabel = 'Axis 1, %s' % (labels[1])
     ylabel = 'Axis 0, %s' % (labels[0])
 
@@ -206,7 +212,7 @@ def create_distribution_plot_and_documentation(params):
         filename=filename)
 
 
-def create_distribution_plot_and_documentation_all():
+def create_distribution_plot_and_documentation_all(context):
     """ Create plots for the distributed array protocol documentation. """
     params_list = [
         # Examples using simple dist specification.
@@ -493,8 +499,9 @@ def create_distribution_plot_and_documentation_all():
     for params in params_list:
     #for params in [params_list[0]]:
     #for params in [params_list[-1]]:
-        create_distribution_plot_and_documentation(params)
+        create_distribution_plot_and_documentation(context, params)
 
 
 if __name__ == '__main__':
-    create_distribution_plot_and_documentation_all()
+    context = distarray.Context()
+    create_distribution_plot_and_documentation_all(context)

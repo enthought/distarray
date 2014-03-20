@@ -145,8 +145,12 @@ def plot_array_distribution(darr,
         cbar.set_ticklabels(cbar_labels)
         cbar.set_label('Processor')
 
+    # Adjust size.
+    figure = pyplot.gcf()
+    figure.set_size_inches(10.0, 5.0)
+
     # Save to output file.
     if filename is not None:
-        pyplot.savefig(filename)
+        pyplot.savefig(filename, dpi=100)
 
     return out
