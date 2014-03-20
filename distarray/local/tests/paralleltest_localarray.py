@@ -405,6 +405,7 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_copy_bn(self):
         a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
         b = a.copy()
         self.assertEqual(a.global_shape, b.global_shape)
         self.assertEqual(a.dist, b.dist)
@@ -418,6 +419,7 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(a.local_shape, b.local_shape)
         self.assertEqual(a.local_array.shape, b.local_array.shape)
         self.assertEqual(a.local_array.dtype, b.local_array.dtype)
+        np.testing.assert_equal(a.local_array, b.local_array)
 
     def test_copy_cbc(self):
         ddpp = [
@@ -472,6 +474,7 @@ class TestLocalArrayMethods(MpiTestCase):
              ]
         a = LocalArray.from_dim_data(dim_data=ddpp[self.comm.Get_rank()],
                                      dtype=np.int_, comm=self.comm)
+        a.fill(12)
         b = a.copy()
         self.assertEqual(a.global_shape, b.global_shape)
         self.assertEqual(a.dist, b.dist)
@@ -485,6 +488,7 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(a.local_shape, b.local_shape)
         self.assertEqual(a.local_array.shape, b.local_array.shape)
         self.assertEqual(a.local_array.dtype, b.local_array.dtype)
+        np.testing.assert_equal(a.local_array, b.local_array)
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
