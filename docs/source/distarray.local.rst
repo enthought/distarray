@@ -25,10 +25,10 @@ local Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`denselocalarray` Module
+:mod:`localarray` Module
 -----------------------------
 
-.. automodule:: distarray.local.denselocalarray
+.. automodule:: distarray.local.localarray
     :members:
     :undoc-members:
     :show-inheritance:
