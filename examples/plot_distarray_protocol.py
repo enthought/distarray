@@ -276,6 +276,41 @@ def create_distributed_protocol_documentation_plots():
          'title': 'Unstructured',
          'filename': 'plot_unstructured.png',
         },
+        # 1D padded example.
+        {'shape': (20,),
+         'dimdata': [
+            ({'size': 20,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 4,
+              'start': 0,
+              'stop': 5,
+              'padding': (1, 1)},),
+            ({'size': 20,
+              'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 4,
+              'start': 5,
+              'stop': 10,
+              'padding': (1, 1)},),
+            ({'size': 20,
+              'dist_type': 'b',
+              'proc_grid_rank': 2,
+              'proc_grid_size': 4,
+              'start': 10,
+              'stop': 15,
+              'padding': (1, 1)},),
+            ({'size': 20,
+              'dist_type': 'b',
+              'proc_grid_rank': 3,
+              'proc_grid_size': 4,
+              'start': 15,
+              'stop': 20,
+              'padding': (1, 1)},),
+          ],
+         'title': 'Padded',
+         'filename': 'plot_padded.png',
+        },
     ]
         
     bogus_list = [
@@ -462,48 +497,5 @@ def create_distributed_protocol_documentation_plots():
         create_distribution_plot(params)
 
 
-from numpy.testing import assert_allclose
-
-
-def test_from_dim_data():
-    total_size = 40
-    ddpp = [
-        ({'dist_type': 'u',
-          'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-          'proc_grid_rank': 0,
-          'proc_grid_size': 4,
-          'size': 40},),
-        ({'dist_type': 'u',
-          'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-          'proc_grid_rank': 1,
-          'proc_grid_size': 4,
-          'size': 40},),
-        ({'dist_type': 'u',
-          'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-          'proc_grid_rank': 2,
-          'proc_grid_size': 4,
-          'size': 40},),
-        ({'dist_type': 'u',
-          'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-          'proc_grid_rank': 3,
-          'proc_grid_size': 4,
-          'size': 40},)]
-    distarr = context.from_dim_data(ddpp)
-    for i in range(total_size):
-        distarr[i] = i
-    localarrays = distarr.get_localarrays()
-    for i, arr in enumerate(localarrays):
-        assert_allclose(arr, ddpp[i][0]['indices'])
-
-
 if __name__ == '__main__':
-    if False:
-        test_from_dim_data()
-    
-    if True:
-        create_distributed_protocol_documentation_plots()
-
-    if False:
-        # Current working test...
-        a = context.zeros((10, 10), dist=('u', 'u'))
-        plot_distribution(a, 'Unstructured-Unstructured\n', 'plot_unstruct_unstruct.png')
+    create_distributed_protocol_documentation_plots()
