@@ -4,7 +4,7 @@ local Package
 :mod:`local` Package
 --------------------
 
-.. automodule:: distarray.local
+.. automodule:: distarray.local.__init__
     :members:
     :undoc-members:
     :show-inheritance:
@@ -41,6 +41,14 @@ local Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`format` Module
+--------------------
+
+.. automodule:: distarray.local.format
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`maps` Module
 ------------------
 
@@ -56,11 +64,3 @@ local Package
     :members:
     :undoc-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    distarray.local.tests
-

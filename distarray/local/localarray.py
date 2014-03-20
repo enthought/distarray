@@ -1065,6 +1065,7 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         The identifier for the group to save the LocalArray to (the default is
         'buffer').
     mode : optional, {'w', 'w-', 'a'}, default 'a'
+
         ``'w'``
             Create file, truncate if exists
         ``'w-'``

@@ -105,7 +105,7 @@ def mirror_sort(seq, ref_seq):
 
 
 def outer_zip(seqa, seqb):
-    """An outer product, but using zip rather than *.
+    """An outer product, but using zip rather than multiplication.
 
     >>> a = 2*range(4)
     >>> b = range(8)
@@ -134,7 +134,7 @@ def sanitize_indices(indices):
     -------
     2-tuple
         ('point', indices) if all `indices` are ints, or
-        ('view', indices) if some `indices`are slices.
+        ('view', indices) if some `indices` are slices.
 
     Raises
     ------
