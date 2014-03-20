@@ -14,7 +14,6 @@ The output .png files should be copied to the images folder as well.
 
 from __future__ import print_function
 
-import matplotlib
 from pprint import pprint
 
 import distarray
@@ -27,21 +26,34 @@ from distarray import plotting
 context = distarray.Context()
 
 
-def plot_distribution(a, title, xlabel, ylabel, filename, interactive=True):
-    plotting.plot_array_distribution(
-        a, xlabel=xlabel, ylabel=ylabel, legend=True)
-    if title is not None:
-        matplotlib.pyplot.title(title)
-    if filename is not None:
-        matplotlib.pyplot.savefig(filename)
-    if interactive:
-        matplotlib.pyplot.show()
+def print_array_documentation(context,
+                              array,
+                              title,
+                              text,
+                              filename,
+                              verbose=False):
+    """ Print some properties of the array.
 
+    The output is rst formatted, so that it can be directly
+    used for documentation. It includes a plot of the array distribution,
+    some properties that are same for each process, and properties that
+    vary per process.
 
-def print_engine_array(context, array, title, text, filename):
-    """ Print some properties of the array on each engine.
-
-    This is formatted to fit nicely into the documentation.
+    Parameters
+    ----------
+    context : distarray.Context
+        The context that will be used to query the array properties.
+    array : DistArray
+        The array to describe.
+    title : string
+        The document section title.
+    text : string
+        A description of the array layout to add to the document.
+    filename : string
+        The filename of the figure to add to the document.
+    verbose : bool
+        If True, some extra information is printed, that would
+        be overly verbose for the real protocol documentation.
     """
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
@@ -82,15 +94,16 @@ def print_engine_array(context, array, title, text, filename):
 
     # Result of get_localarrays() and get_ndarrays().
     # This is mainly for debugging and will eventually not be needed.
-    local_arrays = array.get_localarrays()
-    nd_arrays = array.get_ndarrays()
-    print("Result of get_localarrays() and get_ndarrays():")
-    print()
-    print(">>> get_localarrays()")
-    pprint(local_arrays)
-    print(">>> get_ndarrays()")
-    pprint(nd_arrays)
-    print()
+    if verbose:
+        local_arrays = array.get_localarrays()
+        nd_arrays = array.get_ndarrays()
+        print("Result of get_localarrays() and get_ndarrays():")
+        print()
+        print(">>> get_localarrays()")
+        pprint(local_arrays)
+        print(">>> get_ndarrays()")
+        pprint(nd_arrays)
+        print()
 
     # Properties that are the same on all processes:
     print("In all processes:")
@@ -114,29 +127,42 @@ def print_engine_array(context, array, title, text, filename):
         print()
 
 
-def create_distribution_plot(params):
+def create_distribution_plot_and_documentation(params):
     """ Create an array distribution plot,
-    suitable for the protocol documentation. """
+    and the related .rst documentation.
+    """
 
     def shape_text(shape):
         """ Get a text string describing the array shape. """
+        # Always want to display at least N X M.
+        if len(shape) == 1:
+            shape = (1, shape[0])
         shape_labels = ['%d' % (s) for s in shape]
         shape_text = ' X '.join(shape_labels)
         return shape_text
 
-    if 'skip' in params and params['skip']:
-        print('Skipping %s...' % (params['title']))
+    title = params['title']
+    labels = params['labels']
+    shape = params['shape']
+    text = params.get('text', None)
+    dist = params.get('dist', None)
+    dimdata = params.get('dimdata', None)
+    filename = params.get('filename', None)
+    skip = params.get('skip', False)
+
+    if skip:
+        print('Skipping %s...' % (title))
         return
 
-    if 'dimdata' not in params:
-        shape, dist = params['shape'], params['dist']
+    # Create array, either from dist or dimdata.
+    if dist is not None:
         array = context.empty(shape, dist=dist)
-    else:
-        shape, dimdata = params['shape'], params['dimdata']
-        dist = ('x', 'x')
+    elif dimdata is not None:
         array = context.from_dim_data(dimdata)
+    else:
+        raise ValueError('Must provide either dist or dimdata.')
 
-    # Fill the array [slow].
+    # Fill the array.
     value = 0.0
     if len(shape) == 1:
         for i in range(shape[0]):
@@ -150,61 +176,77 @@ def create_distribution_plot(params):
     else:
         raise ValueError('Array must be 1 or 2 dimensional.')
 
-    # Fixup shape
-    if len(shape) == 1:
-        shape = (1, shape[0])
+    # Plot title and axis labels.
+    plot_title = title + ' ' + shape_text(shape) + '\n'
+    xlabel = 'Axis 1, %s' % (labels[1])
+    ylabel = 'Axis 0, %s' % (labels[0])
 
-    # Add newline to title for better spacing.
-    title, filename = params['title'], params['filename']
-    # Create a nice title.
-    full_title = title + ' %d-by-%d' % (shape[0], shape[1]) + '\n'
-    # Nice labels for axes.
-    xlabel = 'Axis 1, %s' % (dist[1])
-    ylabel = 'Axis 0, %s' % (dist[0])
-    # Text description for documentation.
-    grid_shape = array.grid_shape
-    text = '%s array, %s distribution, distributed over %s process grid.' % (
-        shape_text(shape), title, shape_text(grid_shape))
-    if 'text' in params:
-        text = text + "\n\n" + params['text']
-    plot_distribution(array, full_title, xlabel, ylabel, filename, False)
-    # Print properties on engines.
-    print_engine_array(context, array, title, text, filename)
+    # Documentation title and text description.
+    doc_title = title
+    doc_text = '%s array, %s distribution, over %s process grid.' % (
+        shape_text(shape), title, shape_text(array.grid_shape))
+    if text is not None:
+        doc_text = doc_text + "\n\n" + text
+
+    # Create plot.
+    plotting.plot_array_distribution(
+        array,
+        title=plot_title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        legend=True,
+        filename=filename)
+
+    # Print documentation.
+    print_array_documentation(
+        context,
+        array,
+        title=doc_title,
+        text=doc_text,
+        filename=filename)
 
 
-def create_distributed_protocol_documentation_plots():
+def create_distribution_plot_and_documentation_all():
     """ Create plots for the distributed array protocol documentation. """
     params_list = [
         # Examples using simple dist specification.
         {'shape': (4, 8),
-         'dist': ('b', 'n'),
          'title': 'Block, Nondistributed',
-         'filename': 'plot_block_nondist.png',
+         'labels': ('b', 'n'),
          'text': '''Some description of Block, Nondistributed.''',
+         'filename': 'plot_block_nondist.png',
+         'dist': ('b', 'n'),
         },
         {'shape': (4, 8),
-         'dist': ('n', 'b'),
          'title': 'Nondistributed, Block',
+         'labels': ('n', 'b'),
          'filename': 'plot_nondist_block.png',
+         'dist': ('n', 'b'),
         },
         {'shape': (4, 8),
-         'dist': ('b', 'b'),
          'title': 'Block, Block',
+         'labels': ('b', 'b'),
          'filename': 'plot_block_block.png',
+         'dist': ('b', 'b'),
         },
         {'shape': (4, 8),
-         'dist': ('b', 'c'),
          'title': 'Block, Cyclic',
+         'labels': ('b', 'c'),
          'filename': 'plot_block_cyclic.png',
+         'dist': ('b', 'c'),
         },
         {'shape': (4, 8),
-         'dist': ('c', 'c'),
          'title': 'Cyclic, Cyclic',
+         'labels': ('c', 'c'),
          'filename': 'plot_cyclic_cyclic.png',
+         'dist': ('c', 'c'),
         },
         # Examples requiring custom dimdata.
         # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (4, 8),
+         'title': 'BlockCyclic, BlockCyclic',
+         'labels': ('bc', 'bc'),
+         'filename': 'plot_blockcyclic_blockcyclic.png',
          'dimdata': [
             ({'block_size': 2,
               'dist_type': 'c',
@@ -255,11 +297,12 @@ def create_distributed_protocol_documentation_plots():
               'size': 8,
               'start': 2}),
           ],
-         'title': 'BlockCyclic[2], BlockCyclic[2]',
-         'filename': 'plot_blockcyclic_blockcyclic.png',
         },
         # 1D unstructured example.
         {'shape': (40,),
+         'title': 'Unstructured',
+         'labels': ('u', 'u'),
+         'filename': 'plot_unstructured.png',
          'dimdata': [
             ({'dist_type': 'u',
               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
@@ -281,12 +324,12 @@ def create_distributed_protocol_documentation_plots():
               'proc_grid_rank': 3,
               'proc_grid_size': 4,
               'size': 40},)],
-         'title': 'Unstructured',
-         'filename': 'plot_unstructured.png',
         },
         # 1D padded example.
         {'shape': (20,),
-         'skip': True,
+         'title': 'Padded',
+         'labels': ('bp', 'bp'),
+         'filename': 'plot_padded.png',
          'dimdata': [
             ({'size': 20,
               'dist_type': 'b',
@@ -317,14 +360,15 @@ def create_distributed_protocol_documentation_plots():
               'stop': 20,
               'padding': (1, 1)},),
           ],
-         'title': 'Padded',
-         'filename': 'plot_padded.png',
         },
         #
         # Some attempts at a 2D unstructured array.
         # I have not been able to get these to work yet.
         #
         {'shape': (3, 3),
+         'title': 'Attempt #1: Unstructured, Unstructured',
+         'labels': ('u', 'u'),
+         'filename': 'plot_unstruct_unstruct_1.png',
          'skip': True,
          'dimdata': [
              (
@@ -383,10 +427,11 @@ def create_distributed_protocol_documentation_plots():
                'proc_grid_size': 2,
                'size': 3},
              )],
-         'title': 'Attempt #1: Unstructured, Unstructured',
-         'filename': 'plot_unstruct_unstruct_1.png',
         },
         {'shape': (40, 40),
+         'title': 'Attempt #2: Unstructured, Unstructured',
+         'labels': ('u', 'u'),
+         'filename': 'plot_unstruct_unstruct_2.png',
          'skip': True,
          'dimdata': [
              (
@@ -437,8 +482,6 @@ def create_distributed_protocol_documentation_plots():
                'proc_grid_size': 2,
                'size': 40},
              )],
-         'title': 'Attempt #2: Unstructured, Unstructured',
-         'filename': 'plot_unstruct_unstruct_2.png',
         },
     ]
 
@@ -450,8 +493,8 @@ def create_distributed_protocol_documentation_plots():
     for params in params_list:
     #for params in [params_list[0]]:
     #for params in [params_list[-1]]:
-        create_distribution_plot(params)
+        create_distribution_plot_and_documentation(params)
 
 
 if __name__ == '__main__':
-    create_distributed_protocol_documentation_plots()
+    create_distribution_plot_and_documentation_all()

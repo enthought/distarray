@@ -66,10 +66,12 @@ def cmap_discretize(cmap, N):
 
 
 def plot_array_distribution(darr,
+                            title=None,
                             xlabel=None,
                             ylabel=None,
                             yflip=False,
                             legend=False,
+                            filename=None,
                             *args, **kwargs):
     """
     Plot a distarray's memory layout. It can be 1D or 2D.
@@ -77,6 +79,8 @@ def plot_array_distribution(darr,
 
     Parameters
     ----------
+    title : string
+        Text label for the plot title, or None.
     xlabel : string
         Text label for the x-axis, or None.
     ylabel : string
@@ -86,6 +90,8 @@ def plot_array_distribution(darr,
         when printing the array itself.
     legend : bool
         If True, then a colorbar legend is drawn to label the colors.
+    filename : string
+        Output filename for the plot image.
 
     Returns
     -------
@@ -111,7 +117,9 @@ def plot_array_distribution(darr,
     # Plot the array.
     img = pyplot.matshow(arr, cmap=cmap, norm=norm, *args, **kwargs)
 
-    # Label axes.
+    # Add title and labels.
+    if title is not None:
+        pyplot.title(title)
     if xlabel is not None:
         pyplot.xlabel(xlabel)
     if ylabel is not None:
@@ -136,5 +144,9 @@ def plot_array_distribution(darr,
         cbar.set_ticks(cbar_ticks)
         cbar.set_ticklabels(cbar_labels)
         cbar.set_label('Processor')
+
+    # Save to output file.
+    if filename is not None:
+        pyplot.savefig(filename)
 
     return out
