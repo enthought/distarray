@@ -9,14 +9,6 @@ local Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`base` Module
-------------------
-
-.. automodule:: distarray.local.base
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`construct` Module
 -----------------------
 
