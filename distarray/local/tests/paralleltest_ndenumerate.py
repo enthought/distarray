@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import unittest
 
-import distarray.local.denselocalarray as dla
+from distarray.local.localarray import LocalArray, ndenumerate
 from distarray.testing import MpiTestCase
 
 
@@ -17,10 +17,8 @@ class TestNDEnumerate(MpiTestCase):
     """Make sure we generate indices compatible with __getitem__."""
 
     def test_ndenumerate(self):
-        a = dla.LocalArray((16, 16, 2),
-                           dist=('c', 'b', 'n'),
-                           comm=self.comm)
-        for global_inds, value in dla.ndenumerate(a):
+        a = LocalArray((16, 16, 2), dist=('c', 'b', 'n'), comm=self.comm)
+        for global_inds, value in ndenumerate(a):
             a[global_inds] = 0.0
 
 

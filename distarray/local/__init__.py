@@ -4,5 +4,5 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-from distarray.local import denselocalarray
-from distarray.local.denselocalarray import *
+from distarray.local import localarray
+from distarray.local.localarray import *
