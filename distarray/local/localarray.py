@@ -247,6 +247,7 @@ class LocalArray(BaseLocalArray):
     #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
+        """Return a copy of this LocalArray with a new underlying dtype."""
         if newdtype is None:
             return self.copy()
         else:
@@ -272,13 +273,22 @@ class LocalArray(BaseLocalArray):
             return self.local_array.view(dtype)
 
     def view(self, dtype=None):
+        """Return a new LocalArray whose underlying `local_array` is a view on
+        `self.local_array`.
+
+        Note
+        ----
+        Currently unimplemented for ``dtype is not None``.
+        """
         if dtype is None:
             new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
                                                   dtype=self.dtype,
                                                   comm=self.base_comm,
                                                   buf=self.local_array)
         else:
-            raise_nie()
+            _raise_nie()
+            #TODO: to implement this properly, a new dim_data will need to
+            #      generated that reflects the size and shape of the new dtype.
             #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
             #                                      dtype=dtype,
             #                                      comm=self.base_comm,
