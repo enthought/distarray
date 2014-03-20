@@ -18,7 +18,7 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six import next
-from distarray.externals.six.moves import zip
+from distarray.externals.six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
@@ -66,6 +66,14 @@ def distribute_block_indices(dd):
     dd['stop'] = dd['start'] + nelements
     if dd['stop'] > dd['size']:
         dd['stop'] = dd['size']
+
+def _normalize_dim_data(dim_data):
+    ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
+    for dd in dim_data:
+        if dd['dist_type'] == 'n':
+            dd['proc_grid_size'] = 1
+            dd['proc_grid_rank'] = 0
+    return dim_data
 
 
 def make_partial_dim_data(shape, dist=None, grid_shape=None):
@@ -122,26 +130,25 @@ class LocalArray(object):
 
     def _init(self, dim_data, dtype=None, buf=None, comm=None):
         """Private init method."""
-        self.dim_data = dim_data
+        self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
 
-        self.grid_shape = construct.init_grid_shape(self.global_shape,
-                                                    self.distdims,
-                                                    self.comm_size,
-                                                    self.grid_shape)
+        grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
+        for gs, dd in zip(grid_shape, self.dim_data):
+            dd['proc_grid_size'] = gs
 
-        self.comm = construct.init_comm(self.base_comm, self.grid_shape,
-                                        self.ndistdim)
+        self.comm = construct.init_comm(self.base_comm, grid_shape)
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict) for dimdict in
-                          dim_data)
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
+                          for dimdict in dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
         self.base = None
         self.ctypes = None
+
 
     @classmethod
     def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
@@ -223,15 +230,7 @@ class LocalArray(object):
 
     @property
     def grid_shape(self):
-        return tuple(dd.get('proc_grid_size') for dd in self.dim_data
-                     if dd.get('proc_grid_size'))
-
-    @grid_shape.setter
-    def grid_shape(self, grid_shape):
-        grid_size = iter(grid_shape)
-        for dist, dd in zip(self.dist, self.dim_data):
-            if dist != 'n':
-                dd['proc_grid_size'] = next(grid_size)
+        return tuple(dd['proc_grid_size'] for dd in self.dim_data)
 
     @property
     def global_shape(self):
@@ -258,17 +257,8 @@ class LocalArray(object):
         return tuple(dd['dist_type'] for dd in self.dim_data)
 
     @property
-    def distdims(self):
-        return tuple(i for (i, v) in enumerate(self.dist) if v != 'n')
-
-    @property
-    def ndistdim(self):
-        return len(self.distdims)
-
-    @property
     def cart_coords(self):
-        rval = tuple(dd.get('proc_grid_rank') for dd in self.dim_data
-                     if 'proc_grid_rank' in dd)
+        rval = tuple(dd['proc_grid_rank'] for dd in self.dim_data)
         assert rval == tuple(self.comm.Get_coords(self.comm_rank))
         return rval
 
@@ -294,8 +284,8 @@ class LocalArray(object):
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
-        dist_data = (self.dim_data[i] for i in self.distdims)
-        for dim, cart_rank in zip(dist_data, cart_coords):
+        assert len(cart_coords) == len(self.dim_data)
+        for dim, cart_rank in zip(self.dim_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 
     def _make_local_array(self, buf=None, dtype=None):
@@ -383,16 +373,12 @@ class LocalArray(object):
         return self.comm.Get_cart_rank(coords)
 
     def global_to_local(self, *global_ind):
-        local_ind = list(global_ind)
-        for dd in self.distdims:
-            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
-        return tuple(local_ind)
+        return tuple(self.maps[dim].local_index[global_ind[dim]]
+                     for dim in range(self.ndim))
 
     def local_to_global(self, *local_ind):
-        global_ind = list(local_ind)
-        for dd in self.distdims:
-            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
-        return tuple(global_ind)
+        return tuple(self.maps[dim].global_index[local_ind[dim]]
+                     for dim in range(self.ndim))
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
