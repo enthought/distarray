@@ -125,7 +125,8 @@ class IpclusterTestCase(unittest.TestCase):
 
     """Base test class for test cases needing an ipcluster.
 
-    Overload the `ipcluster_size` class attribute to change the default (default is 4).
+    Overload the `ipcluster_size` class attribute to change the default
+    (default is 4).
     """
 
     ipcluster_size = 4
@@ -134,11 +135,15 @@ class IpclusterTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.client = Client()
         if len(cls.client) < cls.ipcluster_size:
-            errmsg = 'Tests need an ipcluster with at least {} engines running.'
+            errmsg = ('Tests need an ipcluster with at least {} engines '
+                      'running.')
             raise unittest.SkipTest(errmsg.format(cls.ipcluster_size))
 
     def tearDown(self):
-        self.client.clear(block=True)
+        try:
+            self.context.purge_keys()
+        except AttributeError:
+            pass
 
     @classmethod
     def tearDownClass(cls):
