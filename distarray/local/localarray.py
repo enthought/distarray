@@ -257,6 +257,7 @@ class LocalArray(BaseLocalArray):
             return new_da
 
     def copy(self):
+        """Return a copy of this LocalArray."""
         local_copy = self.local_array.copy()
         return self.__class__.from_dim_data(dim_data=self.dim_data,
                                             dtype=self.dtype,
