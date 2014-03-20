@@ -403,6 +403,89 @@ class TestIndexing(MpiTestCase):
 
 class TestLocalArrayMethods(MpiTestCase):
 
+    def test_copy_bn(self):
+        a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
+        b = a.copy()
+        self.assertEqual(a.global_shape, b.global_shape)
+        self.assertEqual(a.dist, b.dist)
+        self.assertEqual(a.grid_shape, b.grid_shape)
+        self.assertEqual(a.comm_size, b.comm_size)
+        self.assertEqual(a.ndistdim, b.ndistdim)
+        self.assertEqual(a.distdims, b.distdims)
+        self.assertEqual(a.comm.Get_topo(), b.comm.Get_topo())
+        for am, bm in zip(a.maps, b.maps):
+            self.assertEqual(list(am.global_index), list(bm.global_index))
+        self.assertEqual(a.local_shape, b.local_shape)
+        self.assertEqual(a.local_array.shape, b.local_array.shape)
+        self.assertEqual(a.local_array.dtype, b.local_array.dtype)
+
+    def test_copy_cbc(self):
+        ddpp = [
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 2}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 1},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 0}),
+            ({'block_size': 1,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 4,
+              'start': 1},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': 8,
+              'start': 2})
+             ]
+        a = LocalArray.from_dim_data(dim_data=ddpp[self.comm.Get_rank()],
+                                     dtype=np.int_, comm=self.comm)
+        b = a.copy()
+        self.assertEqual(a.global_shape, b.global_shape)
+        self.assertEqual(a.dist, b.dist)
+        self.assertEqual(a.grid_shape, b.grid_shape)
+        self.assertEqual(a.comm_size, b.comm_size)
+        self.assertEqual(a.ndistdim, b.ndistdim)
+        self.assertEqual(a.distdims, b.distdims)
+        self.assertEqual(a.comm.Get_topo(), b.comm.Get_topo())
+        for am, bm in zip(a.maps, b.maps):
+            self.assertEqual(list(am.global_index), list(bm.global_index))
+        self.assertEqual(a.local_shape, b.local_shape)
+        self.assertEqual(a.local_array.shape, b.local_array.shape)
+        self.assertEqual(a.local_array.dtype, b.local_array.dtype)
+
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
         a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
