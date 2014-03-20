@@ -273,11 +273,16 @@ class LocalArray(BaseLocalArray):
 
     def view(self, dtype=None):
         if dtype is None:
-            new_da = LocalArray(self.global_shape, self.dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=self.dtype,
+                                                  comm=self.base_comm,
+                                                  buf=self.local_array)
         else:
-            new_da = LocalArray(self.global_shape, dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            raise_nie()
+            #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+            #                                      dtype=dtype,
+            #                                      comm=self.base_comm,
+            #                                      buf=self.local_array)
         return new_da
 
     def __array__(self, dtype=None):

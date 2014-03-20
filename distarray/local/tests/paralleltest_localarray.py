@@ -489,6 +489,13 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(b.dtype, new_dtype)
         self.assertEqual(b.local_array.dtype, new_dtype)
 
+    def test_view_bn(self):
+        a = LocalArray((16,16), dtype=np.int32, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
+        b = a.view()
+        self.assert_localarrays_allclose(a, b)
+        self.assertEqual(id(a.data), id(b.data))
+
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
         a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
