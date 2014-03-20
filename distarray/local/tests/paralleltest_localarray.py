@@ -403,23 +403,32 @@ class TestIndexing(MpiTestCase):
 
 class TestLocalArrayMethods(MpiTestCase):
 
+    def assert_localarrays_allclose(self, l0, l1):
+        self.assertEqual(l0.global_shape, l1.global_shape)
+        self.assertEqual(l0.dist, l1.dist)
+        self.assertEqual(l0.grid_shape, l1.grid_shape)
+        self.assertEqual(l0.base_comm, l1.base_comm)
+        self.assertEqual(l0.comm_size, l1.comm_size)
+        self.assertEqual(l0.comm_rank, l1.comm_rank)
+        self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
+        self.assertEqual(l0.ndistdim, l1.ndistdim)
+        self.assertEqual(l0.distdims, l1.distdims)
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
+        self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_size, l1.local_size)
+        self.assertEqual(len(l0.maps), len(l1.maps))
+        for m0, m1 in zip(l0.maps, l1.maps):
+            self.assertEqual(list(m0.global_index), list(m1.global_index))
+            self.assertEqual(list(m0.local_index), list(m1.local_index))
+        np.testing.assert_allclose(l0.local_array, l1.local_array)
+
     def test_copy_bn(self):
         a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
         a.fill(11)
         b = a.copy()
-        self.assertEqual(a.global_shape, b.global_shape)
-        self.assertEqual(a.dist, b.dist)
-        self.assertEqual(a.grid_shape, b.grid_shape)
-        self.assertEqual(a.comm_size, b.comm_size)
-        self.assertEqual(a.ndistdim, b.ndistdim)
-        self.assertEqual(a.distdims, b.distdims)
-        self.assertEqual(a.comm.Get_topo(), b.comm.Get_topo())
-        for am, bm in zip(a.maps, b.maps):
-            self.assertEqual(list(am.global_index), list(bm.global_index))
-        self.assertEqual(a.local_shape, b.local_shape)
-        self.assertEqual(a.local_array.shape, b.local_array.shape)
-        self.assertEqual(a.local_array.dtype, b.local_array.dtype)
-        np.testing.assert_equal(a.local_array, b.local_array)
+        self.assert_localarrays_allclose(a, b)
 
     def test_copy_cbc(self):
         ddpp = [
@@ -476,19 +485,7 @@ class TestLocalArrayMethods(MpiTestCase):
                                      dtype=np.int_, comm=self.comm)
         a.fill(12)
         b = a.copy()
-        self.assertEqual(a.global_shape, b.global_shape)
-        self.assertEqual(a.dist, b.dist)
-        self.assertEqual(a.grid_shape, b.grid_shape)
-        self.assertEqual(a.comm_size, b.comm_size)
-        self.assertEqual(a.ndistdim, b.ndistdim)
-        self.assertEqual(a.distdims, b.distdims)
-        self.assertEqual(a.comm.Get_topo(), b.comm.Get_topo())
-        for am, bm in zip(a.maps, b.maps):
-            self.assertEqual(list(am.global_index), list(bm.global_index))
-        self.assertEqual(a.local_shape, b.local_shape)
-        self.assertEqual(a.local_array.shape, b.local_array.shape)
-        self.assertEqual(a.local_array.dtype, b.local_array.dtype)
-        np.testing.assert_equal(a.local_array, b.local_array)
+        self.assert_localarrays_allclose(a, b)
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
