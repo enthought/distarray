@@ -175,25 +175,6 @@ class TestFromDimData(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
-    @unittest.skip('Not implemented.')
-    def test_block_cyclic(self):
-        dim0 = {"dist_type": 'c',
-                "size": 16,
-                "proc_grid_size": 4,
-                "block_size": 2}
-
-        dim1 = {"dist_type": 'n',
-                "size": 16,
-                "proc_grid_size": None}
-
-        dim_data = (dim0, dim1)
-
-        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = LocalArray((16,16), dist={0: 'c'}, block_size=2,
-                                 grid_shape=(2, 2), comm=self.comm)
-
-        self.assert_alike(larr, expected)
-
 
 class TestGridShape(MpiTestCase):
 
