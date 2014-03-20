@@ -403,7 +403,58 @@ class TestIndexing(MpiTestCase):
 
 class TestLocalArrayMethods(MpiTestCase):
 
-    def assert_localarrays_allclose(self, l0, l1):
+    ddpp = [
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 0},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 0}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 0},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 2}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 1},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 0}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 1},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 2})
+         ]
+
+    def assert_localarrays_allclose(self, l0, l1, check_dtype=False):
         self.assertEqual(l0.global_shape, l1.global_shape)
         self.assertEqual(l0.dist, l1.dist)
         self.assertEqual(l0.grid_shape, l1.grid_shape)
@@ -415,7 +466,8 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(l0.distdims, l1.distdims)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_array.shape, l1.local_array.shape)
-        self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        if check_dtype:
+            self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_size, l1.local_size)
         self.assertEqual(len(l0.maps), len(l1.maps))
@@ -428,64 +480,33 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
         a.fill(11)
         b = a.copy()
-        self.assert_localarrays_allclose(a, b)
+        self.assert_localarrays_allclose(a, b, check_dtype=True)
 
     def test_copy_cbc(self):
-        ddpp = [
-            ({'block_size': 1,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 0},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 0}),
-            ({'block_size': 1,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 0},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 2}),
-            ({'block_size': 1,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 1},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 0}),
-            ({'block_size': 1,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 1},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 2})
-             ]
-        a = LocalArray.from_dim_data(dim_data=ddpp[self.comm.Get_rank()],
+        a = LocalArray.from_dim_data(dim_data=self.ddpp[self.comm.Get_rank()],
                                      dtype=np.int_, comm=self.comm)
         a.fill(12)
         b = a.copy()
-        self.assert_localarrays_allclose(a, b)
+        self.assert_localarrays_allclose(a, b, check_dtype=True)
+
+    def test_astype_bn(self):
+        new_dtype = np.float32
+        a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
+        b = a.astype(new_dtype)
+        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        self.assertEqual(b.dtype, new_dtype)
+        self.assertEqual(b.local_array.dtype, new_dtype)
+
+    def test_astype_cbc(self):
+        new_dtype = np.int8
+        a = LocalArray.from_dim_data(dim_data=self.ddpp[self.comm.Get_rank()],
+                                     dtype=np.int32, comm=self.comm)
+        a.fill(12)
+        b = a.astype(new_dtype)
+        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        self.assertEqual(b.dtype, new_dtype)
+        self.assertEqual(b.local_array.dtype, new_dtype)
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""

@@ -251,9 +251,10 @@ class LocalArray(BaseLocalArray):
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.global_shape, dtype=newdtype,
-                                dist=self.dist, grid_shape=self.grid_shape,
-                                comm=self.base_comm, buf=local_copy)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=newdtype,
+                                                  comm=self.base_comm,
+                                                  buf=local_copy)
             return new_da
 
     def copy(self):
