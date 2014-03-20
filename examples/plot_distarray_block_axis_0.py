@@ -9,11 +9,13 @@ Create a simple block distributed distarray, then plot its array
 distribution.
 """
 
+from matplotlib import pyplot
+
 import distarray
 from distarray import plotting
 
 
 c = distarray.Context()
 a = c.zeros((64, 64))
-plotting.plot_array_distribution_2d(a)
-plotting.show()
+plotting.plot_array_distribution(a, legend=True)
+pyplot.show()

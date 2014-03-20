@@ -28,7 +28,8 @@ context = distarray.Context()
 
 
 def plot_distribution(a, title, xlabel, ylabel, filename, interactive=True):
-    plotting.plot_array_distribution_2d(a, draw_legend=True, xlabel=xlabel, ylabel=ylabel)
+    plotting.plot_array_distribution(
+        a, xlabel=xlabel, ylabel=ylabel, legend=True)
     if title is not None:
         matplotlib.pyplot.title(title)
     if filename is not None:
@@ -58,9 +59,6 @@ def print_engine_array(context, array, title, text, filename):
     db_version = context.view['db_version']
     db_buffer = context.view['db_buffer']
     db_dim_data = context.view['db_dim_data']
-    # Get the full array.
-    full_array = array.toarray()
-    local_arrays = array.get_localarrays()
 
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
@@ -75,17 +73,23 @@ def print_engine_array(context, array, title, text, filename):
     print()
 
     # Full (undistributed) array:
+    full_array = array.toarray()
     print("The full (undistributed) array:")
     print()
     print(">>> full_array")
     pprint(full_array)
     print()
 
-    # Local arrays.
-    print("get_localarrays():")
+    # Result of get_localarrays() and get_ndarrays().
+    # This is mainly for debugging and will eventually not be needed.
+    local_arrays = array.get_localarrays()
+    nd_arrays = array.get_ndarrays()
+    print("Result of get_localarrays() and get_ndarrays():")
     print()
     print(">>> get_localarrays()")
     pprint(local_arrays)
+    print(">>> get_ndarrays()")
+    pprint(nd_arrays)
     print()
 
     # Properties that are the same on all processes:
@@ -119,6 +123,10 @@ def create_distribution_plot(params):
         shape_labels = ['%d' % (s) for s in shape]
         shape_text = ' X '.join(shape_labels)
         return shape_text
+
+    if 'skip' in params and params['skip']:
+        print('Skipping %s...' % (params['title']))
+        return
 
     if 'dimdata' not in params:
         shape, dist = params['shape'], params['dist']
@@ -165,7 +173,7 @@ def create_distribution_plot(params):
 
 
 def create_distributed_protocol_documentation_plots():
-    """ Create plots for the distributed array protocol documentation. """ 
+    """ Create plots for the distributed array protocol documentation. """
     params_list = [
         # Examples using simple dist specification.
         {'shape': (4, 8),
@@ -278,6 +286,7 @@ def create_distributed_protocol_documentation_plots():
         },
         # 1D padded example.
         {'shape': (20,),
+         'skip': True,
          'dimdata': [
             ({'size': 20,
               'dist_type': 'b',
@@ -311,11 +320,12 @@ def create_distributed_protocol_documentation_plots():
          'title': 'Padded',
          'filename': 'plot_padded.png',
         },
-    ]
-        
-    bogus_list = [
+        #
+        # Some attempts at a 2D unstructured array.
+        # I have not been able to get these to work yet.
+        #
         {'shape': (3, 3),
-         #'dist': ('c', 'c'),
+         'skip': True,
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -373,65 +383,11 @@ def create_distributed_protocol_documentation_plots():
                'proc_grid_size': 2,
                'size': 3},
              )],
-         'title': 'Unstructured, Unstructured',
-         'filename': 'plot_unstruct_unstruct.png',
-        },
-        # Like block-block.
-        {'shape': (4, 8),
-         'dimdata': [
-            ({'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 0,
-              'stop': 2},
-             {'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 0,
-              'stop': 4}),
-            ({'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 0,
-              'stop': 2},
-             {'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 4,
-              'stop': 8}),
-            ({'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 2,
-              'stop': 4},
-             {'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 0,
-              'stop': 4}),
-            ({'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 4,
-              'start': 2,
-              'stop': 4},
-             {'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 8,
-              'start': 4,
-              'stop': 8}),
-          ],
-         'title': 'Slithery, Python',
-         'filename': 'plot_slithery_python.png',
+         'title': 'Attempt #1: Unstructured, Unstructured',
+         'filename': 'plot_unstruct_unstruct_1.png',
         },
         {'shape': (40, 40),
+         'skip': True,
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -481,8 +437,8 @@ def create_distributed_protocol_documentation_plots():
                'proc_grid_size': 2,
                'size': 40},
              )],
-         'title': 'Slithery, Python',
-         'filename': 'plot_slithery_python.png',
+         'title': 'Attempt #2: Unstructured, Unstructured',
+         'filename': 'plot_unstruct_unstruct_2.png',
         },
     ]
 
