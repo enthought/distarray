@@ -85,8 +85,6 @@ class DapTestMixin(object):
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
-        self.assertEqual(larr.ndistdim, self.larr.ndistdim)
-        self.assertEqual(larr.distdims, self.larr.distdims)
         self.assertEqual(larr.comm.Get_topo(), self.larr.comm.Get_topo())
         self.assertEqual(len(larr.maps), len(self.larr.maps))
         self.assertEqual(larr.local_shape, self.larr.local_shape)
@@ -100,8 +98,6 @@ class DapTestMixin(object):
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
         self.assertEqual(larr.comm_size, self.larr.comm_size)
-        self.assertEqual(larr.ndistdim, self.larr.ndistdim)
-        self.assertEqual(larr.distdims, self.larr.distdims)
         self.assertEqual(larr.comm.Get_topo(), self.larr.comm.Get_topo())
         self.assertEqual(len(larr.maps), len(self.larr.maps))
         self.assertEqual(larr.local_shape, self.larr.local_shape)
@@ -161,9 +157,7 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 12
+    comm_size = 12
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99),
@@ -201,9 +195,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
 class TestDapLopsided(DapTestMixin, MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         if self.comm.Get_rank() == 0:

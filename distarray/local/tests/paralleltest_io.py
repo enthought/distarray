@@ -11,7 +11,8 @@ import numpy
 from numpy.testing import assert_allclose, assert_equal
 from distarray.testing import MpiTestCase, import_or_skip, temp_filepath
 from distarray.local import LocalArray, ndenumerate
-from distarray.local import save, load, save_hdf5, load_hdf5, load_npy
+from distarray.local import (save_dnpy, load_dnpy, save_hdf5, load_hdf5,
+                             load_npy)
 
 
 class TestDnpyFileIO(MpiTestCase):
@@ -27,7 +28,7 @@ class TestDnpyFileIO(MpiTestCase):
             os.remove(self.output_path)
 
     def test_flat_file_save_with_filename(self):
-        save(self.output_path, self.larr0)
+        save_dnpy(self.output_path, self.larr0)
 
         with open(self.output_path, 'rb') as fp:
             magic = fp.read(6)
@@ -36,7 +37,7 @@ class TestDnpyFileIO(MpiTestCase):
 
     def test_flat_file_save_with_file_object(self):
         with open(self.output_path, 'wb') as fp:
-            save(fp, self.larr0)
+            save_dnpy(fp, self.larr0)
 
         with open(self.output_path, 'rb') as fp:
             magic = fp.read(6)
@@ -44,15 +45,15 @@ class TestDnpyFileIO(MpiTestCase):
         self.assertTrue(magic == b'\x93DARRY')
 
     def test_flat_file_save_load_with_filename(self):
-        save(self.output_path, self.larr0)
-        larr1 = load(self.output_path, comm=self.comm)
+        save_dnpy(self.output_path, self.larr0)
+        larr1 = load_dnpy(self.output_path, comm=self.comm)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
     def test_flat_file_save_load_with_file_object(self):
-        save(self.output_path, self.larr0)
+        save_dnpy(self.output_path, self.larr0)
         with open(self.output_path, 'rb') as fp:
-            larr1 = load(fp, comm=self.comm)
+            larr1 = load_dnpy(fp, comm=self.comm)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
@@ -133,9 +134,7 @@ nu_test_data = [
 
 class TestNpyFileLoad(MpiTestCase):
 
-    @classmethod
-    def get_comm_size(self):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
@@ -226,9 +225,7 @@ class TestHdf5FileSave(MpiTestCase):
 
 class TestHdf5FileLoad(MpiTestCase):
 
-    @classmethod
-    def get_comm_size(cls):
-        return 2
+    comm_size = 2
 
     def setUp(self):
         self.rank = self.comm.Get_rank()

@@ -16,72 +16,23 @@ import unittest
 import numpy
 
 from numpy.testing import assert_array_equal
-from random import shuffle
 from IPython.parallel import Client
-from distarray.externals.six.moves import range
 
+from distarray.externals.six.moves import range
 from distarray.client import DistArray
 from distarray.context import Context
-from distarray.local import LocalArray
 from distarray.testing import IpclusterTestCase
-
-
-class TestContext(unittest.TestCase):
-    """Test Context methods"""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = Client()
-        cls.context = Context(cls.client)
-        cls.ndarr = numpy.arange(16).reshape(4, 4)
-        cls.darr = cls.context.fromndarray(cls.ndarr)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Close the client connections"""
-        cls.client.close()
-
-    def test_get_localarrays(self):
-        las = self.darr.get_localarrays()
-        self.assertIsInstance(las[0], LocalArray)
-
-    def test_get_ndarrays(self):
-        ndarrs = self.darr.get_ndarrays()
-        self.assertIsInstance(ndarrs[0], numpy.ndarray)
-
-
-class TestContextCreation(IpclusterTestCase):
-    """Test Context Creation"""
-
-    def test_create_Context(self):
-        """Can we create a plain vanilla context?"""
-        dac = Context(self.client)
-        self.assertIs(dac.client, self.client)
-
-    def test_create_Context_with_targets(self):
-        """Can we create a context with a subset of engines?"""
-        dac = Context(self.client, targets=[0, 1])
-        self.assertIs(dac.client, self.client)
-
-    def test_create_Context_with_targets_ranks(self):
-        """Check that the target <=> rank mapping is consistent."""
-        targets = [3, 2]
-        dac = Context(self.client, targets=targets)
-        self.assertEqual(set(dac.targets), set(targets))
-
-    def test_context_target_reordering(self):
-        '''Are contexts' targets reordered in a consistent way?'''
-        orig_targets = self.client.ids
-        ctx1 = Context(self.client, targets=shuffle(orig_targets[:]))
-        ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
-        self.assertEqual(ctx1.targets, ctx2.targets)
-
 
 
 class TestDistArray(IpclusterTestCase):
 
     def setUp(self):
         self.dac = Context(self.client)
+
+     # overloads base class...
+    def tearDown(self):
+        del self.dac
+        super(TestDistArray, self).tearDown()
 
     def test_create_client_map(self):
         dap = self.dac.zeros((100, 100), dist=('b', 'b'))
@@ -177,6 +128,11 @@ class TestDistArrayCreation(IpclusterTestCase):
     def setUp(self):
         self.context = Context(self.client)
 
+     # overloads base class...
+    def tearDown(self):
+        del self.context
+        super(TestDistArrayCreation, self).tearDown()
+
     def test_zeros(self):
         shape = (16, 16)
         zero_distarray = self.context.zeros(shape)
@@ -214,6 +170,9 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.darr
+        del cls.arr
+        del cls.context
         cls.client.close()
 
     def test_sum(self):

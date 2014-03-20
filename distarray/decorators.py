@@ -66,11 +66,11 @@ class DecoratorBase(object):
         This allows us to use the following interface to execute code on
         the engines:
 
-        def foo(*args, **kwargs):
-            args, kwargs = _key_and_push_args(args, kwargs)
-            exec_str = "remote_foo(*%s, **%s)"
-            exec_str %= (args, kwargs)
-            context.execute(exec_str)
+        >>> def foo(*args, **kwargs):
+        >>>     args, kwargs = _key_and_push_args(args, kwargs)
+        >>>     exec_str = "remote_foo(*%s, **%s)"
+        >>>     exec_str %= (args, kwargs)
+        >>>     context.execute(exec_str)
         """
 
         if context is None:
@@ -137,8 +137,8 @@ class DecoratorBase(object):
                     typestring == "<class 'NoneType'>")
 
         def is_LocalArray(typestring):
-            return (typestring == "<class 'distarray.local.denselocalarray"
-                                  ".DenseLocalArray'>")
+            return (typestring == "<class 'distarray.local.localarray."
+                                  "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
             result = DistArray(result_key, context)

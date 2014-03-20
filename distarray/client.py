@@ -50,14 +50,14 @@ def process_return_value(subcontext, result_key, targets):
                 typestring == "<class 'NoneType'>")
 
     def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.local.denselocalarray.DenseLocalArray'>"
+        return typestring == "<class 'distarray.local.localarray.LocalArray'>"
 
     if all(is_LocalArray(r) for r in result_type_str):
         result = DistArray(result_key, subcontext)
     elif all(is_NoneType(r) for r in result_type_str):
         result = None
     else:
-        result = subcontext._pull(result_key)
+        result = subcontext._pull(result_key, targets=targets)
         if has_exactly_one(result):
             result = next(x for x in result if x is not None)
 
@@ -78,7 +78,7 @@ class DistArray(object):
         self.mdmap = mdmap
 
     def __del__(self):
-        self.context._execute('del %s' % self.key)
+        self.context.delete_key(self.key)
 
     def _get_attribute(self, name):
         key = self.context._generate_key()
@@ -137,11 +137,16 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
+            if self.mdmap:
+                ranks = self.mdmap.owning_ranks(index)
+            else:
+                ranks = range(len(self.context.targets))
+            targets = [self.context.targets[i] for i in ranks]
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_setitem(%s, %s)'
             statement = fmt % (result_key, self.key, index, value)
-            self.context._execute(statement)
-            result = process_return_value(self.context, result_key)
+            self.context._execute(statement, targets=targets)
+            result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
                 raise IndexError()
 

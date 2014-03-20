@@ -104,7 +104,14 @@ doc/source/generated
 # Things specific to this project #
 ###################################
 dist
+unittest*.out*
+.parallel_out
 
 # Coverage related files #
 ##########################
 .coverage*
+
+# Nose related files #
+######################
+
+.noseids

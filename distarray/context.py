@@ -50,8 +50,19 @@ class Context(object):
                           "import distarray.mpiutils; "
                           "import numpy")
 
+        self._setup_key_context()
         self._make_intracomm()
         self._set_engine_rank_mapping()
+
+    def __del__(self):
+        """ Clean up keys we have put on the engines. """
+        self._cleanup_keys()
+
+    def _cleanup_keys(self):
+        """ Delete all the keys we have created from all the engines. """
+        self.purge_keys()
+        # comm_key is now invalid.
+        self._comm_key = None
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
@@ -103,14 +114,108 @@ class Context(object):
             block=True
         )
 
-    def _generate_key(self):
+    # Key management routines:
+
+    def _setup_key_context(self):
+        """ Generate a unique string for this context.
+
+        This will be included in the names of all keys we create.
+        This prefix allows us to delete only keys from this context.
+        """
+        # Full length seems excessively verbose so use 16 characters.
         uid = uuid.uuid4()
-        return '__distarray_%s' % uid.hex
+        self.key_context = uid.hex[:16]
+
+    def _key_basename(self):
+        """ Get the base name for all keys. """
+        return '_distarray_key'
+
+    def _key_prefix(self):
+        """ Generate a prefix for a key name for this context. """
+        header = self._key_basename() + '_' + self.key_context
+        return header
+
+    def _generate_key(self):
+        """ Generate a unique key name for this context. """
+        uid = uuid.uuid4()
+        key = self._key_prefix() + '_' + uid.hex
+        return key
 
     def _key_and_push(self, *values):
         keys = [self._generate_key() for value in values]
         self._push(dict(zip(keys, values)))
         return tuple(keys)
+
+    def delete_key(self, key):
+        """ Delete the specific key from all the engines. """
+        cmd = 'del %s' % key
+        self._execute(cmd)
+
+    def purge_keys(self, all_other_contexts=False):
+        """ Delete keys that this context created from all the engines.
+
+        If all_other_contexts is False (the default), then this
+        deletes from the engines all the keys from only this context.
+        Otherwise, it deletes all keys from all other contexts.
+
+        """
+        basename = self._key_basename()
+        prefix = self._key_prefix()
+        if all_other_contexts:
+            # Delete distarray keys from all contexts except this one.
+            cmd = """for k in list(globals().keys()):
+                         if (k.startswith('%s')) and (not k.startswith('%s')):
+                             del globals()[k]""" % (basename, prefix)
+        else:
+            # Delete keys only from this context.
+            cmd = """for k in list(globals().keys()):
+                         if k.startswith('%s'):
+                             del globals()[k]""" % (prefix)
+        self._execute(cmd)
+
+    def dump_keys(self, all_other_contexts=False):
+        """ Return a list of the key names present on the engines.
+
+        If all_other_contexts is False (the default), then this
+        returns only the keys for this context.
+        Otherwise, it returns the keys for all other contexts.
+
+        The list is a list of tuples (key name, list of targets),
+        and is sorted by key name. This is intended to be convenient
+        and readable to print out.
+        """
+        dump_key = self._generate_key()
+        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
+            dump_key, self._key_basename())
+        self._execute(cmd)
+        keylists = self._pull(dump_key)
+        # The values returned by the engines are a nested list,
+        # the outer per engine, and the inner listing each key name.
+        # Convert to dict with key=key, value=list of targets.
+        engine_keys = {}
+        prefix = self._key_prefix()
+        for iengine, keylist in enumerate(keylists):
+            for key in keylist:
+                # Limit to the keys we care about.
+                if not all_other_contexts:
+                    # Skip keys not from this context.
+                    if not key.startswith(prefix):
+                        continue
+                else:
+                    # Skip keys from this context.
+                    if key.startswith(prefix):
+                        continue
+                if key not in engine_keys:
+                    engine_keys[key] = []
+                engine_keys[key].append(self.targets[iengine])
+        # Convert to sorted list of tuples (key name, list of targets).
+        keylist = []
+        for key in sorted(engine_keys.keys()):
+            targets = engine_keys[key]
+            keylist.append((key, targets))
+        return keylist
+
+    # End of key management routines.
 
     def _execute(self, lines, targets=None):
         targets = targets or self.targets
@@ -159,27 +264,44 @@ class Context(object):
         )
         return DistArray(da_key, self)
 
-    def save(self, name, da):
+    def save_dnpy(self, name, da):
         """
         Save a distributed array to files in the ``.dnpy`` format.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
 
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will save a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will save a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
-            corresponding to its rank.  An exception is raised if the
-            length of this list is not the same as the communicator's size.
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the context's communicator's size.
         da : DistArray
             Array to save to files.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        load_dnpy : Loading files saved with save_dnpy.
 
         """
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -187,31 +309,48 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save(%s[%s.comm_rank], %s)' % subs
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
 
-    def load(self, name):
+    def load_dnpy(self, name):
         """
         Load a distributed array from ``.dnpy`` files.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
 
         Parameters
         ----------
         name : str or list of str
             If a str, this is used as the prefix for the filename used by each
-            engine.  Each engine will load a file named
-            ``<name>_<rank>.dnpy``.
+            engine.  Each engine will load a file named ``<name>_<rank>.dnpy``.
             If a list of str, each engine will use the name at the index
             corresponding to its rank.  An exception is raised if the length of
-            this list is not the same as the communicator's size.
+            this list is not the same as the context's communicator's size.
 
         Returns
         -------
         result : DistArray
             A DistArray encapsulating the file loaded on each engine.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        save_dnpy : Saving files to load with with load_dnpy.
 
         """
         da_key = self._generate_key()
@@ -221,7 +360,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
             )
         elif isinstance(name, collections.Iterable):
             if len(name) != len(self.targets):
@@ -230,7 +369,7 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
                     self._comm_key)
             self._execute(
-                '%s = distarray.local.load(%s[%s.Get_rank()], %s)' % subs
+                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -252,6 +391,7 @@ class Context(object):
             The identifier for the group to save the DistArray to (the default
             is 'buffer').
         mode : optional, {'w', 'w-', 'a'}, default 'a'
+
             ``'w'``
                 Create file, truncate if exists
             ``'w-'``

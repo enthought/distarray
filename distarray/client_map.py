@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------------
 
 from itertools import product
-from distarray.local.base import _start_stop_block
+from distarray.local.localarray import _start_stop_block
 
 from distarray.externals.six.moves import range, reduce
 
@@ -68,7 +68,15 @@ class ClientCyclicMap(ClientMapBase):
 class ClientUnstructuredMap(ClientMapBase):
 
     def __init__(self, size, grid_size):
-        raise NotImplementedError()
+        self.size = size
+        self.grid_size = grid_size
+        self._owners = range(self.grid_size)
+
+    def owners(self, idx):
+        # TODO: FIXME: for now, the unstructured map just returns all
+        # processes.  Can be optimized if we know the upper and lower bounds
+        # for each local array's global indices.
+        return self._owners
 
 class ClientMDMap(object):
     '''
