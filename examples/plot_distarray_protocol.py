@@ -308,7 +308,7 @@ def create_distribution_plot_and_documentation_all(context):
         {'shape': (4, 8),
          'title': 'BlockPadded, BlockPadded',
          'labels': ('bp', 'bp'),
-         'filename': 'plot_blockpadded_blockpadded.png',
+         'filename': 'plot_blockpad_blockpad.png',
          'dimdata': [
             (
              {'size': 4,
@@ -378,6 +378,7 @@ def create_distribution_plot_and_documentation_all(context):
         },
         # 1D unstructured example.
         {'shape': (40,),
+         'skip': True,
          'title': 'Unstructured',
          'labels': ('u', 'u'),
          'filename': 'plot_unstructured.png',
@@ -411,7 +412,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Attempt #1: Unstructured, Unstructured',
          'labels': ('u', 'u'),
          'filename': 'plot_unstruct_unstruct_1.png',
-         'skip': True,
+         #'skip': True,
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -532,9 +533,10 @@ def create_distribution_plot_and_documentation_all(context):
     print('--------------------------------')
     print()
 
-    for params in params_list:
+    #for params in params_list:
     #for params in [params_list[0]]:
     #for params in [params_list[-1]]:
+    for params in params_list[-3:-1]:
         create_distribution_plot_and_documentation(context, params)
 
 
