@@ -9,6 +9,7 @@ import operator
 # from distarray.context import Context
 from distarray.local.localarray import _start_stop_block
 from distarray.metadata_utils import (normalize_dist,
+                                      normalize_grid_shape,
                                       make_grid_shape,
                                       validate_grid_shape)
 
@@ -95,15 +96,17 @@ class ClientMDMap(object):
     """
 
     def __init__(self, context, shape, dist, grid_shape=None):
-        # assert isinstance(context, Context)
+
         self.context = context
-        self.ndim = len(shape)
         self.shape = shape
+        self.ndim = len(shape)
         self.dist = normalize_dist(dist, self.ndim)
-        if grid_shape is None:
+
+        if grid_shape is None:  # Make a new grid_shape if not provided.
             self.grid_shape = make_grid_shape(self.shape, dist, len(context.targets))
-        else:
-            self.grid_shape = tuple(grid_shape) + (1,) * (len(shape) - len(grid_shape))
+        else:  # Otherwise normalize the one passed in.
+            self.grid_shape = normalize_grid_shape(grid_shape, self.ndim)
+        # In either case, validate.
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
@@ -111,8 +114,8 @@ class ClientMDMap(object):
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
-        self.maps = [client_map_factory(ss, dd, gg) 
-                     for (ss, dd, gg) in zip(self.shape, self.dist, self.grid_shape)]
+        self.maps = [client_map_factory(*args)
+                     for args in zip(self.shape, self.dist, self.grid_shape)]
 
 
     def owning_ranks(self, idxs):
@@ -120,6 +123,7 @@ class ClientMDMap(object):
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
+
 
     def owning_targets(self, idxs):
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]

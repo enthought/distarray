@@ -33,11 +33,19 @@ def make_grid_shape(global_shape, dist, comm_size):
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     return optimize_grid_shape(global_shape, distdims, comm_size)
 
+def normalize_grid_shape(grid_shape, ndims):
+    """ Adds 1's to grid_shape so it has `ndims` dimensions.
+    """
+    return tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
+
 
 def validate_grid_shape(grid_shape, dist, comm_size):
     """ Validates `grid_shape` tuple against the `dist` tuple and
     `comm_size`.
     """
+    if len(grid_shape) != len(dist):
+        msg = "grid_shape's length (%d) not equal to dist's length (%d)"
+        raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
     # check that if dist[i] == 'n' then grid_shape[i] == 1
     for dim, (gs, dd) in enumerate(zip(grid_shape, dist)):
         if dd == 'n' and gs != 1:
