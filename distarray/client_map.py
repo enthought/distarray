@@ -4,27 +4,27 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-from itertools import product
 import operator
-# from distarray.context import Context
+from itertools import product
+
+import numpy as np
+
+from distarray.externals.six.moves import range, reduce
 from distarray.local.localarray import _start_stop_block
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
                                       validate_grid_shape)
 
-from distarray.externals.six.moves import range, reduce
-
-import numpy as np
 
 def client_map_factory(size, dist, grid_size):
     """ Returns an instance of the appropriate subclass of ClientMapBase.
     """
     cls_from_dist = {
-            'b' : ClientBlockMap,
-            'c' : ClientCyclicMap,
-            'n' : ClientNoDistMap,
-            'u' : ClientUnstructuredMap,
+            'b': ClientBlockMap,
+            'c': ClientCyclicMap,
+            'n': ClientNoDistMap,
+            'u': ClientUnstructuredMap,
             }
     if dist not in cls_from_dist:
         raise ValueError("unknown distribution type for %r" % dist)
@@ -40,6 +40,7 @@ class ClientMapBase(object):
     """
     pass
 
+
 class ClientNoDistMap(ClientMapBase):
 
     def __init__(self, size, grid_size):
@@ -51,13 +52,14 @@ class ClientNoDistMap(ClientMapBase):
     def owners(self, idx):
         return [0] if idx >= 0 and idx < self.size else []
 
+
 class ClientBlockMap(ClientMapBase):
 
     def __init__(self, size, grid_size):
         self.size = size
         self.grid_size = grid_size
         self.bounds = [_start_stop_block(size, grid_size, grid_rank)
-                        for grid_rank in range(grid_size)]
+                       for grid_rank in range(grid_size)]
 
     def owners(self, idx):
         coords = []
@@ -66,15 +68,16 @@ class ClientBlockMap(ClientMapBase):
                 coords.append(coord)
         return coords
 
+
 class ClientCyclicMap(ClientMapBase):
-    
+
     def __init__(self, size, grid_size):
         self.size = size
         self.grid_size = grid_size
 
     def owners(self, idx):
         return [idx % self.grid_size]
-        
+
 
 class ClientUnstructuredMap(ClientMapBase):
 
@@ -103,7 +106,8 @@ class ClientMDMap(object):
         self.dist = normalize_dist(dist, self.ndim)
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
-            self.grid_shape = make_grid_shape(self.shape, dist, len(context.targets))
+            self.grid_shape = make_grid_shape(self.shape, dist,
+                                              len(context.targets))
         else:  # Otherwise normalize the one passed in.
             self.grid_shape = normalize_grid_shape(grid_shape, self.ndim)
         # In either case, validate.
@@ -117,13 +121,11 @@ class ClientMDMap(object):
         self.maps = [client_map_factory(*args)
                      for args in zip(self.shape, self.dist, self.grid_shape)]
 
-
     def owning_ranks(self, idxs):
         dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
-
 
     def owning_targets(self, idxs):
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]
