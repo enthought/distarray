@@ -210,7 +210,7 @@ def create_distribution_plot_and_documentation(context, params):
         filename=filename)
 
 
-def create_distribution_plot_and_documentation_all(context):
+def create_distribution_plot_and_documentation_all(context, add_header=False):
     """ Create plots for the distributed array protocol documentation. """
 
     # Some random values for undistributed example.
@@ -223,7 +223,6 @@ def create_distribution_plot_and_documentation_all(context):
         {'shape': (4, 8),
          'title': 'Block, Nondistributed',
          'labels': ('b', 'n'),
-         'text': '''Some description of Block, Nondistributed.''',
          'filename': 'plot_block_nondist.png',
          'dist': ('b', 'n'),
         },
@@ -466,9 +465,10 @@ def create_distribution_plot_and_documentation_all(context):
     ]
 
     # Document section header
-    print('Automatically Generated Examples')
-    print('--------------------------------')
-    print()
+    if add_header:
+        print('Automatically Generated Examples')
+        print('--------------------------------')
+        print()
 
     for params in params_list:
         create_distribution_plot_and_documentation(context, params)
