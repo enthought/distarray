@@ -117,5 +117,3 @@ class ClientMDMap(object):
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
-
-

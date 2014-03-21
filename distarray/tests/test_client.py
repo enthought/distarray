@@ -34,10 +34,6 @@ class TestDistArray(IpclusterTestCase):
         del self.dac
         super(TestDistArray, self).tearDown()
 
-    def test_create_client_map(self):
-        dap = self.dac.zeros((100, 100), dist=('b', 'b'))
-        cfromr = dap._get_coords_from_rank()
-
     def test_set_and_getitem_block_dist(self):
         size = 10
         dap = self.dac.empty((size,), dist={0: 'b'})

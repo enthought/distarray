@@ -105,12 +105,6 @@ class DistArray(object):
         result = self.context._pull0(key)
         return result
 
-    def _get_coords_from_rank(self):
-        coords_key = self.context._generate_key()
-        self.context._execute("%s = %s.cart_coords" % (coords_key, self.key))
-        coords = self.context._pull(coords_key)
-        return coords
-
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
