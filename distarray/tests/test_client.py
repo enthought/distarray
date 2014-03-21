@@ -16,7 +16,6 @@ import unittest
 import numpy
 
 from numpy.testing import assert_array_equal, assert_allclose
-from random import shuffle
 from IPython.parallel import Client
 
 from distarray.externals.six.moves import range
@@ -186,7 +185,6 @@ class TestDistArrayCreation(IpclusterTestCase):
     def test_from_dim_data_bu(self):
         rows = 9
         cols = 10
-        row_indices = range(rows)
         col_indices = numpy.random.permutation(range(cols))
         ddpp = [
              (
@@ -245,7 +243,6 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
-        localarrays = distarr.get_localarrays()
 
     def test_from_dim_data_uu(self):
         rows = 6
@@ -305,7 +302,6 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
-        localarrays = distarr.get_localarrays()
 
 
 class TestReduceMethods(unittest.TestCase):
