@@ -15,6 +15,7 @@ The output .png files should be copied to the images folder as well.
 from __future__ import print_function
 
 from pprint import pprint
+from numpy.random import permutation
 
 import distarray
 from distarray import plotting
@@ -145,7 +146,6 @@ def create_distribution_plot_and_documentation(context, params):
     skip = params.get('skip', False)
 
     if skip:
-        print('Skipping %s...' % (title))
         return
 
     # Skip if dimdata count does not match context.
@@ -153,8 +153,6 @@ def create_distribution_plot_and_documentation(context, params):
         num_dimdata = len(dimdata)
         num_targets = len(context.targets)
         if num_dimdata != num_targets:
-            print('Skipping %s, num_dimdata %d != num_targets %d' % (
-                title, num_dimdata, num_targets))
             return
 
     # Create array, either from dist or dimdata.
@@ -214,6 +212,12 @@ def create_distribution_plot_and_documentation(context, params):
 
 def create_distribution_plot_and_documentation_all(context):
     """ Create plots for the distributed array protocol documentation. """
+
+    # Some random values for undistributed example.
+    rows, cols = 4, 8
+    row_indices = permutation(range(rows))
+    col_indices = permutation(range(cols))
+
     params_list = [
         # Examples using simple dist specification.
         {'shape': (4, 8),
@@ -376,7 +380,7 @@ def create_distribution_plot_and_documentation_all(context):
              ),
           ],
         },
-        # 1D unstructured example.
+        # 1D unstructured example. Skipped for now but may be a useful example.
         {'shape': (40,),
          'skip': True,
          'title': 'Unstructured',
@@ -404,126 +408,59 @@ def create_distribution_plot_and_documentation_all(context):
               'proc_grid_size': 4,
               'size': 40},)],
         },
-        #
-        # Some attempts at a 2D unstructured array.
-        # I have not been able to get these to work yet.
-        #
-        {'shape': (3, 3),
-         'title': 'Attempt #1: Unstructured, Unstructured',
+        # Unstructured, unstructured.
+        {'shape': (rows, cols),
+         'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
-         'filename': 'plot_unstruct_unstruct_1.png',
-         #'skip': True,
+         'filename': 'plot_unstruct_unstruct.png',
          'dimdata': [
              (
               {'dist_type': 'u',
-               #'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-               'indices': [0, 1],
+               'indices': row_indices[:rows // 2],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': rows},
               {'dist_type': 'u',
-               #'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-               'indices': [0, 1],
+               'indices': col_indices[:cols // 4],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': cols},
              ),
              (
               {'dist_type': 'u',
-               #'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-               'indices': [2],
+               'indices': row_indices[:rows // 2],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': rows},
               {'dist_type': 'u',
-               #'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-               'indices': [2],
+               'indices': col_indices[cols // 4:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': cols},
              ),
              (
               {'dist_type': 'u',
-               #'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-               'indices': [],
+               'indices': row_indices[rows // 2:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': rows},
               {'dist_type': 'u',
-               #'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-               'indices': [],
+               'indices': col_indices[:cols // 4],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': cols},
              ),
              (
               {'dist_type': 'u',
-               #'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-               'indices': [],
+               'indices': row_indices[rows // 2:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
-               'size': 3},
+               'size': rows},
               {'dist_type': 'u',
-               #'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-               'indices': [],
+               'indices': col_indices[cols // 4:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
-               'size': 3},
-             )],
-        },
-        {'shape': (40, 40),
-         'title': 'Attempt #2: Unstructured, Unstructured',
-         'labels': ('u', 'u'),
-         'filename': 'plot_unstruct_unstruct_2.png',
-         'skip': True,
-         'dimdata': [
-             (
-              {'dist_type': 'u',
-               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': 40},
-              {'dist_type': 'u',
-               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': 40},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': 40},
-              {'dist_type': 'u',
-               'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': 40},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': 40},
-              {'dist_type': 'u',
-               'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': 40},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': 40},
-              {'dist_type': 'u',
-               'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': 40},
+               'size': cols},
              )],
         },
     ]
@@ -533,10 +470,7 @@ def create_distribution_plot_and_documentation_all(context):
     print('--------------------------------')
     print()
 
-    #for params in params_list:
-    #for params in [params_list[0]]:
-    #for params in [params_list[-1]]:
-    for params in params_list[-3:-1]:
+    for params in params_list:
         create_distribution_plot_and_documentation(context, params)
 
 
