@@ -396,16 +396,19 @@ class LocalArray(object):
     #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
+        """Return a copy of this LocalArray with a new underlying dtype."""
         if newdtype is None:
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.global_shape, dtype=newdtype,
-                                dist=self.dist, grid_shape=self.grid_shape,
-                                comm=self.base_comm, buf=local_copy)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=newdtype,
+                                                  comm=self.base_comm,
+                                                  buf=local_copy)
             return new_da
 
     def copy(self):
+        """Return a copy of this LocalArray."""
         local_copy = self.local_array.copy()
         return self.__class__.from_dim_data(dim_data=self.dim_data,
                                             dtype=self.dtype,
@@ -419,12 +422,26 @@ class LocalArray(object):
             return self.local_array.view(dtype)
 
     def view(self, dtype=None):
+        """Return a new LocalArray whose underlying `local_array` is a view on
+        `self.local_array`.
+
+        Note
+        ----
+        Currently unimplemented for ``dtype is not None``.
+        """
         if dtype is None:
-            new_da = LocalArray(self.global_shape, self.dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=self.dtype,
+                                                  comm=self.base_comm,
+                                                  buf=self.local_array)
         else:
-            new_da = LocalArray(self.global_shape, dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            _raise_nie()
+            #TODO: to implement this properly, a new dim_data will need to
+            #      generated that reflects the size and shape of the new dtype.
+            #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+            #                                      dtype=dtype,
+            #                                      comm=self.base_comm,
+            #                                      buf=self.local_array)
         return new_da
 
     def __array__(self, dtype=None):
