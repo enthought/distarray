@@ -24,13 +24,14 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def start(n=4):
+def start(args):
     """Convenient way to start an ipcluster for testing.
 
     Doesn't exit until the ipcluster prints a success message.
     """
+    nengines = args.nengines
     engines = "--engines=MPIEngineSetLauncher"
-    cluster = Popen([ipcluster_cmd, 'start', '-n', str(n), engines],
+    cluster = Popen([ipcluster_cmd, 'start', '-n', str(nengines), engines],
                     stdout=PIPE, stderr=PIPE)
 
     started = "Engines appear to have started successfully"
@@ -46,7 +47,7 @@ def start(n=4):
             raise RuntimeError("ipcluster is already running.")
 
 
-def stop():
+def stop(args):
     """Convenient way to stop an ipcluster."""
     stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
 
@@ -62,19 +63,20 @@ def stop():
             break
 
 
-def restart():
+def restart(args):
     """Convenient way to restart an ipcluster."""
-    stop()
+    stop(args)
 
     started = False
     while not started:
         sleep(2)
         try:
-            start()
+            start(args)
         except RuntimeError:
             pass
         else:
             started = True
+
 
 _RESET_ENGINE_DISTARRAY = '''
 from sys import modules
@@ -85,7 +87,7 @@ for m in modules.copy():
 deleted_mods = sorted(orig_mods - set(modules))
 '''
 
-def reset():
+def reset(args):
     from IPython.parallel import Client
     c = Client()
     dv = c[:]
@@ -98,7 +100,21 @@ def reset():
 
 
 if __name__ == '__main__':
-    cmd = sys.argv[1]
-    if cmd not in 'start stop restart reset'.split():
-        sys.exit("Error: %r not a valid command." % cmd)
-    globals()[cmd]()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+
+    parser_start = subparsers.add_parser('start')
+    parser_start.add_argument('nengines', type=int)
+    parser_start.set_defaults(func=start)
+
+    parser_restart = subparsers.add_parser('restart')
+    parser_restart.add_argument('nengines', type=int)
+    parser_restart.set_defaults(func=restart)
+
+    subparsers.add_parser('stop').set_defaults(func=stop)
+    subparsers.add_parser('reset').set_defaults(func=reset)
+
+    args = parser.parse_args()
+    args.func(args)
