@@ -10,6 +10,7 @@ before_install:
     - pip install numpy
     - pip install pyzmq --install-option="--zmq=bundled"
     - pip install ipython
+      #- pip install matplotlib  # takes too long to build
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
     - pip install cython
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git --install-option="--mpi"

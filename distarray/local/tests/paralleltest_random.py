@@ -16,18 +16,16 @@ class TestBasic(MpiTestCase):
     def shape_asserts(self, la):
         self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.dist, ('b', 'n'))
-        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.grid_shape, (4, 1))
         self.assertEqual(la.base_comm, self.comm)
         self.assertEqual(la.comm_size, 4)
         self.assertTrue(la.comm_rank in range(4))
-        self.assertEqual(la.ndistdim, 1)
-        self.assertEqual(la.distdims, (0,))
         self.assertEqual(la.comm.Get_topo(),
                          (list(la.grid_shape),
-                          [0],[la.comm_rank]))
+                          [0,0],list(la.cart_coords)))
         self.assertEqual(len(la.maps), 2)
         self.assertEqual(la.global_shape, (16, 16))
-        self.assertEqual(la.grid_shape, (4,))
+        self.assertEqual(la.grid_shape, (4, 1))
         self.assertEqual(la.local_shape, (4, 16))
         self.assertEqual(la.local_array.shape, la.local_shape)
         self.assertEqual(la.local_array.dtype, la.dtype)
