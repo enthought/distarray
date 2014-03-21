@@ -76,26 +76,20 @@ def _make_mdmap_from_local(local_name, context):
     dist_name = context._generate_key()
     grid_shape_name = context._generate_key()
     context._execute0(_MDMAP_ATTRS.format(**locals()))
-    global_shape = context._pull0(global_shape_name)
-    dist = context._pull0(dist_name)
-    grid_shape = context._pull0(grid_shape_name)
+    global_shape, dist, grid_shape = context._pull0([global_shape_name, dist_name, grid_shape_name])
     return ClientMDMap(context, global_shape, dist, grid_shape)
+
+
+def _get_attribute(context, key, name):
+    local_key = context._generate_key()
+    context._execute0('%s = %s.%s' % (local_key, key, name))
+    result = context._pull0(local_key)
+    return result
 
 
 class DistArray(object):
 
     __array_priority__ = 20.0
-
-    # TODO: make classmethod `from_localarrays(key, context, ...)`. What does
-    # __init__ do in that case?  Does __init__ always create an essentially
-    # `empty` distarray to be initialized some other way?
-
-    @classmethod
-    def from_localarrays(cls, key, context):
-        da = cls.__new__(cls)
-        da.key = key
-        da.mdmap = _make_mdmap_from_local(key, context)
-        return da
 
     def __init__(self, mdmap, dtype):
         """ Creates a new empty distarray according to the multi-dimensional
@@ -107,12 +101,26 @@ class DistArray(object):
         comm = ctx._comm_key
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
-        shape, dist, grid_shape = mdmap.shape, mdmap.dist, mdmap.grid_shape
-        shape_name, dtype_name, dist_name, grid_shape_name = ctx._key_and_push(shape, dtype, dist, grid_shape)
+        names = ctx._key_and_push(mdmap.shape, dtype, mdmap.dist, mdmap.grid_shape)
+        shape_name, dtype_name, dist_name, grid_shape_name = names
         cmd = '{da_key} = distarray.local.empty({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
         ctx._execute(cmd.format(**locals()))
         self.mdmap = mdmap
         self.key = da_key
+        self._dtype = dtype
+
+    @classmethod
+    def from_localarrays(cls, key, context):
+        """ The caller has already created the LocalArray objects.  `key` is
+        their name on the engines.  This classmethod creates a DistArray that
+        refers to these LocalArrays.
+
+        """
+        da = cls.__new__(cls)
+        da.key = key
+        da.mdmap = _make_mdmap_from_local(key, context)
+        da._dtype = _get_attribute(context, key, 'dtype')
+        return da
 
     def __del__(self):
         self.context.delete_key(self.key)
@@ -194,10 +202,6 @@ class DistArray(object):
         return self.mdmap.dist
 
     @property
-    def dtype(self):
-        return self._get_attribute('dtype')
-
-    @property
     def grid_shape(self):
         return self.mdmap.grid_shape
 
@@ -210,8 +214,12 @@ class DistArray(object):
         return self.size * self.itemsize
 
     @property
-    def item_size(self):
-        return self._get_attribute('item_size')
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def itemsize(self):
+        return self._dtype.itemsize
 
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
