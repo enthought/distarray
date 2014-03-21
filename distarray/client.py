@@ -125,12 +125,6 @@ class DistArray(object):
     def __del__(self):
         self.context.delete_key(self.key)
 
-    def _get_attribute(self, name):
-        key = self.context._generate_key()
-        self.context._execute0('%s = %s.%s' % (key, self.key, name))
-        result = self.context._pull0(key)
-        return result
-
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
             (self.shape, self.context.targets)
