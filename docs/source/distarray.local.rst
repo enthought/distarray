@@ -4,15 +4,7 @@ local Package
 :mod:`local` Package
 --------------------
 
-.. automodule:: distarray.local
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`base` Module
-------------------
-
-.. automodule:: distarray.local.base
+.. automodule:: distarray.local.__init__
     :members:
     :undoc-members:
     :show-inheritance:
@@ -25,10 +17,10 @@ local Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`denselocalarray` Module
+:mod:`localarray` Module
 -----------------------------
 
-.. automodule:: distarray.local.denselocalarray
+.. automodule:: distarray.local.localarray
     :members:
     :undoc-members:
     :show-inheritance:
@@ -37,6 +29,14 @@ local Package
 -------------------
 
 .. automodule:: distarray.local.error
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`format` Module
+--------------------
+
+.. automodule:: distarray.local.format
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,11 +56,3 @@ local Package
     :members:
     :undoc-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    distarray.local.tests
-

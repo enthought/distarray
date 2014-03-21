@@ -9,26 +9,71 @@ from __future__ import print_function, division
 #----------------------------------------------------------------------------
 # Imports
 #----------------------------------------------------------------------------
-
-from distarray.externals import six
 import math
+import operator
+from functools import reduce
+from collections import Mapping
 
 import numpy as np
-from distarray.externals.six.moves import zip
-from collections import Mapping
+
+from distarray.externals import six
+from distarray.externals.six import next
+from distarray.externals.six.moves import zip, range
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import construct, format, maps
-from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-# Base LocalArray class
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+def distribute_indices(dim_data):
+    """Fill in missing index related keys...
+
+    for supported dist_types.
+    """
+    distribute_fn = {
+        'n': lambda dd: None,
+        'b': distribute_block_indices,
+        'c': distribute_cyclic_indices,
+        'u': lambda dd: None,
+        }
+    for dim in dim_data:
+        distribute_fn[dim['dist_type']](dim)
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` given dimdict `dd`."""
+    if 'start' in dd:
+        return
+    else:
+        dd['start'] = dd['proc_grid_rank']
+
+
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dimdict `dd`."""
+    if ('start' in dd) and ('stop' in dd):
+        return
+
+    nelements = dd['size'] // dd['proc_grid_size']
+    if dd['size'] % dd['proc_grid_size'] != 0:
+        nelements += 1
+
+    dd['start'] = dd['proc_grid_rank'] * nelements
+    if dd['start'] > dd['size']:
+        dd['start'] = dd['size']
+        dd['stop'] = dd['size']
+
+    dd['stop'] = dd['start'] + nelements
+    if dd['stop'] > dd['size']:
+        dd['stop'] = dd['size']
+
+def _normalize_dim_data(dim_data):
+    ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
+    for dd in dim_data:
+        if dd['dist_type'] == 'n':
+            dd['proc_grid_size'] = 1
+            dd['proc_grid_rank'] = 0
+    return dim_data
 
 
 def make_partial_dim_data(shape, dist=None, grid_shape=None):
@@ -56,7 +101,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
 
     dist_tuple = construct.init_dist(dist, len(shape))
 
-    if grid_shape:  # if None, BaseLocalArray will initialize
+    if grid_shape:  # if None, LocalArray will initialize
         grid_gen = iter(grid_shape)
 
     dim_data = []
@@ -73,13 +118,37 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     return tuple(dim_data)
 
 
-class LocalArray(BaseLocalArray):
+class LocalArray(object):
 
     """Distributed memory Python arrays."""
+
+    __array_priority__ = 20.0
 
     #-------------------------------------------------------------------------
     # Methods used for initialization
     #-------------------------------------------------------------------------
+
+    def _init(self, dim_data, dtype=None, buf=None, comm=None):
+        """Private init method."""
+        self.dim_data = _normalize_dim_data(dim_data)
+        self.base_comm = construct.init_base_comm(comm)
+
+        grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
+        for gs, dd in zip(grid_shape, self.dim_data):
+            dd['proc_grid_size'] = gs
+
+        self.comm = construct.init_comm(self.base_comm, grid_shape)
+
+        self._cache_proc_grid_rank()
+        distribute_indices(self.dim_data)
+        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
+                          for dimdict in dim_data)
+
+        self.local_array = self._make_local_array(buf=buf, dtype=dtype)
+
+        self.base = None
+        self.ctypes = None
+
 
     @classmethod
     def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
@@ -110,8 +179,7 @@ class LocalArray(BaseLocalArray):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                         buf=buf, comm=comm)
+        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -144,12 +212,97 @@ class LocalArray(BaseLocalArray):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        super(LocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                         buf=buf, comm=comm)
+        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
 
     def __del__(self):
-        super(LocalArray, self).__del__()
+        # If the __init__ method fails, we may not have a valid comm
+        # attribute and this needs to be protected against.
+        if hasattr(self, 'comm'):
+            if self.comm is not None:
+                try:
+                    self.comm.Free()
+                except:
+                    pass
 
+    @property
+    def local_shape(self):
+        return tuple(m.size for m in self.maps)
+
+    @property
+    def grid_shape(self):
+        return tuple(dd['proc_grid_size'] for dd in self.dim_data)
+
+    @property
+    def global_shape(self):
+        return tuple(dd['size'] for dd in self.dim_data)
+
+    @property
+    def ndim(self):
+        return len(self.dim_data)
+
+    @property
+    def size(self):
+        return reduce(operator.mul, self.global_shape)
+
+    @property
+    def comm_size(self):
+        return self.base_comm.Get_size()
+
+    @property
+    def comm_rank(self):
+        return self.base_comm.Get_rank()
+
+    @property
+    def dist(self):
+        return tuple(dd['dist_type'] for dd in self.dim_data)
+
+    @property
+    def cart_coords(self):
+        rval = tuple(dd['proc_grid_rank'] for dd in self.dim_data)
+        assert rval == tuple(self.comm.Get_coords(self.comm_rank))
+        return rval
+
+    @property
+    def local_size(self):
+        return self.local_array.size
+
+    @property
+    def data(self):
+        return self.local_array.data
+
+    @property
+    def dtype(self):
+        return self.local_array.dtype
+
+    @property
+    def itemsize(self):
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self):
+        return self.size * self.itemsize
+
+    def _cache_proc_grid_rank(self):
+        cart_coords = self.comm.Get_coords(self.comm_rank)
+        assert len(cart_coords) == len(self.dim_data)
+        for dim, cart_rank in zip(self.dim_data, cart_coords):
+            dim['proc_grid_rank'] = cart_rank
+
+    def _make_local_array(self, buf=None, dtype=None):
+        """Encapsulate `buf` or create an empty local array.
+
+        Returns
+        -------
+        local_array : numpy array
+        """
+        if buf is None:
+            return np.empty(self.local_shape, dtype=dtype)
+        else:
+            mv = memoryview(buf)
+            return np.asarray(mv, dtype=dtype)
+
+    def compatibility_hash(self):
+        return hash((self.global_shape, self.dist, self.grid_shape, True))
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
     #-------------------------------------------------------------------------
@@ -220,16 +373,12 @@ class LocalArray(BaseLocalArray):
         return self.comm.Get_cart_rank(coords)
 
     def global_to_local(self, *global_ind):
-        local_ind = list(global_ind)
-        for dd in self.distdims:
-            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
-        return tuple(local_ind)
+        return tuple(self.maps[dim].local_index[global_ind[dim]]
+                     for dim in range(self.ndim))
 
     def local_to_global(self, *local_ind):
-        global_ind = list(local_ind)
-        for dd in self.distdims:
-            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
-        return tuple(global_ind)
+        return tuple(self.maps[dim].global_index[local_ind[dim]]
+                     for dim in range(self.ndim))
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
@@ -817,7 +966,6 @@ class LocalArray(BaseLocalArray):
 # 4.1 Creating arrays
 #----------------------------------------------------------------------------
 
-
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
 
@@ -935,6 +1083,7 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         The identifier for the group to save the LocalArray to (the default is
         'buffer').
     mode : optional, {'w', 'w-', 'a'}, default 'a'
+
         ``'w'``
             Create file, truncate if exists
         ``'w-'``
@@ -1138,6 +1287,11 @@ def where(condition, x=None, y=None):
 #----------------------------------------------------------------------------
 # 4.2 Operations on two or more arrays
 #----------------------------------------------------------------------------
+
+def arecompatible(a, b):
+    """Do these arrays have the same compatibility hash?"""
+    return a.compatibility_hash() == b.compatibility_hash()
+
 
 def concatenate(seq, axis=0):
     _raise_nie()

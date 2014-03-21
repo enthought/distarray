@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
+from distarray.local import arecompatible
 import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
 from distarray.testing import MpiTestCase
@@ -20,10 +21,10 @@ class TestFunctions(MpiTestCase):
         """Test if two DistArrays are compatible."""
         a = LocalArray((16,16), dtype='int64', comm=self.comm)
         b = LocalArray((16,16), dtype='float32', comm=self.comm)
-        self.assertEqual(localarray.arecompatible(a,b), True)
+        self.assertEqual(arecompatible(a,b), True)
         a = LocalArray((16, 16), dtype='int64', dist='c', comm=self.comm)
         b = LocalArray((16, 16), dtype='float32', dist='b', comm=self.comm)
-        self.assertEqual(localarray.arecompatible(a,b), False)
+        self.assertEqual(arecompatible(a,b), False)
 
     def test_fromfunction(self):
         """Can we build an array using fromfunction and a trivial function?"""
