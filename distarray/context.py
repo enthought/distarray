@@ -244,8 +244,7 @@ class Context(object):
         comm = self._comm_key
         cmd = '{da_key} = {local_call}({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
         self._execute(cmd.format(**locals()))
-        mdmap = ClientMDMap(self, shape, dist, grid_shape)
-        return DistArray(da_key, self, mdmap)
+        return DistArray.from_localarrays(da_key, self)
 
     def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         return self._create_local(local_call='distarray.local.zeros',
@@ -373,7 +372,7 @@ class Context(object):
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
@@ -444,7 +443,7 @@ class Context(object):
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def load_hdf5(self, filename, dim_data_per_process, key='buffer',
                   grid_shape=None):
@@ -488,7 +487,7 @@ class Context(object):
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
         """Convert an ndarray to a distarray."""
@@ -507,4 +506,4 @@ class Context(object):
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
-        return DistArray(new_key, self)
+        return DistArray.from_localarrays(new_key, self)

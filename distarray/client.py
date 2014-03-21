@@ -12,7 +12,6 @@ import operator
 from itertools import product
 
 import numpy as np
-from IPython.parallel import Client
 
 import distarray
 from distarray.client_map import ClientMDMap
@@ -54,7 +53,7 @@ def process_return_value(subcontext, result_key, targets):
         return typestring == "<class 'distarray.local.localarray.LocalArray'>"
 
     if all(is_LocalArray(r) for r in result_type_str):
-        result = DistArray(result_key, subcontext)
+        result = DistArray.from_localarrays(result_key, subcontext)
     elif all(is_NoneType(r) for r in result_type_str):
         result = None
     else:
@@ -91,10 +90,29 @@ class DistArray(object):
     # __init__ do in that case?  Does __init__ always create an essentially
     # `empty` distarray to be initialized some other way?
 
-    def __init__(self, key, context, mdmap=None):
-        # TODO: make this a classmethod named `fromlocalarray`
-        self.key = key
-        self.mdmap = mdmap or _make_mdmap_from_local(key, context)
+    @classmethod
+    def from_localarrays(cls, key, context):
+        da = cls.__new__(cls)
+        da.key = key
+        da.mdmap = _make_mdmap_from_local(key, context)
+        return da
+
+    def __init__(self, mdmap, dtype):
+        """ Creates a new empty distarray according to the multi-dimensional
+        map given.
+        """
+        # FIXME: code duplication with context.py.
+        ctx = mdmap.context
+        # FIXME: this is bad...
+        comm = ctx._comm_key
+        # FIXME: and this is bad...
+        da_key = ctx._generate_key()
+        shape, dist, grid_shape = mdmap.shape, mdmap.dist, mdmap.grid_shape
+        shape_name, dtype_name, dist_name, grid_shape_name = ctx._key_and_push(shape, dtype, dist, grid_shape)
+        cmd = '{da_key} = distarray.local.empty({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
+        ctx._execute(cmd.format(**locals()))
+        self.mdmap = mdmap
+        self.key = da_key
 
     def __del__(self):
         self.context.delete_key(self.key)

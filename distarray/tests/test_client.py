@@ -20,6 +20,7 @@ from IPython.parallel import Client
 
 from distarray.externals.six.moves import range
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 from distarray.context import Context
 from distarray.testing import IpclusterTestCase
 
@@ -128,6 +129,15 @@ class TestDistArrayCreation(IpclusterTestCase):
     def tearDown(self):
         del self.context
         super(TestDistArrayCreation, self).tearDown()
+
+    def test___init__(self):
+        shape = (100, 100)
+        mdmap = ClientMDMap(self.context, shape, ('b', 'c'))
+        da = DistArray(mdmap, dtype=int)
+        da.fill(42)
+        nda = numpy.empty(shape, dtype=int)
+        nda.fill(42)
+        assert_array_equal(da.tondarray(), nda)
 
     def test_zeros(self):
         shape = (16, 16)
