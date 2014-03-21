@@ -10,6 +10,8 @@ COVERAGE := coverage
 
 MPIEXEC := mpiexec
 
+NPROCS := 12
+
 PARALLEL_OUT_DIR := .parallel_out
 
 PARALLEL_UNITTEST_ARGS := -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
@@ -18,7 +20,7 @@ PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
 
 MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
-MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n 12
+MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n ${NPROCS}
 
 # Inside MPI_EXEC_CMD, PARALLEL_TEST is meant to be substituted with either
 # PARALLEL_TEST_REGULAR or PARALLEL_TEST_COVERAGE from above.  See the
