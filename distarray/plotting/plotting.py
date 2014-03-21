@@ -119,6 +119,24 @@ def plot_array_distribution(darray,
     bounds = range(num_processors + 1)
     norm = colors.BoundaryNorm(bounds, cmap.N)
 
+    # Choose a text color for each processor index.
+    # The idea is to pick black for colors near white.
+    # This is not sophisticated but ok for this use.
+    text_colors = []
+    for j in range(num_processors):
+        # Get rgb color that matshow() will use.
+        jj = float(j + 0.5) / float(num_processors)
+        cj = cmap(jj)
+        # Get average of rgb values.
+        avg = (cj[0] + cj[1] + cj[2]) / 3.0
+        # cyan gets avg=0.6111, yellow gets avg=0.6337.
+        # Choose cutoff for yellow and not cyan.
+        if avg >= 0.625:
+            text_color = 'black'
+        else:
+            text_color = 'white'
+        text_colors.append(text_color)
+
     # Plot the array.
     img = pyplot.matshow(process_array, cmap=cmap, norm=norm, *args, **kwargs)
 
@@ -147,11 +165,7 @@ def plot_array_distribution(darray,
             process = process_array[row, col]
             value = values_array[row, col]
             label = '%d' % (value)
-            color = 'white'
-            if process == 2:
-                # Black on yellow is more readable.
-                # Assumes that process=2 is colored yellow!
-                color = 'black'
+            color = text_colors[process]
             pyplot.text(
                 col, row, label,
                 horizontalalignment='center',
