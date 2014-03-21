@@ -100,7 +100,7 @@ restart_cluster:
 
 clear_distarray:
 	${PYTHON} ${IPCLUSTER_SCRIPT} 'reset'
-.PHONY: reset_cluster
+.PHONY: clear_distarray
 
 purge_cluster:
 	${PYTHON} ${PURGE_SCRIPT} 'purge'
@@ -108,7 +108,7 @@ purge_cluster:
 
 dump_cluster:
 	${PYTHON} ${PURGE_SCRIPT} 'dump'
-.PHONY: purge_cluster
+.PHONY: dump_cluster
 
 # ----------------------------------------------------------------------------
 #  Cleanup.

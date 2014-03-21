@@ -17,6 +17,22 @@ distarray
     :undoc-members:
     :show-inheritance:
 
+:mod:`context` Module
+---------------------
+
+.. automodule:: distarray.context
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`decorators` Module
+------------------------
+
+.. automodule:: distarray.decorators
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`error` Module
 -------------------
 
@@ -25,10 +41,26 @@ distarray
     :undoc-members:
     :show-inheritance:
 
+:mod:`functions` Module
+-----------------------
+
+.. automodule:: distarray.functions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`mpiutils` Module
 ----------------------
 
 .. automodule:: distarray.mpiutils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`random` Module
+--------------------
+
+.. automodule:: distarray.random
     :members:
     :undoc-members:
     :show-inheritance:
@@ -55,5 +87,5 @@ Subpackages
 .. toctree::
 
     distarray.local
-    distarray.tests
+    distarray.plotting
 
