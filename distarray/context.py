@@ -13,6 +13,7 @@ from IPython.parallel import Client
 import numpy
 
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 
 
 class Context(object):
@@ -244,7 +245,8 @@ class Context(object):
         self._execute(
             '%s = distarray.local.zeros(%s, %s, %s, %s, %s)' % subs
         )
-        return DistArray(da_key, self)
+        mdmap = ClientMDMap(self, shape, dist, grid_shape)
+        return DistArray(da_key, self, mdmap)
 
     def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         keys = self._key_and_push(shape, dtype, dist, grid_shape)

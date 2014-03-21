@@ -6,6 +6,8 @@
 
 from __future__ import print_function, division
 
+from distarray import metadata_utils
+
 #----------------------------------------------------------------------------
 # Imports
 #----------------------------------------------------------------------------
@@ -114,7 +116,7 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     if dist is None:
         dist = {0: 'b'}
 
-    dist_tuple = construct.init_dist(dist, len(shape))
+    dist_tuple = metadata_utils.normalize_dist(dist, len(shape))
 
     if grid_shape:  # if None, LocalArray will initialize
         grid_gen = iter(grid_shape)
@@ -148,11 +150,9 @@ class LocalArray(object):
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
 
-        grid_shape = construct.init_grid_shape(self.dim_data, self.comm_size)
-        for gs, dd in zip(grid_shape, self.dim_data):
-            dd['proc_grid_size'] = gs
+        self._init_grid_shape()
 
-        self.comm = construct.init_comm(self.base_comm, grid_shape)
+        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
@@ -163,6 +163,13 @@ class LocalArray(object):
 
         self.base = None
         self.ctypes = None
+
+    def _init_grid_shape(self):
+        grid_shape = metadata_utils.make_grid_shape(self.global_shape,
+                                                    self.dist,
+                                                    self.comm_size)
+        for gs, dd in zip(grid_shape, self.dim_data):
+            dd['proc_grid_size'] = gs
 
 
     @classmethod

@@ -4,9 +4,11 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-from collections import Mapping, Sequence
 from itertools import product
+import operator
+# from distarray.context import Context
 from distarray.local.localarray import _start_stop_block
+from distarray.metadata_utils import normalize_dist, make_grid_shape
 
 from distarray.externals.six.moves import range, reduce
 
@@ -90,14 +92,20 @@ class ClientMDMap(object):
     multi-dimensional objects.
     """
 
-    def __init__(self, shape, dist, grid_shape):
+    def __init__(self, context, shape, dist, grid_shape=None):
+        # assert isinstance(context, Context)
+        self.context = context
         self.ndim = len(shape)
         self.shape = shape
-        self.grid_shape = tuple(grid_shape) + (1,) * (len(shape) - len(grid_shape))
-        self.dist = _normalize_dist(self.ndim, dist)
+        self.dist = normalize_dist(dist, self.ndim)
+        if grid_shape is None:
+            self.grid_shape = make_grid_shape(self.shape, dist, len(context.targets))
+        else:
+            self.grid_shape = tuple(grid_shape) + (1,) * (len(shape) - len(grid_shape))
+
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
-        nelts = reduce(int.__mul__, grid_shape)
+        nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
         self.maps = [client_map_factory(ss, dd, gg) 
@@ -111,15 +119,3 @@ class ClientMDMap(object):
         return ranks
 
 
-def _normalize_dist(ndim, dist):
-    """ If `dist` is a dictionary, convert it into the equivalent tuple.
-    """
-    if isinstance(dist, Sequence):
-        return tuple(dist) + ('n',) * (ndim - len(dist))
-    elif isinstance(dist, Mapping):
-        dist_seq = ['n'] * ndim
-        for i, d in dist.items():
-            dist_seq[i] = d
-        return tuple(dist_seq)
-    else:
-        raise TypeError("dist %r is not a Sequence or Mapping" % dist)

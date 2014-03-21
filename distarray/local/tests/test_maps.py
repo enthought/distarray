@@ -5,23 +5,28 @@
 #----------------------------------------------------------------------------
 
 import unittest
+from distarray.testing import IpclusterTestCase
+from distarray import Context
 from distarray.local import maps
 from distarray import client_map
 from random import randrange
 
 from distarray.externals.six.moves import range
 
-class TestClientMap(unittest.TestCase):
+class TestClientMap(IpclusterTestCase):
+
+    def setUp(self):
+        self.ctx = Context(self.client)
 
     def test_2D_bn(self):
-        cm = client_map.ClientMDMap((31, 53), {0:'b'}, (3,))
+        cm = client_map.ClientMDMap(self.ctx, (31, 53), {0:'b'}, (3,))
         for _ in range(100):
             r, c = randrange(31), randrange(53)
             rank = r // 11
             self.assertEqual(cm.owning_ranks((r,c)), [rank])
 
     def test_2D_bb(self):
-        cm = client_map.ClientMDMap((3,5), ('b', 'b'), (2,3))
+        cm = client_map.ClientMDMap(self.ctx, (3,5), ('b', 'b'), (2,3))
         row_chunks = 2
         col_chunks = 2
         for r in range(3):
@@ -31,7 +36,7 @@ class TestClientMap(unittest.TestCase):
                 self.assertEqual(actual, [rank])
 
     def test_2D_cc(self):
-        cm = client_map.ClientMDMap((3,5), ('c', 'c'), (2,3))
+        cm = client_map.ClientMDMap(self.ctx, (3,5), ('c', 'c'), (2,3))
         for r in range(3):
             for c in range(5):
                 rank = (r % 2) * 3 + (c % 3)

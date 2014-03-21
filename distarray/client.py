@@ -8,6 +8,7 @@
 # Imports
 #----------------------------------------------------------------------------
 
+import operator
 from itertools import product
 
 import numpy as np
@@ -63,19 +64,37 @@ def process_return_value(subcontext, result_key, targets):
 
     return result
 
+_MDMAP_ATTRS = """
+{global_shape_name} = {local_name}.global_shape   # shape
+{dist_name} = {local_name}.dist                   # dist
+{grid_shape_name} = {local_name}.grid_shape       # grid_shape
+"""
+
+def _make_mdmap_from_local(local_name, context):
+    """ `key` is a handle to local objects that have a shape, grid_shape, dist
+    """
+    global_shape_name = context._generate_key()
+    dist_name = context._generate_key()
+    grid_shape_name = context._generate_key()
+    context._execute0(_MDMAP_ATTRS.format(**locals()))
+    global_shape = context._pull0(global_shape_name)
+    dist = context._pull0(dist_name)
+    grid_shape = context._pull0(grid_shape_name)
+    return ClientMDMap(context, global_shape, dist, grid_shape)
+
 
 class DistArray(object):
 
     __array_priority__ = 20.0
 
+    # TODO: make classmethod `from_localarrays(key, context, ...)`. What does
+    # __init__ do in that case?  Does __init__ always create an essentially
+    # `empty` distarray to be initialized some other way?
+
     def __init__(self, key, context, mdmap=None):
         # TODO: make this a classmethod named `fromlocalarray`
         self.key = key
-        self.context = context
-        # self.mdmap = ClientMDMap(self, shape, dist, grid_shape)
-        if mdmap is None:
-            mdmap = ClientMDMap(self.shape, self.dist, self.grid_shape)
-        self.mdmap = mdmap
+        self.mdmap = mdmap or _make_mdmap_from_local(key, context)
 
     def __del__(self):
         self.context.delete_key(self.key)
@@ -147,16 +166,20 @@ class DistArray(object):
             raise TypeError("Invalid index type.")
 
     @property
+    def context(self):
+        return self.mdmap.context
+
+    @property
     def shape(self):
-        return self._get_attribute('global_shape')
+        return self.mdmap.shape
 
     @property
     def size(self):
-        return self._get_attribute('size')
+        return reduce(operator.mul, self.shape)
 
     @property
     def dist(self):
-        return self._get_attribute('dist')
+        return self.mdmap.dist
 
     @property
     def dtype(self):
@@ -164,15 +187,15 @@ class DistArray(object):
 
     @property
     def grid_shape(self):
-        return self._get_attribute('grid_shape')
+        return self.mdmap.grid_shape
 
     @property
     def ndim(self):
-        return self._get_attribute('ndim')
+        return len(self.shape)
 
     @property
     def nbytes(self):
-        return self._get_attribute('nbytes')
+        return self.size * self.itemsize
 
     @property
     def item_size(self):

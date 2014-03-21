@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------------
 
 """
-Our adaptation of NumPy's ufuncs.
+Distributed unfuncs for distributed arrays.
 """
 
 import numpy
