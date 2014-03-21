@@ -19,27 +19,28 @@ class TestClientMap(IpclusterTestCase):
         self.ctx = Context(self.client)
 
     def test_2D_bn(self):
-        cm = client_map.ClientMDMap(self.ctx, (31, 53), {0:'b'}, (3,))
+        cm = client_map.ClientMDMap(self.ctx, (31, 53), {0:'b'}, (4,1))
+        chunksize = (31 // 4) + 1
         for _ in range(100):
             r, c = randrange(31), randrange(53)
-            rank = r // 11
+            rank = r // chunksize
             self.assertEqual(cm.owning_ranks((r,c)), [rank])
 
     def test_2D_bb(self):
-        cm = client_map.ClientMDMap(self.ctx, (3,5), ('b', 'b'), (2,3))
+        cm = client_map.ClientMDMap(self.ctx, (3,5), ('b', 'b'), (2,2))
         row_chunks = 2
-        col_chunks = 2
+        col_chunks = 3
         for r in range(3):
             for c in range(5):
-                rank = (r // row_chunks) * 3 + (c // col_chunks)
+                rank = (r // row_chunks) * 2 + (c // col_chunks)
                 actual = cm.owning_ranks((r,c))
                 self.assertEqual(actual, [rank])
 
     def test_2D_cc(self):
-        cm = client_map.ClientMDMap(self.ctx, (3,5), ('c', 'c'), (2,3))
+        cm = client_map.ClientMDMap(self.ctx, (3,5), ('c', 'c'), (2,2))
         for r in range(3):
             for c in range(5):
-                rank = (r % 2) * 3 + (c % 3)
+                rank = (r % 2) * 2 + (c % 2)
                 actual = cm.owning_ranks((r,c))
                 self.assertEqual(actual, [rank])
 

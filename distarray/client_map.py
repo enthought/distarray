@@ -8,7 +8,9 @@ from itertools import product
 import operator
 # from distarray.context import Context
 from distarray.local.localarray import _start_stop_block
-from distarray.metadata_utils import normalize_dist, make_grid_shape
+from distarray.metadata_utils import (normalize_dist,
+                                      make_grid_shape,
+                                      validate_grid_shape)
 
 from distarray.externals.six.moves import range, reduce
 
@@ -102,6 +104,7 @@ class ClientMDMap(object):
             self.grid_shape = make_grid_shape(self.shape, dist, len(context.targets))
         else:
             self.grid_shape = tuple(grid_shape) + (1,) * (len(shape) - len(grid_shape))
+        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.

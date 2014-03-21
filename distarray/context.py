@@ -238,33 +238,29 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k,targets=self.targets[0],block=True)
 
-    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
+    def _create_local(self, local_call, shape, dtype, dist, grid_shape):
+        shape_name, dtype_name, dist_name, grid_shape_name = self._key_and_push(shape, dtype, dist, grid_shape)
         da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.zeros(%s, %s, %s, %s, %s)' % subs
-        )
+        comm = self._comm_key
+        cmd = '{da_key} = {local_call}({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
+        self._execute(cmd.format(**locals()))
         mdmap = ClientMDMap(self, shape, dist, grid_shape)
         return DistArray(da_key, self, mdmap)
 
+    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+        return self._create_local(local_call='distarray.local.zeros',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
+
     def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
-        da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.ones(%s, %s, %s, %s, %s)' % subs
-        )
-        return DistArray(da_key, self)
+        return self._create_local(local_call='distarray.local.ones',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
 
     def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
-        da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.empty(%s, %s, %s, %s, %s)' % subs
-        )
-        return DistArray(da_key, self)
+        return self._create_local(local_call='distarray.local.empty',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
 
     def save_dnpy(self, name, da):
         """

@@ -165,9 +165,14 @@ class LocalArray(object):
         self.ctypes = None
 
     def _init_grid_shape(self):
+
         grid_shape = metadata_utils.make_grid_shape(self.global_shape,
                                                     self.dist,
                                                     self.comm_size)
+        metadata_utils.validate_grid_shape(grid_shape,
+                                           self.dist,
+                                           self.comm_size)
+
         for gs, dd in zip(grid_shape, self.dim_data):
             dd['proc_grid_size'] = gs
 

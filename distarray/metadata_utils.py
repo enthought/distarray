@@ -31,8 +31,7 @@ def make_grid_shape(global_shape, dist, comm_size):
     dimension.
     """
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
-    grid_shape = optimize_grid_shape(global_shape, distdims, comm_size)
-    return validate_grid_shape(grid_shape, dist, comm_size)
+    return optimize_grid_shape(global_shape, distdims, comm_size)
 
 
 def validate_grid_shape(grid_shape, dist, comm_size):
