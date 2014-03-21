@@ -120,3 +120,6 @@ class ClientMDMap(object):
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
+
+    def owning_targets(self, idxs):
+        return [self.context.targets[r] for r in self.owning_ranks(idxs)]

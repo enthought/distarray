@@ -140,8 +140,7 @@ class DistArray(object):
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
-            ranks = self.mdmap.owning_ranks(index)
-            targets = [self.context.targets[i] for i in ranks]
+            targets = self.mdmap.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_getitem(%s)'
             statement = fmt % (result_key, self.key, index)
@@ -166,8 +165,7 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
-            ranks = self.mdmap.owning_ranks(index)
-            targets = [self.context.targets[i] for i in ranks]
+            targets = self.mdmap.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_setitem(%s, %s)'
             statement = fmt % (result_key, self.key, index, value)
