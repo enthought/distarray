@@ -462,8 +462,6 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(l0.comm_size, l1.comm_size)
         self.assertEqual(l0.comm_rank, l1.comm_rank)
         self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
-        self.assertEqual(l0.ndistdim, l1.ndistdim)
-        self.assertEqual(l0.distdims, l1.distdims)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_array.shape, l1.local_array.shape)
         if check_dtype:
