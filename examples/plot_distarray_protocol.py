@@ -421,7 +421,7 @@ def create_distribution_plot_and_documentation_all(context):
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[:cols // 4],
+               'indices': col_indices[:cols // 2],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': cols},
@@ -433,7 +433,7 @@ def create_distribution_plot_and_documentation_all(context):
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[cols // 4:],
+               'indices': col_indices[cols // 2:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': cols},
@@ -445,7 +445,7 @@ def create_distribution_plot_and_documentation_all(context):
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[:cols // 4],
+               'indices': col_indices[:cols // 2],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': cols},
@@ -457,7 +457,7 @@ def create_distribution_plot_and_documentation_all(context):
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[cols // 4:],
+               'indices': col_indices[cols // 2:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': cols},
@@ -474,6 +474,10 @@ def create_distribution_plot_and_documentation_all(context):
         create_distribution_plot_and_documentation(context, params)
 
 
-if __name__ == '__main__':
+def main():
     context = distarray.Context()
     create_distribution_plot_and_documentation_all(context)
+
+
+if __name__ == '__main__':
+    main()
