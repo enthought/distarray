@@ -33,6 +33,7 @@ def make_grid_shape(global_shape, dist, comm_size):
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     return optimize_grid_shape(global_shape, distdims, comm_size)
 
+
 def normalize_grid_shape(grid_shape, ndims):
     """ Adds 1's to grid_shape so it has `ndims` dimensions.
     """
@@ -127,6 +128,7 @@ def _compute_grid_ratios(shape):
         if i < j:
             ratios.append(shape[i] / shape[j])
     return numpy.array(ratios)
+
 
 def normalize_dist(dist, ndim):
     """Return a tuple containing dist-type for each dimension.
