@@ -13,13 +13,12 @@ from distarray.testing import MpiTestCase
 
 
 class TestNDEnumerate(MpiTestCase):
-
     """Make sure we generate indices compatible with __getitem__."""
 
     def test_ndenumerate(self):
         a = LocalArray((16, 16, 2), dist=('c', 'b', 'n'), comm=self.comm)
         for global_inds, value in ndenumerate(a):
-            a[global_inds] = 0.0
+            a.global_index[global_inds] = 0.0
 
 
 if __name__ == '__main__':

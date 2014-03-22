@@ -181,7 +181,7 @@ class TestLocalDecorator(TestCase):
         def fill_da(da):
             for i in da.maps[0].global_index:
                 for j in da.maps[1].global_index:
-                    da[i, j] = i + j
+                    da.global_index[i, j] = i + j
             return da
 
         da = fill_da(da)

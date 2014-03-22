@@ -223,7 +223,7 @@ class DistArray(object):
         for local_array in local_arrays:
             maps = (ax_map.global_index for ax_map in local_array.maps)
             for index in product(*maps):
-                arr[index] = local_array[index]
+                arr[index] = local_array.global_index[index]
         return arr
 
     toarray = tondarray
