@@ -541,3 +541,7 @@ class Context(object):
         subs = (new_key,func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
         return DistArray.from_localarrays(new_key, self)
+        return DistArray(new_key, self)
+
+    def close(self):
+        self.client.close()
