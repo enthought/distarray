@@ -245,7 +245,7 @@ class TestLocalInd(MpiTestCase):
         row_result = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
         row = la.comm_rank
-        calc_row_result = [la.global_to_local(row, col) for col in
+        calc_row_result = [la.local_from_global(row, col) for col in
                            range(la.global_shape[1])]
         self.assertEqual(row_result, calc_row_result)
 
@@ -266,7 +266,7 @@ class TestLocalInd(MpiTestCase):
         elif la.comm_rank == 3:
             gis = [(6, 0), (6, 1), (7, 0), (7, 1)]
 
-        result = [la.global_to_local(*gi) for gi in gis]
+        result = [la.local_from_global(*gi) for gi in gis]
         self.assertEqual(result, expected_lis)
 
     def test_cyclic_simple(self):
@@ -278,22 +278,22 @@ class TestLocalInd(MpiTestCase):
         if la.comm_rank == 0:
             gis = (0, 4, 8)
             self.assertEqual(la.local_shape, (3,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,), (2,)]
         elif la.comm_rank == 1:
             gis = (1, 5, 9)
             self.assertEqual(la.local_shape, (3,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,), (2,)]
         elif la.comm_rank == 2:
             gis = (2, 6)
             self.assertEqual(la.local_shape, (2,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,)]
         elif la.comm_rank == 3:
             gis = (3, 7)
             self.assertEqual(la.local_shape, (2,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,)]
 
         self.assertEqual(result, calc_result)
@@ -316,7 +316,7 @@ class TestLocalInd(MpiTestCase):
         elif la.comm_rank == 3:
             gis = [(3, 0), (3, 1), (7, 0), (7, 1)]
 
-        result = [la.global_to_local(*gi) for gi in gis]
+        result = [la.local_from_global(*gi) for gi in gis]
         self.assertEqual(result, expected_lis)
 
 
@@ -326,8 +326,8 @@ class TestGlobalInd(MpiTestCase):
 
     def round_trip(self, la):
         for indices in utils.multi_for([range(s) for s in la.local_shape]):
-            gi = la.local_to_global(*indices)
-            li = la.global_to_local(*gi)
+            gi = la.global_from_local(*indices)
+            li = la.local_from_global(*gi)
             self.assertEqual(li,indices)
 
     def test_block(self):

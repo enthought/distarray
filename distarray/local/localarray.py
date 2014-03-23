@@ -366,17 +366,17 @@ class LocalArray(object):
         else:
             raise ValueError("Incompatible local array shape")
 
-    def rank_to_coords(self, rank):
+    def coords_from_rank(self, rank):
         return self.comm.Get_coords(rank)
 
-    def coords_to_rank(self, coords):
+    def rank_from_coords(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def global_to_local(self, *global_ind):
+    def local_from_global(self, *global_ind):
         return tuple(self.maps[dim].local_index[global_ind[dim]]
                      for dim in range(self.ndim))
 
-    def local_to_global(self, *local_ind):
+    def global_from_local(self, *local_ind):
         return tuple(self.maps[dim].global_index[local_ind[dim]]
                      for dim in range(self.ndim))
 
@@ -384,9 +384,9 @@ class LocalArray(object):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
-        lower_global = self.local_to_global(*lower_local)
+        lower_global = self.global_from_local(*lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
-        upper_global = self.local_to_global(*upper_local)
+        upper_global = self.global_from_local(*upper_local)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -511,7 +511,7 @@ class LocalArray(object):
         # for old_local_inds, item in np.ndenumerate(local_array):
         #
         #     # Compute the new owner
-        #     global_inds = self.local_to_global(new_da.comm_rank,
+        #     global_inds = self.global_from_local(new_da.comm_rank,
         #                                        old_local_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
@@ -745,7 +745,7 @@ class LocalArray(object):
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self.local_from_global(*global_inds)
             return self.local_array[local_inds]
         except KeyError as err:
             raise IndexError(err)
@@ -753,7 +753,7 @@ class LocalArray(object):
     def __setitem__(self, global_inds, value):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self.local_from_global(*global_inds)
             self.local_array[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
@@ -1248,7 +1248,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.local_to_global(*local_inds)
+        global_inds = self.arr.global_from_local(*local_inds)
         return global_inds, value
 
 
