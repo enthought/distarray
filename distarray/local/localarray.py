@@ -267,7 +267,7 @@ class LocalArray(object):
         return self.local_array.size
 
     @property
-    def data(self):
+    def local_data(self):
         return self.local_array.data
 
     @property
