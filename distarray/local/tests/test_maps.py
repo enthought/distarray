@@ -24,28 +24,35 @@ class TestClientMap(IpclusterTestCase):
         super(TestClientMap, self).tearDown()
 
     def test_2D_bn(self):
-        cm = client_map.ClientMDMap(self.ctx, (31, 53), {0:'b'}, (4,1))
-        chunksize = (31 // 4) + 1
+        nrows, ncols = 31, 53
+        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), {0:'b'}, (4,1))
+        chunksize = (nrows // 4) + 1
         for _ in range(100):
-            r, c = randrange(31), randrange(53)
+            r, c = randrange(nrows), randrange(ncols)
             rank = r // chunksize
             self.assertEqual(cm.owning_ranks((r,c)), [rank])
 
     def test_2D_bb(self):
-        cm = client_map.ClientMDMap(self.ctx, (3,5), ('b', 'b'), (2,2))
-        row_chunks = 2
-        col_chunks = 3
-        for r in range(3):
-            for c in range(5):
-                rank = (r // row_chunks) * 2 + (c // col_chunks)
+        nrows, ncols = 3, 5
+        nprocs_per_dim = 2
+        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), ('b', 'b'),
+                (nprocs_per_dim, nprocs_per_dim))
+        row_chunks = nrows // nprocs_per_dim + 1
+        col_chunks = ncols // nprocs_per_dim + 1
+        for r in range(nrows):
+            for c in range(ncols):
+                rank = (r // row_chunks) * nprocs_per_dim + (c // col_chunks)
                 actual = cm.owning_ranks((r,c))
                 self.assertEqual(actual, [rank])
 
     def test_2D_cc(self):
-        cm = client_map.ClientMDMap(self.ctx, (3,5), ('c', 'c'), (2,2))
-        for r in range(3):
-            for c in range(5):
-                rank = (r % 2) * 2 + (c % 2)
+        nrows, ncols = 3, 5
+        nprocs_per_dim = 2
+        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), ('c', 'c'),
+                (nprocs_per_dim, nprocs_per_dim))
+        for r in range(nrows):
+            for c in range(ncols):
+                rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
                 actual = cm.owning_ranks((r,c))
                 self.assertEqual(actual, [rank])
 
