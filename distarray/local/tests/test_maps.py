@@ -18,6 +18,11 @@ class TestClientMap(IpclusterTestCase):
     def setUp(self):
         self.ctx = Context(self.client)
 
+     # overloads base class...
+    def tearDown(self):
+        del self.ctx
+        super(TestClientMap, self).tearDown()
+
     def test_2D_bn(self):
         cm = client_map.ClientMDMap(self.ctx, (31, 53), {0:'b'}, (4,1))
         chunksize = (31 // 4) + 1
