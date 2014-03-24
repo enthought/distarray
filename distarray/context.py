@@ -235,12 +235,12 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k,targets=self.targets[0],block=True)
 
-    def from_dim_data(self, dim_data_per_process, dtype=float):
+    def from_dim_data(self, dim_data_per_rank, dtype=float):
         """Make a DistArray from dim_data structures.
 
         Parameters
         ----------
-        dim_data_per_process : iterable of tuples of dict
+        dim_data_per_rank : iterable of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
@@ -253,12 +253,12 @@ class Context(object):
             distribution.
 
         """
-        if len(self.targets) != len(dim_data_per_process):
-            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+        if len(self.targets) != len(dim_data_per_rank):
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(dim_data_per_process) +
+        subs = ((da_key,) + self._key_and_push(dim_data_per_rank) +
                 (self._comm_key,) + self._key_and_push(dtype) + (self._comm_key,))
 
         cmd = ('%s = distarray.local.LocalArray.'
@@ -444,7 +444,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_npy(self, filename, dim_data_per_process, grid_shape=None):
+    def load_npy(self, filename, dim_data_per_rank, grid_shape=None):
         """
         Load a DistArray from a dataset in a ``.npy`` file.
 
@@ -452,7 +452,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_process : iterable of tuples of dict
+        dim_data_per_rank : iterable of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         grid_shape : tuple of int, optional
@@ -464,12 +464,12 @@ class Context(object):
             A DistArray encapsulating the file loaded.
 
         """
-        if len(self.targets) != len(dim_data_per_process):
-            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+        if len(self.targets) != len(dim_data_per_rank):
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_process) +
+        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
                 (self._comm_key,) + (self._comm_key,))
 
         self._execute(
@@ -478,7 +478,7 @@ class Context(object):
 
         return DistArray(da_key, self)
 
-    def load_hdf5(self, filename, dim_data_per_process, key='buffer',
+    def load_hdf5(self, filename, dim_data_per_rank, key='buffer',
                   grid_shape=None):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
@@ -487,7 +487,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_process : iterable of tuples of dict
+        dim_data_per_rank : iterable of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         key : str, optional
@@ -508,12 +508,12 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        if len(self.targets) != len(dim_data_per_process):
-            errmsg = "`dim_data_per_process` must contain a dim_data for every process."
+        if len(self.targets) != len(dim_data_per_rank):
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_process) +
+        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
                 (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
 
         self._execute(
