@@ -222,21 +222,22 @@ class Context(object):
         targets = targets or self.targets
         return self.view.execute(lines, targets=targets, block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        targets = targets or self.targets
+        return self.view.push(d, targets=targets, block=True)
 
     def _pull(self, k, targets=None):
         targets = targets or self.targets
         return self.view.pull(k, targets=targets, block=True)
 
     def _execute0(self, lines):
-        return self.view.execute(lines,targets=self.targets[0],block=True)
+        return self.view.execute(lines, targets=self.targets[0], block=True)
 
     def _push0(self, d):
-        return self.view.push(d,targets=self.targets[0],block=True)
+        return self.view.push(d, targets=self.targets[0], block=True)
 
     def _pull0(self, k):
-        return self.view.pull(k,targets=self.targets[0],block=True)
+        return self.view.pull(k, targets=self.targets[0], block=True)
 
     def _create_local(self, local_call, shape, dtype, dist, grid_shape):
         shape_name, dtype_name, dist_name, grid_shape_name = self._key_and_push(shape, dtype, dist, grid_shape)
