@@ -55,7 +55,7 @@ def unstructured(dd):
     return dd['indices']
 
 
-dist_type_to_global_indices = {
+global_indices_from_dist_type = {
     'n': not_distributed,
     'b': block,
     'c': cyclic,
@@ -95,5 +95,5 @@ class IndexMap(object):
     @classmethod
     def from_dimdict(cls, dimdict):
         """Make an IndexMap from a `dimdict` data structure."""
-        global_indices_fn = dist_type_to_global_indices[dimdict['dist_type']]
+        global_indices_fn = global_indices_from_dist_type[dimdict['dist_type']]
         return IndexMap(global_indices_fn(dimdict))
