@@ -147,7 +147,7 @@ class DistArray(object):
             self.context._execute(statement, targets=targets)
             result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
-                raise IndexError
+                raise IndexError("Index %r is out of bounds" % (index,))
             else:
                 return result
         else:
@@ -172,7 +172,7 @@ class DistArray(object):
             self.context._execute(statement, targets=targets)
             result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
-                raise IndexError()
+                raise IndexError("Index %r is out of bounds" % (index,))
 
         else:
             raise TypeError("Invalid index type.")
