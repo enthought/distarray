@@ -241,7 +241,7 @@ class LocalArray(object):
         return len(self.dim_data)
 
     @property
-    def size(self):
+    def global_size(self):
         return reduce(operator.mul, self.global_shape)
 
     @property
@@ -267,7 +267,7 @@ class LocalArray(object):
         return self.local_array.size
 
     @property
-    def data(self):
+    def local_data(self):
         return self.local_array.data
 
     @property
@@ -280,7 +280,7 @@ class LocalArray(object):
 
     @property
     def nbytes(self):
-        return self.size * self.itemsize
+        return self.global_size * self.itemsize
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
@@ -366,17 +366,17 @@ class LocalArray(object):
         else:
             raise ValueError("Incompatible local array shape")
 
-    def rank_to_coords(self, rank):
+    def coords_from_rank(self, rank):
         return self.comm.Get_coords(rank)
 
-    def coords_to_rank(self, coords):
+    def rank_from_coords(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def global_to_local(self, *global_ind):
+    def local_from_global(self, *global_ind):
         return tuple(self.maps[dim].local_index[global_ind[dim]]
                      for dim in range(self.ndim))
 
-    def local_to_global(self, *local_ind):
+    def global_from_local(self, *local_ind):
         return tuple(self.maps[dim].global_index[local_ind[dim]]
                      for dim in range(self.ndim))
 
@@ -384,9 +384,9 @@ class LocalArray(object):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
-        lower_global = self.local_to_global(*lower_local)
+        lower_global = self.global_from_local(*lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
-        upper_global = self.local_to_global(*upper_local)
+        upper_global = self.global_from_local(*upper_local)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -396,20 +396,24 @@ class LocalArray(object):
     #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
+        """Return a copy of this LocalArray with a new underlying dtype."""
         if newdtype is None:
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.global_shape, dtype=newdtype,
-                                dist=self.dist, grid_shape=self.grid_shape,
-                                comm=self.base_comm, buf=local_copy)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=newdtype,
+                                                  comm=self.base_comm,
+                                                  buf=local_copy)
             return new_da
 
     def copy(self):
+        """Return a copy of this LocalArray."""
         local_copy = self.local_array.copy()
-        return LocalArray(self.global_shape, dtype=self.dtype, dist=self.dist,
-                          grid_shape=self.grid_shape, comm=self.base_comm,
-                          buf=local_copy)
+        return self.__class__.from_dim_data(dim_data=self.dim_data,
+                                            dtype=self.dtype,
+                                            comm=self.base_comm,
+                                            buf=local_copy)
 
     def local_view(self, dtype=None):
         if dtype is None:
@@ -418,12 +422,26 @@ class LocalArray(object):
             return self.local_array.view(dtype)
 
     def view(self, dtype=None):
+        """Return a new LocalArray whose underlying `local_array` is a view on
+        `self.local_array`.
+
+        Note
+        ----
+        Currently unimplemented for ``dtype is not None``.
+        """
         if dtype is None:
-            new_da = LocalArray(self.global_shape, self.dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=self.dtype,
+                                                  comm=self.base_comm,
+                                                  buf=self.local_array)
         else:
-            new_da = LocalArray(self.global_shape, dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            _raise_nie()
+            #TODO: to implement this properly, a new dim_data will need to
+            #      generated that reflects the size and shape of the new dtype.
+            #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+            #                                      dtype=dtype,
+            #                                      comm=self.base_comm,
+            #                                      buf=self.local_array)
         return new_da
 
     def __array__(self, dtype=None):
@@ -493,7 +511,7 @@ class LocalArray(object):
         # for old_local_inds, item in np.ndenumerate(local_array):
         #
         #     # Compute the new owner
-        #     global_inds = self.local_to_global(new_da.comm_rank,
+        #     global_inds = self.global_from_local(new_da.comm_rank,
         #                                        old_local_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
@@ -616,9 +634,9 @@ class LocalArray(object):
             _raise_nie()
         elif dtype is not None:
             dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype), self.size)))
+            return dtype.type((np.divide(self.sum(dtype=dtype), self.global_size)))
         else:
-            return np.divide(self.sum(dtype=dtype), self.size)
+            return np.divide(self.sum(dtype=dtype), self.global_size)
 
     def var(self, axis=None, dtype=None, out=None):
         if axis or out is not None:
@@ -727,7 +745,7 @@ class LocalArray(object):
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self.local_from_global(*global_inds)
             return self.local_array[local_inds]
         except KeyError as err:
             raise IndexError(err)
@@ -735,7 +753,7 @@ class LocalArray(object):
     def __setitem__(self, global_inds, value):
         global_inds = self._sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self.local_from_global(*global_inds)
             self.local_array[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
@@ -1230,7 +1248,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.local_to_global(*local_inds)
+        global_inds = self.arr.global_from_local(*local_inds)
         return global_inds, value
 
 

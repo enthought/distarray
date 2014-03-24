@@ -170,25 +170,6 @@ class TestFromDimData(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
-    @unittest.skip('Not implemented.')
-    def test_block_cyclic(self):
-        dim0 = {"dist_type": 'c',
-                "size": 16,
-                "proc_grid_size": 4,
-                "block_size": 2}
-
-        dim1 = {"dist_type": 'n',
-                "size": 16,
-                "proc_grid_size": None}
-
-        dim_data = (dim0, dim1)
-
-        larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = LocalArray((16,16), dist={0: 'c'}, block_size=2,
-                                 grid_shape=(2, 2), comm=self.comm)
-
-        self.assert_alike(larr, expected)
-
 
 class TestGridShape(MpiTestCase):
 
@@ -264,7 +245,7 @@ class TestLocalInd(MpiTestCase):
         row_result = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
         row = la.comm_rank
-        calc_row_result = [la.global_to_local(row, col) for col in
+        calc_row_result = [la.local_from_global(row, col) for col in
                            range(la.global_shape[1])]
         self.assertEqual(row_result, calc_row_result)
 
@@ -285,7 +266,7 @@ class TestLocalInd(MpiTestCase):
         elif la.comm_rank == 3:
             gis = [(6, 0), (6, 1), (7, 0), (7, 1)]
 
-        result = [la.global_to_local(*gi) for gi in gis]
+        result = [la.local_from_global(*gi) for gi in gis]
         self.assertEqual(result, expected_lis)
 
     def test_cyclic_simple(self):
@@ -297,22 +278,22 @@ class TestLocalInd(MpiTestCase):
         if la.comm_rank == 0:
             gis = (0, 4, 8)
             self.assertEqual(la.local_shape, (3,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,), (2,)]
         elif la.comm_rank == 1:
             gis = (1, 5, 9)
             self.assertEqual(la.local_shape, (3,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,), (2,)]
         elif la.comm_rank == 2:
             gis = (2, 6)
             self.assertEqual(la.local_shape, (2,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,)]
         elif la.comm_rank == 3:
             gis = (3, 7)
             self.assertEqual(la.local_shape, (2,))
-            calc_result = [la.global_to_local(gi) for gi in gis]
+            calc_result = [la.local_from_global(gi) for gi in gis]
             result = [(0,), (1,)]
 
         self.assertEqual(result, calc_result)
@@ -335,7 +316,7 @@ class TestLocalInd(MpiTestCase):
         elif la.comm_rank == 3:
             gis = [(3, 0), (3, 1), (7, 0), (7, 1)]
 
-        result = [la.global_to_local(*gi) for gi in gis]
+        result = [la.local_from_global(*gi) for gi in gis]
         self.assertEqual(result, expected_lis)
 
 
@@ -345,8 +326,8 @@ class TestGlobalInd(MpiTestCase):
 
     def round_trip(self, la):
         for indices in utils.multi_for([range(s) for s in la.local_shape]):
-            gi = la.local_to_global(*indices)
-            li = la.global_to_local(*gi)
+            gi = la.global_from_local(*indices)
+            li = la.local_from_global(*gi)
             self.assertEqual(li,indices)
 
     def test_block(self):
@@ -421,6 +402,116 @@ class TestIndexing(MpiTestCase):
 
 
 class TestLocalArrayMethods(MpiTestCase):
+
+    ddpp = [
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 0},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 0}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 0},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 2}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 1},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 0,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 0}),
+        ({'block_size': 1,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 4,
+          'start': 1},
+         {'block_size': 2,
+          'dist_type': 'c',
+          'proc_grid_rank': 1,
+          'proc_grid_size': 2,
+          'size': 8,
+          'start': 2})
+         ]
+
+    def assert_localarrays_allclose(self, l0, l1, check_dtype=False):
+        self.assertEqual(l0.global_shape, l1.global_shape)
+        self.assertEqual(l0.dist, l1.dist)
+        self.assertEqual(l0.grid_shape, l1.grid_shape)
+        self.assertEqual(l0.base_comm, l1.base_comm)
+        self.assertEqual(l0.comm_size, l1.comm_size)
+        self.assertEqual(l0.comm_rank, l1.comm_rank)
+        self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
+        if check_dtype:
+            self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        self.assertEqual(l0.local_shape, l1.local_shape)
+        self.assertEqual(l0.local_size, l1.local_size)
+        self.assertEqual(len(l0.maps), len(l1.maps))
+        for m0, m1 in zip(l0.maps, l1.maps):
+            self.assertEqual(list(m0.global_index), list(m1.global_index))
+            self.assertEqual(list(m0.local_index), list(m1.local_index))
+        np.testing.assert_allclose(l0.local_array, l1.local_array)
+
+    def test_copy_bn(self):
+        a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
+        b = a.copy()
+        self.assert_localarrays_allclose(a, b, check_dtype=True)
+
+    def test_copy_cbc(self):
+        a = LocalArray.from_dim_data(dim_data=self.ddpp[self.comm.Get_rank()],
+                                     dtype=np.int_, comm=self.comm)
+        a.fill(12)
+        b = a.copy()
+        self.assert_localarrays_allclose(a, b, check_dtype=True)
+
+    def test_astype_bn(self):
+        new_dtype = np.float32
+        a = LocalArray((16,16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
+        b = a.astype(new_dtype)
+        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        self.assertEqual(b.dtype, new_dtype)
+        self.assertEqual(b.local_array.dtype, new_dtype)
+
+    def test_astype_cbc(self):
+        new_dtype = np.int8
+        a = LocalArray.from_dim_data(dim_data=self.ddpp[self.comm.Get_rank()],
+                                     dtype=np.int32, comm=self.comm)
+        a.fill(12)
+        b = a.astype(new_dtype)
+        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        self.assertEqual(b.dtype, new_dtype)
+        self.assertEqual(b.local_array.dtype, new_dtype)
+
+    def test_view_bn(self):
+        a = LocalArray((16,16), dtype=np.int32, dist=('b', 'n'), comm=self.comm)
+        a.fill(11)
+        b = a.view()
+        self.assert_localarrays_allclose(a, b)
+        self.assertEqual(id(a.local_data), id(b.local_data))
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
