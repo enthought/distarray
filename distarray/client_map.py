@@ -6,9 +6,11 @@
 
 import operator
 from itertools import product
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+from distarray.externals.six import add_metaclass
 from distarray.externals.six.moves import range, reduce
 from distarray.local.localarray import _start_stop_block
 from distarray.metadata_utils import (normalize_dist,
@@ -31,14 +33,28 @@ def client_map_factory(size, dist, grid_size):
     return cls_from_dist[dist](size, grid_size)
 
 
+@add_metaclass(ABCMeta)
 class ClientMapBase(object):
-    """ Base class for client-side maps.
+    """ Base class for one-dimensional client-side maps.
 
-    Maps keep track of the relevant distribution information.  Maps allow
-    distributed arrays to keep track of which process to talk to when indexing
-    and slicing arrays.
+    Maps keep track of the relevant distribution information for a single
+    dimension of a distributed array.  Maps allow distributed arrays to keep
+    track of which process to talk to when indexing and slicing.
+
+    Classes that inherit from `ClientMapBase` must implement the `owners()`
+    abstractmethod.
+
     """
-    pass
+
+    @abstractmethod
+    def owners(self, idx):
+        """ Returns a list of process IDs in this dimension that might possibly
+        own `idx`.
+
+        Raises `IndexError` if `idx` is out of bounds.
+
+        """
+        raise IndexError()
 
 
 class ClientNoDistMap(ClientMapBase):
@@ -96,6 +112,7 @@ class ClientUnstructuredMap(ClientMapBase):
 class ClientMDMap(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
+
     """
 
     def __init__(self, context, shape, dist, grid_shape=None):
@@ -118,14 +135,32 @@ class ClientMDMap(object):
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
+        # List of `ClientMap` objects, one per dimension.
         self.maps = [client_map_factory(*args)
                      for args in zip(self.shape, self.dist, self.grid_shape)]
 
     def owning_ranks(self, idxs):
+        """ Returns a list of ranks that may *possibly* own the location in the
+        `idxs` tuple.
+
+        For many distribution types, the owning rank is precisely known; for
+        others, it is only probably known.  When the rank is precisely known,
+        `owning_ranks()` returns a list of exactly one rank.  Otherwise,
+        returns a list of more than one rank.
+
+        If the `idxs` tuple is out of bounds, raises `IndexError`.
+
+        """
         dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
 
     def owning_targets(self, idxs):
+        """ Like `owning_ranks()` but returns a list of targets rather than
+        ranks.
+
+        Convenience method meant for IPython parallel usage.
+
+        """
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]
