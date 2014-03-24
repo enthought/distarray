@@ -34,7 +34,7 @@ class TestContext(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
-        cls.client.close()
+        cls.context.close()
 
     def test_get_localarrays(self):
         las = self.darr.get_localarrays()
