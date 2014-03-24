@@ -15,7 +15,7 @@ The output .png files should be copied to the images folder as well.
 from __future__ import print_function
 
 from pprint import pprint
-from numpy.random import permutation
+from numpy.random import permutation, seed
 
 import distarray
 from distarray import plotting
@@ -214,37 +214,39 @@ def create_distribution_plot_and_documentation_all(context, add_header=False):
     """ Create plots for the distributed array protocol documentation. """
 
     # Some random values for undistributed example.
+    # Use a fixed seed for reproducibility.
     rows, cols = 4, 8
+    seed(0x12345670)
     row_indices = permutation(range(rows))
     col_indices = permutation(range(cols))
 
     params_list = [
         # Examples using simple dist specification.
-        {'shape': (4, 8),
+        {'shape': (5, 9),
          'title': 'Block, Nondistributed',
          'labels': ('b', 'n'),
          'filename': 'plot_block_nondist.png',
          'dist': ('b', 'n'),
         },
-        {'shape': (4, 8),
+        {'shape': (5, 9),
          'title': 'Nondistributed, Block',
          'labels': ('n', 'b'),
          'filename': 'plot_nondist_block.png',
          'dist': ('n', 'b'),
         },
-        {'shape': (4, 8),
+        {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'plot_block_block.png',
          'dist': ('b', 'b'),
         },
-        {'shape': (4, 8),
+        {'shape': (5, 9),
          'title': 'Block, Cyclic',
          'labels': ('b', 'c'),
          'filename': 'plot_block_cyclic.png',
          'dist': ('b', 'c'),
         },
-        {'shape': (4, 8),
+        {'shape': (5, 9),
          'title': 'Cyclic, Cyclic',
          'labels': ('c', 'c'),
          'filename': 'plot_cyclic_cyclic.png',
