@@ -240,7 +240,7 @@ class Context(object):
 
         Parameters
         ----------
-        dim_data_per_rank : iterable of tuples of dict
+        dim_data_per_rank : sequence of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
@@ -320,7 +320,7 @@ class Context(object):
         Raises
         ------
         TypeError
-            If `name` is an iterable whose length is different from the
+            If `name` is an sequence whose length is different from the
             context's communicator's size.
 
         See Also
@@ -333,7 +333,7 @@ class Context(object):
             self._execute(
                 'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
             )
-        elif isinstance(name, collections.Iterable):
+        elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
@@ -392,7 +392,7 @@ class Context(object):
             self._execute(
                 '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
             )
-        elif isinstance(name, collections.Iterable):
+        elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
@@ -452,7 +452,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : iterable of tuples of dict
+        dim_data_per_rank : sequence of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         grid_shape : tuple of int, optional
@@ -487,7 +487,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : iterable of tuples of dict
+        dim_data_per_rank : sequence of tuples of dict
             A "dim_data" data structure for every process.  Described here:
             https://github.com/enthought/distributed-array-protocol
         key : str, optional
