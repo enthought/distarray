@@ -511,7 +511,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a.fill(11)
         b = a.view()
         self.assert_localarrays_allclose(a, b)
-        self.assertEqual(id(a.data), id(b.data))
+        self.assertEqual(id(a.local_data), id(b.local_data))
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""

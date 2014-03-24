@@ -241,7 +241,7 @@ class LocalArray(object):
         return len(self.dim_data)
 
     @property
-    def size(self):
+    def global_size(self):
         return reduce(operator.mul, self.global_shape)
 
     @property
@@ -267,7 +267,7 @@ class LocalArray(object):
         return self.local_array.size
 
     @property
-    def data(self):
+    def local_data(self):
         return self.local_array.data
 
     @property
@@ -280,7 +280,7 @@ class LocalArray(object):
 
     @property
     def nbytes(self):
-        return self.size * self.itemsize
+        return self.global_size * self.itemsize
 
     def _cache_proc_grid_rank(self):
         cart_coords = self.comm.Get_coords(self.comm_rank)
@@ -634,9 +634,9 @@ class LocalArray(object):
             _raise_nie()
         elif dtype is not None:
             dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype), self.size)))
+            return dtype.type((np.divide(self.sum(dtype=dtype), self.global_size)))
         else:
-            return np.divide(self.sum(dtype=dtype), self.size)
+            return np.divide(self.sum(dtype=dtype), self.global_size)
 
     def var(self, axis=None, dtype=None, out=None):
         if axis or out is not None:
