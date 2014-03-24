@@ -241,7 +241,7 @@ class Context(object):
         Parameters
         ----------
         dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every process.  Described here:
+            A "dim_data" data structure for every rank.  Described here:
             https://github.com/enthought/distributed-array-protocol
         dtype : numpy dtype, optional
             dtype for underlying arrays
@@ -254,7 +254,7 @@ class Context(object):
 
         """
         if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
@@ -453,7 +453,7 @@ class Context(object):
         filename : str
             Filename to load.
         dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every process.  Described here:
+            A "dim_data" data structure for every rank.  Described here:
             https://github.com/enthought/distributed-array-protocol
         grid_shape : tuple of int, optional
             Shape of process grid.
@@ -465,7 +465,7 @@ class Context(object):
 
         """
         if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
@@ -488,7 +488,7 @@ class Context(object):
         filename : str
             Filename to load.
         dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every process.  Described here:
+            A "dim_data" data structure for every rank.  Described here:
             https://github.com/enthought/distributed-array-protocol
         key : str, optional
             The identifier for the group to load the DistArray from (the
@@ -509,7 +509,7 @@ class Context(object):
             raise ImportError(errmsg)
 
         if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every process."
+            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
 
         da_key = self._generate_key()
