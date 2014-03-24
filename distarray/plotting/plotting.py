@@ -70,6 +70,7 @@ def plot_array_distribution(darray,
                             xlabel=None,
                             ylabel=None,
                             yflip=False,
+                            cell_label=True,
                             legend=False,
                             filename=None,
                             *args, **kwargs):
@@ -88,6 +89,9 @@ def plot_array_distribution(darray,
     yflip : bool
         If True, then the y-axis increases downwards, to match the layout
         when printing the array itself.
+    cell_label : bool
+        If True, then each cell in the plot is labeled with the array value.
+        This can look cluttered for large arrays.
     legend : bool
         If True, then a colorbar legend is drawn to label the colors.
     filename : string
@@ -160,17 +164,18 @@ def plot_array_distribution(darray,
         axis.xaxis.set_label_position('top')
 
     # Label each cell.
-    for row in range(values_array.shape[0]):
-        for col in range(values_array.shape[1]):
-            process = process_array[row, col]
-            value = values_array[row, col]
-            label = '%d' % (value)
-            color = text_colors[process]
-            pyplot.text(
-                col, row, label,
-                horizontalalignment='center',
-                verticalalignment='center',
-                color=color)
+    if cell_label:
+        for row in range(values_array.shape[0]):
+            for col in range(values_array.shape[1]):
+                process = process_array[row, col]
+                value = values_array[row, col]
+                label = '%d' % (value)
+                color = text_colors[process]
+                pyplot.text(
+                    col, row, label,
+                    horizontalalignment='center',
+                    verticalalignment='center',
+                    color=color)
 
     # Add colorbar legend.
     if legend:

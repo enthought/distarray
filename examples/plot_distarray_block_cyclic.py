@@ -16,5 +16,5 @@ from distarray import plotting
 
 c = distarray.Context()
 a = c.zeros((64, 64), dtype='int32', dist=('b', 'c'))
-plotting.plot_array_distribution(a, legend=True)
+plotting.plot_array_distribution(a, cell_label=False, legend=True)
 pyplot.show()
