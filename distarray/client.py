@@ -186,7 +186,7 @@ class DistArray(object):
         return self.mdmap.shape
 
     @property
-    def size(self):
+    def global_size(self):
         return reduce(operator.mul, self.shape)
 
     @property
@@ -203,7 +203,7 @@ class DistArray(object):
 
     @property
     def nbytes(self):
-        return self.size * self.itemsize
+        return self.global_size * self.itemsize
 
     @property
     def dtype(self):
