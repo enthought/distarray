@@ -103,7 +103,8 @@ class DistArray(object):
         da_key = ctx._generate_key()
         names = ctx._key_and_push(mdmap.shape, dtype, mdmap.dist, mdmap.grid_shape)
         shape_name, dtype_name, dist_name, grid_shape_name = names
-        cmd = '{da_key} = distarray.local.empty({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
+        cmd = ('{da_key} = distarray.local.empty({shape_name}, {dtype_name},'
+                                        '{dist_name}, {grid_shape_name}, {comm})')
         ctx._execute(cmd.format(**locals()))
         self.mdmap = mdmap
         self.key = da_key

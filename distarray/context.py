@@ -240,6 +240,7 @@ class Context(object):
         return self.view.pull(k, targets=self.targets[0], block=True)
 
     def _create_local(self, local_call, shape, dtype, dist, grid_shape):
+        """ Creates a local array, according to the method named in `local_call`."""
         shape_name, dtype_name, dist_name, grid_shape_name = self._key_and_push(shape, dtype, dist, grid_shape)
         da_key = self._generate_key()
         comm = self._comm_key

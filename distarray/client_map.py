@@ -4,6 +4,24 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
+"""
+ClientMDMap class and auxiliary ClientMap classes.
+
+The ClientMDMap is a multi-dimensional map class that manages the
+one-dimensional maps for each DistArray dimension.  The ClientMDMap class
+represents the *distribution* information for a distributed array, independent
+of the distributed array's *data*. ClientMDMaps allow DistArrays to reduce
+overall communication when indexing and slicing by determining which processes
+own (or may possibly own) the indices in question.  Two DistArray objects can
+share the same ClientMDMap if they have the exact same distribution.
+
+The one-dimensional ClientMap classes keep track of which process owns which
+index in that dimension.  This class has several subclasses for specific
+distribution types, including `BlockMap`, `CyclicMap`, `NoDistMap`, and
+`UnstructuredMap`.
+
+"""
+
 import operator
 from itertools import product
 from abc import ABCMeta, abstractmethod
