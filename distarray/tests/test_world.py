@@ -16,6 +16,7 @@ import unittest
 
 from distarray.context import Context
 from distarray.client import DistArray
+from distarray.creation import empty, ones, zeros
 from distarray.world import WORLD
 
 
@@ -25,9 +26,9 @@ class TestWorld(unittest.TestCase):
         self.assertIsInstance(WORLD, Context)
 
     def test_world_works(self):
-        a = WORLD.empty((2, 2))
-        b = WORLD.ones((2, 2))
-        c = WORLD.zeros((2, 2))
+        a = empty((2, 2))
+        b = ones((2, 2))
+        c = zeros((2, 2))
 
         self.assertIsInstance(a, DistArray)
         self.assertIsInstance(b, DistArray)

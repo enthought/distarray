@@ -21,6 +21,7 @@ from distarray.externals.six.moves import range
 
 from distarray.client import DistArray
 from distarray.context import Context
+from distarray.creation import empty
 from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
 
 
@@ -28,7 +29,7 @@ class TestDnpyFileIO(IpclusterTestCase):
 
     def test_save_load_with_filenames(self):
         dac = Context(self.client)
-        da = dac.empty((100,), dist={0: 'b'})
+        da = empty((100,), dist={0: 'b'}, context=dac)
 
         output_paths = [temp_filepath() for target in dac.targets]
         try:
@@ -43,7 +44,7 @@ class TestDnpyFileIO(IpclusterTestCase):
 
     def test_save_load_with_prefix(self):
         dac = Context(self.client)
-        da = dac.empty((100,), dist={0: 'b'})
+        da = empty((100,), dist={0: 'b'}, context=dac)
 
         output_path = temp_filepath()
         try:
@@ -189,7 +190,7 @@ class TestHdf5FileSave(IpclusterTestCase):
 
     def test_save_block(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        da = empty((datalen,), dist={0: 'b'})
         for i in range(datalen):
             da[i] = i
 
@@ -204,7 +205,7 @@ class TestHdf5FileSave(IpclusterTestCase):
         source = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        da = self.dac.empty(shape, dist=dist)
+        da = empty(shape, dist=dist)
 
         for i in range(shape[0]):
             for j in range(shape[1]):
@@ -218,7 +219,7 @@ class TestHdf5FileSave(IpclusterTestCase):
 
     def test_save_two_datasets(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        da = empty((datalen,), dist={0: 'b'})
 
         for i in range(datalen):
             da[i] = i
