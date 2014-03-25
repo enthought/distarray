@@ -7,6 +7,7 @@
 """Test random.py"""
 
 import unittest
+from numpy.testing import assert_array_equal
 
 from distarray.context import Context
 from distarray.random import Random
@@ -51,6 +52,28 @@ class TestRandom(unittest.TestCase):
         shape = (3, 4)
         a = self.random.randn(shape)
         self.assertEqual(a.shape, shape)
+
+    def test_seed(self):
+        """ Test that the same seed generates the same sequence. """
+        shape = (8, 6)
+        seed_use = 0xfeedbeef
+        make_distinct = True   #False
+        # Seed once and get some random numbers.
+        self.random.seed(seed_use, make_distinct=make_distinct)
+        a = self.random.rand(shape)
+        aa = a.toarray()
+        print aa
+        # Reseed with same seed, results should be the same.
+        self.random.seed(seed_use, make_distinct=make_distinct)
+        b = self.random.rand(shape)
+        bb = b.toarray()
+        print bb
+        assert_array_equal(aa, bb)
+
+    def test_get_states(self):
+        r = self.random.get_states()
+        print 'result:'
+        print r
 
 
 if __name__ == '__main__':
