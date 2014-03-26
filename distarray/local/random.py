@@ -4,29 +4,45 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
+import hashlib
 import numpy as np
+
 from distarray.local.localarray import LocalArray
 
 
 def label_state(comm):
-    """ Modify/label the random generator state to include the local rank."""
+    """ Label/personalize the random generator state for the local rank."""
+
+    def get_mask(rank):
+        """ Get a uint32 mask to use to xor the random generator state.
+
+        We do not simply return the rank, as this small change to the
+        state of the Mersenne Twister only causes small changes in
+        the generated sequence. (The generators will eventually
+        diverge, but this takes a while.) So we scramble the mask up
+        a lot more, still deterministically, using a cryptographic hash.
+        See: http://en.wikipedia.org/wiki/Mersenne_twister#Disadvantages
+        """ 
+        m = hashlib.sha256()
+        m.update(chr(rank))
+        # Construct a uint32 from the start of the digest.
+        digest = m.digest()
+        value = 0
+        for i in range(4):
+            value += ord(digest[i]) << (8 * i)
+        mask = np.array([value], dtype=np.uint32)
+        return mask
+
     rank = comm.Get_rank()
-    #print('rank:', rank)
-    # We will mix in the rank value into the random generator state.
-    # First, we xor each element of the state vector with the rank.
-    # This is not sufficient to cause the sequences to be completely
-    # different, so we also roll the array by the rank.
-    # It also helps to 'burn' a number of random values,
-    # to let the sequences diverge more completely.
-    # See: http://en.wikipedia.org/wiki/Mersenne_twister#Disadvantages
-    # The state is a 5-tuple, with the second part being an array.
-    # We will mix up that array and leave the rest alone.
+    print('rank:', rank)
+    mask = get_mask(rank)
+    print('mask:', mask)
+    # For the Mersenne Twister used by numpy, the state is a 5-tuple,
+    # with the important part being an array of 624 uint32 values.
+    # We xor the mask into that array, and leave the rest of the tuple alone.
     s0, orig_array, s2, s3, s4 = np.random.get_state()
-    mod_array = np.bitwise_xor(orig_array, rank)
-    mod_array = np.roll(mod_array, rank)
+    mod_array = np.bitwise_xor(orig_array, mask)
     np.random.set_state((s0, mod_array, s2, s3, s4))
-    # 'Burn' some numbers off the sequence to make them diverge more.
-    _ = np.random.bytes(1024)
 
 
 def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
