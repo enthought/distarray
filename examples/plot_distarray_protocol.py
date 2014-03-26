@@ -253,6 +253,13 @@ def create_distribution_plot_and_documentation_all(context, add_header=False):
          'filename': 'plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
         },
+        {'skip': True,
+         'shape': (5, 9, 3),
+         'title': 'Cyclic, Block, Cyclic',
+         'labels': ('c', 'b', 'c'),
+         'filename': 'plot_cyclic_block_cyclic.png',
+         'dist': ('c', 'b', 'c'),
+        },
         # regular-block, irregular-block
         {'shape': (5, 9),
          'title': 'Block, Irregular-Block',
