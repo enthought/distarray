@@ -6,6 +6,7 @@
 
 import hashlib
 import numpy as np
+from six import indexbytes, int2byte
 
 from distarray.local.localarray import LocalArray
 
@@ -24,12 +25,12 @@ def label_state(comm):
         See: http://en.wikipedia.org/wiki/Mersenne_twister#Disadvantages
         """
         m = hashlib.sha256()
-        m.update(chr(rank))
+        m.update(int2byte(rank))
         # Construct a uint32 from the start of the digest.
         digest = m.digest()
         value = 0
         for i in range(4):
-            value += ord(digest[i]) << (8 * i)
+            value += indexbytes(digest, i) << (8 * i)
         mask = np.array([value], dtype=np.uint32)
         return mask
 
