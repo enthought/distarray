@@ -6,8 +6,8 @@
 
 import hashlib
 import numpy as np
-from six import indexbytes, int2byte
 
+from distarray.externals.six import indexbytes, int2byte
 from distarray.local.localarray import LocalArray
 
 
