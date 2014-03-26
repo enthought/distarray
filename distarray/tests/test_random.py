@@ -125,10 +125,11 @@ class TestRandom(unittest.TestCase):
             r1 = aa[r + 1, :]
             self.assertTrue((r0 == r1).all())
 
-    def XXXtest_get_states(self):
+    def test_get_states(self):
         r = self.random.get_states()
         print 'result:'
         print r
+        self.random.set_states(r)
 
 
 if __name__ == '__main__':

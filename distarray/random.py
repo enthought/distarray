@@ -37,7 +37,8 @@ class Random(object):
         print 'cmd:', cmd
         self.context._execute(cmd)
         if make_distinct:
-            cmd = 'distarray.local.random.label_state(%s)' % (self.context._comm_key)
+            cmd = 'distarray.local.random.label_state(%s)' % (
+                self.context._comm_key)
             print 'cmd:', cmd
             self.context._execute(cmd)
 
@@ -50,6 +51,12 @@ class Random(object):
         print 'states:'
         print states
         return states
+
+    def set_states(self, rand_states):
+        cmd = 'distarray.local.random.set_states(%s, %s)' % (
+            rand_states, self.context._comm_key)
+        print 'cmd:', cmd
+        self.context._execute(cmd)
 
     def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
         """

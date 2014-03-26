@@ -45,6 +45,13 @@ def label_state(comm):
     np.random.set_state((s0, mod_array, s2, s3, s4))
 
 
+def set_states(random_states, comm):
+    """ Set the state of the random number generator.
+    The states should have been obtained from get_states().
+    """
+    pass
+
+
 def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
     if size is None:
         return np.random.beta(a, b)
