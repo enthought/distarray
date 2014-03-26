@@ -22,7 +22,7 @@ def label_state(comm):
         diverge, but this takes a while.) So we scramble the mask up
         a lot more, still deterministically, using a cryptographic hash.
         See: http://en.wikipedia.org/wiki/Mersenne_twister#Disadvantages
-        """ 
+        """
         m = hashlib.sha256()
         m.update(chr(rank))
         # Construct a uint32 from the start of the digest.
@@ -34,22 +34,13 @@ def label_state(comm):
         return mask
 
     rank = comm.Get_rank()
-    print('rank:', rank)
     mask = get_mask(rank)
-    print('mask:', mask)
     # For the Mersenne Twister used by numpy, the state is a 5-tuple,
     # with the important part being an array of 624 uint32 values.
     # We xor the mask into that array, and leave the rest of the tuple alone.
     s0, orig_array, s2, s3, s4 = np.random.get_state()
     mod_array = np.bitwise_xor(orig_array, mask)
     np.random.set_state((s0, mod_array, s2, s3, s4))
-
-
-def set_states(random_states, comm):
-    """ Set the state of the random number generator.
-    The states should have been obtained from get_states().
-    """
-    pass
 
 
 def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):

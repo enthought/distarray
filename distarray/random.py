@@ -18,7 +18,7 @@ class Random(object):
     def seed(self, seed=None, make_distinct=True):
         """
         Seed the random number generators on each engine.
-        
+
         Parameters
         ----------
         seed : None, int, or array of integers
@@ -34,29 +34,11 @@ class Random(object):
             and so each engine will generate the same sequence.
         """
         cmd = 'numpy.random.seed(seed=%r)' % (seed)
-        print 'cmd:', cmd
         self.context._execute(cmd)
         if make_distinct:
             cmd = 'distarray.local.random.label_state(%s)' % (
                 self.context._comm_key)
-            print 'cmd:', cmd
             self.context._execute(cmd)
-
-    def get_states(self):
-        key = self.context._generate_key()
-        cmd = '%s = numpy.random.get_state()' % (key)
-        print 'cmd:', cmd
-        self.context._execute(cmd)
-        states = self.context._pull(key)
-        print 'states:'
-        print states
-        return states
-
-    def set_states(self, rand_states):
-        cmd = 'distarray.local.random.set_states(%s, %s)' % (
-            rand_states, self.context._comm_key)
-        print 'cmd:', cmd
-        self.context._execute(cmd)
 
     def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
         """
