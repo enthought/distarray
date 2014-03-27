@@ -10,6 +10,8 @@ COVERAGE := coverage
 
 MPIEXEC := mpiexec
 
+NPROCS := 12
+
 PARALLEL_OUT_DIR := .parallel_out
 
 PARALLEL_UNITTEST_ARGS := -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
@@ -18,7 +20,7 @@ PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
 
 MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
-MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n 12
+MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n ${NPROCS}
 
 # Inside MPI_EXEC_CMD, PARALLEL_TEST is meant to be substituted with either
 # PARALLEL_TEST_REGULAR or PARALLEL_TEST_COVERAGE from above.  See the
@@ -29,6 +31,9 @@ MPI_EXEC_CMD = (${MPIEXEC} ${MPIEXEC_ARGS} ${PARALLEL_TEST} ; OUT=$$? ; \
 
 IPCLUSTER_SCRIPT := distarray/tests/ipcluster.py
 PURGE_SCRIPT := distarray/tests/purge_cluster.py
+
+# default number of engines to use.
+NENGINES := 4
 
 # ----------------------------------------------------------------------------
 #  Installation targets.
@@ -87,27 +92,27 @@ coverage_report:
 # ----------------------------------------------------------------------------
 
 setup_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} 'start'
+	${PYTHON} ${IPCLUSTER_SCRIPT} start ${NENGINES}
 .PHONY: setup_cluster
 
-teardown_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} 'stop'
-.PHONY: teardown_cluster
-
 restart_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} 'restart'
+	${PYTHON} ${IPCLUSTER_SCRIPT} restart ${NENGINES}
 .PHONY: restart_cluster
 
+teardown_cluster:
+	${PYTHON} ${IPCLUSTER_SCRIPT} stop
+.PHONY: teardown_cluster
+
 clear_distarray:
-	${PYTHON} ${IPCLUSTER_SCRIPT} 'reset'
+	${PYTHON} ${IPCLUSTER_SCRIPT} reset
 .PHONY: clear_distarray
 
 purge_cluster:
-	${PYTHON} ${PURGE_SCRIPT} 'purge'
+	${PYTHON} ${PURGE_SCRIPT} purge
 .PHONY: purge_cluster
 
 dump_cluster:
-	${PYTHON} ${PURGE_SCRIPT} 'dump'
+	${PYTHON} ${PURGE_SCRIPT} dump
 .PHONY: dump_cluster
 
 # ----------------------------------------------------------------------------
