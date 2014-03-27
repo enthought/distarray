@@ -54,14 +54,6 @@ class GlobalIndex(object):
                           for dimdict in dim_data)
         self.local_array = ndarray
 
-    @property
-    def ndim(self):
-        return len(self.dim_data)
-
-    @property
-    def local_shape(self):
-        return tuple(m.size for m in self.maps)
-
     def _sanitize_indices(self, indices):
         if isinstance(indices, int) or isinstance(indices, slice):
             return (indices,)
@@ -85,11 +77,11 @@ class GlobalIndex(object):
 
     def global_to_local(self, *global_ind):
         return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(self.ndim))
+                     for dim in range(len(self.dim_data)))
 
     def local_to_global(self, *local_ind):
         return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(self.ndim))
+                     for dim in range(len(self.dim_data)))
 
     def __getitem__(self, global_inds):
         global_inds = self._sanitize_indices(global_inds)
@@ -106,6 +98,7 @@ class GlobalIndex(object):
             self.local_array[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
+
 
 def distribute_indices(dim_data):
     """Fill in missing index related keys...
@@ -147,6 +140,7 @@ def distribute_block_indices(dd):
     dd['stop'] = dd['start'] + nelements
     if dd['stop'] > dd['size']:
         dd['stop'] = dd['size']
+
 
 def _normalize_dim_data(dim_data):
     ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
@@ -726,7 +720,8 @@ class LocalArray(object):
             _raise_nie()
         elif dtype is not None:
             dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype), self.global_size)))
+            return dtype.type((np.divide(self.sum(dtype=dtype),
+                                         self.global_size)))
         else:
             return np.divide(self.sum(dtype=dtype), self.global_size)
 
@@ -809,7 +804,6 @@ class LocalArray(object):
     #-------------------------------------------------------------------------
     # 3.3.3 Container customization
     #-------------------------------------------------------------------------
-
 
     def __len__(self):
         return self.global_shape[0]
