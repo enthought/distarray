@@ -4,10 +4,9 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
-import hashlib
+from hashlib import sha256
 import numpy as np
 
-from distarray.externals.six import indexbytes, int2byte
 from distarray.local.localarray import LocalArray
 
 
@@ -15,7 +14,7 @@ def label_state(comm):
     """ Label/personalize the random generator state for the local rank."""
 
     def get_mask(rank):
-        """ Get a uint32 mask to use to xor the random generator state.
+        """ Get a uint32 mask array to use to xor the random generator state.
 
         We do not simply return the rank, as this small change to the
         state of the Mersenne Twister only causes small changes in
@@ -24,14 +23,18 @@ def label_state(comm):
         a lot more, still deterministically, using a cryptographic hash.
         See: http://en.wikipedia.org/wiki/Mersenne_twister#Disadvantages
         """
-        m = hashlib.sha256()
-        m.update(int2byte(rank))
-        # Construct a uint32 from the start of the digest.
-        digest = m.digest()
-        value = 0
-        for i in range(4):
-            value += indexbytes(digest, i) << (8 * i)
-        mask = np.array([value], dtype=np.uint32)
+        # Since we will be converting to/from bytes, endianness is important.
+        uint32be = np.dtype('>u4')
+        x = np.empty([624 // 8, 2], dtype=uint32be)
+        # The hash of the rank catted with an increasing index
+        # (stuffed into big-endian uint32s) are hashed with SHA-256 to make
+        # the XOR mask for 8 consecutive uint32 words for a 624-word
+        # Mersenne Twister state.
+        x[:, 0] = rank
+        x[:, 1] = np.arange(624 // 8)
+        mask_buffer = b''.join(sha256(row).digest() for row in x)
+        # And convert back to native-endian.
+        mask = np.frombuffer(mask_buffer, dtype=uint32be).astype(np.uint32)
         return mask
 
     rank = comm.Get_rank()
