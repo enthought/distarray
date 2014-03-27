@@ -14,7 +14,7 @@ The output .png files should be copied to the images folder as well.
 
 from __future__ import print_function
 
-from pprint import pprint
+from pprint import pformat
 from numpy.random import permutation, seed
 
 import distarray
@@ -50,6 +50,12 @@ def print_array_documentation(context,
         If True, some extra information is printed, that would
         be overly verbose for the real protocol documentation.
     """
+
+    def rst_print(obj):
+        """ Return text that formats obj nicely for an .rst document. """
+        text = pformat(obj)
+        return text
+
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
     context._execute(cmd)
@@ -74,17 +80,18 @@ def print_array_documentation(context,
     print()
 
     # Add image.
-    print(".. image:: ../images/%s" % (filename))
-    # align right does not work as I want.
-    #print("   :align: right")
-    print()
+    if filename is not None:
+        print(".. image:: ../images/%s" % (filename))
+        # align right does not work as I want.
+        #print("   :align: right")
+        print()
 
     # Full (undistributed) array:
     full_array = array.toarray()
     print("The full (undistributed) array:")
     print()
     print(">>> full_array")
-    pprint(full_array)
+    print(rst_print(full_array))
     print()
 
     # Result of get_localarrays() and get_ndarrays().
@@ -95,9 +102,9 @@ def print_array_documentation(context,
         print("Result of get_localarrays() and get_ndarrays():")
         print()
         print(">>> get_localarrays()")
-        pprint(local_arrays)
+        print(rst_print(local_arrays))
         print(">>> get_ndarrays()")
-        pprint(nd_arrays)
+        print(rst_print(nd_arrays))
         print()
 
     # Properties that are the same on all processes:
@@ -105,9 +112,9 @@ def print_array_documentation(context,
     print()
     print(">>> distbuffer = local_array.__distarray__()")
     print(">>> distbuffer.keys()")
-    pprint(db_keys[0])
+    print(rst_print(db_keys[0]))
     print(">>> distbuffer['__version__']")
-    pprint(db_version[0])
+    print(rst_print(db_version[0]))
     print()
 
     # Properties that change per-process:
@@ -116,9 +123,11 @@ def print_array_documentation(context,
         print("In process %d:" % (p))
         print()
         print(">>> distbuffer['buffer']")
-        pprint(buffer)
+        print(rst_print(buffer))
+        if False:
+            print()
         print(">>> distbuffer['dim_data']")
-        pprint(dim_data)
+        print(rst_print(dim_data))
         print()
 
 
@@ -163,7 +172,7 @@ def create_distribution_plot_and_documentation(context, params):
     else:
         raise ValueError('Must provide either dist or dimdata.')
 
-    # Fill the array.
+    # Fill the array. This is slow but not a real problem here.
     value = 0.0
     if len(shape) == 1:
         for i in range(shape[0]):
@@ -174,8 +183,15 @@ def create_distribution_plot_and_documentation(context, params):
             for col in range(shape[1]):
                 array[row, col] = value
                 value += 1.0
+    elif len(shape) == 3:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    array[i, j, k] = value
+                    value += 1.0
     else:
-        raise ValueError('Array must be 1 or 2 dimensional.')
+        # Even better would be to generalize this to any dimensions.
+        raise ValueError('Array must be 1, 2, or 3 dimensional.')
 
     # Plot title and axis labels.
     plot_title = title + ' ' + shape_text(shape) + '\n'
@@ -194,13 +210,17 @@ def create_distribution_plot_and_documentation(context, params):
         doc_text = doc_text + "\n\n" + text
 
     # Create plot.
-    plotting.plot_array_distribution(
-        array,
-        title=plot_title,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        legend=True,
-        filename=filename)
+    if len(shape) in [1, 2]:
+        plotting.plot_array_distribution(
+            array,
+            title=plot_title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            legend=True,
+            filename=filename)
+    else:
+        # Not plottable, avoid writing a link to the missing plot.
+        filename = None
 
     # Print documentation.
     print_array_documentation(
@@ -253,18 +273,28 @@ def create_distribution_plot_and_documentation_all(context, add_header=False):
          'filename': 'plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
         },
-        {'skip': True,
-         'shape': (5, 9, 3),
-         'title': 'Cyclic, Block, Cyclic',
-         'labels': ('c', 'b', 'c'),
-         'filename': 'plot_cyclic_block_cyclic.png',
-         'dist': ('c', 'b', 'c'),
+        {
+         #'shape': (5, 9, 3),
+         #'shape': (10, 10, 10),
+         'shape': (8, 8, 8),
+         #'title': 'Cyclic, Block, Cyclic',
+         'title': 'Block, None, Cyclic',
+         #'labels': ('c', 'b', 'c'),
+         'labels': ('b', 'n', 'c'),
+         #'filename': 'plot_cyclic_block_cyclic.png',
+         'filename': 'plot_block_none_cyclic.png',
+         #'dist': ('c', 'b', 'c'),
+         'dist': ('b', 'n', 'c'),
+         # New one!
+         'skip': True,
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'plot_block_irregularblock.png',
+         # New one!
+         'skip': True,
          'dimdata': [
             (
              {'size': 5,
