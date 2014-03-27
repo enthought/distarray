@@ -54,7 +54,11 @@ def print_array_documentation(context,
     def rst_print(obj):
         """ Return text that formats obj nicely for an .rst document. """
         text = pformat(obj)
-        return text
+        # pformat() gives blank lines for 3d arrays, which confuse Sphinx.
+        lines = text.split('\n')
+        trims = [line for line in lines if len(line) > 0]
+        trimmed = '\n'.join(trims)
+        return trimmed
 
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
@@ -124,8 +128,6 @@ def print_array_documentation(context,
         print()
         print(">>> distbuffer['buffer']")
         print(rst_print(buffer))
-        if False:
-            print()
         print(">>> distbuffer['dim_data']")
         print(rst_print(dim_data))
         print()
@@ -203,7 +205,7 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Documentation title and text description.
     doc_title = title
-    dist_text = "'%s' x '%s'" % (labels[0], labels[1])
+    dist_text = ' x '.join(["'%s'" % (label) for label in labels])
     doc_text = 'A (%s) array, with a %s (%s) distribution over a (%s) process grid.' % (
         shape_text(shape), title, dist_text, shape_text(array.grid_shape))
     if text is not None:
@@ -231,7 +233,8 @@ def create_distribution_plot_and_documentation(context, params):
         filename=filename)
 
 
-def create_distribution_plot_and_documentation_all(context, add_header=False):
+def create_distribution_plot_and_documentation_all(
+    context, dimlist, add_header=False):
     """ Create plots for the distributed array protocol documentation. """
 
     # Some random values for undistributed example.
@@ -273,28 +276,20 @@ def create_distribution_plot_and_documentation_all(context, add_header=False):
          'filename': 'plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
         },
+        # A 3D array. This needs more than 4 engines.
         {
-         #'shape': (5, 9, 3),
-         #'shape': (10, 10, 10),
-         'shape': (8, 8, 8),
-         #'title': 'Cyclic, Block, Cyclic',
-         'title': 'Block, None, Cyclic',
-         #'labels': ('c', 'b', 'c'),
-         'labels': ('b', 'n', 'c'),
-         #'filename': 'plot_cyclic_block_cyclic.png',
-         'filename': 'plot_block_none_cyclic.png',
-         #'dist': ('c', 'b', 'c'),
-         'dist': ('b', 'n', 'c'),
-         # New one!
-         'skip': True,
+         'shape': (5, 9, 3),
+         #'shape': (4, 4, 4),
+         'title': 'Cyclic, Block, Cyclic',
+         'labels': ('c', 'b', 'c'),
+         'filename': 'plot_cyclic_block_cyclic.png',
+         'dist': ('c', 'b', 'c'),
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'plot_block_irregularblock.png',
-         # New one!
-         'skip': True,
          'dimdata': [
             (
              {'size': 5,
@@ -575,12 +570,25 @@ def create_distribution_plot_and_documentation_all(context, add_header=False):
         print()
 
     for params in params_list:
-        create_distribution_plot_and_documentation(context, params)
+        num_dims = len(params['shape'])
+        if num_dims in dimlist:
+            create_distribution_plot_and_documentation(context, params)
 
 
 def main():
     context = distarray.Context()
-    create_distribution_plot_and_documentation_all(context)
+    num_targets = len(context.targets)
+    # The 1,2-D examples work best with a 4-process grid, and
+    # the 3D examples work best with an 8-process grid.
+    # This is clumsy, I don't like it, but should be ok for now.
+    if num_targets == 4:
+        dimlist = [1, 2]
+    elif num_targets == 8:
+        dimlist = [3]
+    else:
+        # Try them all, but GridShapeErrors are likely!
+        dimlist = [1, 2, 3]
+    create_distribution_plot_and_documentation_all(context, dimlist)
 
 
 if __name__ == '__main__':
