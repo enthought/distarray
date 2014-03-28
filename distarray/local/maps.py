@@ -107,11 +107,6 @@ class BlockMap(MapBase):
         return iter(range(self.start, self.stop))
 
     @property
-    def local_index(self):
-        local_indices = range(self.local_size)
-        return dict(zip(self.global_iter, local_indices))
-
-    @property
     def size(self):
         return self.local_size
 
@@ -157,11 +152,6 @@ class CyclicMap(MapBase):
     @property
     def global_iter(self):
         return iter(range(self.start, self.global_size, self.grid_size))
-
-    @property
-    def local_index(self):
-        local_indices = range(self.local_size)
-        return dict(zip(self.global_iter, local_indices))
 
     @property
     def size(self):
@@ -223,10 +213,6 @@ class BlockCyclicMap(MapBase):
     def size(self):
         return self.local_size
 
-    @property
-    def local_index(self):
-        local_indices = range(self.local_size)
-        return dict(zip(self.global_iter, local_indices))
 
 
 class UnstructuredMap(MapBase):
@@ -264,10 +250,6 @@ class UnstructuredMap(MapBase):
     @property
     def global_iter(self):
         return iter(self.indices)
-
-    @property
-    def local_index(self):
-        return self._local_index
 
     @property
     def size(self):
