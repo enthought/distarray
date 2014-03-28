@@ -6,8 +6,6 @@
 
 from __future__ import division
 
-from math import ceil
-
 import numpy as np
 
 from distarray.externals.six.moves import range, zip
@@ -201,22 +199,12 @@ class BlockCyclicMap(MapBase):
         self.start = start
 
         self.global_index = np.empty((self.local_size,), dtype=np.int32)
+        # FIXME: this is the slow way to do this...
         for i in range(self.local_size):
             self.global_index[i] = self.global_from_local(i)
-        # for i in range(self.block_size):
-            # sl = slice(self.start+i, self.local_size, self.block_size)
-            # self.global_index[sl] = range(sl.start, sl.stop, sl.step)
 
         local_indices = range(len(self.global_index))
         self.local_index = dict(zip(self.global_index, local_indices))
-
-        # if global_nblocks == grid_size * (global_nblocks // grid_size):
-            # local_nblocks = global_nblocks // grid_size
-        # elif grid_rank == grid_size - 1:
-            # local_nblocks = global_nblocks % grid_size
-        # else:
-            # local_nblocks = global_nblocks // grid_size + 1
-        # self.local_size = local_nblocks * block_size
 
     def local_from_global(self, gidx):
         global_block, offset = divmod(gidx, self.block_size)
@@ -300,94 +288,3 @@ class UnstructuredMap(MapBase):
     @property
     def size(self):
         return len(self.global_index)
-
-
-class IndexMap(object):
-
-    """Provide global->local and local->global index mappings.
-
-    Attributes
-    ----------
-    global_index : list of int or range object
-        Given a local index as a key, return the corresponding global index.
-    local_index : dict of int -> int
-        Given a global index as a key, return the corresponding local index.
-    """
-
-    def _internal__init__(self, global_indices):
-        """Make an IndexMap from a local_index and global_index.
-
-        Parameters
-        ----------
-        global_indices: list of int or range object
-            Each position contains the corresponding global index for a
-            local index (position).
-        """
-        self.global_index = global_indices
-        local_indices = range(len(global_indices))
-        self.local_index = dict(zip(global_indices, local_indices))
-
-    @property
-    def size(self):
-        return len(self.global_index)
-
-    @classmethod
-    def from_dimdict(cls, dimdict):
-        """Make an IndexMap from a `dimdict` data structure."""
-        global_indices_fn = global_indices_from_dist_type[dimdict['dist_type']]
-        self = cls.__new__(cls)
-        self._internal__init__(global_indices_fn(dimdict))
-        return self
-
-
-def not_distributed(dd):
-    """Return the global indicies owned by this undistributed process.
-
-    Requires the 'size' key.
-    """
-    return range(dd['size'])
-
-
-def block(dd):
-    """Return the global indices owned by this block-distributed process.
-
-    Requires 'start' and 'stop' keys.
-    """
-    return range(dd['start'], dd['stop'])
-
-
-def cyclic(dd):
-    """Return the global indices owned by this (block-)cyclically-distributed
-    process.
-
-    Requires 'start', 'size', 'proc_grid_size', and (optionally) 'block_size'
-    keys.  If 'block_size' key does not exist, it is set to 1.
-    """
-    dd.setdefault('block_size', 1)
-    nblocks = int(ceil(dd['size'] / dd['block_size']))
-    block_indices = range(0, nblocks, dd['proc_grid_size'])
-
-    global_indices = []
-    for block_index in block_indices:
-        block_start = block_index * dd['block_size'] + dd['start']
-        block_stop = block_start + dd['block_size']
-        block = range(block_start, min(block_stop, dd['size']))
-        global_indices.extend(block)
-
-    return global_indices
-
-
-def unstructured(dd):
-    """Return the arbitrary global indices owned by this  process.
-
-    Requires the 'indices' key.
-    """
-    return dd['indices']
-
-
-global_indices_from_dist_type = {
-    'n': not_distributed,
-    'b': block,
-    'c': cyclic,
-    'u': unstructured,
-}
