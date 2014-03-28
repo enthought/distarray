@@ -20,6 +20,7 @@ from IPython.parallel import Client
 
 from distarray.externals.six.moves import range
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 from distarray.context import Context
 from distarray.testing import IpclusterTestCase
 
@@ -129,6 +130,15 @@ class TestDistArrayCreation(IpclusterTestCase):
         del self.context
         super(TestDistArrayCreation, self).tearDown()
 
+    def test___init__(self):
+        shape = (100, 100)
+        mdmap = ClientMDMap(self.context, shape, ('b', 'c'))
+        da = DistArray(mdmap, dtype=int)
+        da.fill(42)
+        nda = numpy.empty(shape, dtype=int)
+        nda.fill(42)
+        assert_array_equal(da.tondarray(), nda)
+
     def test_zeros(self):
         shape = (16, 16)
         zero_distarray = self.context.zeros(shape)
@@ -186,16 +196,18 @@ class TestDistArrayCreation(IpclusterTestCase):
         rows = 9
         cols = 10
         col_indices = numpy.random.permutation(range(cols))
+        row_break_point = rows // 2 + 1
+        col_break_point = len(col_indices) // 3
         ddpp = [
              (
               {'dist_type': 'b',
                'start': 0,
-               'stop': rows // 2,
+               'stop': row_break_point,
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[:len(col_indices)//3],
+               'indices': col_indices[:col_break_point],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': cols},
@@ -203,38 +215,38 @@ class TestDistArrayCreation(IpclusterTestCase):
              (
               {'dist_type': 'b',
                'start': 0,
-               'stop': rows // 2,
+               'stop': row_break_point,
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[len(col_indices)//3:],
+               'indices': col_indices[col_break_point:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': cols},
              ),
              (
               {'dist_type': 'b',
-               'start': rows//2,
+               'start': row_break_point,
                'stop': rows,
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[:len(col_indices)//3],
+               'indices': col_indices[:col_break_point],
                'proc_grid_rank': 0,
                'proc_grid_size': 2,
                'size': cols},
              ),
              (
               {'dist_type': 'b',
-               'start': rows//2,
+               'start': row_break_point,
                'stop': rows,
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': rows},
               {'dist_type': 'u',
-               'indices': col_indices[len(col_indices)//3:],
+               'indices': col_indices[col_break_point:],
                'proc_grid_rank': 1,
                'proc_grid_size': 2,
                'size': cols},

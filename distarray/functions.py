@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------------
 
 """
-Our adaptation of NumPy's ufuncs.
+Distributed unfuncs for distributed arrays.
 """
 
 import numpy
@@ -45,7 +45,7 @@ def unary_proxy(name):
             exec_str %= (new_key, name, a.key)
 
         context._execute(exec_str)
-        return DistArray(new_key, context)
+        return DistArray.from_localarrays(new_key, context)
     return proxy_func
 
 
@@ -75,7 +75,7 @@ def binary_proxy(name):
             exec_str %= (new_key, name, a_key, b_key)
 
         context._execute(exec_str)
-        return DistArray(new_key, context)
+        return DistArray.from_localarrays(new_key, context)
     return proxy_func
 
 
