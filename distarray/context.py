@@ -13,6 +13,7 @@ from IPython.parallel import Client
 import numpy
 
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 
 
 class Context(object):
@@ -217,23 +218,50 @@ class Context(object):
 
     # End of key management routines.
 
-    def _execute(self, lines):
-        return self.view.execute(lines,targets=self.targets,block=True)
+    def _execute(self, lines, targets=None):
+        targets = targets or self.targets
+        return self.view.execute(lines, targets=targets, block=True)
 
-    def _push(self, d):
-        return self.view.push(d,targets=self.targets,block=True)
+    def _push(self, d, targets=None):
+        targets = targets or self.targets
+        return self.view.push(d, targets=targets, block=True)
 
-    def _pull(self, k):
-        return self.view.pull(k,targets=self.targets,block=True)
+    def _pull(self, k, targets=None):
+        targets = targets or self.targets
+        return self.view.pull(k, targets=targets, block=True)
 
     def _execute0(self, lines):
-        return self.view.execute(lines,targets=self.targets[0],block=True)
+        return self.view.execute(lines, targets=self.targets[0], block=True)
 
     def _push0(self, d):
-        return self.view.push(d,targets=self.targets[0],block=True)
+        return self.view.push(d, targets=self.targets[0], block=True)
 
     def _pull0(self, k):
-        return self.view.pull(k,targets=self.targets[0],block=True)
+        return self.view.pull(k, targets=self.targets[0], block=True)
+
+    def _create_local(self, local_call, shape, dtype, dist, grid_shape):
+        """ Creates a local array, according to the method named in `local_call`."""
+        shape_name, dtype_name, dist_name, grid_shape_name = self._key_and_push(shape, dtype, dist, grid_shape)
+        da_key = self._generate_key()
+        comm = self._comm_key
+        cmd = '{da_key} = {local_call}({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
+        self._execute(cmd.format(**locals()))
+        return DistArray.from_localarrays(da_key, self)
+
+    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+        return self._create_local(local_call='distarray.local.zeros',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
+
+    def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+        return self._create_local(local_call='distarray.local.ones',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
+
+    def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+        return self._create_local(local_call='distarray.local.empty',
+                                  shape=shape, dtype=dtype,
+                                  dist=dist, grid_shape=grid_shape)
 
     def from_dim_data(self, dim_data_per_rank, dtype=float):
         """Make a DistArray from dim_data structures.
@@ -265,34 +293,7 @@ class Context(object):
                'from_dim_data(%s[%s.Get_rank()], dtype=%s, comm=%s)')
         self._execute(cmd % subs)
 
-        return DistArray(da_key, self)
-
-    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
-        da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.zeros(%s, %s, %s, %s, %s)' % subs
-        )
-        return DistArray(da_key, self)
-
-    def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
-        da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.ones(%s, %s, %s, %s, %s)' % subs
-        )
-        return DistArray(da_key, self)
-
-    def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
-        keys = self._key_and_push(shape, dtype, dist, grid_shape)
-        da_key = self._generate_key()
-        subs = (da_key,) + keys + (self._comm_key,)
-        self._execute(
-            '%s = distarray.local.empty(%s, %s, %s, %s, %s)' % subs
-        )
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def save_dnpy(self, name, da):
         """
@@ -405,7 +406,7 @@ class Context(object):
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
@@ -476,7 +477,7 @@ class Context(object):
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def load_hdf5(self, filename, dim_data_per_rank, key='buffer',
                   grid_shape=None):
@@ -520,7 +521,7 @@ class Context(object):
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
 
-        return DistArray(da_key, self)
+        return DistArray.from_localarrays(da_key, self)
 
     def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
         """Convert an ndarray to a distarray."""
@@ -539,4 +540,4 @@ class Context(object):
         new_key = self._generate_key()
         subs = (new_key,func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
-        return DistArray(new_key, self)
+        return DistArray.from_localarrays(new_key, self)

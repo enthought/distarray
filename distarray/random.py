@@ -72,7 +72,7 @@ class Random(object):
         self.context._execute(
             '%s = distarray.local.random.rand(%s,%s,%s,%s)' % subs
         )
-        return DistArray(new_key, self.context)
+        return DistArray.from_localarrays(new_key, self.context)
 
     def normal(self, loc=0.0, scale=1.0, size=None, dist={0: 'b'},
                grid_shape=None):
@@ -137,7 +137,7 @@ class Random(object):
         self.context._execute(
             '%s = distarray.local.random.normal(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArray(new_key, self.context)
+        return DistArray.from_localarrays(new_key, self.context)
 
     def randint(self, low, high=None, size=None, dist={0: 'b'},
                 grid_shape=None):
@@ -181,7 +181,7 @@ class Random(object):
         self.context._execute(
             '%s = distarray.local.random.randint(%s,%s,%s,%s,%s,%s)' % subs
         )
-        return DistArray(new_key, self.context)
+        return DistArray.from_localarrays(new_key, self.context)
 
     def randn(self, size=None, dist={0: 'b'}, grid_shape=None):
         """
@@ -212,4 +212,4 @@ class Random(object):
         self.context._execute(
             '%s = distarray.local.random.randn(%s,%s,%s,%s)' % subs
         )
-        return DistArray(new_key, self.context)
+        return DistArray.from_localarrays(new_key, self.context)
