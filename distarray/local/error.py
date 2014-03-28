@@ -11,14 +11,6 @@ class InvalidBaseCommError(DistArrayError):
     pass
 
 
-class InvalidGridShapeError(DistArrayError):
-    pass
-
-
-class GridShapeError(DistArrayError):
-    pass
-
-
 class DistError(DistArrayError):
     pass
 
