@@ -156,8 +156,7 @@ class LocalArray(object):
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
-                          for dimdict in dim_data)
+        self.maps = maps.MDMap.from_dim_data(dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
 
@@ -253,7 +252,7 @@ class LocalArray(object):
 
     @property
     def local_shape(self):
-        return tuple(m.size for m in self.maps)
+        return self.maps.local_shape
 
     @property
     def grid_shape(self):
@@ -400,12 +399,10 @@ class LocalArray(object):
         return self.comm.Get_cart_rank(coords)
 
     def local_from_global(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.local_from_global(*global_ind)
 
     def global_from_local(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.global_from_local(*local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:

@@ -61,6 +61,36 @@ global_indices_from_dist_type = {
     'c': cyclic,
     'u': unstructured,
 }
+# self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
+                    # for dimdict in dim_data)
+
+class MDMap(object):
+    
+    @classmethod
+    def from_dim_data(cls, dim_data):
+        self = cls.__new__(cls)
+        self.maps = tuple(IndexMap.from_dimdict(dimdict)
+                          for dimdict in dim_data)
+        self.ndim = len(self.maps)
+        return self
+
+    @property
+    def local_shape(self):
+        return tuple(m.size for m in self.maps)
+
+    def local_from_global(self, *global_ind):
+        return tuple(self.maps[dim].local_index[global_ind[dim]]
+                     for dim in range(self.ndim))
+
+    def global_from_local(self, *local_ind):
+        return tuple(self.maps[dim].global_index[local_ind[dim]]
+                     for dim in range(self.ndim))
+
+    def __getitem__(self, idx):
+        return self.maps[idx]
+
+    def __len__(self):
+        return len(self.maps)
 
 
 class IndexMap(object):
@@ -74,9 +104,6 @@ class IndexMap(object):
     local_index : dict of int -> int
         Given a global index as a key, return the corresponding local index.
     """
-
-    # def __init__(self, global_indices):
-        # pass
 
     def _internal__init__(self, global_indices):
         """Make an IndexMap from a local_index and global_index.
