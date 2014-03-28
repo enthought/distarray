@@ -62,7 +62,7 @@ class TestNotDistMap(unittest.TestCase):
 
     def setUp(self):
         dimdict = dict(dist_type='n', size=20)
-        self.m = maps.IndexMap.from_dimdict(dimdict)
+        self.m = maps.map_from_dim_dict(dimdict)
 
     def test_local_index(self):
         gis = range(0, 20)
@@ -88,8 +88,8 @@ class TestNotDistMap(unittest.TestCase):
 class TestBlockMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(dist_type='b', start=16, stop=39)
-        self.m = maps.IndexMap.from_dimdict(dimdict)
+        dimdict = dict(dist_type='b', size=(39-16), start=16, stop=39)
+        self.m = maps.map_from_dim_dict(dimdict)
 
     def test_local_index(self):
         gis = range(16, 39)
@@ -118,8 +118,8 @@ class TestBlockMap(unittest.TestCase):
 class TestCyclicMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(dist_type='c', start=2, size=16, proc_grid_size=4)
-        self.m = maps.IndexMap.from_dimdict(dimdict)
+        dimdict = dict(dist_type='c', start=2, size=16, proc_grid_size=4, proc_grid_rank=2)
+        self.m = maps.map_from_dim_dict(dimdict)
 
     def test_local_index(self):
         gis = (2, 6, 10, 14)
@@ -150,7 +150,7 @@ class TestBlockCyclicMap(unittest.TestCase):
     def setUp(self):
         dimdict = dict(dist_type='c', start=2, size=16, proc_grid_size=4,
                        block_size=2)
-        self.m = maps.IndexMap.from_dimdict(dimdict)
+        self.m = maps.map_from_dim_dict(dimdict)
 
     def test_local_index(self):
         """Test the local_index method of BlockCyclicMap."""
@@ -187,10 +187,10 @@ class TestMapEquivalences(unittest.TestCase):
         block = size // grid
         dimdict = dict(start=start, size=size, proc_grid_size=grid)
 
-        bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
+        bcm = maps.map_from_dim_dict(dict(list(dimdict.items()) +
                                               [('dist_type', 'c'),
                                                ('block_size', block)]))
-        bm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
+        bm = maps.map_from_dim_dict(dict(list(dimdict.items()) +
                                              [('dist_type', 'b'),
                                               ('stop', size // grid +
                                                        start)]))
@@ -205,10 +205,10 @@ class TestMapEquivalences(unittest.TestCase):
         grid = 4
         block = 1
         dimdict = dict(start=start, size=size, proc_grid_size=grid,
-                       block_size=block)
-        bcm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
+                       block_size=block, proc_grid_rank=start)
+        bcm = maps.map_from_dim_dict(dict(list(dimdict.items()) +
                                               [('dist_type', 'c')]))
-        cm = maps.IndexMap.from_dimdict(dict(list(dimdict.items()) +
+        cm = maps.map_from_dim_dict(dict(list(dimdict.items()) +
                                              [('dist_type', 'c')]))
         bcm_lis = [bcm.local_index[e] for e in range(1, 16, 4)]
         cm_lis = [cm.local_index[e] for e in range(1, 16, 4)]

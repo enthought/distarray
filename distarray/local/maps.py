@@ -6,8 +6,11 @@
 
 from __future__ import division
 
-from distarray.externals.six.moves import range, zip
 from math import ceil
+
+import numpy as np
+
+from distarray.externals.six.moves import range, zip
 
 
 class MDMap(object):
@@ -15,7 +18,7 @@ class MDMap(object):
     @classmethod
     def from_dim_data(cls, dim_data):
         self = cls.__new__(cls)
-        self.maps = tuple(_map_from_dim_dict(dimdict)
+        self.maps = tuple(map_from_dim_dict(dimdict)
                             for dimdict in dim_data)
         self.ndim = len(self.maps)
         return self
@@ -39,15 +42,15 @@ class MDMap(object):
         return len(self.maps)
 
 
-def _map_from_dim_dict(dd):
+def map_from_dim_dict(dd):
 
     # Extract parameters from the dimension dictionary.
     dist_type = dd['dist_type']
     size = dd['size']
     start = dd.get('start', None)
     stop = dd.get('stop', None)
-    grid_rank = dd.get('proc_grid_rank', None)
-    grid_size = dd.get('proc_grid_size', None)
+    grid_rank = dd.get('proc_grid_rank', 0)
+    grid_size = dd.get('proc_grid_size', 1)
     block_size = dd.get('block_size', 1)
     indices = dd.get('indices', None)
 
@@ -125,7 +128,8 @@ class CyclicMap(MapBase):
 
     def __init__(self, global_size, grid_size, grid_rank, start):
         if start != grid_rank:
-            raise ValueError()
+            msg = "start value (given %d) does not equal grid_rank (given %d)"
+            raise ValueError(msg % (start, grid_rank))
         if start >= grid_size:
             msg = "start (%d) is greater or equal to grid_size (%d)"
             raise ValueError(msg % (start, grid_size))
@@ -190,9 +194,21 @@ class BlockCyclicMap(MapBase):
             raise ValueError()
         self.grid_size = grid_size
 
-        local_nblocks = (global_nblocks - 1 - grid_rank) // grid_rank + 1
+        local_nblocks = (global_nblocks - 1 - grid_rank) // grid_size + 1
         self.local_size = local_nblocks * block_size
         self.global_size = global_size
+
+        self.start = start
+
+        self.global_index = np.empty((self.local_size,), dtype=np.int32)
+        for i in range(self.local_size):
+            self.global_index[i] = self.global_from_local(i)
+        # for i in range(self.block_size):
+            # sl = slice(self.start+i, self.local_size, self.block_size)
+            # self.global_index[sl] = range(sl.start, sl.stop, sl.step)
+
+        local_indices = range(len(self.global_index))
+        self.local_index = dict(zip(self.global_index, local_indices))
 
         # if global_nblocks == grid_size * (global_nblocks // grid_size):
             # local_nblocks = global_nblocks // grid_size
@@ -231,6 +247,10 @@ class BlockCyclicMap(MapBase):
                 'start': self.start,
                 'block_size': self.block_size,
                 }
+
+    @property
+    def size(self):
+        return len(self.global_index)
 
 
 
