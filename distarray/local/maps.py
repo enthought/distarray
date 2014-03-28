@@ -81,9 +81,6 @@ class BlockMap(MapBase):
         self.grid_size = grid_size
         self.grid_rank = grid_rank
 
-        self._global_index = list(range(self.start, self.stop))
-        local_indices = range(len(self._global_index))
-        self._local_index = dict(zip(self._global_index, local_indices))
 
     def local_from_global(self, gidx):
         if gidx < self.start or gidx >= self.stop:
@@ -110,11 +107,12 @@ class BlockMap(MapBase):
 
     @property
     def global_index(self):
-        return self._global_index
+        return list(range(self.start, self.stop))
 
     @property
     def local_index(self):
-        return self._local_index
+        local_indices = range(self.local_size)
+        return dict(zip(self.global_index, local_indices))
 
     @property
     def size(self):
@@ -139,9 +137,6 @@ class CyclicMap(MapBase):
         self.local_size = (global_size - 1 - grid_rank) // grid_size + 1
         self.global_size = global_size
 
-        self._global_index = list(range(self.start, self.global_size, self.grid_size))
-        local_indices = range(len(self._global_index))
-        self._local_index = dict(zip(self._global_index, local_indices))
 
     def local_from_global(self, gidx):
         if (gidx - self.start) % self.grid_size:
@@ -167,11 +162,12 @@ class CyclicMap(MapBase):
 
     @property
     def global_index(self):
-        return self._global_index
+        return list(range(self.start, self.global_size, self.grid_size))
 
     @property
     def local_index(self):
-        return self._local_index
+        local_indices = range(self.local_size)
+        return dict(zip(self.global_index, local_indices))
 
     @property
     def size(self):
@@ -185,6 +181,7 @@ class BlockCyclicMap(MapBase):
     def __init__(self, global_size, grid_size, grid_rank, start, block_size):
         if start % block_size:
             raise ValueError()
+        self.start = start
         self.start_block = start // block_size
         self.block_size = block_size
         global_nblocks = global_size // block_size
@@ -196,15 +193,6 @@ class BlockCyclicMap(MapBase):
         self.local_size = local_nblocks * block_size
         self.global_size = global_size
 
-        self.start = start
-
-        self.global_index = np.empty((self.local_size,), dtype=np.int32)
-        # FIXME: this is the slow way to do this...
-        for i in range(self.local_size):
-            self.global_index[i] = self.global_from_local(i)
-
-        local_indices = range(len(self.global_index))
-        self.local_index = dict(zip(self.global_index, local_indices))
 
     def local_from_global(self, gidx):
         global_block, offset = divmod(gidx, self.block_size)
@@ -239,6 +227,19 @@ class BlockCyclicMap(MapBase):
     @property
     def size(self):
         return len(self.global_index)
+
+    @property
+    def global_index(self):
+        _global_index = np.empty((self.local_size,), dtype=np.int32)
+        # FIXME: this is the slow way to do this...
+        for i in range(self.local_size):
+            _global_index[i] = self.global_from_local(i)
+        return _global_index
+
+    @property
+    def local_index(self):
+        local_indices = range(self.local_size)
+        return dict(zip(self.global_index, local_indices))
 
 
 class UnstructuredMap(MapBase):
