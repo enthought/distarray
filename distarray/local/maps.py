@@ -64,6 +64,7 @@ def map_from_dim_dict(dd):
         return UnstructuredMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, indices=indices)
     raise ValueError("Unsupported dist_type of %r" % dist_type)
 
+
 class MapBase(object):
     pass
 
@@ -177,7 +178,6 @@ class CyclicMap(MapBase):
         return len(self.global_index)
 
 
-
 class BlockCyclicMap(MapBase):
 
     dist = 'c'
@@ -239,7 +239,6 @@ class BlockCyclicMap(MapBase):
     @property
     def size(self):
         return len(self.global_index)
-
 
 
 class UnstructuredMap(MapBase):
