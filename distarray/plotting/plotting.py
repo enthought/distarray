@@ -10,6 +10,8 @@ Plotting functions for distarrays.
 
 from matplotlib import pyplot, colors, cm
 from numpy import arange, concatenate, linspace, resize
+import numpy
+import os.path
 
 from distarray.decorators import local
 
@@ -193,5 +195,81 @@ def plot_array_distribution(darray,
     # Save to output file.
     if filename is not None:
         pyplot.savefig(filename, dpi=100)
+
+    # Make similar plots for the local arrays...
+    plot_local_arrays = True
+    local_arrays = darray.get_ndarrays()
+    if plot_local_arrays and len(local_arrays) == 4:
+
+        pyplot.clf()
+        fig, subfigs = pyplot.subplots(2, 2)
+        fig.suptitle('Local Arrays', fontsize=14)
+        fig.set_size_inches(10.0, 5.0)
+
+        for ilocal, local_array in enumerate(local_arrays):
+            ix, iy = ilocal // 2, ilocal % 2
+            sfig = subfigs[ix, iy]
+
+            title = 'Process %d' % (ilocal)
+            sfig.set_title(title, fontsize=10)
+
+            # Fill array with the process number so it colors
+            # the same as in the global plot.
+            plot_local_array = numpy.empty_like(local_array)
+            plot_local_array.fill(ilocal)
+
+            shape = local_array.shape
+
+            # I tried to adjust the size of the subplots carefully, with
+            # the idea that the size should be proportional to the local array
+            # size, but I was not able to work that out.
+            # So this makes all the plots the same size which at least
+            # does not look too strange.
+            img = sfig.imshow(plot_local_array,
+                              extent=[-0.5, shape[1] - 0.5, -0.5, shape[0] - 0.5],
+                              interpolation='nearest',
+                              aspect='auto',
+                              cmap=cmap, norm=norm,
+                              *args, **kwargs)
+
+            # Note that y limits are flipped to get the first row
+            # of the arrays at the top of the plot.
+            sfig.set_xlim(0 - 0.5, shape[1] - 0.5)
+            sfig.set_ylim(shape[0] - 0.5, 0 - 0.5)
+
+            # Configure a grid but otherwise hide the tickmarks.
+            x_ticks = [i - 0.5 for i in range(shape[1] + 1)]
+            y_ticks = [i - 0.5 for i in range(shape[0] + 1)]
+            sfig.xaxis.set_ticks(x_ticks)
+            sfig.yaxis.set_ticks(y_ticks)
+            sfig.grid(True,
+                      linestyle='-',
+                      color=text_colors[ilocal])
+            all_ticks = []
+            all_ticks.extend(sfig.xaxis.iter_ticks())
+            all_ticks.extend(sfig.yaxis.iter_ticks())
+            for tick in all_ticks:
+                tick[0].label1On = False
+                tick[0].label2On = False
+                tick[0].tick1On = False
+                tick[0].tick2On = False
+
+            # Label each cell.
+            if cell_label:
+                for row in range(shape[0]):
+                    for col in range(shape[1]):
+                        value = local_array[row, col]
+                        label = '%d' % (value)
+                        color = text_colors[ilocal]
+                        sfig.text(
+                            col, row, label,
+                            horizontalalignment='center',
+                            verticalalignment='center',
+                            color=color)
+
+        if filename is not None:
+            root, ext = os.path.splitext(filename)
+            local_filename = root + '_local' + ext
+            pyplot.savefig(local_filename, dpi=100)
 
     return process_darray
