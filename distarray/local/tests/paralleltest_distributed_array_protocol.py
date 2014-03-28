@@ -117,13 +117,13 @@ class DapTestMixin(object):
 class TestDapBasic(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4,), comm=self.comm)
+        self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4, 1), comm=self.comm)
 
 
 class TestDapUint(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((16, 16), dtype='uint8', grid_shape=(4,),
+        self.larr = distarray.local.LocalArray((16, 16), dtype='uint8', grid_shape=(4, 1),
                                   comm=self.comm, buf=None)
 
 
@@ -131,21 +131,21 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='complex128',
-                                  grid_shape=(4,), comm=self.comm, buf=None)
+                                  grid_shape=(4, 1), comm=self.comm, buf=None)
 
 
 class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
-                                  grid_shape=(4,), comm=self.comm)
+                                  grid_shape=(4, 1), comm=self.comm)
 
 
 class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
-                                  grid_shape=(4,), comm=self.comm)
+                                  grid_shape=(1, 4), comm=self.comm)
 
 
 class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
@@ -171,7 +171,7 @@ class TestDapCyclicDim(DapTestMixin, MpiTestCase):
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77),
                                   dist={0: 'c'},
-                                  grid_shape=(4,),
+                                  grid_shape=(4,1),
                                   comm=self.comm)
 
 
@@ -189,7 +189,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99), dtype='float64',
                                   dist={0: 'b', 1: 'n', 2: 'c'},
-                                  grid_shape=(2, 2),
+                                  grid_shape=(2, 1, 2),
                                   comm=self.comm)
 
 

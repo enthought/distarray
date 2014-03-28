@@ -21,7 +21,7 @@ class TestInit(MpiTestCase):
     def setUp(self):
         self.larr_1d = LocalArray((7,), grid_shape=(4,), comm=self.comm,
                                      buf=None)
-        self.larr_2d = LocalArray((16,16), grid_shape=(4,), comm=self.comm,
+        self.larr_2d = LocalArray((16,16), grid_shape=(4, 1), comm=self.comm,
                                      buf=None)
 
     def test_basic_1d(self):
@@ -123,7 +123,7 @@ class TestFromDimData(MpiTestCase):
         dim_data = (dim0, dim1)
 
         larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = LocalArray((16,16), dist={0: 'b'}, grid_shape=(4,),
+        expected = LocalArray((16,16), dist={0: 'b'}, grid_shape=(4, 1),
                                  comm=self.comm)
 
         self.assert_alike(larr, expected)
@@ -144,7 +144,7 @@ class TestFromDimData(MpiTestCase):
         dim_data = (dim0, dim1)
 
         larr = LocalArray.from_dim_data(dim_data, comm=self.comm)
-        expected = LocalArray((16,16), dist={1: 'c'}, grid_shape=(4,),
+        expected = LocalArray((16,16), dist={1: 'c'}, grid_shape=(1, 4),
                                  comm=self.comm)
 
         self.assert_alike(larr, expected)
