@@ -221,7 +221,7 @@ class DistArray(object):
         self.context._execute('%s = %s.copy()' % (local_name, self.key))
         local_arrays = self.context._pull(local_name)
         for local_array in local_arrays:
-            maps = (ax_map.global_index for ax_map in local_array.maps)
+            maps = (list(ax_map.global_iter) for ax_map in local_array.maps)
             for index in product(*maps):
                 arr[index] = local_array[index]
         return arr

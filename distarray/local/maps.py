@@ -26,11 +26,11 @@ class MDMap(object):
         return tuple(m.size for m in self.maps)
 
     def local_from_global(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
+        return tuple(self.maps[dim].local_from_global(global_ind[dim])
                      for dim in range(self.ndim))
 
     def global_from_local(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
+        return tuple(self.maps[dim].global_from_local(local_ind[dim])
                      for dim in range(self.ndim))
 
     def __getitem__(self, idx):
@@ -92,9 +92,6 @@ class BlockMap(MapBase):
             raise IndexError()
         return lidx + self.start
 
-    def global_slice(self):
-        return slice(self.start, self.stop)
-
     @property
     def dim_dict(self):
         return {'dist_type': self.dist,
@@ -106,17 +103,17 @@ class BlockMap(MapBase):
                 }
 
     @property
-    def global_index(self):
-        return list(range(self.start, self.stop))
+    def global_iter(self):
+        return iter(range(self.start, self.stop))
 
     @property
     def local_index(self):
         local_indices = range(self.local_size)
-        return dict(zip(self.global_index, local_indices))
+        return dict(zip(self.global_iter, local_indices))
 
     @property
     def size(self):
-        return len(self.global_index)
+        return self.local_size
 
 
 class CyclicMap(MapBase):
@@ -148,9 +145,6 @@ class CyclicMap(MapBase):
             raise IndexError()
         return (lidx * self.grid_size) + self.start
 
-    def global_slice(self):
-        return slice(self.start, self.global_size, self.grid_size)
-
     @property
     def dim_dict(self):
         return {'dist_type': self.dist,
@@ -161,17 +155,17 @@ class CyclicMap(MapBase):
                 }
 
     @property
-    def global_index(self):
-        return list(range(self.start, self.global_size, self.grid_size))
+    def global_iter(self):
+        return iter(range(self.start, self.global_size, self.grid_size))
 
     @property
     def local_index(self):
         local_indices = range(self.local_size)
-        return dict(zip(self.global_index, local_indices))
+        return dict(zip(self.global_iter, local_indices))
 
     @property
     def size(self):
-        return len(self.global_index)
+        return self.local_size
 
 
 class BlockCyclicMap(MapBase):
@@ -207,13 +201,6 @@ class BlockCyclicMap(MapBase):
         global_block = (local_block * self.grid_size) + self.start_block
         return global_block * self.block_size + offset
 
-    def global_slice(self):
-        raise NotImplementedError()
-        # TODO: FIXME: Not really a slice, but a fancy index, since can't
-        # represent blockcyclic as a slice!
-        # idxs = np.empty(self.size, dtype=np.int)
-        # for offset in range(self.block_size):
-
     @property
     def dim_dict(self):
         return {'dist_type': self.dist,
@@ -225,21 +212,21 @@ class BlockCyclicMap(MapBase):
                 }
 
     @property
-    def size(self):
-        return len(self.global_index)
-
-    @property
-    def global_index(self):
+    def global_iter(self):
         _global_index = np.empty((self.local_size,), dtype=np.int32)
         # FIXME: this is the slow way to do this...
         for i in range(self.local_size):
             _global_index[i] = self.global_from_local(i)
-        return _global_index
+        return iter(_global_index)
+
+    @property
+    def size(self):
+        return self.local_size
 
     @property
     def local_index(self):
         local_indices = range(self.local_size)
-        return dict(zip(self.global_index, local_indices))
+        return dict(zip(self.global_iter, local_indices))
 
 
 class UnstructuredMap(MapBase):
@@ -250,23 +237,20 @@ class UnstructuredMap(MapBase):
         self.global_size = global_size
         self.grid_size = grid_size
         self.grid_rank = grid_rank
-        self.indices = list(indices)
+        self.indices =  np.asarray(indices)
         self.local_size = len(self.indices)
-        local_indices = range(len(self.indices))
+        local_indices = range(self.local_size)
         self._local_index = dict(zip(self.indices, local_indices))
 
     def local_from_global(self, gidx):
         try:
-            lidx = self.indices.index(gidx)
-        except ValueError:
+            lidx = self._local_index[gidx]
+        except KeyError:
             raise IndexError()
         return lidx
 
     def global_from_local(self, lidx):
         return self.indices[lidx]
-
-    def global_slice(self):
-        raise NotImplementedError()
 
     @property
     def dim_dict(self):
@@ -278,8 +262,8 @@ class UnstructuredMap(MapBase):
                 }
 
     @property
-    def global_index(self):
-        return self.indices
+    def global_iter(self):
+        return iter(self.indices)
 
     @property
     def local_index(self):
@@ -287,4 +271,4 @@ class UnstructuredMap(MapBase):
 
     @property
     def size(self):
-        return len(self.global_index)
+        return self.local_size

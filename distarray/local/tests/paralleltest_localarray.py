@@ -102,8 +102,8 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_size, l1.local_size)
-        self.assertEqual(list(l0.maps[0].global_index),
-                         list(l1.maps[0].global_index))
+        self.assertEqual(list(l0.maps[0].global_iter),
+                         list(l1.maps[0].global_iter))
         self.assertEqual(list(l0.maps[0].local_index),
                          list(l1.maps[0].local_index))
 
@@ -470,7 +470,7 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(l0.local_size, l1.local_size)
         self.assertEqual(len(l0.maps), len(l1.maps))
         for m0, m1 in zip(l0.maps, l1.maps):
-            self.assertEqual(list(m0.global_index), list(m1.global_index))
+            self.assertEqual(list(m0.global_iter), list(m1.global_iter))
             self.assertEqual(list(m0.local_index), list(m1.local_index))
         np.testing.assert_allclose(l0.local_array, l1.local_array)
 

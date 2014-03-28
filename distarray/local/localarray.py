@@ -1159,10 +1159,10 @@ def compact_indices(dim_data):
         if ('block_size' not in dd) or (dd['block_size'] == 1):
             return slice(dd['start'], None, dd['proc_grid_size'])
         else:
-            return maps.map_from_dim_dict(dd).global_index
+            return list(maps.map_from_dim_dict(dd).global_iter)
 
     def unstructured_index(dd):
-        return maps.map_from_dim_dict(dd).global_index
+        return list(maps.map_from_dim_dict(dd).global_iter)
 
     index_fn_map = {'n': nodist_index,
                     'b': block_index,
