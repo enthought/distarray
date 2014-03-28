@@ -61,8 +61,6 @@ global_indices_from_dist_type = {
     'c': cyclic,
     'u': unstructured,
 }
-# self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
-                    # for dimdict in dim_data)
 
 class MDMap(object):
     
