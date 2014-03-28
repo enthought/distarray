@@ -315,6 +315,12 @@ class TestDistArrayCreation(IpclusterTestCase):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
 
+    def test_grid_rank(self):
+        # regression test for issue #235
+        a = self.context.empty((4, 4, 4), dist=('b', 'n', 'b'),
+                               grid_shape=(1, 1, 4))
+        self.assertEqual(a.grid_shape, (1, 1, 4))
+
 
 class TestReduceMethods(unittest.TestCase):
     """Test reduction methods"""
