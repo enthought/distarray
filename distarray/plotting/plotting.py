@@ -9,8 +9,7 @@ Plotting functions for distarrays.
 """
 
 from matplotlib import pyplot, colors, cm
-from numpy import arange, concatenate, linspace, resize
-import numpy
+from numpy import arange, concatenate, empty, linspace, resize
 import os.path
 
 from distarray.decorators import local
@@ -67,6 +66,164 @@ def cmap_discretize(cmap, N):
     return colors.LinearSegmentedColormap(cmap.name + "_%d" % N, cdict, 1024)
 
 
+def create_discrete_colormaps(num_values):
+    """ Create colormap objects for a discrete colormap.
+
+    Parameters
+    ----------
+    num_values : The number of distinct colors to use.
+
+    Returns
+    -------
+    cmap, norm, text_colors : tuple
+        The matplotlib colormap, norm, and recommended text colors.
+        text_colors is an array of length num_values,
+        with each entry being a nice color for text drawn
+        on top of the colormap selection.
+    """
+    # Create discrete colormap for matplotlib.
+    cmap = cmap_discretize(cm.jet, num_values)
+    bounds = range(num_values + 1)
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+
+    # Choose a text color for each discrete color.
+    # The idea is to pick black for colors near white.
+    # This is not sophisticated but ok for this use.
+    text_colors = []
+    for j in range(num_values):
+        # Get rgb color that matshow() will use.
+        jj = float(j + 0.5) / float(num_values)
+        cj = cmap(jj)
+        # Get average of rgb values.
+        avg = (cj[0] + cj[1] + cj[2]) / 3.0
+        # cyan gets avg=0.6111, yellow gets avg=0.6337.
+        # Choose cutoff for yellow and not cyan.
+        if avg >= 0.625:
+            text_color = 'black'
+        else:
+            text_color = 'white'
+        text_colors.append(text_color)
+
+    # Return a tuple with all the parts.
+    colormaps = (cmap, norm, text_colors)
+    return colormaps
+
+
+def plot_local_array_subfigure(subfig,
+                               local_array,
+                               process,
+                               colormap_objects,
+                               *args, **kwargs):
+    """ Plot a single local_array into a matplotlib subfigure. """
+    title = 'Process %d' % (process)
+    subfig.set_title(title, fontsize=10)
+
+    # Fill array with the process number.
+    # (Then it will color the same as in the global plot.)
+    shape = local_array.shape
+    plot_array = empty(shape, dtype=int)
+    plot_array.fill(process)
+
+    cmap, norm, text_colors = colormap_objects
+    text_color = text_colors[process]
+
+    # I tried to adjust the size of the subplots carefully, with
+    # the idea that the size should be proportional to the local array
+    # size, but I was not able to work that out.
+    # So this makes all the plots the same size which at least
+    # does not look too strange.
+    extent = [-0.5, shape[1] - 0.5, -0.5, shape[0] - 0.5]
+    subfig.imshow(plot_array,
+                        extent=extent,
+                        interpolation='nearest',
+                        aspect='auto',
+                        cmap=cmap, norm=norm,
+                        *args, **kwargs)
+
+    # Note that y limits are flipped to get the first row
+    # of the arrays at the top of the plot.
+    subfig.set_xlim(0 - 0.5, shape[1] - 0.5)
+    subfig.set_ylim(shape[0] - 0.5, 0 - 0.5)
+
+    # Configure a grid but otherwise hide the tickmarks.
+    x_ticks = [i - 0.5 for i in range(shape[1] + 1)]
+    y_ticks = [i - 0.5 for i in range(shape[0] + 1)]
+    subfig.xaxis.set_ticks(x_ticks)
+    subfig.yaxis.set_ticks(y_ticks)
+    subfig.grid(True, linestyle='-', color=text_color)
+    all_ticks = []
+    all_ticks.extend(subfig.xaxis.iter_ticks())
+    all_ticks.extend(subfig.yaxis.iter_ticks())
+    for tick in all_ticks:
+        tick[0].label1On = False
+        tick[0].label2On = False
+        tick[0].tick1On = False
+        tick[0].tick2On = False
+
+    # Label each cell.
+    for row in range(shape[0]):
+        for col in range(shape[1]):
+            value = local_array[row, col]
+            label = '%d' % (value)
+            subfig.text(
+                col, row, label,
+                horizontalalignment='center',
+                verticalalignment='center',
+                color=text_color)
+
+
+def plot_local_arrays(darray,
+                      colormap_objects,
+                      filename):
+    """ Plot the local arrays as a multi-figure matplotlib plot. """
+    # Get the local arrays that are not empty.
+    ndarrays = darray.get_ndarrays()
+    local_arrays = []
+    for processor, local_array in enumerate(ndarrays):
+        if local_array.size > 0:
+            local_arrays.append((processor, local_array))
+        else:
+            print('Skipping zero sized local array for processor', processor)
+
+    # Can only handle 4 local arrays for now.
+    num_local_arrays = len(local_arrays)
+    if num_local_arrays not in [3, 4]:
+        print('Cannot handle %d local arrays.' % (num_local_arrays))
+        return
+
+    pyplot.clf()
+
+    if num_local_arrays == 3:
+        # 3x1 grid
+        _, subfigs = pyplot.subplots(3, 1)
+        for process, local_array in local_arrays:
+            subfig = subfigs[process]
+            plot_local_array_subfigure(subfig,
+                                       local_array,
+                                       process,
+                                       colormap_objects)
+    elif num_local_arrays == 4:
+        # 2x2 grid
+        _, subfigs = pyplot.subplots(2, 2)
+        for process, local_array in local_arrays:
+            ix, iy = process // 2, process % 2
+            subfig = subfigs[ix, iy]
+            plot_local_array_subfigure(subfig,
+                                       local_array,
+                                       process,
+                                       colormap_objects)
+    else:
+        raise ValueError('Invalid number of local arrays to plot.')
+
+    # Add main title and adjust size.
+    figure = pyplot.gcf()
+    figure.suptitle('Local Arrays', fontsize=14)
+    figure.set_size_inches(10.0, 5.0)
+
+    if filename is not None:
+        pyplot.savefig(filename, dpi=100)
+
+
 def plot_array_distribution(darray,
                             title=None,
                             xlabel=None,
@@ -121,27 +278,8 @@ def plot_array_distribution(darray,
 
     # Create discrete colormap.
     num_processors = process_array.max() + 1
-    cmap = cmap_discretize(cm.jet, num_processors)
-    bounds = range(num_processors + 1)
-    norm = colors.BoundaryNorm(bounds, cmap.N)
-
-    # Choose a text color for each processor index.
-    # The idea is to pick black for colors near white.
-    # This is not sophisticated but ok for this use.
-    text_colors = []
-    for j in range(num_processors):
-        # Get rgb color that matshow() will use.
-        jj = float(j + 0.5) / float(num_processors)
-        cj = cmap(jj)
-        # Get average of rgb values.
-        avg = (cj[0] + cj[1] + cj[2]) / 3.0
-        # cyan gets avg=0.6111, yellow gets avg=0.6337.
-        # Choose cutoff for yellow and not cyan.
-        if avg >= 0.625:
-            text_color = 'black'
-        else:
-            text_color = 'white'
-        text_colors.append(text_color)
+    colormap_objects = create_discrete_colormaps(num_processors)
+    cmap, norm, text_colors = colormap_objects
 
     # Plot the array.
     img = pyplot.matshow(process_array, cmap=cmap, norm=norm, *args, **kwargs)
@@ -197,79 +335,9 @@ def plot_array_distribution(darray,
         pyplot.savefig(filename, dpi=100)
 
     # Make similar plots for the local arrays...
-    plot_local_arrays = True
-    local_arrays = darray.get_ndarrays()
-    if plot_local_arrays and len(local_arrays) == 4:
-
-        pyplot.clf()
-        fig, subfigs = pyplot.subplots(2, 2)
-        fig.suptitle('Local Arrays', fontsize=14)
-        fig.set_size_inches(10.0, 5.0)
-
-        for ilocal, local_array in enumerate(local_arrays):
-            ix, iy = ilocal // 2, ilocal % 2
-            sfig = subfigs[ix, iy]
-
-            title = 'Process %d' % (ilocal)
-            sfig.set_title(title, fontsize=10)
-
-            # Fill array with the process number so it colors
-            # the same as in the global plot.
-            plot_local_array = numpy.empty_like(local_array)
-            plot_local_array.fill(ilocal)
-
-            shape = local_array.shape
-
-            # I tried to adjust the size of the subplots carefully, with
-            # the idea that the size should be proportional to the local array
-            # size, but I was not able to work that out.
-            # So this makes all the plots the same size which at least
-            # does not look too strange.
-            img = sfig.imshow(plot_local_array,
-                              extent=[-0.5, shape[1] - 0.5, -0.5, shape[0] - 0.5],
-                              interpolation='nearest',
-                              aspect='auto',
-                              cmap=cmap, norm=norm,
-                              *args, **kwargs)
-
-            # Note that y limits are flipped to get the first row
-            # of the arrays at the top of the plot.
-            sfig.set_xlim(0 - 0.5, shape[1] - 0.5)
-            sfig.set_ylim(shape[0] - 0.5, 0 - 0.5)
-
-            # Configure a grid but otherwise hide the tickmarks.
-            x_ticks = [i - 0.5 for i in range(shape[1] + 1)]
-            y_ticks = [i - 0.5 for i in range(shape[0] + 1)]
-            sfig.xaxis.set_ticks(x_ticks)
-            sfig.yaxis.set_ticks(y_ticks)
-            sfig.grid(True,
-                      linestyle='-',
-                      color=text_colors[ilocal])
-            all_ticks = []
-            all_ticks.extend(sfig.xaxis.iter_ticks())
-            all_ticks.extend(sfig.yaxis.iter_ticks())
-            for tick in all_ticks:
-                tick[0].label1On = False
-                tick[0].label2On = False
-                tick[0].tick1On = False
-                tick[0].tick2On = False
-
-            # Label each cell.
-            if cell_label:
-                for row in range(shape[0]):
-                    for col in range(shape[1]):
-                        value = local_array[row, col]
-                        label = '%d' % (value)
-                        color = text_colors[ilocal]
-                        sfig.text(
-                            col, row, label,
-                            horizontalalignment='center',
-                            verticalalignment='center',
-                            color=color)
-
-        if filename is not None:
-            root, ext = os.path.splitext(filename)
-            local_filename = root + '_local' + ext
-            pyplot.savefig(local_filename, dpi=100)
+    if filename is not None:
+        root, ext = os.path.splitext(filename)
+        local_filename = root + '_local' + ext
+        plot_local_arrays(darray, colormap_objects, local_filename)
 
     return process_darray
