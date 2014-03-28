@@ -30,7 +30,7 @@ class TestClientMap(IpclusterTestCase):
         for _ in range(100):
             r, c = randrange(nrows), randrange(ncols)
             rank = r // chunksize
-            self.assertEqual(cm.owning_ranks((r,c)), [rank])
+            self.assertSequenceEqual(cm.owning_ranks((r,c)), [rank])
 
     def test_2D_bb(self):
         nrows, ncols = 3, 5
@@ -43,7 +43,7 @@ class TestClientMap(IpclusterTestCase):
             for c in range(ncols):
                 rank = (r // row_chunks) * nprocs_per_dim + (c // col_chunks)
                 actual = cm.owning_ranks((r,c))
-                self.assertEqual(actual, [rank])
+                self.assertSequenceEqual(actual, [rank])
 
     def test_2D_cc(self):
         nrows, ncols = 3, 5
@@ -54,7 +54,7 @@ class TestClientMap(IpclusterTestCase):
             for c in range(ncols):
                 rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
                 actual = cm.owning_ranks((r,c))
-                self.assertEqual(actual, [rank])
+                self.assertSequenceEqual(actual, [rank])
 
 
 
@@ -68,21 +68,21 @@ class TestNotDistMap(unittest.TestCase):
         gis = range(0, 20)
         lis = list(self.m.local_index[gi] for gi in gis)
         expected = list(range(20))
-        self.assertEqual(lis, expected)
+        self.assertSequenceEqual(lis, expected)
 
     def test_local_index_KeyError(self):
         gi = 20
         self.assertRaises(KeyError, self.m.local_index.__getitem__, gi)
 
-    def test_global_index(self):
+    def test_global_from_local(self):
         lis = range(20)
-        gis = list(self.m.global_index[li] for li in lis)
+        gis = [self.m.global_from_local(li) for li in lis]
         expected = list(range(20))
-        self.assertEqual(gis, expected)
+        self.assertSequenceEqual(gis, expected)
 
-    def test_global_index_IndexError(self):
+    def test_global_from_local_IndexError(self):
         li = 20
-        self.assertRaises(IndexError, self.m.global_index.__getitem__, li)
+        self.assertRaises(IndexError, self.m.global_from_local, li)
 
 
 class TestBlockMap(unittest.TestCase):
@@ -95,7 +95,7 @@ class TestBlockMap(unittest.TestCase):
         gis = range(16, 39)
         lis = list(self.m.local_index[gi] for gi in gis)
         expected = list(range(23))
-        self.assertEqual(lis, expected)
+        self.assertSequenceEqual(lis, expected)
 
     def test_local_index_KeyError(self):
         gi = 15
@@ -104,15 +104,15 @@ class TestBlockMap(unittest.TestCase):
         gi = 39
         self.assertRaises(KeyError, self.m.local_index.__getitem__, gi)
 
-    def test_global_index(self):
+    def test_global_from_local(self):
         lis = range(23)
-        gis = list(self.m.global_index[li] for li in lis)
+        gis = [self.m.global_from_local(li) for li in lis]
         expected = list(range(16, 39))
-        self.assertEqual(gis, expected)
+        self.assertSequenceEqual(gis, expected)
 
-    def test_global_index_IndexError(self):
+    def test_global_from_local_IndexError(self):
         li = 25
-        self.assertRaises(IndexError, self.m.global_index.__getitem__, li)
+        self.assertRaises(IndexError, self.m.global_from_local, li)
 
 
 class TestCyclicMap(unittest.TestCase):
@@ -125,7 +125,7 @@ class TestCyclicMap(unittest.TestCase):
         gis = (2, 6, 10, 14)
         lis = tuple(self.m.local_index[gi] for gi in gis)
         expected = tuple(range(4))
-        self.assertEqual(lis, expected)
+        self.assertSequenceEqual(lis, expected)
 
     def test_local_index_KeyError(self):
         gi = 3
@@ -134,15 +134,15 @@ class TestCyclicMap(unittest.TestCase):
         gi = 7
         self.assertRaises(KeyError, self.m.local_index.__getitem__, gi)
 
-    def test_global_index(self):
+    def test_global_from_local(self):
         lis = range(4)
-        gis = tuple(self.m.global_index[li] for li in lis)
+        gis = [self.m.global_from_local(li) for li in lis]
         expected = (2, 6, 10, 14)
-        self.assertEqual(gis, expected)
+        self.assertSequenceEqual(gis, expected)
 
-    def test_global_index_IndexError(self):
+    def test_global_from_local_IndexError(self):
         li = 5
-        self.assertRaises(IndexError, self.m.global_index.__getitem__, li)
+        self.assertRaises(IndexError, self.m.global_from_local, li)
 
 
 class TestBlockCyclicMap(unittest.TestCase):
@@ -157,7 +157,7 @@ class TestBlockCyclicMap(unittest.TestCase):
         gis = (2, 3, 10, 11)
         lis = tuple(self.m.local_index[gi] for gi in gis)
         expected = tuple(range(4))
-        self.assertEqual(lis, expected)
+        self.assertSequenceEqual(lis, expected)
 
     def test_local_index_KeyError(self):
         gi = 4
@@ -166,15 +166,15 @@ class TestBlockCyclicMap(unittest.TestCase):
         gi = 12
         self.assertRaises(KeyError, self.m.local_index.__getitem__, gi)
 
-    def test_global_index(self):
+    def test_global_from_local(self):
         lis = range(4)
-        gis = tuple(self.m.global_index[li] for li in lis)
+        gis = [self.m.global_from_local(li) for li in lis]
         expected = (2, 3, 10, 11)
-        self.assertEqual(gis, expected)
+        self.assertSequenceEqual(gis, expected)
 
-    def test_global_index_IndexError(self):
+    def test_global_from_local_IndexError(self):
         li = 5
-        self.assertRaises(IndexError, self.m.global_index.__getitem__, li)
+        self.assertRaises(IndexError, self.m.global_from_local, li)
 
 
 class TestMapEquivalences(unittest.TestCase):
@@ -196,7 +196,7 @@ class TestMapEquivalences(unittest.TestCase):
                                                        start)]))
         bcm_lis = [bcm.local_index[e] for e in range(4, 8)]
         bm_lis = [bm.local_index[e] for e in range(4, 8)]
-        self.assertEqual(bcm_lis, bm_lis)
+        self.assertSequenceEqual(bcm_lis, bm_lis)
 
     def test_compare_bcm_cm_local_index(self):
         """Test Block-Cyclic against Cyclic map."""
@@ -212,7 +212,7 @@ class TestMapEquivalences(unittest.TestCase):
                                              [('dist_type', 'c')]))
         bcm_lis = [bcm.local_index[e] for e in range(1, 16, 4)]
         cm_lis = [cm.local_index[e] for e in range(1, 16, 4)]
-        self.assertEqual(bcm_lis, cm_lis)
+        self.assertSequenceEqual(bcm_lis, cm_lis)
 
 
 if __name__ == '__main__':
