@@ -7,7 +7,6 @@
 from __future__ import division
 
 import numpy as np
-
 from distarray.externals.six.moves import range, zip
 
 
@@ -212,7 +211,6 @@ class BlockCyclicMap(MapBase):
     @property
     def size(self):
         return self.local_size
-
 
 
 class UnstructuredMap(MapBase):
