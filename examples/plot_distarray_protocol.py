@@ -16,6 +16,7 @@ from __future__ import print_function
 
 import os.path
 from pprint import pformat
+from numpy import empty
 from numpy.random import permutation, seed
 
 import distarray
@@ -55,14 +56,19 @@ def print_array_documentation(context,
         be overly verbose for the real protocol documentation.
     """
 
-    def rst_print(obj):
-        """ Return text that formats obj nicely for an .rst document. """
+    def rst_lines(obj):
+        """ Return lines of text that format obj for an .rst document. """
         text = pformat(obj)
         # pformat() gives blank lines for 3d arrays, which confuse Sphinx.
         lines = text.split('\n')
         trims = [line for line in lines if len(line) > 0]
-        trimmed = '\n'.join(trims)
-        return trimmed
+        return trims
+
+    def rst_print(obj):
+        """ Return text that formats obj nicely for an .rst document. """
+        lines = rst_lines(obj)
+        text = '\n'.join(lines)
+        return text
 
     def rst_plot(filename):
         """ Include a plot in the .rst document. """
@@ -70,6 +76,70 @@ def print_array_documentation(context,
         # align right does not work as I want.
         #print("   :align: right")
         print()
+
+    def text_block_size(lines):
+        """ Determine the number of rows and columns to print lines. """
+        line_count = len(lines)
+        line_width = max([len(line) for line in lines])
+        return line_count, line_width
+
+    def text_block_max_size(lines_list):
+        """ Determine  number of rows/columns for the largest line list. """
+        block_size = empty((len(lines_list), 2), dtype=int)
+        for itext, lines in enumerate(lines_list):
+            line_count, line_width = text_block_size(lines)
+            block_size[itext, 0] = line_count
+            block_size[itext, 1] = line_width
+        #print('Table sizes:')
+        #print(block_size)
+        max_size = block_size.max(axis=0)
+        #print('Max size:')
+        #print(max_size)
+        max_rows, max_cols = max_size[0], max_size[1]
+        return max_rows, max_cols
+
+    def rst_table(rows, cols, lines_list):
+        """ Print the list of lines as a .rst table. """
+        num_cells = rows * cols
+        num_texts = len(lines_list)
+        if num_cells != num_texts:
+            raise ValueError('Invalid table size %d x %d for %d entries.' % (
+                rows, cols, num_texts))
+        # Determine table size needed for biggest text blocks.
+        max_sizes = text_block_max_size(lines_list)
+        #print('max_sizes:')
+        #print(max_sizes)
+        max_lines, max_cols = max_sizes
+        # Table row separator.
+        sep = '-' * max_cols
+        seps = [sep for i in range(cols)]
+        header = '+' + '+'.join(seps) + '+'
+        # Group text blocks into array pattern.
+        text_blocks = []
+        print(header)
+        for row in range(rows):
+            for line in range(max_lines):
+                col_lines = []
+                for col in range(cols):
+                    iblock = row * cols + col
+                    lines = lines_list[iblock]
+                    if line < len(lines):
+                        text = lines[line]
+                    else:
+                        text = ''
+                    text = text.ljust(max_cols)
+                    col_lines.append(text)
+                col_line = '|' + '|'.join(col_lines) + '|'
+                print(col_line)
+            print(header)
+        #print('text_blocks:')
+        #print(text_blocks)
+        print()
+        # Non-table layout.
+        for lines in lines_list:
+            for line in lines:
+                print(line)
+            print()
 
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
@@ -87,6 +157,8 @@ def print_array_documentation(context,
     db_version = context.view['db_version']
     db_buffer = context.view['db_buffer']
     db_dim_data = context.view['db_dim_data']
+    # Get local ndarrays.
+    db_ndarrays = array.get_ndarrays()
 
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
@@ -134,15 +206,27 @@ def print_array_documentation(context,
         rst_plot(local_plot_filename)
 
     # Properties that change per-process:
-    for p, (keys, version, buffer, dim_data) in enumerate(
-            zip(db_keys, db_version, db_buffer, db_dim_data)):
-        print("In process %d:" % (p))
-        print()
-        print(">>> distbuffer['buffer']")
-        print(rst_print(buffer))
-        print(">>> distbuffer['dim_data']")
-        print(rst_print(dim_data))
-        print()
+    lines_list = []
+    for p, (keys, version, buffer, dim_data, ndarray) in enumerate(
+            zip(db_keys, db_version, db_buffer, db_dim_data, db_ndarrays)):
+        # Skip if local ndarray is empty, as there is no local plot.
+        if ndarray.size == 0:
+            continue
+        lines = []
+        lines += ["In process %d:" % (p), ""]
+        lines += [">>> distbuffer['buffer']"] + rst_lines(buffer)
+        lines += [">>> distbuffer['dim_data']"] + rst_lines(dim_data)
+        #lines += [""]
+        lines_list.append(lines)
+    # Print as table with nice layout.
+    num_local_properties = len(lines_list)
+    if (num_local_properties % 2) == 0:
+        # 2 X N grid
+        rows, cols = (2, num_local_properties // 2)
+    else:
+        # N x 1 grid
+        rows, cols = (num_local_properties, 1)
+    rst_table(rows, cols, lines_list)
 
 
 def create_distribution_plot_and_documentation(context, params):
