@@ -213,8 +213,8 @@ def map_from_dim_datas(dim_datas):
     # check that all proccesses / ranks are accounted for.
     proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
     if proc_ranks != list(range(len(dim_datas))):
-        raise ValueError(
-                "Ranks of processes (%r) not consistent." % proc_ranks)
+        msg = "Ranks of processes (%r) not consistent."
+        raise ValueError(msg % proc_ranks)
     # Sort dim_datas according to proc_grid_rank.
     dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
 
@@ -251,7 +251,8 @@ class ClientMDMap(object):
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
         self.rank_from_coords = { c: r for (r, c) in enumerate(coords)}
 
-        dim_data_per_dim = [_compactify_dicts(dict_tuple) for dict_tuple in zip(*dim_datas)]
+        dim_data_per_dim = [_compactify_dicts(dict_tuple)
+                            for dict_tuple in zip(*dim_datas)]
 
         if len(dim_data_per_dim) != self.ndim:
             raise ValueError("Inconsistent dimensions.")
