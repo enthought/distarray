@@ -182,38 +182,28 @@ def plot_local_arrays(darray,
     for processor, local_array in enumerate(ndarrays):
         if local_array.size > 0:
             local_arrays.append((processor, local_array))
-        else:
-            print('Skipping zero sized local array for processor', processor)
-
-    # Can only handle 4 local arrays for now.
-    num_local_arrays = len(local_arrays)
-    if num_local_arrays not in [3, 4]:
-        print('Cannot handle %d local arrays.' % (num_local_arrays))
-        return
 
     pyplot.clf()
 
-    if num_local_arrays == 3:
-        # 3x1 grid
-        _, subfigs = pyplot.subplots(3, 1)
-        for process, local_array in local_arrays:
-            subfig = subfigs[process]
-            plot_local_array_subfigure(subfig,
-                                       local_array,
-                                       process,
-                                       colormap_objects)
-    elif num_local_arrays == 4:
-        # 2x2 grid
-        _, subfigs = pyplot.subplots(2, 2)
-        for process, local_array in local_arrays:
-            ix, iy = process // 2, process % 2
-            subfig = subfigs[ix, iy]
-            plot_local_array_subfigure(subfig,
-                                       local_array,
-                                       process,
-                                       colormap_objects)
+    num_local_arrays = len(local_arrays)
+    if (num_local_arrays % 2) == 0:
+        # 2 X N grid
+        subplot_grid = (2, num_local_arrays // 2)
     else:
-        raise ValueError('Invalid number of local arrays to plot.')
+        # N x 1 grid
+        subplot_grid = (num_local_arrays, 1)
+
+    _, subfigs = pyplot.subplots(*subplot_grid)
+    for i, (process, local_array) in enumerate(local_arrays):
+        if subplot_grid[1] > 1:
+            row, col = i % 2, i // 2
+            subfig = subfigs[row, col]
+        else:
+            subfig = subfigs[i]
+        plot_local_array_subfigure(subfig,
+                                   local_array,
+                                   process,
+                                   colormap_objects)
 
     # Add main title and adjust size.
     figure = pyplot.gcf()
