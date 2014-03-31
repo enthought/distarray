@@ -96,9 +96,9 @@ def create_discrete_colormaps(num_values):
         cj = cmap(jj)
         # Get average of rgb values.
         avg = (cj[0] + cj[1] + cj[2]) / 3.0
-        # cyan gets avg=0.6111, yellow gets avg=0.6337.
-        # Choose cutoff for yellow and not cyan.
-        if avg >= 0.625:
+        # With 4-color jet, avg cyan=0.6111, yellow=0.6337.
+        # Choose empirically reasonable cutoff.
+        if avg >= 0.5:
             text_color = 'black'
         else:
             text_color = 'white'
