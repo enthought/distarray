@@ -172,7 +172,13 @@ class ClientUnstructuredMap(ClientMapBase):
         # for each local array's global indices.
         return self._owners
 
+
 def _compactify_dicts(dicts):
+    """ Internal helper function to take a list of dimension dictionaries with
+    duplicates and remove the dupes.
+
+    """
+    # Workaround to make the dictionary's contents hashable.
     for d in dicts:
         if 'indices' in d:
             d['indices'] = tuple(d['indices'])
@@ -187,6 +193,23 @@ def _compactify_dicts(dicts):
 
 
 def map_from_dim_datas(dim_datas):
+    """ Generates a ClientMap instance from a santized sequence of dim_data
+    dictionaries.
+
+    Parameters
+    ----------
+    dim_datas : sequence of dictionaries
+        Each dictionary is a "dimension dictionary" from the distributed array
+        protocol, one per process in this dimension of the process grid.  The
+        dimension dictionaries shall all have the same keys and values for
+        global attributes: `dist_type`, `size`, `proc_grid_size`, and perhaps
+        others.
+
+    Returns
+    -------
+        An instance of a subclass of ClientMapBase.
+
+    """
     # check that all proccesses / ranks are accounted for.
     proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
     if proc_ranks != list(range(len(dim_datas))):
@@ -204,7 +227,6 @@ def map_from_dim_datas(dim_datas):
     return selector[dist_type](dim_datas)
 
 
-
 class ClientMDMap(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
@@ -213,6 +235,9 @@ class ClientMDMap(object):
 
     @classmethod
     def from_dim_data(cls, context, dim_datas):
+        """ Creates a ClientMDMap from a sequence of `dim_data` dictionary
+        tuples from each LocalArray.
+        """
 
         self = cls.__new__(cls)
         dd0 = dim_datas[0]

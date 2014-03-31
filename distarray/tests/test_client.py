@@ -213,7 +213,7 @@ class TestDistArrayCreation(IpclusterTestCase):
         rows = 9
         cols = 10
         col_indices = numpy.random.permutation(range(cols))
-        row_break_point = rows // 2 + 1
+        row_break_point = rows // 2
         col_break_point = len(col_indices) // 3
         ddpp = [
              (
