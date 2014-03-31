@@ -80,10 +80,13 @@ class ClientNoDistMap(ClientMapBase):
     @classmethod
     def from_dim_data(cls, dim_data_seq):
         if len(dim_data_seq) != 1:
-            raise ValueError()
+            msg = ("Number of dimension dictionaries "
+                   "non-unitary for non-distributed dimension.")
+            raise ValueError(msg)
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'n':
-            raise ValueError()
+            msg = "Wrong dist_type (%r) for non-distributed map."
+            raise ValueError(msg % dd['dist_type'])
         grid_size = dd['proc_grid_size']
         size = dd['size']
         return cls(size, grid_size)
@@ -105,11 +108,14 @@ class ClientBlockMap(ClientMapBase):
         self = cls.__new__(cls)
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'b':
-            raise ValueError()
+            msg = "Wrong dist_type (%r) for block map."
+            raise ValueError(msg % dd['dist_type'])
         self.size = dd['size']
         self.grid_size = dd['proc_grid_size']
         if self.grid_size != len(dim_data_seq):
-            raise ValueError()
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), self.grid_size))
         self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
         return self
 
@@ -133,11 +139,14 @@ class ClientCyclicMap(ClientMapBase):
     def from_dim_data(cls, dim_data_seq):
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'c':
-            raise ValueError()
+            msg = "Wrong dist_type (%r) for cyclic map."
+            raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
         if grid_size != len(dim_data_seq):
-            raise ValueError()
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), grid_size))
         return cls(size, grid_size)
 
     def __init__(self, size, grid_size):
@@ -154,11 +163,14 @@ class ClientUnstructuredMap(ClientMapBase):
     def from_dim_data(cls, dim_data_seq):
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'u':
-            raise ValueError()
+            msg = "Wrong dist_type (%r) for unstructured map."
+            raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
         if grid_size != len(dim_data_seq):
-            raise ValueError()
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), grid_size))
         return cls(size, grid_size)
 
     def __init__(self, size, grid_size):
