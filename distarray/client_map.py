@@ -77,6 +77,20 @@ class ClientMapBase(object):
 
 class ClientNoDistMap(ClientMapBase):
 
+    @classmethod
+    def from_dim_data(cls, dim_data_seq):
+        if len(dim_data_seq) != 1:
+            msg = ("Number of dimension dictionaries "
+                   "non-unitary for non-distributed dimension.")
+            raise ValueError(msg)
+        dd = dim_data_seq[0]
+        if dd['dist_type'] != 'n':
+            msg = "Wrong dist_type (%r) for non-distributed map."
+            raise ValueError(msg % dd['dist_type'])
+        grid_size = dd['proc_grid_size']
+        size = dd['size']
+        return cls(size, grid_size)
+
     def __init__(self, size, grid_size):
         if grid_size != 1:
             msg = "grid_size for ClientNoDistMap must be 1 (given %s)"
@@ -88,6 +102,22 @@ class ClientNoDistMap(ClientMapBase):
 
 
 class ClientBlockMap(ClientMapBase):
+
+    @classmethod
+    def from_dim_data(cls, dim_data_seq):
+        self = cls.__new__(cls)
+        dd = dim_data_seq[0]
+        if dd['dist_type'] != 'b':
+            msg = "Wrong dist_type (%r) for block map."
+            raise ValueError(msg % dd['dist_type'])
+        self.size = dd['size']
+        self.grid_size = dd['proc_grid_size']
+        if self.grid_size != len(dim_data_seq):
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), self.grid_size))
+        self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
+        return self
 
     def __init__(self, size, grid_size):
         self.size = size
@@ -105,6 +135,20 @@ class ClientBlockMap(ClientMapBase):
 
 class ClientCyclicMap(ClientMapBase):
 
+    @classmethod
+    def from_dim_data(cls, dim_data_seq):
+        dd = dim_data_seq[0]
+        if dd['dist_type'] != 'c':
+            msg = "Wrong dist_type (%r) for cyclic map."
+            raise ValueError(msg % dd['dist_type'])
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(dim_data_seq):
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), grid_size))
+        return cls(size, grid_size)
+
     def __init__(self, size, grid_size):
         self.size = size
         self.grid_size = grid_size
@@ -114,6 +158,20 @@ class ClientCyclicMap(ClientMapBase):
 
 
 class ClientUnstructuredMap(ClientMapBase):
+
+    @classmethod
+    def from_dim_data(cls, dim_data_seq):
+        dd = dim_data_seq[0]
+        if dd['dist_type'] != 'u':
+            msg = "Wrong dist_type (%r) for unstructured map."
+            raise ValueError(msg % dd['dist_type'])
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(dim_data_seq):
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(dim_data_seq), grid_size))
+        return cls(size, grid_size)
 
     def __init__(self, size, grid_size):
         self.size = size
@@ -127,11 +185,93 @@ class ClientUnstructuredMap(ClientMapBase):
         return self._owners
 
 
+def _compactify_dicts(dicts):
+    """ Internal helper function to take a list of dimension dictionaries with
+    duplicates and remove the dupes.
+
+    """
+    # Workaround to make the dictionary's contents hashable.
+    for d in dicts:
+        if 'indices' in d:
+            d['indices'] = tuple(d['indices'])
+    try:
+        return [dict(u) for u in set(tuple(sorted(d.items())) for d in dicts)]
+    except TypeError:
+        result = []
+        for i, d in enumerate(dicts):
+            if d not in dicts[i+1:]:
+                result.append(d)
+        return result
+
+
+def map_from_dim_datas(dim_datas):
+    """ Generates a ClientMap instance from a santized sequence of dim_data
+    dictionaries.
+
+    Parameters
+    ----------
+    dim_datas : sequence of dictionaries
+        Each dictionary is a "dimension dictionary" from the distributed array
+        protocol, one per process in this dimension of the process grid.  The
+        dimension dictionaries shall all have the same keys and values for
+        global attributes: `dist_type`, `size`, `proc_grid_size`, and perhaps
+        others.
+
+    Returns
+    -------
+        An instance of a subclass of ClientMapBase.
+
+    """
+    # check that all proccesses / ranks are accounted for.
+    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
+    if proc_ranks != list(range(len(dim_datas))):
+        msg = "Ranks of processes (%r) not consistent."
+        raise ValueError(msg % proc_ranks)
+    # Sort dim_datas according to proc_grid_rank.
+    dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
+
+    dist_type = dim_datas[0]['dist_type']
+    selector = {'n': ClientNoDistMap.from_dim_data,
+                'b': ClientBlockMap.from_dim_data,
+                'c': ClientCyclicMap.from_dim_data,
+                'u': ClientUnstructuredMap.from_dim_data}
+    if dist_type not in selector:
+        raise ValueError("Unknown dist_type %r" % dist_type)
+    return selector[dist_type](dim_datas)
+
+
 class ClientMDMap(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
 
     """
+
+    @classmethod
+    def from_dim_data(cls, context, dim_datas):
+        """ Creates a ClientMDMap from a sequence of `dim_data` dictionary
+        tuples from each LocalArray.
+        """
+
+        self = cls.__new__(cls)
+        dd0 = dim_datas[0]
+        self.context = context
+        self.shape = tuple(dd['size'] for dd in dd0)
+        self.ndim = len(dd0)
+        self.dist = tuple(dd['dist_type'] for dd in dd0)
+        self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
+
+        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
+        self.rank_from_coords = { c: r for (r, c) in enumerate(coords)}
+
+        dim_data_per_dim = [_compactify_dicts(dict_tuple)
+                            for dict_tuple in zip(*dim_datas)]
+
+        if len(dim_data_per_dim) != self.ndim:
+            raise ValueError("Inconsistent dimensions.")
+
+        self.maps = [map_from_dim_datas(ddpd) for ddpd in dim_data_per_dim]
+
+        return self
 
     def __init__(self, context, shape, dist, grid_shape=None):
 

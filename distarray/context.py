@@ -12,7 +12,6 @@ import collections
 import numpy
 
 from distarray.client import DistArray
-from distarray.client_map import ClientMDMap
 from distarray.ipython_utils import IPythonClient
 
 

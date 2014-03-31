@@ -191,11 +191,29 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i, arr in enumerate(localarrays):
             assert_allclose(arr, ddpp[i][0]['indices'])
 
+    def test_from_dim_data_irregular_block(self):
+        global_size = 10
+        starts = (0, 2, 3, 4)
+        stops = (2, 3, 4, 10)
+        ddpp = [
+             (
+              {'dist_type': 'b',
+               'start': starts[i],
+               'stop': stops[i],
+               'proc_grid_rank': i,
+               'proc_grid_size': 4,
+               'size': global_size},
+              ) for i in range(4)
+             ]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(global_size):
+            distarr[i] = i
+
     def test_from_dim_data_bu(self):
         rows = 9
         cols = 10
         col_indices = numpy.random.permutation(range(cols))
-        row_break_point = rows // 2 + 1
+        row_break_point = rows // 2
         col_break_point = len(col_indices) // 3
         ddpp = [
              (
