@@ -15,6 +15,28 @@ class Random(object):
         self.context = context
         self.context._execute('import distarray.local.random')
 
+    def seed(self, seed=None):
+        """
+        Seed the random number generators on each engine.
+
+        Parameters
+        ----------
+        seed : None, int, or array of integers
+            Base random number seed to use on each engine.
+            If None, then a non-deterministic seed is obtained from the
+            operating system. Otherwise, the seed is used as passed,
+            and the sequence of random numbers will be deterministic.
+
+            Each individual engine has its state adjusted so that
+            it is different from each other engine. Thus, each engine
+            will compute a different sequence of random numbers.
+        """
+        cmd = 'numpy.random.seed(seed=%r)' % (seed)
+        self.context._execute(cmd)
+        cmd = 'distarray.local.random.label_state(%s)' % (
+            self.context._comm_key)
+        self.context._execute(cmd)
+
     def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
         """
         rand(size=(d0, d1, ..., dn))
