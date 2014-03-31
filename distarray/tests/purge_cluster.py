@@ -10,14 +10,12 @@ from __future__ import print_function
 
 import sys
 
-from IPython.parallel import Client
 from distarray.context import Context
 
 
 def dump():
     """ Print out key names that exist on the engines. """
-    client = Client()
-    context = Context(client)
+    context = Context()
     keylist = context.dump_keys(all_other_contexts=True)
     num_keys = len(keylist)
     print('*** %d ENGINE KEYS ***' % (num_keys))
@@ -28,8 +26,7 @@ def dump():
 def purge():
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
-    client = Client()
-    context = Context(client)
+    context = Context()
     context.purge_keys(all_other_contexts=True)
 
 
