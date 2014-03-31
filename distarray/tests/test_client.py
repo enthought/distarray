@@ -117,49 +117,10 @@ class TestDistArray(IpclusterTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreation(IpclusterTestCase):
-
-    """Test distarray creation methods"""
+class TestDistArrayCreationFromDimData(IpclusterTestCase):
 
     def setUp(self):
         self.context = Context(self.client)
-
-     # overloads base class...
-    def tearDown(self):
-        del self.context
-        super(TestDistArrayCreation, self).tearDown()
-
-    def test___init__(self):
-        shape = (100, 100)
-        mdmap = ClientMDMap(self.context, shape, ('b', 'c'))
-        da = DistArray(mdmap, dtype=int)
-        da.fill(42)
-        nda = numpy.empty(shape, dtype=int)
-        nda.fill(42)
-        assert_array_equal(da.tondarray(), nda)
-
-    def test_zeros(self):
-        shape = (16, 16)
-        zero_distarray = self.context.zeros(shape)
-        zero_ndarray = numpy.zeros(shape)
-        assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
-
-    def test_ones(self):
-        shape = (16, 16)
-        one_distarray = self.context.ones(shape)
-        one_ndarray = numpy.ones(shape)
-        assert_array_equal(one_distarray.tondarray(), one_ndarray)
-
-    def test_empty(self):
-        shape = (16, 16)
-        empty_distarray = self.context.empty(shape)
-        self.assertEqual(empty_distarray.shape, shape)
-
-    def test_fromndarray(self):
-        ndarr = numpy.arange(16).reshape(4, 4)
-        distarr = self.context.fromndarray(ndarr)
-        for (i, j), val in numpy.ndenumerate(ndarr):
-            self.assertEqual(distarr[i, j], ndarr[i, j])
 
     def test_from_dim_data_1d(self):
         total_size = 40
@@ -331,6 +292,52 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
+
+
+
+class TestDistArrayCreation(IpclusterTestCase):
+
+    """Test distarray creation methods"""
+
+    def setUp(self):
+        self.context = Context(self.client)
+
+     # overloads base class...
+    def tearDown(self):
+        del self.context
+        super(TestDistArrayCreation, self).tearDown()
+
+    def test___init__(self):
+        shape = (100, 100)
+        mdmap = ClientMDMap(self.context, shape, ('b', 'c'))
+        da = DistArray(mdmap, dtype=int)
+        da.fill(42)
+        nda = numpy.empty(shape, dtype=int)
+        nda.fill(42)
+        assert_array_equal(da.tondarray(), nda)
+
+    def test_zeros(self):
+        shape = (16, 16)
+        zero_distarray = self.context.zeros(shape)
+        zero_ndarray = numpy.zeros(shape)
+        assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
+
+    def test_ones(self):
+        shape = (16, 16)
+        one_distarray = self.context.ones(shape)
+        one_ndarray = numpy.ones(shape)
+        assert_array_equal(one_distarray.tondarray(), one_ndarray)
+
+    def test_empty(self):
+        shape = (16, 16)
+        empty_distarray = self.context.empty(shape)
+        self.assertEqual(empty_distarray.shape, shape)
+
+    def test_fromndarray(self):
+        ndarr = numpy.arange(16).reshape(4, 4)
+        distarr = self.context.fromndarray(ndarr)
+        for (i, j), val in numpy.ndenumerate(ndarr):
+            self.assertEqual(distarr[i, j], ndarr[i, j])
 
     def test_grid_rank(self):
         # regression test for issue #235
