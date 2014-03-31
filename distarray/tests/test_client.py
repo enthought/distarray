@@ -117,6 +117,25 @@ class TestDistArray(IpclusterTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
+class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
+
+    def setUp(self):
+        self.context = Context(self.client)
+
+    def test_from_global_dim_data_irregular_block(self):
+        global_size = 10
+        starts = (0, 2, 3, 4)
+        glb_dim_data = (
+              {'dist_type': 'b',
+               'starts': starts,
+               'proc_grid_size': 4,
+               'size': global_size},
+              )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
+        for i in range(global_size):
+            distarr[i] = i
+
+
 class TestDistArrayCreationFromDimData(IpclusterTestCase):
 
     def setUp(self):
