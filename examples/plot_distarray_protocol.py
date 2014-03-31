@@ -14,6 +14,7 @@ The output .png files should be copied to the images folder as well.
 
 from __future__ import print_function
 
+import os.path
 from pprint import pformat
 from numpy.random import permutation, seed
 
@@ -25,7 +26,8 @@ def print_array_documentation(context,
                               array,
                               title,
                               text,
-                              filename,
+                              global_plot_filename,
+                              local_plot_filename,
                               verbose=False):
     """ Print some properties of the array.
 
@@ -44,8 +46,10 @@ def print_array_documentation(context,
         The document section title.
     text : string
         A description of the array layout to add to the document.
-    filename : string
-        The filename of the figure to add to the document.
+    global_plot_filename : string
+        The filename of the global array figure to add to the document.
+    local_plot_filename : string
+        The filename of the local array figure to add to the document.
     verbose : bool
         If True, some extra information is printed, that would
         be overly verbose for the real protocol documentation.
@@ -59,6 +63,13 @@ def print_array_documentation(context,
         trims = [line for line in lines if len(line) > 0]
         trimmed = '\n'.join(trims)
         return trimmed
+
+    def rst_plot(filename):
+        """ Include a plot in the .rst document. """
+        print(".. image:: ../images/%s" % (filename))
+        # align right does not work as I want.
+        #print("   :align: right")
+        print()
 
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
@@ -83,12 +94,9 @@ def print_array_documentation(context,
     print(text)
     print()
 
-    # Add image.
-    if filename is not None:
-        print(".. image:: ../images/%s" % (filename))
-        # align right does not work as I want.
-        #print("   :align: right")
-        print()
+    # Global array plot.
+    if global_plot_filename is not None:
+        rst_plot(global_plot_filename)
 
     # Full (undistributed) array:
     full_array = array.toarray()
@@ -120,6 +128,10 @@ def print_array_documentation(context,
     print(">>> distbuffer['__version__']")
     print(rst_print(db_version[0]))
     print()
+
+    # Local array plot.
+    if local_plot_filename is not None:
+        rst_plot(local_plot_filename)
 
     # Properties that change per-process:
     for p, (keys, version, buffer, dim_data) in enumerate(
@@ -192,7 +204,7 @@ def create_distribution_plot_and_documentation(context, params):
                     array[i, j, k] = value
                     value += 1.0
     else:
-        # Even better would be to generalize this to any dimensions.
+        # TODO: Even better would be to generalize this to any dimensions.
         raise ValueError('Array must be 1, 2, or 3 dimensional.')
 
     # Plot title and axis labels.
@@ -211,6 +223,13 @@ def create_distribution_plot_and_documentation(context, params):
     if text is not None:
         doc_text = doc_text + "\n\n" + text
 
+    # Filenames for array plots.
+    global_plot_filename = filename
+    local_plot_filename = None
+    if global_plot_filename is not None:
+        root, ext = os.path.splitext(global_plot_filename)
+        local_plot_filename = root + '_local' + ext
+
     # Create plot.
     if len(shape) in [1, 2]:
         plotting.plot_array_distribution(
@@ -219,10 +238,12 @@ def create_distribution_plot_and_documentation(context, params):
             xlabel=xlabel,
             ylabel=ylabel,
             legend=True,
-            filename=filename)
+            global_plot_filename=global_plot_filename,
+            local_plot_filename=local_plot_filename)
     else:
-        # Not plottable, avoid writing a link to the missing plot.
-        filename = None
+        # Not plottable, avoid writing links to missing plots.
+        global_plot_filename = None
+        local_plot_filename = None
 
     # Print documentation.
     print_array_documentation(
@@ -230,7 +251,8 @@ def create_distribution_plot_and_documentation(context, params):
         array,
         title=doc_title,
         text=doc_text,
-        filename=filename)
+        global_plot_filename=global_plot_filename,
+        local_plot_filename=local_plot_filename)
 
 
 def create_distribution_plot_and_documentation_all(
@@ -290,6 +312,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'plot_block_irregularblock.png',
+         'skip': True,    # IndexErrors now???
          'dimdata': [
             (
              {'size': 5,
@@ -355,6 +378,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'BlockCyclic, BlockCyclic',
          'labels': ('bc', 'bc'),
          'filename': 'plot_blockcyclic_blockcyclic.png',
+         'skip': True,    # IndexErrors now???
          'dimdata': [
             ({'block_size': 2,
               'dist_type': 'c',
@@ -411,6 +435,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'BlockPadded, BlockPadded',
          'labels': ('bp', 'bp'),
          'filename': 'plot_blockpad_blockpad.png',
+         'skip': True,    # IndexErrors now???
          'dimdata': [
             (
              {'size': 5,
@@ -563,6 +588,90 @@ def create_distribution_plot_and_documentation_all(
         },
     ]
 
+    test_params_list = [
+        {'shape': (5, 9),
+         'title': 'Block, Irregular-Block',
+         'labels': ('b', 'b'),
+         'filename': 'plot_block_irregularblock.png',
+         'dimdata': [
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 4,
+              'start': 0,
+              'stop': 2},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 4,
+              'start': 2,
+              'stop': 6},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 2,
+              'proc_grid_size': 4,
+              'start': 6,
+              'stop': 7},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 3,
+              'proc_grid_size': 4,
+              'start': 7,
+              'stop': 9},
+             ),
+          ],
+        },
+#         {'shape': (5, 9),
+#          'title': 'Cyclic, Cyclic',
+#          'labels': ('c', 'c'),
+#          'filename': 'plot_cyclic_cyclic.png',
+#          'dist': ('c', 'c'),
+#         },
+#         {'shape': (5, 9),
+#          'title': 'Block, Nondistributed',
+#          'labels': ('b', 'n'),
+#          'filename': 'plot_block_nondist.png',
+#          'dist': ('b', 'n'),
+#         },
+#         {'shape': (5, 9),
+#          'title': 'Block, Cyclic',
+#          'labels': ('b', 'c'),
+#          'filename': 'plot_block_cyclic.png',
+#          'dist': ('b', 'c'),
+#         },
+    ]
+
     # Document section header
     if add_header:
         print('Automatically Generated Examples')
@@ -570,6 +679,7 @@ def create_distribution_plot_and_documentation_all(
         print()
 
     for params in params_list:
+    #for params in test_params_list:
         num_dims = len(params['shape'])
         if num_dims in dimlist:
             create_distribution_plot_and_documentation(context, params)
@@ -585,6 +695,7 @@ def main():
         dimlist = [1, 2]
     elif num_targets == 8:
         dimlist = [3]
+        dimlist = [1, 2, 3]
     else:
         # Try them all, but GridShapeErrors are likely!
         dimlist = [1, 2, 3]

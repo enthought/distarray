@@ -10,7 +10,6 @@ Plotting functions for distarrays.
 
 from matplotlib import pyplot, colors, cm
 from numpy import arange, concatenate, empty, linspace, resize
-import os.path
 
 from distarray.decorators import local
 
@@ -196,7 +195,8 @@ def plot_local_arrays(darray,
     _, subfigs = pyplot.subplots(*subplot_grid)
     for i, (process, local_array) in enumerate(local_arrays):
         if subplot_grid[1] > 1:
-            row, col = i % 2, i // 2
+            N = subplot_grid[0]
+            row, col = i // N, i % N
             subfig = subfigs[row, col]
         else:
             subfig = subfigs[i]
@@ -221,7 +221,8 @@ def plot_array_distribution(darray,
                             yflip=False,
                             cell_label=True,
                             legend=False,
-                            filename=None,
+                            global_plot_filename=None,
+                            local_plot_filename=None,
                             *args, **kwargs):
     """
     Plot a distarray's memory layout. It can be 1D or 2D.
@@ -243,8 +244,10 @@ def plot_array_distribution(darray,
         This can look cluttered for large arrays.
     legend : bool
         If True, then a colorbar legend is drawn to label the colors.
-    filename : string
-        Output filename for the plot image.
+    global_plot_filename : string
+        Output filename for the global array plot image.
+    local_plot_filename : string
+        Output filename for the local array plot image.
 
     Returns
     -------
@@ -321,13 +324,11 @@ def plot_array_distribution(darray,
     figure.set_size_inches(10.0, 5.0)
 
     # Save to output file.
-    if filename is not None:
-        pyplot.savefig(filename, dpi=100)
+    if global_plot_filename is not None:
+        pyplot.savefig(global_plot_filename, dpi=100)
 
     # Make similar plots for the local arrays...
-    if filename is not None:
-        root, ext = os.path.splitext(filename)
-        local_filename = root + '_local' + ext
-        plot_local_arrays(darray, colormap_objects, local_filename)
+    if local_plot_filename is not None:
+        plot_local_arrays(darray, colormap_objects, local_plot_filename)
 
     return process_darray
