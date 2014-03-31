@@ -15,7 +15,7 @@ class Random(object):
         self.context = context
         self.context._execute('import distarray.local.random')
 
-    def seed(self, seed=None, make_distinct=True):
+    def seed(self, seed=None):
         """
         Seed the random number generators on each engine.
 
@@ -26,19 +26,16 @@ class Random(object):
             If None, then a non-deterministic seed is obtained from the
             operating system. Otherwise, the seed is used as passed,
             and the sequence of random numbers will be deterministic.
-        make_distinct : bool
-            If True, then each engine has its state adjusted so that
-            it is different from each other engine. Then, each engine
+
+            Each individual engine has its state adjusted so that
+            it is different from each other engine. Thus, each engine
             will compute a different sequence of random numbers.
-            If False, then each engine is given the same state,
-            and so each engine will generate the same sequence.
         """
         cmd = 'numpy.random.seed(seed=%r)' % (seed)
         self.context._execute(cmd)
-        if make_distinct:
-            cmd = 'distarray.local.random.label_state(%s)' % (
-                self.context._comm_key)
-            self.context._execute(cmd)
+        cmd = 'distarray.local.random.label_state(%s)' % (
+            self.context._comm_key)
+        self.context._execute(cmd)
 
     def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
         """

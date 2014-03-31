@@ -56,13 +56,12 @@ class TestRandom(unittest.TestCase):
         """ Test that the same seed generates the same sequence. """
         shape = (8, 6)
         seed = 0xfeedbeef
-        make_distinct = True
         # Seed and get some random numbers.
-        self.random.seed(seed, make_distinct=make_distinct)
+        self.random.seed(seed)
         a = self.random.rand(shape)
         aa = a.toarray()
         # Seed again and get more random numbers.
-        self.random.seed(seed, make_distinct=make_distinct)
+        self.random.seed(seed)
         b = self.random.rand(shape)
         bb = b.toarray()
         # For an explicit seed, these should match exactly.
@@ -72,22 +71,18 @@ class TestRandom(unittest.TestCase):
         """ Test that if seed=None, the sequences are not deterministic. """
         shape = (8, 6)
         # Seed and get some random numbers.
-        self.random.seed(None, make_distinct=True)
+        self.random.seed(None)
         a = self.random.rand(shape)
         aa = a.toarray()
         # Seed again and get more random numbers.
-        self.random.seed(None, make_distinct=True)
+        self.random.seed(None)
         b = self.random.rand(shape)
         bb = b.toarray()
         # For seed=None, these should *not* match.
         self.assertFalse((aa == bb).all())
 
-    def test_rand_per_engine_distinct(self):
-        """ Test that, if make_distinct=True when seeding,
-        that each engine produces a different sequence of random numbers,
-        while if make_distinct=False, then each engine produces
-        the same sequence.
-        """
+    def test_engines_distinct(self):
+        """ Test that each engine makes a different sequence of numbers. """
 
         def get_rand_array_per_engine(context, num_cols):
             """ Get a distarray of random numbers,
@@ -95,31 +90,23 @@ class TestRandom(unittest.TestCase):
             """
             num_engines = len(context.targets)
             shape = (num_engines, num_cols)
-            darr = self.random.rand(size=shape, dist={0: 'c', 1: 'n'})
+            darr = self.random.rand(size=shape, dist={0: 'b', 1: 'n'})
             return darr
 
-        # Seed generators so that each engine is different.
+        # Seed generators.
         seed = [0x12345678, 0xdeadbeef, 42]
-        self.random.seed(seed, make_distinct=True)
+        self.random.seed(seed)
         # Get array of random values, with one row per engine.
         a = get_rand_array_per_engine(self.context, 6)
         aa = a.toarray()
         # Each row should be different. We just test consecutive rows.
+        # If the rows are not different, then the generators on
+        # distinct engines are in the same state.
         num_rows = aa.shape[0]
         for r in range(num_rows - 1):
             r0 = aa[r, :]
             r1 = aa[r + 1, :]
             self.assertFalse((r0 == r1).all())
-        # Now seed so that each engine is the same, and get another array.
-        self.random.seed(seed, make_distinct=False)
-        a = get_rand_array_per_engine(self.context, 6)
-        aa = a.toarray()
-        # Now each row should be the same. We just test consecutive rows.
-        num_rows = aa.shape[0]
-        for r in range(num_rows - 1):
-            r0 = aa[r, :]
-            r1 = aa[r + 1, :]
-            self.assertTrue((r0 == r1).all())
 
 
 if __name__ == '__main__':
