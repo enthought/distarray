@@ -4,6 +4,20 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 #----------------------------------------------------------------------------
 
+"""
+Classes to manage the distribution-specific aspects of a LocalArray.
+
+The MDMap class is the main entry point and is meant to be used by LocalArrays
+to help translate between local and global index spaces.  It manages `ndim`
+one-dimensional map objects.
+
+The one-dimensional map classes BlockMap, CyclicMap, BlockCyclicMap, and
+UnstructuredMap all manage the mapping tasks for their particular dimension.
+All are subclasses of MapBase.  The reason for the several subclasses is to
+allow more compact and efficient operations.
+
+"""
+
 from __future__ import division
 
 import numpy as np
@@ -11,6 +25,11 @@ from distarray.externals.six.moves import range, zip
 
 
 class MDMap(object):
+    """ Multi-dimensional Map class.
+
+    Manages one or more one-dimensional map classes.
+
+    """
     
     @classmethod
     def from_dim_data(cls, dim_data):
@@ -20,27 +39,32 @@ class MDMap(object):
         self.ndim = len(self.maps)
         return self
 
-    @property
-    def local_shape(self):
-        return tuple(m.size for m in self.maps)
-
-    def local_from_global(self, *global_ind):
-        return tuple(self.maps[dim].local_from_global(global_ind[dim])
-                     for dim in range(self.ndim))
-
-    def global_from_local(self, *local_ind):
-        return tuple(self.maps[dim].global_from_local(local_ind[dim])
-                     for dim in range(self.ndim))
-
     def __getitem__(self, idx):
         return self.maps[idx]
 
     def __len__(self):
         return len(self.maps)
 
+    @property
+    def local_shape(self):
+        return tuple(m.size for m in self.maps)
+
+    def local_from_global(self, *global_ind):
+        """ Given `global_ind` indices, translate into local indices."""
+        return tuple(self.maps[dim].local_from_global(global_ind[dim])
+                     for dim in range(self.ndim))
+
+    def global_from_local(self, *local_ind):
+        """ Given `local_ind` indices, translate into global indices."""
+        return tuple(self.maps[dim].global_from_local(local_ind[dim])
+                     for dim in range(self.ndim))
+
 
 def map_from_dim_dict(dd):
+    """ Factory function that returns a 1D map for a given dimension
+    dictionary.
 
+    """
     # Extract parameters from the dimension dictionary.
     dist_type = dd['dist_type']
     size = dd['size']
@@ -52,23 +76,34 @@ def map_from_dim_dict(dd):
     indices = dd.get('indices', None)
 
     if dist_type == 'n':
-        return BlockMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, start=0, stop=size)
+        return BlockMap(global_size=size, grid_size=grid_size,
+                        grid_rank=grid_rank, start=0, stop=size)
     if dist_type == 'b':
-        return BlockMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, start=start, stop=stop)
+        return BlockMap(global_size=size, grid_size=grid_size,
+                        grid_rank=grid_rank, start=start, stop=stop)
     if dist_type == 'c' and block_size == 1:
-        return CyclicMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, start=start)
+        return CyclicMap(global_size=size, grid_size=grid_size,
+                         grid_rank=grid_rank, start=start)
     if dist_type == 'c' and block_size > 1:
-        return BlockCyclicMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, start=start, block_size=block_size)
+        return BlockCyclicMap(global_size=size, grid_size=grid_size,
+                              grid_rank=grid_rank, start=start,
+                              block_size=block_size)
     if dist_type == 'u':
-        return UnstructuredMap(global_size=size, grid_size=grid_size, grid_rank=grid_rank, indices=indices)
+        return UnstructuredMap(global_size=size, grid_size=grid_size,
+                               grid_rank=grid_rank, indices=indices)
+
     raise ValueError("Unsupported dist_type of %r" % dist_type)
 
 
 class MapBase(object):
+    """ Base class for all one dimensional Map classes.
+    """
     pass
 
 
 class BlockMap(MapBase):
+    """ One-dimensional block map class.
+    """
 
     dist = 'b'
 
@@ -111,6 +146,8 @@ class BlockMap(MapBase):
 
 
 class CyclicMap(MapBase):
+    """ One-dimensional cyclic map class.
+    """
 
     dist = 'c'
 
@@ -158,6 +195,8 @@ class CyclicMap(MapBase):
 
 
 class BlockCyclicMap(MapBase):
+    """ One-dimensional block cyclic map class.
+    """
 
     dist = 'c'
     
@@ -214,6 +253,8 @@ class BlockCyclicMap(MapBase):
 
 
 class UnstructuredMap(MapBase):
+    """ One-dimensional unstructured map class.
+    """
 
     dist = 'u'
 
