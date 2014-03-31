@@ -145,12 +145,13 @@ class LocalArray(object):
     # Methods used for initialization
     #-------------------------------------------------------------------------
 
-    def _init(self, dim_data, dtype=None, buf=None, comm=None):
+    def _init(self, dim_data, dtype=None, buf=None, comm=None,
+              grid_shape=None):
         """Private init method."""
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
+        self._init_grid_shape(grid_shape)
 
-        self._init_grid_shape()
 
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
@@ -164,11 +165,12 @@ class LocalArray(object):
         self.base = None
         self.ctypes = None
 
-    def _init_grid_shape(self):
+    def _init_grid_shape(self, grid_shape):
 
-        grid_shape = metadata_utils.make_grid_shape(self.global_shape,
-                                                    self.dist,
-                                                    self.comm_size)
+        if grid_shape is None:
+            grid_shape = metadata_utils.make_grid_shape(self.global_shape,
+                                                        self.dist,
+                                                        self.comm_size)
         metadata_utils.validate_grid_shape(grid_shape,
                                            self.dist,
                                            self.comm_size)
@@ -239,7 +241,8 @@ class LocalArray(object):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm,
+                   grid_shape=grid_shape)
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
