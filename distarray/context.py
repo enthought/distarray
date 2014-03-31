@@ -12,6 +12,7 @@ import collections
 import numpy
 
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 from distarray.ipython_utils import IPythonClient
 
 
@@ -261,6 +262,11 @@ class Context(object):
         return self._create_local(local_call='distarray.local.empty',
                                   shape=shape, dtype=dtype,
                                   dist=dist, grid_shape=grid_shape)
+
+    def from_global_dim_data(self, global_dim_data, dtype=float):
+        # global_dim_data is a sequence of dictionaries, one per dimension.
+        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
+        return DistArray(mdmap, dtype=dtype)
 
     def from_dim_data(self, dim_data_per_rank, dtype=float):
         """Make a DistArray from dim_data structures.

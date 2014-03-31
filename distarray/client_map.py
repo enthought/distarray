@@ -78,6 +78,15 @@ class ClientMapBase(object):
 class ClientNoDistMap(ClientMapBase):
 
     @classmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        if glb_dim_dict['dist_type'] != 'n':
+            msg = "Wrong dist_type (%r) for non-distributed map."
+            raise ValueError(msg % glb_dim_dict['dist_type'])
+        grid_size = glb_dim_dict['proc_grid_size']
+        size = glb_dim_dict['size']
+        return cls(size, grid_size)
+
+    @classmethod
     def from_dim_data(cls, dim_data_seq):
         if len(dim_data_seq) != 1:
             msg = ("Number of dimension dictionaries "
@@ -102,6 +111,21 @@ class ClientNoDistMap(ClientMapBase):
 
 
 class ClientBlockMap(ClientMapBase):
+
+    @classmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        self = cls.__new__(cls)
+        if glb_dim_dict['dist_type'] != 'b':
+            msg = "Wrong dist_type (%r) for block map."
+            raise ValueError(msg % glb_dim_dict['dist_type'])
+        self.size = glb_dim_dict['size']
+        self.grid_size = glb_dim_dict['proc_grid_size']
+        
+        starts = tuple(glb_dim_dict['starts'])
+        breakpoints = tuple(starts) + (self.size,)
+        self.bounds = list(zip(breakpoints[:-1], breakpoints[1:]))
+
+        return self
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -136,6 +160,15 @@ class ClientBlockMap(ClientMapBase):
 class ClientCyclicMap(ClientMapBase):
 
     @classmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        if glb_dim_dict['dist_type'] != 'c':
+            msg = "Wrong dist_type (%r) for cyclic map."
+            raise ValueError(msg % glb_dim_dict['dist_type'])
+        size = glb_dim_dict['size']
+        grid_size = glb_dim_dict['proc_grid_size']
+        return cls(size, grid_size)
+
+    @classmethod
     def from_dim_data(cls, dim_data_seq):
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'c':
@@ -158,6 +191,15 @@ class ClientCyclicMap(ClientMapBase):
 
 
 class ClientUnstructuredMap(ClientMapBase):
+
+    @classmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        if glb_dim_dict['dist_type'] != 'c':
+            msg = "Wrong dist_type (%r) for unstructured map."
+            raise ValueError(msg % glb_dim_dict['dist_type'])
+        size = glb_dim_dict['size']
+        grid_size = glb_dim_dict['proc_grid_size']
+        return cls(size, grid_size)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -239,12 +281,40 @@ def map_from_dim_datas(dim_datas):
         raise ValueError("Unknown dist_type %r" % dist_type)
     return selector[dist_type](dim_datas)
 
+def map_from_glb_dim_dict(global_dim_dict):
+
+    dist_type = global_dim_dict['dist_type']
+    selector = {'n': ClientNoDistMap.from_global_dim_dict,
+                'b': ClientBlockMap.from_global_dim_dict,
+                'c': ClientCyclicMap.from_global_dim_dict,
+                'u': ClientUnstructuredMap.from_global_dim_dict,
+                }
+    if dist_type not in selector:
+        raise ValueError("Unknown dist_type %r" % dist_type)
+    return selector[dist_type](global_dim_dict)
+
 
 class ClientMDMap(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
 
     """
+
+    @classmethod
+    def from_global_dim_data(cls, context, glb_dim_data):
+        self = cls.__new__(cls)
+        self.context = context
+        self.shape = tuple(gdd['size'] for gdd in glb_dim_data)
+        self.ndim = len(glb_dim_data)
+        self.dist = tuple(gdd['dist_type'] for gdd in glb_dim_data)
+        self.grid_shape = tuple(gdd['proc_grid_size'] for gdd in glb_dim_data)
+
+        nelts = reduce(operator.mul, self.grid_shape)
+        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+
+        self.maps = [map_from_glb_dim_dict(gdd) for gdd in glb_dim_data]
+
+        return self
 
     @classmethod
     def from_dim_data(cls, context, dim_datas):
