@@ -375,24 +375,24 @@ class TestIndexing(MpiTestCase):
         a = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         b = LocalArray((16,16), dist=('b', 'n'), comm=self.comm)
         for global_inds, value in ndenumerate(a):
-            a[global_inds] = 0.0
+            a.global_index[global_inds] =  0.0
         for global_inds, value in ndenumerate(a):
-            b[global_inds] = a[global_inds]
-        for global_inds, value in ndenumerate(a):
-            self.assertEqual(b[global_inds],a[global_inds])
-            self.assertEqual(a[global_inds],0.0)
+            b.global_index[global_inds] = a.global_index[global_inds]
+        for i, value in ndenumerate(a):
+            self.assertEqual(b.global_index[i], a.global_index[i])
+            self.assertEqual(a.global_index[i],0.0)
 
     def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
         a = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
         b = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
-        for global_inds, value in ndenumerate(a):
-            a[global_inds] = 0.0
-        for global_inds, value in ndenumerate(a):
-            b[global_inds] = a[global_inds]
-        for global_inds, value in ndenumerate(a):
-            self.assertEqual(b[global_inds],a[global_inds])
-            self.assertEqual(a[global_inds],0.0)
+        for i, value in ndenumerate(a):
+            a.global_index[i] = 0.0
+        for i, value in ndenumerate(a):
+            b.global_index[i] = a.global_index[i]
+        for i, value in ndenumerate(a):
+            self.assertEqual(b.global_index[i], a.global_index[i])
+            self.assertEqual(a.global_index[i], 0.0)
 
     def test_pack_unpack_index(self):
         a = LocalArray((16,16,2), dist=('c', 'b', 'n'), comm=self.comm)
