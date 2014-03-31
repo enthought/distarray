@@ -192,9 +192,9 @@ class TestDistArrayCreation(IpclusterTestCase):
             assert_allclose(arr, ddpp[i][0]['indices'])
 
     def test_from_dim_data_irregular_block(self):
-        global_size = 9
-        starts = (0, 4, 7, 8)
-        stops = (4, 7, 8, 8)
+        global_size = 10
+        starts = (0, 2, 3, 4)
+        stops = (2, 3, 4, 10)
         ddpp = [
              (
               {'dist_type': 'b',
