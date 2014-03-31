@@ -115,15 +115,14 @@ class BlockMap(MapBase):
         self.grid_size = grid_size
         self.grid_rank = grid_rank
 
-
     def local_from_global(self, gidx):
         if gidx < self.start or gidx >= self.stop:
-            raise IndexError()
+            raise IndexError("Global index %s out of bounds" % gidx)
         return gidx - self.start
 
     def global_from_local(self, lidx):
         if lidx >= self.local_size:
-            raise IndexError()
+            raise IndexError("Local index %s out of bounds" % lidx)
         return lidx + self.start
 
     @property
@@ -168,12 +167,12 @@ class CyclicMap(MapBase):
 
     def local_from_global(self, gidx):
         if (gidx - self.start) % self.grid_size:
-            raise IndexError()
+            raise IndexError("Global index %s out of bounds" % gidx)
         return (gidx - self.start) // self.grid_size
 
     def global_from_local(self, lidx):
         if lidx >= self.local_size:
-            raise IndexError()
+            raise IndexError("Local index %s out of bounds" % lidx)
         return (lidx * self.grid_size) + self.start
 
     @property
@@ -202,13 +201,16 @@ class BlockCyclicMap(MapBase):
     
     def __init__(self, global_size, grid_size, grid_rank, start, block_size):
         if start % block_size:
-            raise ValueError()
+            msg = "Value of start (%r) does not evenly divide block_size (%r)."
+            raise ValueError(msg % (start, block_size))
         self.start = start
         self.start_block = start // block_size
         self.block_size = block_size
+        if global_size % block_size:
+            # if global_nblocks * block_size != global_size:
+            msg ="Inconsistent values for global_size (%r) and block_size (%r)."
+            raise ValueError(msg % (global_size, block_size))
         global_nblocks = global_size // block_size
-        if global_nblocks * block_size != global_size:
-            raise ValueError()
         self.grid_size = grid_size
 
         local_nblocks = (global_nblocks - 1 - grid_rank) // grid_size + 1
@@ -219,12 +221,12 @@ class BlockCyclicMap(MapBase):
     def local_from_global(self, gidx):
         global_block, offset = divmod(gidx, self.block_size)
         if (global_block - self.start_block) % self.grid_size:
-            raise IndexError()
+            raise IndexError("Global index %s out of bounds" % gidx)
         return self.block_size * ((global_block - self.start_block) // self.grid_size) + offset
 
     def global_from_local(self, lidx):
         if lidx >= self.local_size:
-            raise IndexError()
+            raise IndexError("Local index %s out of bounds" % lidx)
         local_block, offset = divmod(lidx, self.block_size)
         global_block = (local_block * self.grid_size) + self.start_block
         return global_block * self.block_size + offset
@@ -271,7 +273,7 @@ class UnstructuredMap(MapBase):
         try:
             lidx = self._local_index[gidx]
         except KeyError:
-            raise IndexError()
+            raise IndexError("Global index %s out of bounds" % gidx)
         return lidx
 
     def global_from_local(self, lidx):
