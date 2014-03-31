@@ -183,7 +183,7 @@ def _compactify_dicts(dicts):
         if 'indices' in d:
             d['indices'] = tuple(d['indices'])
     try:
-        return [dict(u) for u in set(tuple(d.items()) for d in dicts)]
+        return [dict(u) for u in set(tuple(sorted(d.items())) for d in dicts)]
     except TypeError:
         result = []
         for i, d in enumerate(dicts):
@@ -213,7 +213,8 @@ def map_from_dim_datas(dim_datas):
     # check that all proccesses / ranks are accounted for.
     proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
     if proc_ranks != list(range(len(dim_datas))):
-        raise ValueError()
+        raise ValueError(
+                "Ranks of processes (%r) not consistent." % proc_ranks)
     # Sort dim_datas according to proc_grid_rank.
     dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
 
@@ -223,7 +224,7 @@ def map_from_dim_datas(dim_datas):
                 'c': ClientCyclicMap.from_dim_data,
                 'u': ClientUnstructuredMap.from_dim_data}
     if dist_type not in selector:
-        raise ValueError()
+        raise ValueError("Unknown dist_type %r" % dist_type)
     return selector[dist_type](dim_datas)
 
 
