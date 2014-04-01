@@ -195,7 +195,7 @@ def plot_local_arrays(darray,
     _, subfigs = pyplot.subplots(*subplot_grid)
     for i, (process, local_array) in enumerate(local_arrays):
         if subplot_grid[1] > 1:
-            N = subplot_grid[0]
+            N = subplot_grid[1]
             row, col = i // N, i % N
             subfig = subfigs[row, col]
         else:
