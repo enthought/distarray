@@ -109,6 +109,13 @@ class ClientNoDistMap(ClientMapBase):
     def owners(self, idx):
         return [0] if idx >= 0 and idx < self.size else []
 
+    def get_dimdicts(self):
+        return ({'dist_type' : 'n',
+                'size' : self.size,
+                'proc_grid_size' : 1,
+                'proc_grid_rank' : 0,
+                },)
+
 
 class ClientBlockMap(ClientMapBase):
 
@@ -156,6 +163,15 @@ class ClientBlockMap(ClientMapBase):
                 coords.append(coord)
         return coords
 
+    def get_dimdicts(self):
+        return tuple(({'dist_type' : 'b',
+                        'size' : self.size,
+                        'proc_grid_size' : self.grid_size,
+                        'proc_grid_rank' : grid_rank,
+                        'start' : start,
+                        'stop' : stop,
+                        }) for grid_rank, (start, stop) in enumerate(self.bounds))
+
 
 class ClientCyclicMap(ClientMapBase):
 
@@ -188,6 +204,14 @@ class ClientCyclicMap(ClientMapBase):
 
     def owners(self, idx):
         return [idx % self.grid_size]
+
+    def get_dimdicts(self):
+        return tuple(({'dist_type' : 'c',
+                        'size' : self.size,
+                        'proc_grid_size' : self.grid_size,
+                        'proc_grid_rank' : grid_rank,
+                        'start' : grid_rank,
+                        }) for grid_rank, in self.grid_size)
 
 
 class ClientUnstructuredMap(ClientMapBase):
@@ -225,6 +249,16 @@ class ClientUnstructuredMap(ClientMapBase):
         # processes.  Can be optimized if we know the upper and lower bounds
         # for each local array's global indices.
         return self._owners
+
+    def get_dimdicts(self):
+        if self.indices is None:
+            raise ValueError()
+        return tuple(({'dist_type' : 'u',
+                        'size' : self.size,
+                        'proc_grid_size' : self.grid_size,
+                        'proc_grid_rank' : grid_rank,
+                        'indices' : ii,
+                        }) for grid_rank, ii in enumerate(self.indices))
 
 
 def _compactify_dicts(dicts):
@@ -392,3 +426,11 @@ class ClientMDMap(object):
 
         """
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]
+
+    def get_local_dim_datas(self):
+        dds = [enumerate(m.get_dimdicts()) for m in self.maps]
+        cart_dds = product(*dds)
+        coord_and_dd = [zip(*cdd) for cdd in cart_dds]
+        rank_and_dd = [(self.rank_from_coord[c], dd) for (c, dd) in coord_and_dd]
+        target_and_dd = [(self.context.targets[r], dd) for (r, dd) in rank_and_dd]
+        return target_and_dd
