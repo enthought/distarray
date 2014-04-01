@@ -50,7 +50,7 @@ def validate_grid_shape(grid_shape, dist, comm_size):
     # check that if dist[i] == 'n' then grid_shape[i] == 1
     for dim, (gs, dd) in enumerate(zip(grid_shape, dist)):
         if dd == 'n' and gs != 1:
-            msg = "dimension %d is not distributed but has a grid size of %d."
+            msg = "dimension %s is not distributed but has a grid size of %s."
             raise InvalidGridShapeError(msg % (dim, gs))
     if reduce(operator.mul, grid_shape) != comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
