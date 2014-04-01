@@ -353,6 +353,8 @@ def create_distribution_plot_and_documentation_all(
     row_indices = permutation(range(rows))
     col_indices = permutation(range(cols))
 
+    skip_simple = False
+
     params_list = [
         # Examples using simple dist specification.
         {'shape': (5, 9),
@@ -360,35 +362,39 @@ def create_distribution_plot_and_documentation_all(
          'labels': ('b', 'n'),
          'filename': 'plot_block_nondist.png',
          'dist': ('b', 'n'),
+         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Nondistributed, Block',
          'labels': ('n', 'b'),
          'filename': 'plot_nondist_block.png',
          'dist': ('n', 'b'),
+         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'plot_block_block.png',
          'dist': ('b', 'b'),
+         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Cyclic',
          'labels': ('b', 'c'),
          'filename': 'plot_block_cyclic.png',
          'dist': ('b', 'c'),
+         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Cyclic, Cyclic',
          'labels': ('c', 'c'),
          'filename': 'plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
+         'skip': skip_simple,
         },
         # A 3D array. This needs more than 4 engines.
         {
          'shape': (5, 9, 3),
-         #'shape': (4, 4, 4),
          'title': 'Cyclic, Block, Cyclic',
          'labels': ('c', 'b', 'c'),
          'filename': 'plot_cyclic_block_cyclic.png',
@@ -769,10 +775,11 @@ def create_distribution_plot_and_documentation_all(
     #for params in test_params_list:
         num_dims = len(params['shape'])
         if num_dims in dimlist:
+            #print('*** STARTING %s' % (params['title']))
             create_distribution_plot_and_documentation(context, params)
 
 
-def main():
+def main1():
     context = distarray.Context()
     num_targets = len(context.targets)
     # The 1,2-D examples work best with a 4-process grid, and
@@ -781,12 +788,32 @@ def main():
     if num_targets == 4:
         dimlist = [1, 2]
     elif num_targets == 8:
-        dimlist = [3]
+        #dimlist = [3]
         dimlist = [1, 2, 3]
     else:
         # Try them all, but GridShapeErrors are likely!
         dimlist = [1, 2, 3]
     create_distribution_plot_and_documentation_all(context, dimlist)
+
+
+def main():
+    # We need >=8 engines for the 3D example...
+    context = distarray.Context()
+    num_targets = len(context.targets)
+    if num_targets < 8:
+        raise ValueError('Need at least 8 engines for all examples.')
+    # Do 1,2 dimension cases with 4 engines for clearer plots,
+    # and 3 dimension cases with 8 engines.
+    dimlist4, dimlist8 = [1, 2], [3]
+    # Test: All examples with 8 engines.
+    if False:
+        dimlist4, dimlist8 = [], [1, 2, 3]
+    # Make examples with 4 engines.
+    context4 = distarray.Context(targets=range(4))
+    create_distribution_plot_and_documentation_all(context4, dimlist4)
+    # Make examples with 8 engines.
+    context8 = distarray.Context(targets=range(8))
+    create_distribution_plot_and_documentation_all(context8, dimlist8)
 
 
 if __name__ == '__main__':
