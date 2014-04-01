@@ -124,50 +124,35 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
-        starts = (0, 2, 3, 4)
+        bounds = (0, 2, 3, 4, 10)
         glb_dim_data = (
                 {'dist_type': 'b',
-                    'starts': starts,
-                    'proc_grid_size': 4,
-                    'size': global_size},
+                    'bounds': bounds},
                 )
         distarr = self.context.from_global_dim_data(glb_dim_data)
         for i in range(global_size):
             distarr[i] = i
 
-    def test_from_dim_data_irregular_block(self):
-        global_size = 10
-        starts = (0, 2, 3, 4)
+    def test_from_dim_data_1d(self):
+        total_size = 40
+        list_of_indices = [
+                [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+                [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+                [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+                [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+                ]
+        total_size = sum(len(ii) for ii in list_of_indices)
         glb_dim_data = (
-                {'dist_type': 'b',
-                    'starts': starts,
-                    'proc_grid_size': 4,
-                    'size': global_size},
+                {'dist_type': 'u',
+                    'indices': list_of_indices,
+                    },
                 )
         distarr = self.context.from_global_dim_data(glb_dim_data)
-        for i in range(global_size):
+        for i in range(total_size):
             distarr[i] = i
-
-    # def test_from_dim_data_1d(self):
-        # total_size = 40
-        # list_of_indices = [
-                # [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-                # [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-                # [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-                # [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-                # ]
-        # total_size = sum(len(ii) for ii in list_of_indices)
-        # glb_dim_data = (
-                # {'dist_type': 'u',
-                    # 'indices': list_of_indices,
-                    # },
-                # )
-        # distarr = self.context.from_global_dim_data(glb_dim_data)
-        # for i in range(total_size):
-            # distarr[i] = i
-        # localarrays = distarr.get_localarrays()
-        # for i, arr in enumerate(localarrays):
-            # assert_allclose(arr, list_of_indices[i])
+        localarrays = distarr.get_localarrays()
+        for i, arr in enumerate(localarrays):
+            assert_allclose(arr, list_of_indices[i])
 
 
 

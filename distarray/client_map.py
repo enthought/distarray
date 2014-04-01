@@ -77,14 +77,15 @@ class ClientMapBase(object):
 
 class ClientNoDistMap(ClientMapBase):
 
+    dist = 'n'
+
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
         if glb_dim_dict['dist_type'] != 'n':
             msg = "Wrong dist_type (%r) for non-distributed map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        grid_size = glb_dim_dict['proc_grid_size']
         size = glb_dim_dict['size']
-        return cls(size, grid_size)
+        return cls(size, grid_size=1)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -119,18 +120,19 @@ class ClientNoDistMap(ClientMapBase):
 
 class ClientBlockMap(ClientMapBase):
 
+    dist = 'b'
+
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
         self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        self.size = glb_dim_dict['size']
-        self.grid_size = glb_dim_dict['proc_grid_size']
+        bounds = glb_dim_dict['bounds']
+        self.size = bounds[-1]
+        self.grid_size = len(bounds) - 1
         
-        starts = tuple(glb_dim_dict['starts'])
-        breakpoints = tuple(starts) + (self.size,)
-        self.bounds = list(zip(breakpoints[:-1], breakpoints[1:]))
+        self.bounds = list(zip(bounds[:-1], bounds[1:]))
 
         return self
 
@@ -175,6 +177,8 @@ class ClientBlockMap(ClientMapBase):
 
 class ClientCyclicMap(ClientMapBase):
 
+    dist = 'c'
+
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
         if glb_dim_dict['dist_type'] != 'c':
@@ -216,14 +220,17 @@ class ClientCyclicMap(ClientMapBase):
 
 class ClientUnstructuredMap(ClientMapBase):
 
+    dist = 'u'
+
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-        if glb_dim_dict['dist_type'] != 'c':
+        if glb_dim_dict['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        size = glb_dim_dict['size']
-        grid_size = glb_dim_dict['proc_grid_size']
-        return cls(size, grid_size)
+        indices_sequence = glb_dim_dict['indices']
+        size = sum(len(ii) for ii in indices_sequence)
+        grid_size = len(indices_sequence)
+        return cls(size, grid_size, indices=indices_sequence)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -237,11 +244,13 @@ class ClientUnstructuredMap(ClientMapBase):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), grid_size))
-        return cls(size, grid_size)
+        indices = [dd['indices'] for dd in dim_data_seq]
+        return cls(size, grid_size, indices=indices)
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, indices=None):
         self.size = size
         self.grid_size = grid_size
+        self.indices = indices
         self._owners = range(self.grid_size)
 
     def owners(self, idx):
@@ -338,15 +347,14 @@ class ClientMDMap(object):
     def from_global_dim_data(cls, context, glb_dim_data):
         self = cls.__new__(cls)
         self.context = context
-        self.shape = tuple(gdd['size'] for gdd in glb_dim_data)
-        self.ndim = len(glb_dim_data)
-        self.dist = tuple(gdd['dist_type'] for gdd in glb_dim_data)
-        self.grid_shape = tuple(gdd['proc_grid_size'] for gdd in glb_dim_data)
+        self.maps = [map_from_glb_dim_dict(gdd) for gdd in glb_dim_data]
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
 
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
-
-        self.maps = [map_from_glb_dim_dict(gdd) for gdd in glb_dim_data]
 
         return self
 
