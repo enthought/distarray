@@ -42,7 +42,7 @@ def client_map_factory(size, dist, grid_size):
     """
     cls_from_dist = {
             'b': ClientBlockMap,
-            'c': ClientCyclicMap,
+            'c': ClientBlockCyclicMap,
             'n': ClientNoDistMap,
             'u': ClientUnstructuredMap,
             }
@@ -190,7 +190,7 @@ class ClientBlockMap(ClientMapBase):
                         }) for grid_rank, padding, (start, stop) in data_tuples)
 
 
-class ClientCyclicMap(ClientMapBase):
+class ClientBlockCyclicMap(ClientMapBase):
 
     dist = 'c'
 
@@ -201,7 +201,8 @@ class ClientCyclicMap(ClientMapBase):
             raise ValueError(msg % glb_dim_dict['dist_type'])
         size = glb_dim_dict['size']
         grid_size = glb_dim_dict['proc_grid_size']
-        return cls(size, grid_size)
+        block_size = glb_dim_dict.get('block_size', 1)
+        return cls(size, grid_size, block_size)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -215,14 +216,17 @@ class ClientCyclicMap(ClientMapBase):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), grid_size))
-        return cls(size, grid_size)
+        block_size = dd.get('block_size', 1)
+        return cls(size, grid_size, block_size)
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, block_size=1):
         self.size = size
         self.grid_size = grid_size
+        self.block_size = block_size
 
     def owners(self, idx):
-        return [idx % self.grid_size]
+        idx_block = idx // self.block_size
+        return [idx_block % self.grid_size]
 
     def get_dimdicts(self):
         return tuple(({'dist_type' : 'c',
@@ -230,6 +234,7 @@ class ClientCyclicMap(ClientMapBase):
                         'proc_grid_size' : self.grid_size,
                         'proc_grid_rank' : grid_rank,
                         'start' : grid_rank,
+                        'block_size': self.block_size,
                         }) for grid_rank in range(self.grid_size))
 
 
@@ -333,7 +338,7 @@ def map_from_dim_datas(dim_datas):
     dist_type = dim_datas[0]['dist_type']
     selector = {'n': ClientNoDistMap.from_dim_data,
                 'b': ClientBlockMap.from_dim_data,
-                'c': ClientCyclicMap.from_dim_data,
+                'c': ClientBlockCyclicMap.from_dim_data,
                 'u': ClientUnstructuredMap.from_dim_data}
     if dist_type not in selector:
         raise ValueError("Unknown dist_type %r" % dist_type)
@@ -344,7 +349,7 @@ def map_from_global_dim_dict(global_dim_dict):
     dist_type = global_dim_dict['dist_type']
     selector = {'n': ClientNoDistMap.from_global_dim_dict,
                 'b': ClientBlockMap.from_global_dim_dict,
-                'c': ClientCyclicMap.from_global_dim_dict,
+                'c': ClientBlockCyclicMap.from_global_dim_dict,
                 'u': ClientUnstructuredMap.from_global_dim_dict,
                 }
     if dist_type not in selector:
