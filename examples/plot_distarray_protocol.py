@@ -72,8 +72,6 @@ def print_array_documentation(context,
         The plot must be created elsewhere, this does not make it.
         """
         print(".. image:: ../%s" % (filename))
-        # align right does not work as I want.
-        #print("   :align: right")
         print()
 
     def text_block_size(lines):
@@ -219,7 +217,6 @@ def print_array_documentation(context,
         lines += ["In process %d:" % (p), ""]
         lines += [">>> distbuffer['buffer']"] + rst_lines(buffer)
         lines += [">>> distbuffer['dim_data']"] + rst_lines(dim_data)
-        #lines += [""]
         lines_list.append(lines)
     # Print as table with nice layout.
     num_local_properties = len(lines_list)
@@ -353,7 +350,8 @@ def create_distribution_plot_and_documentation_all(
     row_indices = permutation(range(rows))
     col_indices = permutation(range(cols))
 
-    skip_simple = False
+    skip_simple = True
+    skip_3d     = True
 
     params_list = [
         # Examples using simple dist specification.
@@ -399,13 +397,14 @@ def create_distribution_plot_and_documentation_all(
          'labels': ('c', 'b', 'c'),
          'filename': 'images/plot_cyclic_block_cyclic.png',
          'dist': ('c', 'b', 'c'),
+         'skip': skip_3d,
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_irregularblock.png',
-         'skip': True,    # IndexErrors now???
+         #'skip': True,    # IndexErrors now???
          'dimdata': [
             (
              {'size': 5,
@@ -629,6 +628,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstruct_unstruct.png',
+         'skip': True,
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -681,90 +681,6 @@ def create_distribution_plot_and_documentation_all(
         },
     ]
 
-    test_params_list = [
-        {'shape': (5, 9),
-         'title': 'Block, Irregular-Block',
-         'labels': ('b', 'b'),
-         'filename': 'plot_block_irregularblock.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'start': 0,
-              'stop': 2},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'start': 2,
-              'stop': 6},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'start': 6,
-              'stop': 7},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'start': 7,
-              'stop': 9},
-             ),
-          ],
-        },
-#         {'shape': (5, 9),
-#          'title': 'Cyclic, Cyclic',
-#          'labels': ('c', 'c'),
-#          'filename': 'plot_cyclic_cyclic.png',
-#          'dist': ('c', 'c'),
-#         },
-#         {'shape': (5, 9),
-#          'title': 'Block, Nondistributed',
-#          'labels': ('b', 'n'),
-#          'filename': 'plot_block_nondist.png',
-#          'dist': ('b', 'n'),
-#         },
-#         {'shape': (5, 9),
-#          'title': 'Block, Cyclic',
-#          'labels': ('b', 'c'),
-#          'filename': 'plot_block_cyclic.png',
-#          'dist': ('b', 'c'),
-#         },
-    ]
-
     # Document section header
     if add_header:
         print('Automatically Generated Examples')
@@ -772,7 +688,6 @@ def create_distribution_plot_and_documentation_all(
         print()
 
     for params in params_list:
-    #for params in test_params_list:
         num_dims = len(params['shape'])
         if num_dims in dimlist:
             #print('*** STARTING %s' % (params['title']))
