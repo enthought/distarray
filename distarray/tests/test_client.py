@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Tests for distarray's client-side API.
@@ -191,11 +191,29 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i, arr in enumerate(localarrays):
             assert_allclose(arr, ddpp[i][0]['indices'])
 
+    def test_from_dim_data_irregular_block(self):
+        global_size = 10
+        starts = (0, 2, 3, 4)
+        stops = (2, 3, 4, 10)
+        ddpp = [
+             (
+              {'dist_type': 'b',
+               'start': starts[i],
+               'stop': stops[i],
+               'proc_grid_rank': i,
+               'proc_grid_size': 4,
+               'size': global_size},
+              ) for i in range(4)
+             ]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(global_size):
+            distarr[i] = i
+
     def test_from_dim_data_bu(self):
         rows = 9
         cols = 10
         col_indices = numpy.random.permutation(range(cols))
-        row_break_point = rows // 2 + 1
+        row_break_point = rows // 2
         col_break_point = len(col_indices) // 3
         ddpp = [
              (
@@ -313,6 +331,12 @@ class TestDistArrayCreation(IpclusterTestCase):
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
+
+    def test_grid_rank(self):
+        # regression test for issue #235
+        a = self.context.empty((4, 4, 4), dist=('b', 'n', 'b'),
+                               grid_shape=(1, 1, 4))
+        self.assertEqual(a.grid_shape, (1, 1, 4))
 
 
 class TestReduceMethods(unittest.TestCase):

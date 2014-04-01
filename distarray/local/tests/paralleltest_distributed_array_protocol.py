@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import unittest
 import numpy as np
@@ -69,7 +69,8 @@ class DapTestMixin(object):
             self.assertIn(dd['dist_type'], VALID_DIST_TYPES)
             self.assertIsInstance(dd['size'], int)
 
-            for key in ('proc_grid_rank', 'proc_grid_size',  'block_size', 'padding'):
+            for key in ('proc_grid_rank', 'proc_grid_size',  'block_size',
+                        'padding'):
                 try:
                     self.assertIsInstance(dd[key], int)
                 except KeyError:
@@ -80,7 +81,8 @@ class DapTestMixin(object):
                 pass
 
     def test_round_trip_equality_from_object(self):
-        larr = distarray.local.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = distarray.local.LocalArray.from_distarray(self.larr,
+                                                         comm=self.comm)
         self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
@@ -93,7 +95,8 @@ class DapTestMixin(object):
         assert_array_equal(larr.local_array, self.larr.local_array)
 
     def test_round_trip_equality_from_dict(self):
-        larr = distarray.local.LocalArray.from_distarray(self.larr.__distarray__(), comm=self.comm)
+        larr = distarray.local.LocalArray.from_distarray(
+            self.larr.__distarray__(), comm=self.comm)
         self.assertEqual(larr.global_shape, self.larr.global_shape)
         self.assertEqual(larr.dist, self.larr.dist)
         self.assertEqual(larr.grid_shape, self.larr.grid_shape)
@@ -106,53 +109,59 @@ class DapTestMixin(object):
         assert_array_equal(larr.local_array, self.larr.local_array)
 
     def test_round_trip_identity(self):
-        larr = distarray.local.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = distarray.local.LocalArray.from_distarray(self.larr,
+                                                         comm=self.comm)
         if self.comm.Get_rank() == 0:
             idx = (0,) * larr.local_array.ndim
             larr.local_array[idx] = 99
         assert_array_equal(larr.local_array, self.larr.local_array)
-        #self.assertIs(larr.local_array.data, self.larr.local_array.data)
 
 
 class TestDapBasic(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4,), comm=self.comm)
+        self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4, 1),
+                                               comm=self.comm)
 
 
 class TestDapUint(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((16, 16), dtype='uint8', grid_shape=(4,),
-                                  comm=self.comm, buf=None)
+        self.larr = distarray.local.LocalArray((16, 16), dtype='uint8',
+                                               grid_shape=(4, 1),
+                                               comm=self.comm, buf=None)
 
 
 class TestDapComplex(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='complex128',
-                                  grid_shape=(4,), comm=self.comm, buf=None)
+                                               grid_shape=(4, 1),
+                                               comm=self.comm, buf=None)
 
 
 class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
-                                  grid_shape=(4,), comm=self.comm)
+                                               grid_shape=(4, 1),
+                                               comm=self.comm)
 
 
 class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
-                                  grid_shape=(4,), comm=self.comm)
+                                               grid_shape=(1, 4),
+                                               comm=self.comm)
 
 
 class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77), dist={0: 'b', 1: 'b'},
-                                  grid_shape=(2, 2), comm=self.comm)
+                                               grid_shape=(2, 2),
+                                               comm=self.comm)
 
 
 class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
@@ -161,36 +170,34 @@ class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99),
-                                  dist={0: 'b', 1: 'b', 2: 'b'},
-                                  grid_shape=(2, 2, 3),
-                                  comm=self.comm)
+                                               dist={0: 'b', 1: 'b', 2: 'b'},
+                                               grid_shape=(2, 2, 3),
+                                               comm=self.comm)
 
 
 class TestDapCyclicDim(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((53, 77),
-                                  dist={0: 'c'},
-                                  grid_shape=(4,),
-                                  comm=self.comm)
+        self.larr = distarray.local.LocalArray((53, 77), dist={0: 'c'},
+                                               grid_shape=(4, 1),
+                                               comm=self.comm)
 
 
 class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
 
     def setUp(self):
-        self.larr = distarray.local.LocalArray((53, 77),
-                                  dist={0: 'c', 1: 'b'},
-                                  grid_shape=(2, 2),
-                                  comm=self.comm)
+        self.larr = distarray.local.LocalArray((53, 77), dist={0: 'c', 1: 'b'},
+                                               grid_shape=(2, 2),
+                                               comm=self.comm)
 
 
 class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99), dtype='float64',
-                                  dist={0: 'b', 1: 'n', 2: 'c'},
-                                  grid_shape=(2, 2),
-                                  comm=self.comm)
+                                               dist={0: 'b', 1: 'n', 2: 'c'},
+                                               grid_shape=(2, 1, 2),
+                                               comm=self.comm)
 
 
 class TestDapLopsided(DapTestMixin, MpiTestCase):
@@ -204,8 +211,9 @@ class TestDapLopsided(DapTestMixin, MpiTestCase):
             arr = np.arange(30)
 
         self.larr = distarray.local.LocalArray((50,), dtype='float64',
-                             dist={0: 'b', 1: 'n'},
-                             grid_shape=(2,), comm=self.comm, buf=arr)
+                                               dist={0: 'b', 1: 'n'},
+                                               grid_shape=(2,), comm=self.comm,
+                                               buf=arr)
 
     def test_values(self):
         if self.comm.Get_rank() == 0:
@@ -213,7 +221,8 @@ class TestDapLopsided(DapTestMixin, MpiTestCase):
         elif self.comm.Get_rank() == 1:
             assert_array_equal(np.arange(30), self.larr.local_array)
 
-        larr = distarray.local.LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = distarray.local.LocalArray.from_distarray(self.larr,
+                                                         comm=self.comm)
         if self.comm.Get_rank() == 0:
             assert_array_equal(np.arange(20), larr.local_array)
         elif self.comm.Get_rank() == 1:

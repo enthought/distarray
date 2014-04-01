@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import unittest
 
@@ -31,24 +31,24 @@ class TestBasic(MpiTestCase):
         self.assertEqual(la.local_array.dtype, la.dtype)
 
     def test_beta(self):
-        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4, 1), comm=self.comm)
         self.shape_asserts(la)
 
     def test_normal(self):
-        la = local_random.normal(size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.normal(size=(16, 16), grid_shape=(4, 1), comm=self.comm)
         self.shape_asserts(la)
 
     def test_rand(self):
-        la = local_random.rand(size=(16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.rand(size=(16, 16), grid_shape=(4, 1), comm=self.comm)
         self.shape_asserts(la)
 
     def test_randint(self):
-        la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4,),
+        la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4, 1),
                         comm=self.comm)
         self.shape_asserts(la)
 
     def test_randn(self):
-        la = local_random.randn((16, 16), grid_shape=(4,), comm=self.comm)
+        la = local_random.randn((16, 16), grid_shape=(4, 1), comm=self.comm)
         self.shape_asserts(la)
 
 

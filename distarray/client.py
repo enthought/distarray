@@ -1,12 +1,12 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Imports
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import operator
 from itertools import product
@@ -21,9 +21,9 @@ from distarray.utils import has_exactly_one, _raise_nie
 __all__ = ['DistArray']
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Code
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def process_return_value(subcontext, result_key, targets):
     """Figure out what to return on the Client.
@@ -63,6 +63,17 @@ def process_return_value(subcontext, result_key, targets):
 
     return result
 
+_DIMDATAS = """
+{dim_data_name} = {local_name}.dim_data
+"""
+
+def _make_mdmap_from_local_dimdata(local_name, context):
+    dim_data_name = context._generate_key()
+    context._execute(_DIMDATAS.format(local_name=local_name, dim_data_name=dim_data_name))
+    dim_datas = context._pull(dim_data_name)
+    return ClientMDMap.from_dim_data(context, dim_datas)
+
+
 _MDMAP_ATTRS = """
 {global_shape_name} = {local_name}.global_shape   # shape
 {dist_name} = {local_name}.dist                   # dist
@@ -76,7 +87,8 @@ def _make_mdmap_from_local(local_name, context):
     dist_name = context._generate_key()
     grid_shape_name = context._generate_key()
     context._execute0(_MDMAP_ATTRS.format(**locals()))
-    global_shape, dist, grid_shape = context._pull0([global_shape_name, dist_name, grid_shape_name])
+    values = context._pull0([global_shape_name, dist_name, grid_shape_name])
+    global_shape, dist, grid_shape = values
     return ClientMDMap(context, global_shape, dist, grid_shape)
 
 
@@ -119,7 +131,7 @@ class DistArray(object):
         """
         da = cls.__new__(cls)
         da.key = key
-        da.mdmap = _make_mdmap_from_local(key, context)
+        da.mdmap = _make_mdmap_from_local_dimdata(key, context)
         da._dtype = _get_attribute(context, key, 'dtype')
         return da
 
@@ -223,7 +235,7 @@ class DistArray(object):
         for local_array in local_arrays:
             maps = (ax_map.global_index for ax_map in local_array.maps)
             for index in product(*maps):
-                arr[index] = local_array[index]
+                arr[index] = local_array.global_index[index]
         return arr
 
     toarray = tondarray

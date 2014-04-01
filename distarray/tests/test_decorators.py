@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Test decorators, these need a separate module because we are defining
@@ -181,7 +181,7 @@ class TestLocalDecorator(TestCase):
         def fill_da(da):
             for i in da.maps[0].global_index:
                 for j in da.maps[1].global_index:
-                    da[i, j] = i + j
+                    da.global_index[i, j] = i + j
             return da
 
         da = fill_da(da)
