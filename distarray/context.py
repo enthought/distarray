@@ -264,19 +264,12 @@ class Context(object):
                                   dist=dist, grid_shape=grid_shape)
 
     def from_global_dim_data(self, global_dim_data, dtype=float):
-        # global_dim_data is a sequence of dictionaries, one per dimension.
-        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
-        dim_data_per_rank = mdmap.get_local_dim_datas()
-        return self.from_dim_data(dim_data_per_rank, dtype=dtype)
-
-    def from_dim_data(self, dim_data_per_rank, dtype=float):
-        """Make a DistArray from dim_data structures.
+        """Make a DistArray from global dim_data structures.
 
         Parameters
         ----------
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        global_dim_data : tuple of dict
+            A global dimension dictionary per dimension.
         dtype : numpy dtype, optional
             dtype for underlying arrays
 
@@ -287,6 +280,12 @@ class Context(object):
             distribution.
 
         """
+        # global_dim_data is a sequence of dictionaries, one per dimension.
+        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
+        dim_data_per_rank = mdmap.get_local_dim_datas()
+        return self._from_dim_data(dim_data_per_rank, dtype=dtype)
+
+    def _from_dim_data(self, dim_data_per_rank, dtype=float):
         if len(self.targets) != len(dim_data_per_rank):
             errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
