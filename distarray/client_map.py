@@ -211,7 +211,7 @@ class ClientCyclicMap(ClientMapBase):
                         'proc_grid_size' : self.grid_size,
                         'proc_grid_rank' : grid_rank,
                         'start' : grid_rank,
-                        }) for grid_rank, in self.grid_size)
+                        }) for grid_rank in range(self.grid_size))
 
 
 class ClientUnstructuredMap(ClientMapBase):
@@ -431,6 +431,5 @@ class ClientMDMap(object):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]
-        rank_and_dd = [(self.rank_from_coord[c], dd) for (c, dd) in coord_and_dd]
-        target_and_dd = [(self.context.targets[r], dd) for (r, dd) in rank_and_dd]
-        return target_and_dd
+        rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)
+        return [dd for (_, dd) in rank_and_dd]
