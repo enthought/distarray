@@ -1,12 +1,12 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Imports
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import operator
 from itertools import product
@@ -21,9 +21,9 @@ from distarray.utils import has_exactly_one, _raise_nie
 __all__ = ['DistArray']
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Code
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def process_return_value(subcontext, result_key, targets):
     """Figure out what to return on the Client.
@@ -235,7 +235,7 @@ class DistArray(object):
         for local_array in local_arrays:
             maps = (list(ax_map.global_iter) for ax_map in local_array.maps)
             for index in product(*maps):
-                arr[index] = local_array[index]
+                arr[index] = local_array.global_index[index]
         return arr
 
     toarray = tondarray

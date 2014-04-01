@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 from __future__ import division
 
@@ -11,10 +11,10 @@ from distarray.local.error import NullCommError, InvalidBaseCommError
 from distarray import mpiutils
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Stateless functions for initializing various aspects of DistArray and
 # LocalArray objects.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # These are functions rather than methods because they need to be both
 # stateless and free of side-effects.  It is possible that they could be

@@ -1,16 +1,16 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 from __future__ import print_function, division
 
 from distarray import metadata_utils
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Imports
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 import math
 import operator
 from functools import reduce
@@ -20,12 +20,13 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six import next
-from distarray.externals.six.moves import zip, range
+from distarray.externals.six.moves import zip
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import construct, format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
+
 
 def _start_stop_block(size, proc_grid_size, proc_grid_rank):
     nelements = size // proc_grid_size
@@ -42,6 +43,14 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
         stop = size
 
     return start, stop
+
+def _sanitize_indices(indices):
+    if isinstance(indices, int) or isinstance(indices, slice):
+        return (indices,)
+    elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+        return indices
+    else:
+        raise TypeError("Index must be a sequence of ints and slices")
 
 def distribute_indices(dim_data):
     """Fill in missing index related keys...
@@ -83,6 +92,7 @@ def distribute_block_indices(dd):
     dd['stop'] = dd['start'] + nelements
     if dd['stop'] > dd['size']:
         dd['stop'] = dd['size']
+
 
 def _normalize_dim_data(dim_data):
     ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
@@ -135,6 +145,50 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     return tuple(dim_data)
 
 
+class GlobalIndex(object):
+    """Object which provides access to global indexing on
+    LocalArrays.
+    """
+    def __init__(self, maps, ndarray):
+        self.maps = maps
+        self.local_array = ndarray
+
+    def checked_getitem(self, global_inds):
+        try:
+            return self.__getitem__(global_inds)
+        except IndexError:
+            return None
+
+    def checked_setitem(self, global_inds, value):
+        try:
+            self.__setitem__(global_inds, value)
+            return True
+        except IndexError:
+            return None
+
+    def global_to_local(self, *global_ind):
+        return self.maps.local_from_global(*global_ind)
+
+    def local_to_global(self, *local_ind):
+        return self.maps.global_from_local(*local_ind)
+
+    def __getitem__(self, global_inds):
+        global_inds = _sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            return self.local_array[local_inds]
+        except KeyError as err:
+            raise IndexError(err)
+
+    def __setitem__(self, global_inds, value):
+        global_inds = _sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            self.local_array[local_inds] = value
+        except KeyError as err:
+            raise IndexError(err)
+
+
 class LocalArray(object):
 
     """Distributed memory Python arrays."""
@@ -160,6 +214,10 @@ class LocalArray(object):
         self.maps = maps.MDMap.from_dim_data(dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
+        # We pass a view of self.local_array because we want the
+        # GlobalIndex object to be able to change the LocalArray
+        # object's data.
+        self.global_index = GlobalIndex(self.maps, self.local_array.view())
 
         self.base = None
         self.ctypes = None
@@ -661,7 +719,8 @@ class LocalArray(object):
             _raise_nie()
         elif dtype is not None:
             dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype), self.global_size)))
+            return dtype.type((np.divide(self.sum(dtype=dtype),
+                                         self.global_size)))
         else:
             return np.divide(self.sum(dtype=dtype), self.global_size)
 
@@ -750,40 +809,24 @@ class LocalArray(object):
 
     def checked_getitem(self, global_inds):
         try:
-            return self.__getitem__(global_inds)
+            return self.global_index[global_inds]
         except IndexError:
             return None
 
     def checked_setitem(self, global_inds, value):
         try:
-            self.__setitem__(global_inds, value)
+            self.global_index[global_inds] = value
             return True
         except IndexError:
             return None
 
-    def _sanitize_indices(self, indices):
-        if isinstance(indices, int) or isinstance(indices, slice):
-            return (indices,)
-        elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
-            return indices
-        else:
-            raise TypeError("Index must be a sequence of ints and slices")
+    def __getitem__(self, index):
+        """Get a local item."""
+        return self.local_array[index]
 
-    def __getitem__(self, global_inds):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.local_from_global(*global_inds)
-            return self.local_array[local_inds]
-        except KeyError as err:
-            raise IndexError(err)
-
-    def __setitem__(self, global_inds, value):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.local_from_global(*global_inds)
-            self.local_array[local_inds] = value
-        except KeyError as err:
-            raise IndexError(err)
+    def __setitem__(self, index, value):
+        """Set a local item."""
+        self.local_array[index] = value
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
@@ -965,8 +1008,8 @@ class LocalArray(object):
         return invert(self)
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Functions that are friends of LocalArray
 #
 # I would really like these functions to be in a separate file, but that
@@ -978,20 +1021,20 @@ class LocalArray(object):
 #     * Put everything in one file
 #     * Put the functions needed by LocalArray in distarray, others elsewhere
 #     * Make a subclass of LocalArray that has methods that use the functions
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Utilities needed to implement things below
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4 Basic routines
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.1 Creating arrays
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
@@ -1290,7 +1333,7 @@ def fromfunction(function, shape, **kwargs):
     comm = kwargs.pop('comm', None)
     da = empty(shape, dtype, dist, grid_shape, comm)
     for global_inds, x in ndenumerate(da):
-        da[global_inds] = function(*global_inds, **kwargs)
+        da.global_index[global_inds] = function(*global_inds, **kwargs)
     return da
 
 
@@ -1311,9 +1354,9 @@ def where(condition, x=None, y=None):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.2 Operations on two or more arrays
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def arecompatible(a, b):
     """Do these arrays have the same compatibility hash?"""
@@ -1360,9 +1403,9 @@ def allclose(a, b, rtol=10e-5, atom=10e-8):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.3 Printing arrays
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def distarray2string(a):
@@ -1380,9 +1423,9 @@ def get_printoptions():
     return np.get_printoptions()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.5 Dealing with data types
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 dtype = np.dtype
@@ -1393,19 +1436,19 @@ sctype2char = np.sctype2char
 can_cast = np.can_cast
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5 Additional convenience routines
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.1 Shape functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.2 Basic functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def sum(a, dtype=None):
@@ -1450,29 +1493,29 @@ def linspace(start, stop, num=50, endpoint=True, retstep=False):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.3 Polynomial functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.4 Set operations
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.5 Array construction using index tricks
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.6 Other indexing devices
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.7 Two-dimensional functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def eye(n, m=None, k=0, dtype=float):
@@ -1483,9 +1526,9 @@ def diag(v, k=0):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.8 More data type functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 issubclass_ = np.issubclass_
@@ -1500,23 +1543,23 @@ mintypecode = np.mintypecode
 finfo = np.finfo
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.9 Functions that behave like ufuncs
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.10 Misc functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.11 Utility functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Universal Functions
 #
 # I would really like these functions to be in a separate file, but that
@@ -1528,8 +1571,8 @@ finfo = np.finfo
 #     * Put everything in one file
 #     * Put the functions needed by LocalArray in distarray, others elsewhere
 #     * Make a subclass of LocalArray that has methods that use the functions
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 # Functions for manipulating shapes according to the broadcast rules.
