@@ -71,7 +71,7 @@ def print_array_documentation(context,
 
         The plot must be created elsewhere, this does not make it.
         """
-        print(".. image:: ../images/%s" % (filename))
+        print(".. image:: ../%s" % (filename))
         # align right does not work as I want.
         #print("   :align: right")
         print()
@@ -360,35 +360,35 @@ def create_distribution_plot_and_documentation_all(
         {'shape': (5, 9),
          'title': 'Block, Nondistributed',
          'labels': ('b', 'n'),
-         'filename': 'plot_block_nondist.png',
+         'filename': 'images/plot_block_nondist.png',
          'dist': ('b', 'n'),
          'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Nondistributed, Block',
          'labels': ('n', 'b'),
-         'filename': 'plot_nondist_block.png',
+         'filename': 'images/plot_nondist_block.png',
          'dist': ('n', 'b'),
          'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'plot_block_block.png',
+         'filename': 'images/plot_block_block.png',
          'dist': ('b', 'b'),
          'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Cyclic',
          'labels': ('b', 'c'),
-         'filename': 'plot_block_cyclic.png',
+         'filename': 'images/plot_block_cyclic.png',
          'dist': ('b', 'c'),
          'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Cyclic, Cyclic',
          'labels': ('c', 'c'),
-         'filename': 'plot_cyclic_cyclic.png',
+         'filename': 'images/plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
          'skip': skip_simple,
         },
@@ -397,14 +397,14 @@ def create_distribution_plot_and_documentation_all(
          'shape': (5, 9, 3),
          'title': 'Cyclic, Block, Cyclic',
          'labels': ('c', 'b', 'c'),
-         'filename': 'plot_cyclic_block_cyclic.png',
+         'filename': 'images/plot_cyclic_block_cyclic.png',
          'dist': ('c', 'b', 'c'),
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
-         'filename': 'plot_block_irregularblock.png',
+         'filename': 'images/plot_block_irregularblock.png',
          'skip': True,    # IndexErrors now???
          'dimdata': [
             (
@@ -470,7 +470,7 @@ def create_distribution_plot_and_documentation_all(
         {'shape': (5, 9),
          'title': 'BlockCyclic, BlockCyclic',
          'labels': ('bc', 'bc'),
-         'filename': 'plot_blockcyclic_blockcyclic.png',
+         'filename': 'images/plot_blockcyclic_blockcyclic.png',
          'skip': True,    # IndexErrors now???
          'dimdata': [
             ({'block_size': 2,
@@ -527,7 +527,7 @@ def create_distribution_plot_and_documentation_all(
         {'shape': (5, 9),
          'title': 'BlockPadded, BlockPadded',
          'labels': ('bp', 'bp'),
-         'filename': 'plot_blockpad_blockpad.png',
+         'filename': 'images/plot_blockpad_blockpad.png',
          'skip': True,    # IndexErrors now???
          'dimdata': [
             (
@@ -601,7 +601,7 @@ def create_distribution_plot_and_documentation_all(
          'skip': True,
          'title': 'Unstructured',
          'labels': ('u', 'u'),
-         'filename': 'plot_unstructured.png',
+         'filename': 'images/plot_unstructured.png',
          'dimdata': [
             ({'dist_type': 'u',
               'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
@@ -628,7 +628,7 @@ def create_distribution_plot_and_documentation_all(
         {'shape': (rows, cols),
          'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
-         'filename': 'plot_unstruct_unstruct.png',
+         'filename': 'images/plot_unstruct_unstruct.png',
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -777,23 +777,6 @@ def create_distribution_plot_and_documentation_all(
         if num_dims in dimlist:
             #print('*** STARTING %s' % (params['title']))
             create_distribution_plot_and_documentation(context, params)
-
-
-def main1():
-    context = distarray.Context()
-    num_targets = len(context.targets)
-    # The 1,2-D examples work best with a 4-process grid, and
-    # the 3D examples work best with an 8-process grid.
-    # This is clumsy, I don't like it, but should be ok for now.
-    if num_targets == 4:
-        dimlist = [1, 2]
-    elif num_targets == 8:
-        #dimlist = [3]
-        dimlist = [1, 2, 3]
-    else:
-        # Try them all, but GridShapeErrors are likely!
-        dimlist = [1, 2, 3]
-    create_distribution_plot_and_documentation_all(context, dimlist)
 
 
 def main():
