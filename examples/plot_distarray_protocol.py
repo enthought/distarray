@@ -28,8 +28,7 @@ def print_array_documentation(context,
                               title,
                               text,
                               global_plot_filename,
-                              local_plot_filename,
-                              verbose=False):
+                              local_plot_filename):
     """ Print some properties of the array.
 
     The output is rst formatted, so that it can be directly
@@ -51,16 +50,13 @@ def print_array_documentation(context,
         The filename of the global array figure to add to the document.
     local_plot_filename : string
         The filename of the local array figure to add to the document.
-    verbose : bool
-        If True, some extra information is printed, that would
-        be overly verbose for the real protocol documentation.
     """
 
     def rst_lines(obj):
         """ Return lines of text that format obj for an .rst document. """
         text = pformat(obj)
-        # pformat() gives blank lines for 3d arrays, which confuse Sphinx.
         lines = text.split('\n')
+        # pformat() gives blank lines for 3d arrays, which confuse Sphinx.
         trims = [line for line in lines if len(line) > 0]
         return trims
 
@@ -71,32 +67,63 @@ def print_array_documentation(context,
         return text
 
     def rst_plot(filename):
-        """ Include a plot in the .rst document. """
+        """ Reference a plot in the .rst document.
+
+        The plot must be created elsewhere, this does not make it.
+        """
         print(".. image:: ../images/%s" % (filename))
         # align right does not work as I want.
         #print("   :align: right")
         print()
 
     def text_block_size(lines):
-        """ Determine the number of rows and columns to print lines. """
+        """ Determine the number of rows and columns to print lines.
+
+        Parameters
+        ----------
+        lines : list of text strings
+
+        Returns
+        -------
+        line_count, line_width : integers
+            The number of lines and columns required to contain the text.
+        """
         line_count = len(lines)
         line_width = max([len(line) for line in lines])
         return line_count, line_width
 
     def text_block_max_size(lines_list):
-        """ Determine  number of rows/columns for the largest line list. """
+        """ Determine  number of rows/columns for the largest line list.
+
+        Parameters
+        ----------
+        lines_list : list of list of text strings
+            Each entry in the outer list is termed a 'block'.
+            Each block, which is a list of text strings,
+            needs some size of space R x C to fit.
+
+        Returns
+        -------
+            The text box size, in lines and columns, which
+            is just large enough to display all of the blocks.
+        """
+        # Get line count and width needed for each block.
         block_size = empty((len(lines_list), 2), dtype=int)
         for itext, lines in enumerate(lines_list):
             line_count, line_width = text_block_size(lines)
             block_size[itext, 0] = line_count
             block_size[itext, 1] = line_width
-        #print('Table sizes:')
-        #print(block_size)
+        # Get maximum which is enough to hold any of them.
         max_size = block_size.max(axis=0)
-        #print('Max size:')
-        #print(max_size)
         max_rows, max_cols = max_size[0], max_size[1]
         return max_rows, max_cols
+
+    def rst_print_lines(lines_list):
+        """ Print the list of lines. """
+        for lines in lines_list:
+            for line in lines:
+                print(line)
+            print()
 
     def rst_table(rows, cols, lines_list):
         """ Print the list of lines as a .rst table. """
@@ -106,16 +133,12 @@ def print_array_documentation(context,
             raise ValueError('Invalid table size %d x %d for %d entries.' % (
                 rows, cols, num_texts))
         # Determine table size needed for biggest text blocks.
-        max_sizes = text_block_max_size(lines_list)
-        #print('max_sizes:')
-        #print(max_sizes)
-        max_lines, max_cols = max_sizes
-        # Table row separator.
+        max_lines, max_cols = text_block_max_size(lines_list)
+        # Sphinx table row separator.
         sep = '-' * max_cols
         seps = [sep for i in range(cols)]
         header = '+' + '+'.join(seps) + '+'
         # Group text blocks into array pattern.
-        text_blocks = []
         print(header)
         for row in range(rows):
             for line in range(max_lines):
@@ -124,22 +147,15 @@ def print_array_documentation(context,
                     iblock = row * cols + col
                     lines = lines_list[iblock]
                     if line < len(lines):
-                        text = lines[line]
+                        col_line = lines[line]
                     else:
-                        text = ''
-                    text = text.ljust(max_cols)
-                    col_lines.append(text)
-                col_line = '|' + '|'.join(col_lines) + '|'
-                print(col_line)
+                        col_line = ''
+                    col_line = col_line.ljust(max_cols)
+                    col_lines.append(col_line)
+                text = '|' + '|'.join(col_lines) + '|'
+                print(text)
             print(header)
-        #print('text_blocks:')
-        #print(text_blocks)
         print()
-        # Non-table layout.
-        for lines in lines_list:
-            for line in lines:
-                print(line)
-            print()
 
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
@@ -177,19 +193,6 @@ def print_array_documentation(context,
     print(">>> full_array")
     print(rst_print(full_array))
     print()
-
-    # Result of get_localarrays() and get_ndarrays().
-    # This is mainly for debugging and will eventually not be needed.
-    if verbose:
-        local_arrays = array.get_localarrays()
-        nd_arrays = array.get_ndarrays()
-        print("Result of get_localarrays() and get_ndarrays():")
-        print()
-        print(">>> get_localarrays()")
-        print(rst_print(local_arrays))
-        print(">>> get_ndarrays()")
-        print(rst_print(nd_arrays))
-        print()
 
     # Properties that are the same on all processes:
     print("In all processes:")
