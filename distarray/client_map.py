@@ -324,7 +324,7 @@ def map_from_dim_datas(dim_datas):
         raise ValueError("Unknown dist_type %r" % dist_type)
     return selector[dist_type](dim_datas)
 
-def map_from_glb_dim_dict(global_dim_dict):
+def map_from_global_dim_dict(global_dim_dict):
 
     dist_type = global_dim_dict['dist_type']
     selector = {'n': ClientNoDistMap.from_global_dim_dict,
@@ -347,7 +347,7 @@ class ClientMDMap(object):
     def from_global_dim_data(cls, context, glb_dim_data):
         self = cls.__new__(cls)
         self.context = context
-        self.maps = [map_from_glb_dim_dict(gdd) for gdd in glb_dim_data]
+        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)
         self.dist = tuple(m.dist for m in self.maps)
