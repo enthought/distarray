@@ -117,6 +117,10 @@ def plot_local_array_subfigure(subfig,
     title = 'Process %d' % (process)
     subfig.set_title(title, fontsize=10)
 
+    # Coerce to 2D if needed.
+    if len(local_array.shape) == 1:
+        local_array.shape = (1, local_array.shape[0])
+
     # Fill array with the process number.
     # (Then it will color the same as in the global plot.)
     shape = local_array.shape

@@ -167,10 +167,10 @@ def print_array_documentation(context,
     cmd = 'db_dim_data = distbuffer["dim_data"]'
     context._execute(cmd)
     # Get data from each engine.
-    db_keys = context.view['db_keys']
-    db_version = context.view['db_version']
-    db_buffer = context.view['db_buffer']
-    db_dim_data = context.view['db_dim_data']
+    db_keys = context._pull('db_keys')
+    db_version = context._pull('db_version')
+    db_buffer = context._pull('db_buffer')
+    db_dim_data = context._pull('db_dim_data')
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
@@ -350,8 +350,8 @@ def create_distribution_plot_and_documentation_all(
     row_indices = permutation(range(rows))
     col_indices = permutation(range(cols))
 
-    skip_simple = True
-    skip_3d     = True
+    skip_simple = False
+    skip_3d     = False
 
     params_list = [
         # Examples using simple dist specification.
@@ -404,7 +404,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_irregularblock.png',
-         #'skip': True,    # IndexErrors now???
+         'skip': True,    # Array creation failure now.
          'dimdata': [
             (
              {'size': 5,
@@ -470,7 +470,7 @@ def create_distribution_plot_and_documentation_all(
          'title': 'BlockCyclic, BlockCyclic',
          'labels': ('bc', 'bc'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
-         'skip': True,    # IndexErrors now???
+         'skip': True,    # IndexErrors now.
          'dimdata': [
             ({'block_size': 2,
               'dist_type': 'c',
@@ -486,7 +486,7 @@ def create_distribution_plot_and_documentation_all(
               'start': 0}),
             ({'block_size': 2,
               'dist_type': 'c',
-              'proc_grid_rank': 1,
+              'proc_grid_rank': 0,
               'proc_grid_size': 2,
               'size': 5,
               'start': 0},
@@ -498,7 +498,7 @@ def create_distribution_plot_and_documentation_all(
               'start': 2}),
             ({'block_size': 2,
               'dist_type': 'c',
-              'proc_grid_rank': 0,
+              'proc_grid_rank': 1,
               'proc_grid_size': 2,
               'size': 5,
               'start': 2},
@@ -527,7 +527,6 @@ def create_distribution_plot_and_documentation_all(
          'title': 'BlockPadded, BlockPadded',
          'labels': ('bp', 'bp'),
          'filename': 'images/plot_blockpad_blockpad.png',
-         'skip': True,    # IndexErrors now???
          'dimdata': [
             (
              {'size': 5,
@@ -628,7 +627,6 @@ def create_distribution_plot_and_documentation_all(
          'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstruct_unstruct.png',
-         'skip': True,
          'dimdata': [
              (
               {'dist_type': 'u',
@@ -690,7 +688,6 @@ def create_distribution_plot_and_documentation_all(
     for params in params_list:
         num_dims = len(params['shape'])
         if num_dims in dimlist:
-            #print('*** STARTING %s' % (params['title']))
             create_distribution_plot_and_documentation(context, params)
 
 
