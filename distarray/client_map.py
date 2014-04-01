@@ -124,15 +124,20 @@ class ClientBlockMap(ClientMapBase):
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
+
         self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
+
         bounds = glb_dim_dict['bounds']
+        self.bounds = list(zip(bounds[:-1], bounds[1:]))
+
         self.size = bounds[-1]
         self.grid_size = len(bounds) - 1
-        
-        self.bounds = list(zip(bounds[:-1], bounds[1:]))
+
+        self.comm_padding = int(glb_dim_dict.get('comm_padding', 0))
+        self.boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
 
         return self
 
@@ -150,6 +155,8 @@ class ClientBlockMap(ClientMapBase):
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), self.grid_size))
         self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
+        self.boundary_padding, self.comm_padding = dd.get('padding', (0,0))
+        
         return self
 
     def __init__(self, size, grid_size):
@@ -157,6 +164,7 @@ class ClientBlockMap(ClientMapBase):
         self.grid_size = grid_size
         self.bounds = [_start_stop_block(size, grid_size, grid_rank)
                        for grid_rank in range(grid_size)]
+        self.boundary_padding = self.comm_padding = 0
 
     def owners(self, idx):
         coords = []
@@ -166,13 +174,20 @@ class ClientBlockMap(ClientMapBase):
         return coords
 
     def get_dimdicts(self):
+        grid_ranks = range(len(self.bounds))
+        cpadding = self.comm_padding
+        padding = [[cpadding, cpadding] for i in grid_ranks]
+        padding[0][0] = self.boundary_padding
+        padding[-1][-1] = self.boundary_padding
+        data_tuples = zip(grid_ranks, padding, self.bounds)
         return tuple(({'dist_type' : 'b',
                         'size' : self.size,
                         'proc_grid_size' : self.grid_size,
                         'proc_grid_rank' : grid_rank,
                         'start' : start,
                         'stop' : stop,
-                        }) for grid_rank, (start, stop) in enumerate(self.bounds))
+                        'padding': padding,
+                        }) for grid_rank, padding, (start, stop) in data_tuples)
 
 
 class ClientCyclicMap(ClientMapBase):
