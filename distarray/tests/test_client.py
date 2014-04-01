@@ -133,7 +133,7 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
         for i in range(global_size):
             distarr[i] = i
 
-    def test_from_dim_data_1d(self):
+    def test_from_global_dim_data_1d(self):
         total_size = 40
         list_of_indices = [
                 [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
@@ -154,184 +154,41 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
         for i, arr in enumerate(localarrays):
             assert_allclose(arr, list_of_indices[i])
 
-
-
-class TestDistArrayCreationFromDimData(IpclusterTestCase):
-
-    def setUp(self):
-        self.context = Context(self.client)
-
-    def test_from_dim_data_1d(self):
-        total_size = 40
-        ddpp = [
-            ({'dist_type': 'u',
-              'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'size': total_size},),
-            ({'dist_type': 'u',
-              'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'size': total_size},),
-            ({'dist_type': 'u',
-              'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'size': total_size},),
-            ({'dist_type': 'u',
-              'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'size': total_size},)]
-        distarr = self.context.from_dim_data(ddpp)
-        for i in range(total_size):
-            distarr[i] = i
-        localarrays = distarr.get_localarrays()
-        for i, arr in enumerate(localarrays):
-            assert_allclose(arr, ddpp[i][0]['indices'])
-
-    def test_from_dim_data_irregular_block(self):
-        global_size = 10
-        starts = (0, 2, 3, 4)
-        stops = (2, 3, 4, 10)
-        ddpp = [
-             (
-              {'dist_type': 'b',
-               'start': starts[i],
-               'stop': stops[i],
-               'proc_grid_rank': i,
-               'proc_grid_size': 4,
-               'size': global_size},
-              ) for i in range(4)
-             ]
-        distarr = self.context.from_dim_data(ddpp)
-        for i in range(global_size):
-            distarr[i] = i
-
-    def test_from_dim_data_bu(self):
+    def test_from_global_dim_data_bu(self):
         rows = 9
+        row_break_point = rows // 2
         cols = 10
         col_indices = numpy.random.permutation(range(cols))
-        row_break_point = rows // 2
         col_break_point = len(col_indices) // 3
-        ddpp = [
-             (
-              {'dist_type': 'b',
-               'start': 0,
-               'stop': row_break_point,
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:col_break_point],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'b',
-               'start': 0,
-               'stop': row_break_point,
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[col_break_point:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'b',
-               'start': row_break_point,
-               'stop': rows,
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:col_break_point],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'b',
-               'start': row_break_point,
-               'stop': rows,
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[col_break_point:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             )]
-        distarr = self.context.from_dim_data(ddpp)
+        indices = [col_indices[:col_break_point], col_indices[col_break_point:]]
+        glb_dim_data = (
+                {'dist_type': 'b',
+                    'bounds': (0, row_break_point, rows)},
+                {'dist_type': 'u',
+                    'indices' : indices},
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
 
-    def test_from_dim_data_uu(self):
+    def test_from_global_dim_data_uu(self):
         rows = 6
         cols = 20
-        row_indices = numpy.random.permutation(range(rows))
-        col_indices = numpy.random.permutation(range(cols))
-        ddpp = [
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[:rows//2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:cols//4],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[:rows//2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[cols//4:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[rows//2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:cols//4],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[rows//2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[cols//4:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             )]
-        distarr = self.context.from_dim_data(ddpp)
+        row_ixs = numpy.random.permutation(range(rows))
+        col_ixs = numpy.random.permutation(range(cols))
+        row_indices = [row_ixs[:rows//2], row_ixs[rows//2:]]
+        col_indices = [col_ixs[:cols//4], col_ixs[cols//4:]]
+        glb_dim_data = (
+                {'dist_type': 'u',
+                    'indices': row_indices},
+                {'dist_type': 'u',
+                    'indices' : col_indices},
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
-
 
 
 class TestDistArrayCreation(IpclusterTestCase):
