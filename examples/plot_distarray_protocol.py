@@ -353,9 +353,6 @@ def create_distribution_plot_and_documentation_all(context):
     row_indices = permutation(range(rows))
     col_indices = permutation(range(cols))
 
-    skip_simple = False
-    skip_3d     = False
-
     #
     # Examples intended for 4 processes:
     #
@@ -366,35 +363,30 @@ def create_distribution_plot_and_documentation_all(context):
          'labels': ('b', 'n'),
          'filename': 'images/plot_block_nondist.png',
          'dist': ('b', 'n'),
-         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Nondistributed, Block',
          'labels': ('n', 'b'),
          'filename': 'images/plot_nondist_block.png',
          'dist': ('n', 'b'),
-         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block.png',
          'dist': ('b', 'b'),
-         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Block, Cyclic',
          'labels': ('b', 'c'),
          'filename': 'images/plot_block_cyclic.png',
          'dist': ('b', 'c'),
-         'skip': skip_simple,
         },
         {'shape': (5, 9),
          'title': 'Cyclic, Cyclic',
          'labels': ('c', 'c'),
          'filename': 'images/plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
-         'skip': skip_simple,
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
@@ -466,7 +458,6 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'BlockCyclic, BlockCyclic',
          'labels': ('bc', 'bc'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
-         'skip': True,    # IndexErrors now.
          'dimdata': [
             ({'block_size': 2,
               'dist_type': 'c',
@@ -689,7 +680,6 @@ def create_distribution_plot_and_documentation_all(context):
          'labels': ('c', 'b', 'c'),
          'filename': 'images/plot_cyclic_block_cyclic.png',
          'dist': ('c', 'b', 'c'),
-         'skip': skip_3d,
         },
     ]
 
