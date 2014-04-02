@@ -45,7 +45,6 @@ if __name__ == '__main__':
     numpy_times = bench(pi_numpy, n_list)
     print("Benchmarking distarray")
     distarray_times = bench(pi_distarray, n_list)
-    pi_distarray.context.client.close()
 
     # plot the data
     fig = plt.figure()

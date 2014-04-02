@@ -39,7 +39,8 @@ def draw_coord(arr, re_ax, im_ax, resolution):
     im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
     for i in arr.maps[0].global_iter:
         for j in arr.maps[1].global_iter:
-            arr[i, j] = complex(re_ax[0] + re_step*i, im_ax[0] + im_step*j)
+            arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
+                                             im_ax[0] + im_step*j)
     return arr
 
 
