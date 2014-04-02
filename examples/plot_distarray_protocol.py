@@ -193,13 +193,17 @@ def print_array_documentation(context,
     print()
 
     # Properties that are the same on all processes:
-    print("In all processes:")
+    print("In all processes, we have:")
     print()
     print(">>> distbuffer = local_array.__distarray__()")
     print(">>> distbuffer.keys()")
     print(rst_print(db_keys[0]))
     print(">>> distbuffer['__version__']")
     print(rst_print(db_version[0]))
+    print()
+
+    # Local arrays / properties that vary per engine.
+    print("The local arrays, on each separate engine:")
     print()
 
     # Local array plot.
@@ -339,8 +343,7 @@ def create_distribution_plot_and_documentation(context, params):
         local_plot_filename=local_plot_filename)
 
 
-def create_distribution_plot_and_documentation_all(
-    context, dimlist, add_header=False):
+def create_distribution_plot_and_documentation_all(context):
     """ Create plots for the distributed array protocol documentation. """
 
     # Some random values for undistributed example.
@@ -353,7 +356,10 @@ def create_distribution_plot_and_documentation_all(
     skip_simple = False
     skip_3d     = False
 
-    params_list = [
+    #
+    # Examples intended for 4 processes:
+    #
+    params_list_4 = [
         # Examples using simple dist specification.
         {'shape': (5, 9),
          'title': 'Block, Nondistributed',
@@ -389,15 +395,6 @@ def create_distribution_plot_and_documentation_all(
          'filename': 'images/plot_cyclic_cyclic.png',
          'dist': ('c', 'c'),
          'skip': skip_simple,
-        },
-        # A 3D array. This needs more than 4 engines.
-        {
-         'shape': (5, 9, 3),
-         'title': 'Cyclic, Block, Cyclic',
-         'labels': ('c', 'b', 'c'),
-         'filename': 'images/plot_cyclic_block_cyclic.png',
-         'dist': ('c', 'b', 'c'),
-         'skip': skip_3d,
         },
         # regular-block, irregular-block
         {'shape': (5, 9),
@@ -526,6 +523,9 @@ def create_distribution_plot_and_documentation_all(
          'title': 'BlockPadded, BlockPadded',
          'labels': ('bp', 'bp'),
          'filename': 'images/plot_blockpad_blockpad.png',
+         # The padding is not actually used yet, so this is not a meaningful
+         # example now.
+         'skip': True, 
          'dimdata': [
             (
              {'size': 5,
@@ -678,16 +678,37 @@ def create_distribution_plot_and_documentation_all(
         },
     ]
 
-    # Document section header
-    if add_header:
-        print('Automatically Generated Examples')
-        print('--------------------------------')
-        print()
+    #
+    # Examples intended for 8 processes:
+    #
+    params_list_8 = [
+        # A 3D array.
+        {
+         'shape': (5, 9, 3),
+         'title': 'Cyclic, Block, Cyclic',
+         'labels': ('c', 'b', 'c'),
+         'filename': 'images/plot_cyclic_block_cyclic.png',
+         'dist': ('c', 'b', 'c'),
+         'skip': skip_3d,
+        },
+    ]
 
-    for params in params_list:
-        num_dims = len(params['shape'])
-        if num_dims in dimlist:
-            create_distribution_plot_and_documentation(context, params)
+    # Get the examples to use for the number of engines.
+    param_list = []
+    num_engines = len(context.targets)
+    if num_engines == 4:
+        # 1,2 dimension cases with 4 engines give nicer plots.
+        param_list.extend(params_list_4)
+    elif num_engines == 8:
+        # 3 dimension cases require 8 engines for now.
+        param_list.extend(params_list_8)
+    else:
+        # No examples for this engine count.
+        pass
+
+    # Crunch...
+    for params in param_list:
+        create_distribution_plot_and_documentation(context, params)
 
 
 def main():
@@ -696,18 +717,12 @@ def main():
     num_targets = len(context.targets)
     if num_targets < 8:
         raise ValueError('Need at least 8 engines for all examples.')
-    # Do 1,2 dimension cases with 4 engines for clearer plots,
-    # and 3 dimension cases with 8 engines.
-    dimlist4, dimlist8 = [1, 2], [3]
-    # Test: All examples with 8 engines.
-    if False:
-        dimlist4, dimlist8 = [], [1, 2, 3]
     # Make examples with 4 engines.
     context4 = distarray.Context(targets=range(4))
-    create_distribution_plot_and_documentation_all(context4, dimlist4)
+    create_distribution_plot_and_documentation_all(context4)
     # Make examples with 8 engines.
     context8 = distarray.Context(targets=range(8))
-    create_distribution_plot_and_documentation_all(context8, dimlist8)
+    create_distribution_plot_and_documentation_all(context8)
 
 
 if __name__ == '__main__':
