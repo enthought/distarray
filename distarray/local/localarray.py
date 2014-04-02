@@ -199,8 +199,7 @@ class LocalArray(object):
     # Methods used for initialization
     #-------------------------------------------------------------------------
 
-    def _init(self, dim_data, dtype=None, buf=None, comm=None,
-              grid_shape=None):
+    def _init(self, dim_data, grid_shape, dtype=None, buf=None, comm=None):
         """Private init method."""
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
@@ -265,7 +264,11 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+        # Extract grid_shape from dim_data.
+        grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
+                           for dd in dim_data)
+        self._init(dim_data=dim_data, dtype=dtype,
+                   buf=buf, comm=comm, grid_shape=grid_shape)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -298,8 +301,8 @@ class LocalArray(object):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm,
-                   grid_shape=grid_shape)
+        self._init(dim_data=dim_data, grid_shape=grid_shape,
+                   dtype=dtype, buf=buf, comm=comm)
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
