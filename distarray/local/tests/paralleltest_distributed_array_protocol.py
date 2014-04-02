@@ -6,12 +6,12 @@
 
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
+from distutils.version import StrictVersion
 
 import distarray.local
-
 from distarray.externals import six
-from distutils.version import StrictVersion
-from numpy.testing import assert_array_equal
+from distarray.externals import protocol_validator
 from distarray.testing import MpiTestCase, CommNullPasser
 
 
@@ -30,55 +30,9 @@ class DapTestMixin(object):
     on.
     """
 
-    def test_has_export(self):
-        self.assertTrue(hasattr(self.larr, '__distarray__'))
-
-    def test_export_keys(self):
-        required_keys = set(("__version__", "buffer", "dim_data"))
-        export_data = self.larr.__distarray__()
-        exported_keys = set(export_data.keys())
-        self.assertEqual(required_keys, exported_keys)
-
-    def test_export_buffer(self):
-        """See if we actually export a buffer."""
-        export_data = self.larr.__distarray__()
-        memoryview(export_data['buffer'])
-
-    def test_export_version(self):
-        """Check type of version."""
-        export_data = self.larr.__distarray__()
-        StrictVersion(export_data['__version__'])
-
-    def test_export_dim_data_len(self):
-        """Test if there is a `dimdict` for every dimension."""
-        export_data = self.larr.__distarray__()
-        dim_data = export_data['dim_data']
-        self.assertEqual(len(dim_data), self.larr.ndim)
-
-    def test_export_dim_data_keys(self):
-        export_data = self.larr.__distarray__()
-        dim_data = export_data['dim_data']
-        required_keys = {"dist_type", "size"}
-        for dimdict in dim_data:
-            self.assertTrue(required_keys <= set(dimdict.keys()))
-
-    def test_export_dim_data_values(self):
-        export_data = self.larr.__distarray__()
-        dim_data = export_data['dim_data']
-        for dd in dim_data:
-            self.assertIn(dd['dist_type'], VALID_DIST_TYPES)
-            self.assertIsInstance(dd['size'], int)
-
-            for key in ('proc_grid_rank', 'proc_grid_size',  'block_size',
-                        'padding'):
-                try:
-                    self.assertIsInstance(dd[key], int)
-                except KeyError:
-                    pass
-            try:
-                self.assertIsInstance(dd['periodic'], bool)
-            except KeyError:
-                pass
+    def test_with_validator(self):
+        valid, msg = protocol_validator.validate(self.larr.__distarray__())
+        self.assertTrue(valid, msg=msg)
 
     def test_round_trip_equality_from_object(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr,
