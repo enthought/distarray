@@ -161,6 +161,134 @@ class TestDistArrayCreation(IpclusterTestCase):
         for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
 
+    def test_from_dim_data_bc(self):
+        """ Test creation of a block-cyclic array. """
+        rows, cols = 5, 9
+        ddpp = [
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+        ]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(rows):
+            for j in range(cols):
+                distarr[i, j] = i*cols + j
+        las = distarr.get_localarrays()
+        local_shapes = [la.local_shape for la in las]
+        self.assertSequenceEqual(local_shapes, [(3,5), (3,4), (2,5), (2,4)])
+
+
+    def test_from_bad_dim_data_irregular_block(self):
+        global_shape = (5, 9)
+        ddpp = [
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 4,
+              'start': 0,
+              'stop': 2},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 4,
+              'start': 2,
+              'stop': 6},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 2,
+              'proc_grid_size': 4,
+              'start': 6,
+              'stop': 7},
+             ),
+            (
+             {'size': 5,
+              'dist_type': 'b',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 1,
+              'start': 0,
+              'stop': 5},
+             {'size': 9,
+              'dist_type': 'b',
+              'proc_grid_rank': 3,
+              'proc_grid_size': 4,
+              'start': 7,
+              'stop': 9},
+             ),
+        ]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(global_shape[0]):
+            for j in range(global_shape[1]):
+                distarr[i,j] = i + j
+
+
     def test_from_dim_data_1d(self):
         total_size = 40
         ddpp = [

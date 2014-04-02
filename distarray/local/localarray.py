@@ -15,6 +15,7 @@ import math
 import operator
 from functools import reduce
 from collections import Mapping
+from numbers import Integral
 
 import numpy as np
 
@@ -44,10 +45,14 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
 
     return start, stop
 
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
+
 def _sanitize_indices(indices):
-    if isinstance(indices, int) or isinstance(indices, slice):
+    if isinstance(indices, Integral) or isinstance(indices, slice):
         return (indices,)
-    elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
         return indices
     else:
         raise TypeError("Index must be a sequence of ints and slices")
@@ -199,13 +204,11 @@ class LocalArray(object):
     # Methods used for initialization
     #-------------------------------------------------------------------------
 
-    def _init(self, dim_data, dtype=None, buf=None, comm=None,
-              grid_shape=None):
+    def _init(self, dim_data, grid_shape, dtype=None, buf=None, comm=None):
         """Private init method."""
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
         self._init_grid_shape(grid_shape)
-
 
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
@@ -265,7 +268,11 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+        # Extract grid_shape from dim_data.
+        grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
+                           for dd in dim_data)
+        self._init(dim_data=dim_data, dtype=dtype,
+                   buf=buf, comm=comm, grid_shape=grid_shape)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -298,8 +305,8 @@ class LocalArray(object):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm,
-                   grid_shape=grid_shape)
+        self._init(dim_data=dim_data, grid_shape=grid_shape,
+                   dtype=dtype, buf=buf, comm=comm)
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
