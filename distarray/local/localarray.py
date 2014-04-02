@@ -222,9 +222,6 @@ class LocalArray(object):
         # object's data.
         self.global_index = GlobalIndex(self.maps, self.local_array.view())
 
-        self.base = None
-        self.ctypes = None
-
     def _init_grid_shape(self, grid_shape):
 
         if grid_shape is None:
