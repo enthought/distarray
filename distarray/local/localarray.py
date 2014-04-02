@@ -20,7 +20,7 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six import next
-from distarray.externals.six.moves import zip, range
+from distarray.externals.six.moves import zip
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
@@ -167,12 +167,10 @@ class GlobalIndex(object):
             return None
 
     def global_to_local(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(len(self.maps)))
+        return self.maps.local_from_global(*global_ind)
 
     def local_to_global(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(len(self.maps)))
+        return self.maps.global_from_local(*local_ind)
 
     def __getitem__(self, global_inds):
         global_inds = _sanitize_indices(global_inds)
@@ -213,8 +211,7 @@ class LocalArray(object):
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
-                          for dimdict in dim_data)
+        self.maps = maps.MDMap.from_dim_data(dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
         # We pass a view of self.local_array because we want the
@@ -316,7 +313,7 @@ class LocalArray(object):
 
     @property
     def local_shape(self):
-        return tuple(m.size for m in self.maps)
+        return self.maps.local_shape
 
     @property
     def grid_shape(self):
@@ -463,12 +460,10 @@ class LocalArray(object):
         return self.comm.Get_cart_rank(coords)
 
     def local_from_global(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.local_from_global(*global_ind)
 
     def global_from_local(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.global_from_local(*local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
@@ -1210,10 +1205,10 @@ def compact_indices(dim_data):
         if ('block_size' not in dd) or (dd['block_size'] == 1):
             return slice(dd['start'], None, dd['proc_grid_size'])
         else:
-            return maps.IndexMap.from_dimdict(dd).global_index
+            return list(maps.map_from_dim_dict(dd).global_iter)
 
     def unstructured_index(dd):
-        return maps.IndexMap.from_dimdict(dd).global_index
+        return list(maps.map_from_dim_dict(dd).global_iter)
 
     index_fn_map = {'n': nodist_index,
                     'b': block_index,
