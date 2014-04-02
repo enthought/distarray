@@ -190,6 +190,75 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
 
+    def test_global_dim_data_local_dim_data_equivalence(self):
+        rows, cols = 5, 9
+        glb_dim_data = (
+                {'dist_type': 'c',
+                 'block_size': 2,
+                 'size': rows,
+                 'proc_grid_size': 2,
+                 },
+                {'dist_type': 'c',
+                 'block_size': 2,
+                 'proc_grid_size': 2,
+                 'size': cols,
+                 },
+                )
+        mdmap = ClientMDMap.from_global_dim_data(self.context, glb_dim_data)
+        actual = mdmap.get_local_dim_datas()
+
+        expected = [
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+        ]
+        self.assertSequenceEqual(actual, expected)
+
 
 class TestDistArrayCreation(IpclusterTestCase):
 

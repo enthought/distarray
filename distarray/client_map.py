@@ -233,7 +233,7 @@ class ClientBlockCyclicMap(ClientMapBase):
                         'size' : self.size,
                         'proc_grid_size' : self.grid_size,
                         'proc_grid_rank' : grid_rank,
-                        'start' : grid_rank,
+                        'start' : grid_rank * self.block_size,
                         'block_size': self.block_size,
                         }) for grid_rank in range(self.grid_size))
 
