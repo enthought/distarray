@@ -20,10 +20,19 @@ class TestMultPartitions(unittest.TestCase):
         """
         Do the two methods of computing the multiplicative partitions agree?
         """
-        for s in [2, 3]:
-            for n in range(2, 512):
-                self.assertEqual(utils.mult_partitions(n, s),
-                                 utils.create_factors(n, s))
+        self.assertEqual(utils.mult_partitions(1, 2), [(1, 1)])
+        self.assertEqual(utils.mult_partitions(1, 7), [(1,) * 7])
+        self.assertEqual(utils.mult_partitions(7, 2), [(1, 7)])
+        self.assertEqual(utils.mult_partitions(16, 4), [(1, 1, 1, 16),
+                                                        (1, 1, 2, 8),
+                                                        (1, 1, 4, 4),
+                                                        (1, 2, 2, 4),
+                                                        (2, 2, 2, 2)])
+        self.assertEqual(utils.mult_partitions(16, 4), [(1, 1, 1, 16),
+                                                        (1, 1, 2, 8),
+                                                        (1, 1, 4, 4),
+                                                        (1, 2, 2, 4),
+                                                        (2, 2, 2, 2)])
 
 
 class TestSanitizeIndices(unittest.TestCase):

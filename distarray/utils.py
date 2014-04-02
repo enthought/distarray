@@ -28,22 +28,6 @@ def multi_for(iterables):
                 yield (item,) + rest_tuple
 
 
-def create_factors(n, size=2):
-    divs = list(divisors(n))
-    factors = []
-    for indices in multi_for( [range(p) for p in size*[len(divs)]] ):
-        total = 1
-        for i in indices:
-            total = total*divs[i]
-        if n == total:
-            factor = [divs[i] for i in indices]
-            factor.sort()
-            factor = tuple(factor)
-            if factor not in factors:
-                factors.append(factor)
-    return factors
-
-
 def divisors_minmax(n, dmin, dmax):
     """Find the divisors of n in the interval (dmin,dmax]."""
     i = dmin+1
