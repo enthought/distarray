@@ -15,12 +15,13 @@ import math
 import operator
 from functools import reduce
 from collections import Mapping
+from numbers import Integral
 
 import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six import next
-from distarray.externals.six.moves import zip, range
+from distarray.externals.six.moves import zip
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
@@ -44,10 +45,14 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
 
     return start, stop
 
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
+
 def _sanitize_indices(indices):
-    if isinstance(indices, int) or isinstance(indices, slice):
+    if isinstance(indices, Integral) or isinstance(indices, slice):
         return (indices,)
-    elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
         return indices
     else:
         raise TypeError("Index must be a sequence of ints and slices")
@@ -167,12 +172,10 @@ class GlobalIndex(object):
             return None
 
     def global_to_local(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(len(self.maps)))
+        return self.maps.local_from_global(*global_ind)
 
     def local_to_global(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(len(self.maps)))
+        return self.maps.global_from_local(*local_ind)
 
     def __getitem__(self, global_inds):
         global_inds = _sanitize_indices(global_inds)
@@ -201,20 +204,17 @@ class LocalArray(object):
     # Methods used for initialization
     #-------------------------------------------------------------------------
 
-    def _init(self, dim_data, dtype=None, buf=None, comm=None,
-              grid_shape=None):
+    def _init(self, dim_data, grid_shape, dtype=None, buf=None, comm=None):
         """Private init method."""
         self.dim_data = _normalize_dim_data(dim_data)
         self.base_comm = construct.init_base_comm(comm)
         self._init_grid_shape(grid_shape)
 
-
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = tuple(maps.IndexMap.from_dimdict(dimdict)
-                          for dimdict in dim_data)
+        self.maps = maps.MDMap.from_dim_data(dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
         # We pass a view of self.local_array because we want the
@@ -268,7 +268,11 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm)
+        # Extract grid_shape from dim_data.
+        grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
+                           for dd in dim_data)
+        self._init(dim_data=dim_data, dtype=dtype,
+                   buf=buf, comm=comm, grid_shape=grid_shape)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -301,8 +305,8 @@ class LocalArray(object):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        self._init(dim_data=dim_data, dtype=dtype, buf=buf, comm=comm,
-                   grid_shape=grid_shape)
+        self._init(dim_data=dim_data, grid_shape=grid_shape,
+                   dtype=dtype, buf=buf, comm=comm)
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
@@ -316,7 +320,7 @@ class LocalArray(object):
 
     @property
     def local_shape(self):
-        return tuple(m.size for m in self.maps)
+        return self.maps.local_shape
 
     @property
     def grid_shape(self):
@@ -463,12 +467,10 @@ class LocalArray(object):
         return self.comm.Get_cart_rank(coords)
 
     def local_from_global(self, *global_ind):
-        return tuple(self.maps[dim].local_index[global_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.local_from_global(*global_ind)
 
     def global_from_local(self, *local_ind):
-        return tuple(self.maps[dim].global_index[local_ind[dim]]
-                     for dim in range(self.ndim))
+        return self.maps.global_from_local(*local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
@@ -1210,10 +1212,10 @@ def compact_indices(dim_data):
         if ('block_size' not in dd) or (dd['block_size'] == 1):
             return slice(dd['start'], None, dd['proc_grid_size'])
         else:
-            return maps.IndexMap.from_dimdict(dd).global_index
+            return list(maps.map_from_dim_dict(dd).global_iter)
 
     def unstructured_index(dd):
-        return maps.IndexMap.from_dimdict(dd).global_index
+        return list(maps.map_from_dim_dict(dd).global_iter)
 
     index_fn_map = {'n': nodist_index,
                     'b': block_index,
