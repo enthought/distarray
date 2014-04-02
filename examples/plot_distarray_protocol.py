@@ -404,7 +404,6 @@ def create_distribution_plot_and_documentation_all(
          'title': 'Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_irregularblock.png',
-         'skip': True,    # Array creation failure now.
          'dimdata': [
             (
              {'size': 5,
