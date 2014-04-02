@@ -75,10 +75,10 @@ def mult_partitions(n, s):
     >>> mult_partitions(52,2)
     [(2, 26), (4, 13)]
     """
-    return [tuple(flatten(p)) for p in mult_partitions_recurs(n,s)]
+    return [tuple(flatten(p)) for p in mult_partitions_recurs(n, s)]
 
 
-def mult_partitions_recurs(n, s, pd=1):
+def mult_partitions_recurs(n, s, pd=0):
     if s == 1:
         return [n]
     divs = divisors_minmax(n, pd, int(sqrt(n)))
