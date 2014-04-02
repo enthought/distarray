@@ -15,6 +15,7 @@ import math
 import operator
 from functools import reduce
 from collections import Mapping
+from numbers import Integral
 
 import numpy as np
 
@@ -44,10 +45,14 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
 
     return start, stop
 
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
+
 def _sanitize_indices(indices):
-    if isinstance(indices, int) or isinstance(indices, slice):
+    if isinstance(indices, Integral) or isinstance(indices, slice):
         return (indices,)
-    elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
         return indices
     else:
         raise TypeError("Index must be a sequence of ints and slices")
