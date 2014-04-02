@@ -217,9 +217,10 @@ class TestDistArrayCreation(IpclusterTestCase):
         distarr = self.context.from_dim_data(ddpp)
         for i in range(rows):
             for j in range(cols):
-                # if (i,j) == (0,1):
-                    # import pdb; pdb.set_trace()
                 distarr[i, j] = i*cols + j
+        las = distarr.get_localarrays()
+        local_shapes = [la.local_shape for la in las]
+        self.assertSequenceEqual(local_shapes, [(3,5), (3,4), (2,5), (2,4)])
 
 
     def test_from_bad_dim_data_irregular_block(self):
