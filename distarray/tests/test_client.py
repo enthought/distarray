@@ -161,6 +161,67 @@ class TestDistArrayCreation(IpclusterTestCase):
         for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
 
+    def test_from_dim_data_bc(self):
+        """ Test creation of a block-cyclic array. """
+        rows, cols = 5, 9
+        ddpp = [
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+        ]
+        distarr = self.context.from_dim_data(ddpp)
+        for i in range(rows):
+            for j in range(cols):
+                # if (i,j) == (0,1):
+                    # import pdb; pdb.set_trace()
+                distarr[i, j] = i*cols + j
+
+
     def test_from_bad_dim_data_irregular_block(self):
         global_shape = (5, 9)
         ddpp = [

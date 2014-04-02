@@ -205,7 +205,6 @@ class LocalArray(object):
         self.base_comm = construct.init_base_comm(comm)
         self._init_grid_shape(grid_shape)
 
-
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
         self._cache_proc_grid_rank()

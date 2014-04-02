@@ -206,15 +206,12 @@ class BlockCyclicMap(MapBase):
         self.start = start
         self.start_block = start // block_size
         self.block_size = block_size
-        if global_size % block_size:
-            # if global_nblocks * block_size != global_size:
-            msg ="Inconsistent values for global_size (%r) and block_size (%r)."
-            raise ValueError(msg % (global_size, block_size))
-        global_nblocks = global_size // block_size
+        full_blocks, partial = divmod(global_size, block_size)
+        global_nblocks = full_blocks + (1 if partial else 0)
         self.grid_size = grid_size
 
         local_nblocks = (global_nblocks - 1 - grid_rank) // grid_size + 1
-        self.local_size = local_nblocks * block_size
+        self.local_size = local_nblocks * block_size + (partial if grid_rank == 0 else 0)
         self.global_size = global_size
 
 

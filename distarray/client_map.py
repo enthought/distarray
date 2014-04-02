@@ -147,14 +147,17 @@ class ClientCyclicMap(ClientMapBase):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), grid_size))
-        return cls(size, grid_size)
+        block_size = dd.get('block_size', 1)
+        return cls(size, grid_size, block_size)
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, block_size=1):
         self.size = size
         self.grid_size = grid_size
+        self.block_size = block_size
 
     def owners(self, idx):
-        return [idx % self.grid_size]
+        block = idx // self.block_size
+        return [block % self.grid_size]
 
 
 class ClientUnstructuredMap(ClientMapBase):
