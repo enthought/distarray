@@ -230,6 +230,8 @@ class TestGridShape(MpiTestCase):
         self.larr = LocalArray((100, 10, 300), dist=('b', 'n', 'c'), comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2, 1, 6))
         self.larr = LocalArray((100, 50, 300), dist='b', comm=self.comm)
+        self.assertEqual(self.larr.grid_shape, (2, 1, 6))
+        self.larr = LocalArray((100, 100, 150), dist='b', comm=self.comm)
         self.assertEqual(self.larr.grid_shape, (2, 2, 3))
 
     def test_ones_in_grid_shape(self):
