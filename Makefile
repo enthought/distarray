@@ -29,8 +29,8 @@ MPI_EXEC_CMD = (${MPIEXEC} ${MPIEXEC_ARGS} ${PARALLEL_TEST} ; OUT=$$? ; \
 			   for f in ${MPI_OUT_PREFIX}* ; do echo "====> " $$f ; cat $$f ; done ; \
 			   exit $$OUT)
 
-IPCLUSTER_SCRIPT := distarray/tests/ipcluster.py
-PURGE_SCRIPT := distarray/tests/purge_cluster.py
+IPCLUSTER_SCRIPT := utils/ipcluster.py
+PURGE_SCRIPT := utils/purge_cluster.py
 
 # default number of engines to use.
 NENGINES := 4
