@@ -274,6 +274,7 @@ def create_distribution_plot_and_documentation(context, params):
     text = params.get('text', None)
     dist = params.get('dist', None)
     dimdata = params.get('dimdata', None)
+    global_dimdata = params.get('global_dimdata', None)
     filename = params.get('filename', None)
     skip = params.get('skip', False)
 
@@ -292,6 +293,8 @@ def create_distribution_plot_and_documentation(context, params):
         array = context.empty(shape, dist=dist)
     elif dimdata is not None:
         array = context._from_dim_data(dimdata)
+    elif global_dimdata is not None:
+        array = context.from_global_dim_data(global_dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
 
@@ -391,128 +394,20 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_4x1.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'start': 0,
-              'stop': 2},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'start': 2,
-              'stop': 4},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'start': 4,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'start': 5,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-          ],
+         'global_dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 2, 4, 5, 5]},
+             {'dist_type': 'b', 'bounds': [0, 9]},
+          ),
         },
         # Same results as old 'n', 'b'.
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_1x4.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'start': 0,
-              'stop': 3},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'start': 3,
-              'stop': 6},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'start': 6,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'start': 9,
-              'stop': 9},
-             ),
-          ],
+         'global_dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 5]},
+             {'dist_type': 'b', 'bounds': [0, 3, 6, 9, 9]},
+          ),
         },
         # Some simple description examples.
         {'shape': (5, 9),
