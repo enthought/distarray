@@ -111,10 +111,11 @@ def create_discrete_colormaps(num_values):
 def plot_local_array_subfigure(subfig,
                                local_array,
                                process,
+                               coord,
                                colormap_objects,
                                *args, **kwargs):
     """ Plot a single local_array into a matplotlib subfigure. """
-    title = 'Process %d' % (process)
+    title = 'Process %r' % (coord,)
     subfig.set_title(title, fontsize=10)
 
     # Coerce to 2D if needed.
@@ -137,11 +138,11 @@ def plot_local_array_subfigure(subfig,
     # does not look too strange.
     extent = [-0.5, shape[1] - 0.5, -0.5, shape[0] - 0.5]
     subfig.imshow(plot_array,
-                        extent=extent,
-                        interpolation='nearest',
-                        aspect='auto',
-                        cmap=cmap, norm=norm,
-                        *args, **kwargs)
+                  extent=extent,
+                  interpolation='nearest',
+                  aspect='auto',
+                  cmap=cmap, norm=norm,
+                  *args, **kwargs)
 
     # Note that y limits are flipped to get the first row
     # of the arrays at the top of the plot.
@@ -176,6 +177,7 @@ def plot_local_array_subfigure(subfig,
 
 
 def plot_local_arrays(darray,
+                      process_coords,
                       colormap_objects,
                       filename):
     """ Plot the local arrays as a multi-figure matplotlib plot. """
@@ -183,8 +185,9 @@ def plot_local_arrays(darray,
     ndarrays = darray.get_ndarrays()
     local_arrays = []
     for processor, local_array in enumerate(ndarrays):
+        processor_coord = process_coords[processor]
         if local_array.size > 0:
-            local_arrays.append((processor, local_array))
+            local_arrays.append((processor, processor_coord, local_array))
 
     pyplot.clf()
 
@@ -197,7 +200,7 @@ def plot_local_arrays(darray,
         subplot_grid = (num_local_arrays, 1)
 
     _, subfigs = pyplot.subplots(*subplot_grid)
-    for i, (process, local_array) in enumerate(local_arrays):
+    for i, (process, coord, local_array) in enumerate(local_arrays):
         if subplot_grid[1] > 1:
             N = subplot_grid[1]
             row, col = i // N, i % N
@@ -207,6 +210,7 @@ def plot_local_arrays(darray,
         plot_local_array_subfigure(subfig,
                                    local_array,
                                    process,
+                                   coord,
                                    colormap_objects)
 
     # Add main title and adjust size.
@@ -219,6 +223,7 @@ def plot_local_arrays(darray,
 
 
 def plot_array_distribution(darray,
+                            process_coords,
                             title=None,
                             xlabel=None,
                             ylabel=None,
@@ -234,6 +239,10 @@ def plot_array_distribution(darray,
 
     Parameters
     ----------
+    darray : DistArray
+        The distributed array to plot.
+    process_coords : List of tuples.
+        The process grid coordinates.
     title : string
         Text label for the plot title, or None.
     xlabel : string
@@ -333,6 +342,9 @@ def plot_array_distribution(darray,
 
     # Make similar plots for the local arrays...
     if local_plot_filename is not None:
-        plot_local_arrays(darray, colormap_objects, local_plot_filename)
+        plot_local_arrays(darray,
+                          process_coords,
+                          colormap_objects,
+                          local_plot_filename)
 
     return process_darray
