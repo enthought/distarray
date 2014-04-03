@@ -388,9 +388,9 @@ def create_distribution_plot_and_documentation_all(context):
     params_list_4 = [
         # Same results as old 'b', 'n'.
         {'shape': (5, 9),
-         'title': 'Block, Nondistributed',
+         'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'images/plot_block_nondist.png',
+         'filename': 'images/plot_block_block_4x1.png',
          'dimdata': [
             (
              {'size': 5,
@@ -452,9 +452,9 @@ def create_distribution_plot_and_documentation_all(context):
         },
         # Same results as old 'n', 'b'.
         {'shape': (5, 9),
-         'title': 'Nondistributed, Block',
+         'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'images/plot_nondist_block.png',
+         'filename': 'images/plot_block_block_1x4.png',
          'dimdata': [
             (
              {'size': 5,
@@ -518,7 +518,7 @@ def create_distribution_plot_and_documentation_all(context):
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'images/plot_block_block.png',
+         'filename': 'images/plot_block_block_2x2.png',
          'dist': ('b', 'b'),
         },
         {'shape': (5, 9),
@@ -600,7 +600,7 @@ def create_distribution_plot_and_documentation_all(context):
         # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (5, 9),
          'title': 'BlockCyclic, BlockCyclic',
-         'labels': ('bc', 'bc'),
+         'labels': ('b', 'b'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
          'dimdata': [
             ({'block_size': 2,
@@ -656,7 +656,7 @@ def create_distribution_plot_and_documentation_all(context):
         # block-padded, block-padded: Block with padding = (1, 1).
         {'shape': (5, 9),
          'title': 'BlockPadded, BlockPadded',
-         'labels': ('bp', 'bp'),
+         'labels': ('b', 'b'),
          'filename': 'images/plot_blockpad_blockpad.png',
          # The padding is not actually used yet, so this is not a meaningful
          # example now.
