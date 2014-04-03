@@ -60,6 +60,20 @@ def print_array_documentation(context,
         trims = [line for line in lines if len(line) > 0]
         return trims
 
+    def rst_code(lines):
+        """ Format a list of lines into a python code block.
+        Returns a list of text lines.
+        """
+        code_lines = []
+        code_lines.append("")
+        code_lines.append(".. code-block:: python")
+        code_lines.append("")
+        for line in lines:
+            code_line = "    " + line
+            code_lines.append(code_line)
+        code_lines.append("")
+        return code_lines
+
     def rst_print(obj):
         """ Return text that formats obj nicely for an .rst document. """
         lines = rst_lines(obj)
@@ -121,7 +135,6 @@ def print_array_documentation(context,
         for lines in lines_list:
             for line in lines:
                 print(line)
-            print()
 
     def rst_table(rows, cols, lines_list):
         """ Print the list of lines as a .rst table. """
@@ -187,20 +200,18 @@ def print_array_documentation(context,
     # Full (undistributed) array:
     full_array = array.toarray()
     print("The full (undistributed) array:")
-    print()
-    print(">>> full_array")
-    print(rst_print(full_array))
-    print()
+    lines = [">>> full_array"] + rst_lines(full_array)
+    code_lines = rst_code(lines)
+    rst_print_lines([code_lines])
 
     # Properties that are the same on all processes:
     print("In all processes, we have:")
-    print()
-    print(">>> distbuffer = local_array.__distarray__()")
-    print(">>> distbuffer.keys()")
-    print(rst_print(db_keys[0]))
-    print(">>> distbuffer['__version__']")
-    print(rst_print(db_version[0]))
-    print()
+    lines = []
+    lines += [">>> distbuffer = local_array.__distarray__()"]
+    lines += [">>> distbuffer.keys()"] + rst_lines(db_keys[0])
+    lines += [">>> distbuffer['__version__']"] + rst_lines(db_version[0])
+    code_lines = rst_code(lines)
+    rst_print_lines([code_lines])
 
     # Local arrays / properties that vary per engine.
     print("The local arrays, on each separate engine:")
@@ -217,10 +228,12 @@ def print_array_documentation(context,
         # Skip if local ndarray is empty, as there is no local plot.
         if ndarray.size == 0:
             continue
+        header = "In process %d:" % (p)
         lines = []
-        lines += ["In process %d:" % (p), ""]
         lines += [">>> distbuffer['buffer']"] + rst_lines(buffer)
         lines += [">>> distbuffer['dim_data']"] + rst_lines(dim_data)
+        code_lines = rst_code(lines)
+        lines = [header] + code_lines
         lines_list.append(lines)
     # Print as table with nice layout.
     num_local_properties = len(lines_list)
@@ -516,7 +529,7 @@ def create_distribution_plot_and_documentation_all(context):
          'filename': 'images/plot_blockpad_blockpad.png',
          # The padding is not actually used yet, so this is not a meaningful
          # example now.
-         'skip': True, 
+         'skip': True,
          'dimdata': [
             (
              {'size': 5,
