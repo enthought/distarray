@@ -117,6 +117,149 @@ class TestDistArray(IpclusterTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
+class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
+
+    def setUp(self):
+        self.context = Context(self.client)
+
+    def test_from_global_dim_data_irregular_block(self):
+        global_size = 10
+        bounds = (0, 2, 3, 4, 10)
+        glb_dim_data = (
+                {'dist_type': 'b',
+                    'bounds': bounds},
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
+        for i in range(global_size):
+            distarr[i] = i
+
+    def test_from_global_dim_data_1d(self):
+        total_size = 40
+        list_of_indices = [
+                [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+                [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+                [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+                [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+                ]
+        total_size = sum(len(ii) for ii in list_of_indices)
+        glb_dim_data = (
+                {'dist_type': 'u',
+                    'indices': list_of_indices,
+                    },
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
+        for i in range(total_size):
+            distarr[i] = i
+        localarrays = distarr.get_localarrays()
+        for i, arr in enumerate(localarrays):
+            assert_allclose(arr, list_of_indices[i])
+
+    def test_from_global_dim_data_bu(self):
+        rows = 9
+        row_break_point = rows // 2
+        cols = 10
+        col_indices = numpy.random.permutation(range(cols))
+        col_break_point = len(col_indices) // 3
+        indices = [col_indices[:col_break_point], col_indices[col_break_point:]]
+        glb_dim_data = (
+                {'dist_type': 'b',
+                    'bounds': (0, row_break_point, rows)},
+                {'dist_type': 'u',
+                    'indices' : indices},
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
+        for i in range(rows):
+            for j in range(cols):
+                distarr[i, j] = i*cols + j
+
+    def test_from_global_dim_data_uu(self):
+        rows = 6
+        cols = 20
+        row_ixs = numpy.random.permutation(range(rows))
+        col_ixs = numpy.random.permutation(range(cols))
+        row_indices = [row_ixs[:rows//2], row_ixs[rows//2:]]
+        col_indices = [col_ixs[:cols//4], col_ixs[cols//4:]]
+        glb_dim_data = (
+                {'dist_type': 'u',
+                    'indices': row_indices},
+                {'dist_type': 'u',
+                    'indices' : col_indices},
+                )
+        distarr = self.context.from_global_dim_data(glb_dim_data)
+        for i in range(rows):
+            for j in range(cols):
+                distarr[i, j] = i*cols + j
+
+    def test_global_dim_data_local_dim_data_equivalence(self):
+        rows, cols = 5, 9
+        glb_dim_data = (
+                {'dist_type': 'c',
+                 'block_size': 2,
+                 'size': rows,
+                 'proc_grid_size': 2,
+                 },
+                {'dist_type': 'c',
+                 'block_size': 2,
+                 'proc_grid_size': 2,
+                 'size': cols,
+                 },
+                )
+        mdmap = ClientMDMap.from_global_dim_data(self.context, glb_dim_data)
+        actual = mdmap.get_local_dim_datas()
+
+        expected = [
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 0},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 0,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 0}),
+            ({'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': rows,
+              'start': 2},
+             {'block_size': 2,
+              'dist_type': 'c',
+              'proc_grid_rank': 1,
+              'proc_grid_size': 2,
+              'size': cols,
+              'start': 2}),
+        ]
+        self.assertSequenceEqual(actual, expected)
+
+
 class TestDistArrayCreation(IpclusterTestCase):
 
     """Test distarray creation methods"""
@@ -214,7 +357,7 @@ class TestDistArrayCreation(IpclusterTestCase):
               'size': cols,
               'start': 2}),
         ]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
@@ -283,7 +426,7 @@ class TestDistArrayCreation(IpclusterTestCase):
               'stop': 9},
              ),
         ]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(global_shape[0]):
             for j in range(global_shape[1]):
                 distarr[i,j] = i + j
@@ -312,7 +455,7 @@ class TestDistArrayCreation(IpclusterTestCase):
               'proc_grid_rank': 3,
               'proc_grid_size': 4,
               'size': total_size},)]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(total_size):
             distarr[i] = i
         localarrays = distarr.get_localarrays()
@@ -333,7 +476,7 @@ class TestDistArrayCreation(IpclusterTestCase):
                'size': global_size},
               ) for i in range(4)
              ]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(global_size):
             distarr[i] = i
 
@@ -396,7 +539,7 @@ class TestDistArrayCreation(IpclusterTestCase):
                'proc_grid_size': 2,
                'size': cols},
              )]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
@@ -455,7 +598,7 @@ class TestDistArrayCreation(IpclusterTestCase):
                'proc_grid_size': 2,
                'size': cols},
              )]
-        distarr = self.context.from_dim_data(ddpp)
+        distarr = self.context._from_dim_data(ddpp)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
