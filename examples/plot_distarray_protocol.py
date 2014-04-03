@@ -179,11 +179,14 @@ def print_array_documentation(context,
     context._execute(cmd)
     cmd = 'db_dim_data = distbuffer["dim_data"]'
     context._execute(cmd)
+    cmd = 'db_coords = %s.cart_coords' % (array.key)
+    context._execute(cmd)
     # Get data from each engine.
     db_keys = context._pull('db_keys')
     db_version = context._pull('db_version')
     db_buffer = context._pull('db_buffer')
     db_dim_data = context._pull('db_dim_data')
+    db_coords = context._pull('db_coords')
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
@@ -223,12 +226,17 @@ def print_array_documentation(context,
 
     # Properties that change per-process:
     lines_list = []
-    for p, (keys, version, buffer, dim_data, ndarray) in enumerate(
-            zip(db_keys, db_version, db_buffer, db_dim_data, db_ndarrays)):
+    for rank, (keys, version, buffer, dim_data, ndarray, coord) in enumerate(
+            zip(db_keys,
+                db_version,
+                db_buffer,
+                db_dim_data,
+                db_ndarrays,
+                db_coords)):
         # Skip if local ndarray is empty, as there is no local plot.
         if ndarray.size == 0:
             continue
-        header = "In process %d:" % (p)
+        header = "In process %r:" % (coord,)
         lines = []
         lines += [">>> distbuffer['buffer']"] + rst_lines(buffer)
         lines += [">>> distbuffer['dim_data']"] + rst_lines(dim_data)
@@ -308,6 +316,13 @@ def create_distribution_plot_and_documentation(context, params):
         # TODO: Even better would be to generalize this to any dimensions.
         raise ValueError('Array must be 1, 2, or 3 dimensional.')
 
+    # Get all process grid coordinates.
+    # This is duplicating work in print_array_documentation(),
+    # but it is needed for the local array plots.
+    cmd = 'process_coords = %s.cart_coords' % (array.key)
+    context._execute(cmd)
+    process_coords = context._pull('process_coords')
+
     # Plot title and axis labels.
     plot_title = title + ' ' + shape_text(shape) + '\n'
     if len(shape) == 1:
@@ -335,6 +350,7 @@ def create_distribution_plot_and_documentation(context, params):
     if len(shape) in [1, 2]:
         plotting.plot_array_distribution(
             array,
+            process_coords,
             title=plot_title,
             xlabel=xlabel,
             ylabel=ylabel,
