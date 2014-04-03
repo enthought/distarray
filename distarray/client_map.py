@@ -271,6 +271,9 @@ class ClientUnstructuredMap(ClientMapBase):
         self.size = size
         self.grid_size = grid_size
         self.indices = indices
+        if self.indices is not None:
+            # Convert to NumPy arrays if not already.
+            self.indices = [np.asarray(ind) for ind in self.indices]
         self._owners = range(self.grid_size)
 
     def owners(self, idx):
