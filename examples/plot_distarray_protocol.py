@@ -291,7 +291,7 @@ def create_distribution_plot_and_documentation(context, params):
     if dist is not None:
         array = context.empty(shape, dist=dist)
     elif dimdata is not None:
-        array = context.from_dim_data(dimdata)
+        array = context._from_dim_data(dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
 
