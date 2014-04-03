@@ -702,17 +702,17 @@ def create_distribution_plot_and_documentation_all(context):
 
 
 def main():
-    # We need >=8 engines for the 3D example...
     context = distarray.Context()
     num_targets = len(context.targets)
-    if num_targets < 8:
-        raise ValueError('Need at least 8 engines for all examples.')
-    # Make examples with 4 engines.
-    context4 = distarray.Context(targets=range(4))
-    create_distribution_plot_and_documentation_all(context4)
-    # Make examples with 8 engines.
-    context8 = distarray.Context(targets=range(8))
-    create_distribution_plot_and_documentation_all(context8)
+    # Examples are designed for various engine counts...
+    engine_counts = [4, 8]
+    need_targets = max(engine_counts)
+    if num_targets < need_targets:
+        raise ValueError('Need at least %d engines for all the examples, '
+                         'but only have %d.' % (need_targets, num_targets))
+    for engine_count in engine_counts:
+        context_n = distarray.Context(targets=range(engine_count))
+        create_distribution_plot_and_documentation_all(context_n)
 
 
 if __name__ == '__main__':
