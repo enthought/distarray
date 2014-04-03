@@ -274,27 +274,17 @@ def create_distribution_plot_and_documentation(context, params):
     text = params.get('text', None)
     dist = params.get('dist', None)
     dimdata = params.get('dimdata', None)
-    global_dimdata = params.get('global_dimdata', None)
     filename = params.get('filename', None)
     skip = params.get('skip', False)
 
     if skip:
         return
 
-    # Skip if dimdata count does not match context.
-    if dimdata is not None:
-        num_dimdata = len(dimdata)
-        num_targets = len(context.targets)
-        if num_dimdata != num_targets:
-            return
-
     # Create array, either from dist or dimdata.
     if dist is not None:
         array = context.empty(shape, dist=dist)
     elif dimdata is not None:
-        array = context._from_dim_data(dimdata)
-    elif global_dimdata is not None:
-        array = context.from_global_dim_data(global_dimdata)
+        array = context.from_global_dim_data(dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
 
@@ -394,7 +384,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_4x1.png',
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'b', 'bounds': [0, 2, 4, 5, 5]},
              {'dist_type': 'b', 'bounds': [0, 9]},
           ),
@@ -404,7 +394,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_1x4.png',
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'b', 'bounds': [0, 5]},
              {'dist_type': 'b', 'bounds': [0, 3, 6, 9, 9]},
           ),
@@ -433,7 +423,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Irregular-Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_irregularblock_irregularblock.png',
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'b', 'bounds': [0, 1, 5]},
              {'dist_type': 'b', 'bounds': [0, 2, 9]},
           ),
@@ -443,7 +433,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'BlockCyclic, BlockCyclic',
          'labels': ('b', 'b'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
-         'global_dimdata': (
+         'dimdata': (
              {'size': 5, 'dist_type': 'c', 'proc_grid_size': 2, 'block_size': 2},
              {'size': 9, 'dist_type': 'c', 'proc_grid_size': 2, 'block_size': 2},
           ),
@@ -456,7 +446,7 @@ def create_distribution_plot_and_documentation_all(context):
          # The padding is not actually used yet, so this is not a meaningful
          # example now.
          'skip': True,
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'b', 'bounds': [0, 2, 5], 'boundary_padding': 1},
              {'dist_type': 'b', 'bounds': [0, 4, 9], 'boundary_padding': 1},
           ),
@@ -467,7 +457,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstructured.png',
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'u',
               'indices': [
                    [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
@@ -482,7 +472,7 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstruct_unstruct.png',
-         'global_dimdata': (
+         'dimdata': (
              {'dist_type': 'u',
               'indices': [row_indices[:rows // 2], row_indices[rows // 2:]],
              },
