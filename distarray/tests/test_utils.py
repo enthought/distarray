@@ -16,23 +16,21 @@ class TestMultPartitions(unittest.TestCase):
     Test the multiplicative parition code.
     """
 
-    def test_both_methods(self):
+    def test_mult_partitions(self):
         """
         Do the two methods of computing the multiplicative partitions agree?
         """
         self.assertEqual(utils.mult_partitions(1, 2), [(1, 1)])
+        self.assertEqual(utils.mult_partitions(2, 2), [(1, 2)])
         self.assertEqual(utils.mult_partitions(1, 7), [(1,) * 7])
         self.assertEqual(utils.mult_partitions(7, 2), [(1, 7)])
+        self.assertEqual(utils.mult_partitions(7, 3), [(1, 1, 7)])
         self.assertEqual(utils.mult_partitions(16, 4), [(1, 1, 1, 16),
                                                         (1, 1, 2, 8),
                                                         (1, 1, 4, 4),
                                                         (1, 2, 2, 4),
                                                         (2, 2, 2, 2)])
-        self.assertEqual(utils.mult_partitions(16, 4), [(1, 1, 1, 16),
-                                                        (1, 1, 2, 8),
-                                                        (1, 1, 4, 4),
-                                                        (1, 2, 2, 4),
-                                                        (2, 2, 2, 2)])
+        self.assertEqual(utils.mult_partitions(6, 3), [(1, 1, 6), (1, 2, 3)])
 
 
 class TestSanitizeIndices(unittest.TestCase):
