@@ -73,25 +73,6 @@ def _make_mdmap_from_local_dimdata(local_name, context):
     dim_datas = context._pull(dim_data_name)
     return ClientMDMap.from_dim_data(context, dim_datas)
 
-
-_MDMAP_ATTRS = """
-{global_shape_name} = {local_name}.global_shape   # shape
-{dist_name} = {local_name}.dist                   # dist
-{grid_shape_name} = {local_name}.grid_shape       # grid_shape
-"""
-
-def _make_mdmap_from_local(local_name, context):
-    """ `key` is a handle to local objects that have a shape, grid_shape, dist
-    """
-    global_shape_name = context._generate_key()
-    dist_name = context._generate_key()
-    grid_shape_name = context._generate_key()
-    context._execute0(_MDMAP_ATTRS.format(**locals()))
-    values = context._pull0([global_shape_name, dist_name, grid_shape_name])
-    global_shape, dist, grid_shape = values
-    return ClientMDMap(context, global_shape, dist, grid_shape)
-
-
 def _get_attribute(context, key, name):
     local_key = context._generate_key()
     context._execute0('%s = %s.%s' % (local_key, key, name))

@@ -12,6 +12,7 @@ import collections
 import numpy
 
 from distarray.client import DistArray
+from distarray.client_map import ClientMDMap
 from distarray.ipython_utils import IPythonClient
 
 
@@ -262,14 +263,14 @@ class Context(object):
                                   shape=shape, dtype=dtype,
                                   dist=dist, grid_shape=grid_shape)
 
-    def from_dim_data(self, dim_data_per_rank, dtype=float):
-        """Make a DistArray from dim_data structures.
+    def from_global_dim_data(self, global_dim_data, dtype=float):
+        """Make a DistArray from global dim_data structures.
 
         Parameters
         ----------
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        global_dim_data : tuple of dict
+            A global dimension dictionary per dimension.  See following `Note`
+            section.
         dtype : numpy dtype, optional
             dtype for underlying arrays
 
@@ -279,7 +280,91 @@ class Context(object):
             An empty DistArray of the specified size, dimensionality, and
             distribution.
 
+        Note
+        ----
+
+        The `global_dim_data` tuple is a simple, straightforward data structure
+        that allows full control over all aspects of a DistArray's distribution
+        information.  It does not contain any of the array's *data*, only the
+        *metadata* needed to specify how the array is to be distributed.  Each
+        dimension of the array is represented by corresponding dictionary in
+        the tuple, one per dimension.  All dictionaries have a `dist_type` key
+        that specifies whether the array is block, cyclic, or unstructured.
+        The other keys in the dictionary are dependent on the `dist_type` key.
+
+        Block
+        ~~~~~
+
+        * ``dist_type`` is ``'b'``.
+
+        * ``bounds`` is a sequence of integers, at least two elements.
+
+          The ``bounds`` sequence always starts with 0 and ends with the global
+          ``size`` of the array.  The other elements indicate the local array
+          global index boundaries, such that successive pairs of elements from
+          ``bounds`` indicates the ``start`` and ``stop`` indices of the
+          corresponding local array.
+
+        * ``comm_padding`` integer, greater than or equal to zero.
+        * ``boundary_padding`` integer, greater than or equal to zero.
+
+        These integer values indicate the communication or boundary padding,
+        respectively, for the local arrays.  Currently only a single value for
+        both ``boundary_padding`` and ``comm_padding`` is allowed for the
+        entire dimension.
+
+        Cyclic
+        ~~~~~~
+
+        * ``dist_type`` is ``'c'``
+
+        * ``proc_grid_size`` integer, greater than or equal to one.
+
+        The size of the process grid in this dimension.  Equivalent to the
+        number of local arrays in this dimension and determines the number of
+        array sections.
+
+        * ``size`` integer, greater than or equal to zero.
+
+        The global size of the array in this dimension.
+
+        * ``block_size`` integer, optional.  Greater than or equal to one.
+
+        If not present, equivalent to being present with value of one.
+
+        Unstructured
+        ~~~~~~~~~~~~
+
+        * ``dist_type`` is ``'u'``
+
+        * ``indices`` sequence of one-dimensional numpy integer arrays or
+          buffers.
+
+          The ``len(indices)`` is the number of local unstructured arrays in
+          this dimension.
+
+          To compute the global size of the array in this dimension, compute
+          ``sum(len(ii) for ii in indices)``.
+
+        Not-distributed
+        ~~~~~~~~~~~~~~~
+
+        The ``'n'`` distribution type is a convenience to specify that an array
+        is not distributed along this dimension.
+
+        * ``dist_type`` is ``'n'``
+
+        * ``size`` integer, greater than or equal to zero.
+
+        The global size of the array in this dimension.
+
         """
+        # global_dim_data is a sequence of dictionaries, one per dimension.
+        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
+        dim_data_per_rank = mdmap.get_local_dim_datas()
+        return self._from_dim_data(dim_data_per_rank, dtype=dtype)
+
+    def _from_dim_data(self, dim_data_per_rank, dtype=float):
         if len(self.targets) != len(dim_data_per_rank):
             errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
