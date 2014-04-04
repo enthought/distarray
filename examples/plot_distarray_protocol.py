@@ -443,7 +443,7 @@ def create_distribution_plot_and_documentation_all(context):
         # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (5, 9),
          'title': 'BlockCyclic, BlockCyclic',
-         'labels': ('b', 'b'),
+         'labels': ('c', 'c'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
          'dimdata': (
              {'size': 5, 'dist_type': 'c', 'proc_grid_size': 2, 'block_size': 2},
