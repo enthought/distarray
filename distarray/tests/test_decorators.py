@@ -189,6 +189,17 @@ class TestLocalDecorator(TestCase):
 
         assert_array_equal(da.toarray(), a)
 
+    def test_different_contexts(self):
+        ctx1 = Context(targets=range(4))
+        ctx2 = Context(targets=range(3))
+        da1 = ctx1.ones((10,))
+        da2 = ctx2.ones((10,))
+        db1 = self.local_sin(da1)
+        db2 = self.local_sin(da2)
+        ndarr1 = db1.toarray()
+        ndarr2 = db2.toarray()
+        assert_array_equal(ndarr1, ndarr2)
+
     def test_local_sin(self):
         db = self.local_sin(self.da)
         self.assert_allclose(db, 0)
