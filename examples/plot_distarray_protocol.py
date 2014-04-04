@@ -202,6 +202,13 @@ def print_array_documentation(context,
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
+    # When preparing examples for the protocol release, we need to
+    # adjust the version number manually. Otherwise this would be left alone.
+    manual_version_update = True
+    if manual_version_update:
+        manual_version = '0.10.0'
+        db_version = [manual_version for version in db_version]
+
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
     print()
@@ -338,7 +345,7 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Documentation title and text description.
     doc_title = title
-    dist_text = ' x '.join(["'%s'" % (label) for label in labels])
+    dist_text = ' X '.join(["'%s'" % (label) for label in labels])
     doc_text = 'A (%s) array, with a %s (%s) distribution over a (%s) process grid.' % (
         shape_text(shape), title, dist_text, shape_text(array.grid_shape))
     if text is not None:
@@ -388,6 +395,34 @@ def create_distribution_plot_and_documentation_all(context):
     col_indices = permutation(range(cols))
 
     #
+    # Examples intended for 3 processes:
+    #
+    # FIXME: For unknown reasons, running these examples,
+    # followed by the 4 process examples, results in a hang.
+    params_list_3 = [
+        # Same results as old 'b', 'n'.
+        {'shape': (5, 9),
+         'title': 'Block, Block',
+         'labels': ('b', 'b'),
+         'filename': 'images/plot_block_block_3x1.png',
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 2, 4, 5]},
+             {'dist_type': 'b', 'bounds': [0, 9]},
+          ),
+        },
+        # Same results as old 'n', 'b'.
+        {'shape': (5, 9),
+         'title': 'Block, Block',
+         'labels': ('b', 'b'),
+         'filename': 'images/plot_block_block_1x3.png',
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 5]},
+             {'dist_type': 'b', 'bounds': [0, 3, 6, 9]},
+          ),
+        },
+    ]
+
+    #
     # Examples intended for 4 processes:
     #
     params_list_4 = [
@@ -397,7 +432,7 @@ def create_distribution_plot_and_documentation_all(context):
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_4x1.png',
          'dimdata': (
-             {'dist_type': 'b', 'bounds': [0, 2, 4, 5, 5]},
+             {'dist_type': 'b', 'bounds': [0, 2, 3, 4, 5]},
              {'dist_type': 'b', 'bounds': [0, 9]},
           ),
         },
@@ -408,7 +443,7 @@ def create_distribution_plot_and_documentation_all(context):
          'filename': 'images/plot_block_block_1x4.png',
          'dimdata': (
              {'dist_type': 'b', 'bounds': [0, 5]},
-             {'dist_type': 'b', 'bounds': [0, 3, 6, 9, 9]},
+             {'dist_type': 'b', 'bounds': [0, 3, 6, 8, 9]},
           ),
         },
         # Some simple description examples.
@@ -442,7 +477,7 @@ def create_distribution_plot_and_documentation_all(context):
         },
         # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (5, 9),
-         'title': 'BlockCyclic, BlockCyclic',
+         'title': 'Block-Cyclic, Block-Cyclic',
          'labels': ('c', 'c'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
          'dimdata': (
@@ -452,7 +487,7 @@ def create_distribution_plot_and_documentation_all(context):
         },
         # block-padded, block-padded: Block with padding = (1, 1).
         {'shape': (5, 9),
-         'title': 'BlockPadded, BlockPadded',
+         'title': 'Block-Padded, Block-Padded',
          'labels': ('b', 'b'),
          'filename': 'images/plot_blockpad_blockpad.png',
          # The padding is not actually used yet, so this is not a meaningful
@@ -512,7 +547,10 @@ def create_distribution_plot_and_documentation_all(context):
     # Get the examples to use for the number of engines.
     param_list = []
     num_engines = len(context.targets)
-    if num_engines == 4:
+    if num_engines == 3:
+        # Examples that only use 3 processes.
+        param_list.extend(params_list_3)
+    elif num_engines == 4:
         # 1,2 dimension cases with 4 engines give nicer plots.
         param_list.extend(params_list_4)
     elif num_engines == 8:
@@ -526,11 +564,11 @@ def create_distribution_plot_and_documentation_all(context):
     for params in param_list:
         create_distribution_plot_and_documentation(context, params)
 
-
 def main():
     context = distarray.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
+    # 3 engine case is skipped as it causes an unexplained hang.
     engine_counts = [4, 8]
     need_targets = max(engine_counts)
     if num_targets < need_targets:
