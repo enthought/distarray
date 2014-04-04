@@ -397,8 +397,6 @@ def create_distribution_plot_and_documentation_all(context):
     #
     # Examples intended for 3 processes:
     #
-    # FIXME: For unknown reasons, running these examples,
-    # followed by the 4 process examples, results in a hang.
     params_list_3 = [
         # Same results as old 'b', 'n'.
         {'shape': (5, 9),
@@ -426,26 +424,6 @@ def create_distribution_plot_and_documentation_all(context):
     # Examples intended for 4 processes:
     #
     params_list_4 = [
-        # Same results as old 'b', 'n'.
-        {'shape': (5, 9),
-         'title': 'Block, Block',
-         'labels': ('b', 'b'),
-         'filename': 'images/plot_block_block_4x1.png',
-         'dimdata': (
-             {'dist_type': 'b', 'bounds': [0, 2, 3, 4, 5]},
-             {'dist_type': 'b', 'bounds': [0, 9]},
-          ),
-        },
-        # Same results as old 'n', 'b'.
-        {'shape': (5, 9),
-         'title': 'Block, Block',
-         'labels': ('b', 'b'),
-         'filename': 'images/plot_block_block_1x4.png',
-         'dimdata': (
-             {'dist_type': 'b', 'bounds': [0, 5]},
-             {'dist_type': 'b', 'bounds': [0, 3, 6, 8, 9]},
-          ),
-        },
         # Some simple description examples.
         {'shape': (5, 9),
          'title': 'Block, Block',
@@ -511,7 +489,7 @@ def create_distribution_plot_and_documentation_all(context):
                    [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
                    [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
                    [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-               ],},
+               ], },
           ),
         },
         # Unstructured, unstructured.
@@ -564,12 +542,12 @@ def create_distribution_plot_and_documentation_all(context):
     for params in param_list:
         create_distribution_plot_and_documentation(context, params)
 
+
 def main():
     context = distarray.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
-    # 3 engine case is skipped as it causes an unexplained hang.
-    engine_counts = [4, 8]
+    engine_counts = [3, 4, 8]
     need_targets = max(engine_counts)
     if num_targets < need_targets:
         raise ValueError('Need at least %d engines for all the examples, '
