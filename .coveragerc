@@ -5,7 +5,7 @@ branch = True
 source = distarray
 omit = 
         */tests/*
-        externals/*
+        distarray/externals/*
 
 [html]
 directory = coverage_report
