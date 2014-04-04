@@ -198,3 +198,15 @@ def all_equal(iterable):
 
     return all(element == first for element in iterator)
 
+def is_local():
+    """Check if we are on an engine.
+
+    Returns
+    -------
+    bool : True if run on an engine, False if run on client.
+    """
+    try:
+        a = get_ipython()
+    except NameError:
+        return False
+    return ("IPython.kernel.zmq" in str(a))
