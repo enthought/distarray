@@ -10,6 +10,16 @@ Plot distributions for some distarrays for the protocol documentation.
 The output from this example program should be directly usable in the
 distributed array protocol documentation, if saved as examples.rst.
 The output .png files should be copied to the images folder as well.
+
+To generate the automatic documentation:
+Run:
+    $ python plot_distarray_protocol.py >examples.rst
+This should create both the examples.rst redirected output, and also
+create many .png files in the images subdirectory.
+
+All of these should be copied to the corresponding location in the
+distributed-array-protocol directory tree, then the sphinx documentation
+can be rebuilt with 'make html'.
 """
 
 from __future__ import print_function
@@ -84,8 +94,10 @@ def print_array_documentation(context,
         """ Reference a plot in the .rst document.
 
         The plot must be created elsewhere, this does not make it.
+        The path emitted assumes some organization of the
+        documentation directory.
         """
-        print(".. image:: ../%s" % (filename))
+        print(".. image:: %s" % (filename))
         print()
 
     def text_block_size(lines):
