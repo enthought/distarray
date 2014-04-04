@@ -12,20 +12,7 @@ from functools import wraps
 import numpy
 
 from distarray.client import DistArray
-
-
-def default_context(func):
-    """Importing `from distarray.world import WORLD` at the module
-    level results in circular imports. So we do this, to import it
-    lazily.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if kwargs.get('context') is None:
-            from distarray.world import WORLD
-            kwargs['context'] = WORLD
-        return func(*args, **kwargs)
-    return wrapper
+from distarray.world import WORLD
 
 
 def _create_local(context, local_call, shape, dtype, dist, grid_shape):
@@ -40,8 +27,7 @@ def _create_local(context, local_call, shape, dtype, dist, grid_shape):
     return DistArray.from_localarrays(da_key, context)
 
 
-@default_context
-def from_dim_data(dim_data_per_rank, context=None, dtype=float):
+def from_dim_data(dim_data_per_rank, context=WORLD, dtype=float):
     """Make a DistArray from dim_data structures.
 
     Parameters
@@ -75,29 +61,25 @@ def from_dim_data(dim_data_per_rank, context=None, dtype=float):
     return DistArray.from_localarrays(da_key, context)
 
 
-@default_context
-def zeros(shape, context=None, dtype=float, dist={0: 'b'}, grid_shape=None):
+def zeros(shape, context=WORLD, dtype=float, dist={0: 'b'}, grid_shape=None):
     return _create_local(context, local_call='distarray.local.zeros',
                          shape=shape, dtype=dtype, dist=dist,
                          grid_shape=grid_shape)
 
 
-@default_context
-def ones(shape, context=None, dtype=float, dist={0: 'b'}, grid_shape=None):
+def ones(shape, context=WORLD, dtype=float, dist={0: 'b'}, grid_shape=None):
     return _create_local(context, local_call='distarray.local.ones',
                          shape=shape, dtype=dtype, dist=dist,
                          grid_shape=grid_shape)
 
 
-@default_context
-def empty(shape, context=None, dtype=float, dist={0: 'b'}, grid_shape=None):
+def empty(shape, context=WORLD, dtype=float, dist={0: 'b'}, grid_shape=None):
     return _create_local(context, local_call='distarray.local.empty',
                          shape=shape, dtype=dtype, dist=dist,
                          grid_shape=grid_shape)
 
 
-@default_context
-def fromndarray(arr, context=None, dist={0: 'b'}, grid_shape=None):
+def fromndarray(arr, context=WORLD, dist={0: 'b'}, grid_shape=None):
     """Convert an ndarray to a distarray."""
     out = empty(arr.shape, dtype=arr.dtype, dist=dist, grid_shape=grid_shape)
     for index, value in numpy.ndenumerate(arr):
@@ -107,8 +89,7 @@ def fromndarray(arr, context=None, dist={0: 'b'}, grid_shape=None):
 fromarray = fromndarray
 
 
-@default_context
-def fromfunction(function, shape, context=None, **kwargs):
+def fromfunction(function, shape, context=WORLD, **kwargs):
     func_key = context._generate_key()
     context.view.push_function({func_key: function}, targets=context.targets,
                                block=True)
