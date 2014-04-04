@@ -247,7 +247,7 @@ class ClientUnstructuredMap(ClientMapBase):
         if glb_dim_dict['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        indices_sequence = glb_dim_dict['indices']
+        indices_sequence = tuple(np.asarray(ind) for ind in glb_dim_dict['indices'])
         size = sum(len(ii) for ii in indices_sequence)
         grid_size = len(indices_sequence)
         return cls(size, grid_size, indices=indices_sequence)
@@ -376,6 +376,8 @@ class ClientMDMap(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
+        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
@@ -394,6 +396,8 @@ class ClientMDMap(object):
         self.ndim = len(dd0)
         self.dist = tuple(dd['dist_type'] for dd in dd0)
         self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
+
+        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
         self.rank_from_coords = { c: r for (r, c) in enumerate(coords)}
