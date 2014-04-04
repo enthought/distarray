@@ -13,6 +13,7 @@ import functools
 from distarray.client import DistArray
 from distarray.context import Context
 from distarray.error import ContextError
+from distarray.creation import empty
 from distarray.utils import has_exactly_one
 
 
@@ -197,9 +198,8 @@ class vectorize(DecoratorBase):
         for arg in args:
             if isinstance(arg, DistArray):
                 # Create the output distarray.
-                out = self.context.empty(arg.shape, dtype=arg.dtype,
-                                         dist=arg.dist,
-                                         grid_shape=arg.grid_shape)
+                out = empty(arg.shape, context=self.context, dtype=arg.dtype,
+                            dist=arg.dist, grid_shape=arg.grid_shape)
                 # parse args
                 args_str, kwargs_str = self.key_and_push_args(
                     args, kwargs, context=self.context,

@@ -18,6 +18,7 @@ from numpy.testing import assert_array_equal
 
 import distarray
 from distarray import Context
+from distarray.creation import fromarray
 
 
 def add_checkers(cls, ops, checker_name):
@@ -50,8 +51,8 @@ class TestDistArrayUfuncs(unittest.TestCase):
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = cls.context.fromndarray(cls.a)
-        cls.db = cls.context.fromndarray(cls.b)
+        cls.da = fromarray(cls.a)
+        cls.db = fromarray(cls.b)
 
     @classmethod
     def tearDownClass(cls):
@@ -102,8 +103,8 @@ class TestSpecialMethods(unittest.TestCase):
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
-        cls.da = cls.context.fromndarray(cls.a)
-        cls.db = cls.context.fromndarray(cls.b)
+        cls.da = fromarray(cls.a)
+        cls.db = fromarray(cls.b)
 
     @classmethod
     def tearDownClass(cls):

@@ -6,4 +6,5 @@
 
 from distarray.client import DistArray
 from distarray.context import Context
+from distarray.creation import *
 from distarray.functions import *

@@ -18,6 +18,7 @@ import numpy
 from numpy.testing import assert_array_equal
 
 from distarray.context import Context
+from distarray.creation import empty, fromarray, ones
 from distarray.decorators import DecoratorBase, local, vectorize
 from distarray.error import ContextError
 
@@ -27,7 +28,7 @@ class TestDecoratorBase(TestCase):
     def test_determine_context(self):
         context = Context()
         context2 = Context()  # for cross Context checking
-        da = context.ones((2, 2))
+        da = ones((2, 2), context=context)
 
         def dummy_func(*args, **kwargs):
             fn = lambda x: x
@@ -45,7 +46,7 @@ class TestDecoratorBase(TestCase):
     def test_key_and_push_args(self):
         context = Context()
 
-        da = context.ones((2, 2))
+        da = ones((2, 2))
         db = da*2
 
         def dummy_func(*args, **kwargs):
@@ -141,7 +142,7 @@ class TestLocalDecorator(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
-        cls.da = cls.context.empty((5, 5))
+        cls.da = empty((5, 5))
         cls.da.fill(2 * numpy.pi)
 
     @classmethod
@@ -169,7 +170,7 @@ class TestLocalDecorator(TestCase):
         context = Context()
 
         """Test the @local decorator"""
-        da = context.empty((4, 4))
+        da = empty((4, 4))
         a = numpy.empty((4, 4))
 
         def fill_a(a):
@@ -215,13 +216,13 @@ class TestLocalDecorator(TestCase):
         self.assert_allclose(df, 2 * numpy.pi + 11 + 12 + 13)
 
     def test_local_add_distarrayproxies(self):
-        dg = self.context.empty((5, 5))
+        dg = empty((5, 5))
         dg.fill(33)
         dh = self.local_add_distarrayproxies(self.da, dg)
         self.assert_allclose(dh, 33 + 2 * numpy.pi)
 
     def test_local_add_mixed(self):
-        di = self.context.empty((5, 5))
+        di = empty((5, 5))
         di.fill(33)
         dj = self.local_add_mixed(self.da, 11, di, 12)
         self.assert_allclose(dj, 2 * numpy.pi + 11 + 33 + 12)
@@ -239,9 +240,9 @@ class TestLocalDecorator(TestCase):
         self.assert_allclose(dl, 2 * numpy.pi + 11 + 12)
 
     def test_local_add_supermix(self):
-        dm = self.context.empty((5, 5))
+        dm = empty((5, 5))
         dm.fill(22)
-        dn = self.context.empty((5, 5))
+        dn = empty((5, 5))
         dn.fill(44)
         do = self.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
@@ -272,7 +273,7 @@ class TestVectorizeDecorator(TestCase):
         context = Context()
 
         a = numpy.arange(16).reshape(4, 4)
-        da = context.fromndarray(a)
+        da = fromarray(a)
 
         @vectorize
         def da_fn(a, b, c):

@@ -11,14 +11,13 @@ Functions for starting and stopping ipclusters.
 from __future__ import print_function
 
 import sys
-from distarray.externals import six
 from time import sleep
 from subprocess import Popen, PIPE
 
 
-if six.PY2:
+if sys.version_info[0] == 2:
     ipcluster_cmd = 'ipcluster'
-elif six.PY3:
+elif sys.version_info[0] == 3:
     ipcluster_cmd = 'ipcluster3'
 else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")

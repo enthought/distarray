@@ -19,6 +19,7 @@ import numpy
 
 from distarray import Context
 from distarray.local import LocalArray
+from distarray.creation import fromarray
 from distarray.testing import IpclusterTestCase
 
 
@@ -29,7 +30,7 @@ class TestContext(unittest.TestCase):
     def setUpClass(cls):
         cls.context = Context()
         cls.ndarr = numpy.arange(16).reshape(4, 4)
-        cls.darr = cls.context.fromndarray(cls.ndarr)
+        cls.darr = fromarray(cls.ndarr)
 
     @classmethod
     def tearDownClass(cls):
