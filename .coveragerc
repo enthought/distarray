@@ -3,7 +3,9 @@
 [run]
 branch = True
 source = distarray
-omit = */tests/*
+omit = 
+        */tests/*
+        exterals/*
 
 [html]
 directory = coverage_report
