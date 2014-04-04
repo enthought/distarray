@@ -10,6 +10,16 @@ Plot distributions for some distarrays for the protocol documentation.
 The output from this example program should be directly usable in the
 distributed array protocol documentation, if saved as examples.rst.
 The output .png files should be copied to the images folder as well.
+
+To generate the automatic documentation:
+Run:
+    $ python plot_distarray_protocol.py >examples.rst
+This should create both the examples.rst redirected output, and also
+create many .png files in the images subdirectory.
+
+All of these should be copied to the corresponding location in the
+distributed-array-protocol directory tree, then the sphinx documentation
+can be rebuilt with 'make html'.
 """
 
 from __future__ import print_function
@@ -84,8 +94,10 @@ def print_array_documentation(context,
         """ Reference a plot in the .rst document.
 
         The plot must be created elsewhere, this does not make it.
+        The path emitted assumes some organization of the
+        documentation directory.
         """
-        print(".. image:: ../%s" % (filename))
+        print(".. image:: %s" % (filename))
         print()
 
     def text_block_size(lines):
@@ -190,6 +202,13 @@ def print_array_documentation(context,
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
+    # When preparing examples for the protocol release, we need to
+    # adjust the version number manually. Otherwise this would be left alone.
+    manual_version_update = True
+    if manual_version_update:
+        manual_version = '0.10.0'
+        db_version = [manual_version for version in db_version]
+
     print("%s" % (title))
     print("%s" % ('`' * len(title)))
     print()
@@ -280,18 +299,11 @@ def create_distribution_plot_and_documentation(context, params):
     if skip:
         return
 
-    # Skip if dimdata count does not match context.
-    if dimdata is not None:
-        num_dimdata = len(dimdata)
-        num_targets = len(context.targets)
-        if num_dimdata != num_targets:
-            return
-
     # Create array, either from dist or dimdata.
     if dist is not None:
         array = context.empty(shape, dist=dist)
     elif dimdata is not None:
-        array = context.from_dim_data(dimdata)
+        array = context.from_global_dim_data(dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
 
@@ -333,7 +345,7 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Documentation title and text description.
     doc_title = title
-    dist_text = ' x '.join(["'%s'" % (label) for label in labels])
+    dist_text = ' X '.join(["'%s'" % (label) for label in labels])
     doc_text = 'A (%s) array, with a %s (%s) distribution over a (%s) process grid.' % (
         shape_text(shape), title, dist_text, shape_text(array.grid_shape))
     if text is not None:
@@ -383,137 +395,35 @@ def create_distribution_plot_and_documentation_all(context):
     col_indices = permutation(range(cols))
 
     #
-    # Examples intended for 4 processes:
+    # Examples intended for 3 processes:
     #
-    params_list_4 = [
+    params_list_3 = [
         # Same results as old 'b', 'n'.
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'images/plot_block_block_4x1.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'start': 0,
-              'stop': 2},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'start': 2,
-              'stop': 4},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'start': 4,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'start': 5,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 9},
-             ),
-          ],
+         'filename': 'images/plot_block_block_3x1.png',
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 2, 4, 5]},
+             {'dist_type': 'b', 'bounds': [0, 9]},
+          ),
         },
         # Same results as old 'n', 'b'.
         {'shape': (5, 9),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
-         'filename': 'images/plot_block_block_1x4.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'start': 0,
-              'stop': 3},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'start': 3,
-              'stop': 6},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'start': 6,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 1,
-              'start': 0,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'start': 9,
-              'stop': 9},
-             ),
-          ],
+         'filename': 'images/plot_block_block_1x3.png',
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 5]},
+             {'dist_type': 'b', 'bounds': [0, 3, 6, 9]},
+          ),
         },
+    ]
+
+    #
+    # Examples intended for 4 processes:
+    #
+    params_list_4 = [
         # Some simple description examples.
         {'shape': (5, 9),
          'title': 'Block, Block',
@@ -538,195 +448,33 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Irregular-Block, Irregular-Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_irregularblock_irregularblock.png',
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 1},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 2},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 1},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 2,
-              'stop': 9},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 1,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 2},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 1,
-              'stop': 5},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 2,
-              'stop': 9},
-             ),
-          ],
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 1, 5]},
+             {'dist_type': 'b', 'bounds': [0, 2, 9]},
+          ),
         },
         # blockcyclic-blockcyclic: Like cyclic-cyclic but with block_size=2.
         {'shape': (5, 9),
-         'title': 'BlockCyclic, BlockCyclic',
-         'labels': ('b', 'b'),
+         'title': 'Block-Cyclic, Block-Cyclic',
+         'labels': ('c', 'c'),
          'filename': 'images/plot_blockcyclic_blockcyclic.png',
-         'dimdata': [
-            ({'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 5,
-              'start': 0},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 9,
-              'start': 0}),
-            ({'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 5,
-              'start': 0},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 9,
-              'start': 2}),
-            ({'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 5,
-              'start': 2},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'size': 9,
-              'start': 0}),
-            ({'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 5,
-              'start': 2},
-             {'block_size': 2,
-              'dist_type': 'c',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'size': 9,
-              'start': 2}),
-          ],
+         'dimdata': (
+             {'size': 5, 'dist_type': 'c', 'proc_grid_size': 2, 'block_size': 2},
+             {'size': 9, 'dist_type': 'c', 'proc_grid_size': 2, 'block_size': 2},
+          ),
         },
         # block-padded, block-padded: Block with padding = (1, 1).
         {'shape': (5, 9),
-         'title': 'BlockPadded, BlockPadded',
+         'title': 'Block-Padded, Block-Padded',
          'labels': ('b', 'b'),
          'filename': 'images/plot_blockpad_blockpad.png',
          # The padding is not actually used yet, so this is not a meaningful
          # example now.
          'skip': True,
-         'dimdata': [
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 2,
-              'padding': (1, 1)},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 4,
-              'padding': (1, 1)},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 2,
-              'padding': (1, 1)},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 4,
-              'stop': 9,
-              'padding': (1, 1)},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 2,
-              'stop': 5,
-              'padding': (1, 1)},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 0,
-              'proc_grid_size': 2,
-              'start': 0,
-              'stop': 4,
-              'padding': (1, 1)},
-             ),
-            (
-             {'size': 5,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 2,
-              'stop': 5,
-              'padding': (1, 1)},
-             {'size': 9,
-              'dist_type': 'b',
-              'proc_grid_rank': 1,
-              'proc_grid_size': 2,
-              'start': 4,
-              'stop': 9,
-              'padding': (1, 1)},
-             ),
-          ],
+         'dimdata': (
+             {'dist_type': 'b', 'bounds': [0, 2, 5], 'boundary_padding': 1},
+             {'dist_type': 'b', 'bounds': [0, 4, 9], 'boundary_padding': 1},
+          ),
         },
         # 1D unstructured example. Skipped for now but may be a useful example.
         {'shape': (40,),
@@ -734,82 +482,29 @@ def create_distribution_plot_and_documentation_all(context):
          'title': 'Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstructured.png',
-         'dimdata': [
-            ({'dist_type': 'u',
-              'indices': [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
-              'proc_grid_rank': 0,
-              'proc_grid_size': 4,
-              'size': 40},),
-            ({'dist_type': 'u',
-              'indices': [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
-              'proc_grid_rank': 1,
-              'proc_grid_size': 4,
-              'size': 40},),
-            ({'dist_type': 'u',
-              'indices': [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
-              'proc_grid_rank': 2,
-              'proc_grid_size': 4,
-              'size': 40},),
-            ({'dist_type': 'u',
-              'indices': [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
-              'proc_grid_rank': 3,
-              'proc_grid_size': 4,
-              'size': 40},)],
+         'dimdata': (
+             {'dist_type': 'u',
+              'indices': [
+                   [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
+                   [5, 15, 34, 12, 16, 24, 23, 39, 6, 36],
+                   [0, 7, 27, 4, 32, 37, 21, 26, 9, 17],
+                   [35, 14, 20, 13, 3, 30, 2, 8, 28, 31],
+               ], },
+          ),
         },
         # Unstructured, unstructured.
         {'shape': (rows, cols),
          'title': 'Unstructured, Unstructured',
          'labels': ('u', 'u'),
          'filename': 'images/plot_unstruct_unstruct.png',
-         'dimdata': [
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[:rows // 2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:cols // 2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[:rows // 2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[cols // 2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[rows // 2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[:cols // 2],
-               'proc_grid_rank': 0,
-               'proc_grid_size': 2,
-               'size': cols},
-             ),
-             (
-              {'dist_type': 'u',
-               'indices': row_indices[rows // 2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': rows},
-              {'dist_type': 'u',
-               'indices': col_indices[cols // 2:],
-               'proc_grid_rank': 1,
-               'proc_grid_size': 2,
-               'size': cols},
-             )],
+         'dimdata': (
+             {'dist_type': 'u',
+              'indices': [row_indices[:rows // 2], row_indices[rows // 2:]],
+             },
+             {'dist_type': 'u',
+              'indices': [col_indices[:cols // 2], col_indices[cols // 2:]],
+             },
+          ),
         },
     ]
 
@@ -830,7 +525,10 @@ def create_distribution_plot_and_documentation_all(context):
     # Get the examples to use for the number of engines.
     param_list = []
     num_engines = len(context.targets)
-    if num_engines == 4:
+    if num_engines == 3:
+        # Examples that only use 3 processes.
+        param_list.extend(params_list_3)
+    elif num_engines == 4:
         # 1,2 dimension cases with 4 engines give nicer plots.
         param_list.extend(params_list_4)
     elif num_engines == 8:
@@ -849,7 +547,7 @@ def main():
     context = distarray.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
-    engine_counts = [4, 8]
+    engine_counts = [3, 4, 8]
     need_targets = max(engine_counts)
     if num_targets < need_targets:
         raise ValueError('Need at least %d engines for all the examples, '
