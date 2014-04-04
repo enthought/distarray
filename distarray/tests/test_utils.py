@@ -17,9 +17,6 @@ class TestMultPartitions(unittest.TestCase):
     """
 
     def test_mult_partitions(self):
-        """
-        Do the two methods of computing the multiplicative partitions agree?
-        """
         self.assertEqual(utils.mult_partitions(1, 2), [(1, 1)])
         self.assertEqual(utils.mult_partitions(2, 2), [(1, 2)])
         self.assertEqual(utils.mult_partitions(1, 7), [(1,) * 7])
