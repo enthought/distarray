@@ -408,13 +408,12 @@ class TestRankCoords(MpiTestCase):
     def round_trip(self, la, rank):
         """ Test that given a rank, we can get the coords,
         and then get back to the same rank. """
-        coords = la.rank_to_coords(rank)
+        coords = la.coords_from_rank(rank)
         # I am not sure what to expect for specific values for coords.
         # Therefore the specific return value is not checked.
-        rank2 = la.coords_to_rank(coords)
+        rank2 = la.rank_from_coords(coords)
         self.assertEqual(rank, rank2)
 
-    @unittest.skip('No rank_to_coords anymore.')
     def test_rank_coords(self):
         """ Test that we can go from rank to coords and back. """
         la = LocalArray((4,4), comm=self.comm)
