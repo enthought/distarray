@@ -619,13 +619,13 @@ class Context(object):
 
     def fromfunction(self, function, shape, **kwargs):
         func_key = self._generate_key()
-        self.view.push_function({func_key:function},targets=self.targets,block=True)
+        self.view.push_function({func_key: function}, targets=self.targets,
+                                block=True)
         keys = self._key_and_push(shape, kwargs)
         new_key = self._generate_key()
-        subs = (new_key,func_key) + keys
+        subs = (new_key, func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
         return DistArray.from_localarrays(new_key, self)
-        return DistArray(new_key, self)
 
     def close(self):
         self.client.close()
