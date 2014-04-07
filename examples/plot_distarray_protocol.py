@@ -346,8 +346,13 @@ def create_distribution_plot_and_documentation(context, params):
     # Documentation title and text description.
     doc_title = title
     dist_text = ' X '.join(["'%s'" % (label) for label in labels])
-    doc_text = 'A (%s) array, with a %s (%s) distribution over a (%s) process grid.' % (
-        shape_text(shape), title, dist_text, shape_text(array.grid_shape))
+    # Choose 'a' vs 'an' appropriately.
+    if title[0] in 'aeiouAEIOU':
+        article = 'an'
+    else:
+        article = 'a'
+    doc_text = 'A (%s) array, with %s %s (%s) distribution over a (%s) process grid.' % (
+        shape_text(shape), article, title, dist_text, shape_text(array.grid_shape))
     if text is not None:
         doc_text = doc_text + "\n\n" + text
 
