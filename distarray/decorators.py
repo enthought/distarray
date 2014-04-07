@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Decorators
@@ -66,11 +66,11 @@ class DecoratorBase(object):
         This allows us to use the following interface to execute code on
         the engines:
 
-        def foo(*args, **kwargs):
-            args, kwargs = _key_and_push_args(args, kwargs)
-            exec_str = "remote_foo(*%s, **%s)"
-            exec_str %= (args, kwargs)
-            context.execute(exec_str)
+        >>> def foo(*args, **kwargs):
+        >>>     args, kwargs = _key_and_push_args(args, kwargs)
+        >>>     exec_str = "remote_foo(*%s, **%s)"
+        >>>     exec_str %= (args, kwargs)
+        >>>     context.execute(exec_str)
         """
 
         if context is None:
@@ -137,11 +137,11 @@ class DecoratorBase(object):
                     typestring == "<class 'NoneType'>")
 
         def is_LocalArray(typestring):
-            return (typestring == "<class 'distarray.local.denselocalarray"
-                                  ".DenseLocalArray'>")
+            return (typestring == "<class 'distarray.local.localarray."
+                                  "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
-            result = DistArray(result_key, context)
+            result = DistArray.from_localarrays(result_key, context)
         elif all(is_NoneType(r) for r in result_type_str):
             result = None
         else:
@@ -156,22 +156,20 @@ class local(DecoratorBase):
     """Decorator to run a function locally on the engines."""
 
     def __call__(self, *args, **kwargs):
-        # get the context
-        if self.context is None:
-            # get context from args
-            self.context = self.determine_context(args, kwargs)
-            # push function
-            self.push_fn(self.context, self.fn_key, self.fn)
+        # get context from args
+        context = self.determine_context(args, kwargs)
+        # push function
+        self.push_fn(context, self.fn_key, self.fn)
 
         args, kwargs = self.key_and_push_args(args, kwargs,
-                                              context=self.context)
-        result_key = self.context._generate_key()
+                                              context=context)
+        result_key = context._generate_key()
 
         exec_str = "%s = %s(*%s, **%s)"
         exec_str %= (result_key, self.fn_key, args, kwargs)
-        self.context._execute(exec_str)
+        context._execute(exec_str)
 
-        return self.process_return_value(self.context, result_key)
+        return self.process_return_value(context, result_key)
 
 
 class vectorize(DecoratorBase):
@@ -184,25 +182,24 @@ class vectorize(DecoratorBase):
         return arg_keys + [da.key + '.local_array']
 
     def __call__(self, *args, **kwargs):
-        if self.context is None:
-            # get context from args
-            self.context = self.determine_context(args, kwargs)
-            # push function
-            self.push_fn(self.context, self.fn_key, self.fn)
+        # get context from args
+        context = self.determine_context(args, kwargs)
+        # push function
+        self.push_fn(context, self.fn_key, self.fn)
         # vectorize the function
         exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
-        self.context._execute(exec_str)
+        context._execute(exec_str)
 
         # Find the first distarray, they should all be the same up to the data.
         for arg in args:
             if isinstance(arg, DistArray):
                 # Create the output distarray.
-                out = self.context.empty(arg.shape, dtype=arg.dtype,
+                out = context.empty(arg.shape, dtype=arg.dtype,
                                          dist=arg.dist,
                                          grid_shape=arg.grid_shape)
                 # parse args
                 args_str, kwargs_str = self.key_and_push_args(
-                    args, kwargs, context=self.context,
+                    args, kwargs, context=context,
                     da_handler=self.get_local_array)
 
                 # Call the function
@@ -210,5 +207,5 @@ class vectorize(DecoratorBase):
                             "%s(*%s, **%s)")
                 exec_str %= (out.key, out.key, self.fn_key, args_str,
                              kwargs_str)
-                self.context._execute(exec_str)
+                context._execute(exec_str)
                 return out

@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 from math import sqrt
 from distarray.externals.six import next
@@ -87,14 +87,16 @@ def mult_partitions_recurs(n, s, pd=1):
 
 
 def mirror_sort(seq, ref_seq):
-    """Sort s2 into the order that s1 is in.
+    """Sort `seq` into the order that `ref_seq` is in.
 
     >>> mirror_sort(range(5),[1,5,2,4,3])
     [0, 4, 1, 3, 2]
     """
-    assert len(seq)==len(ref_seq), "Sequences must have the same length"
-    shift = list(zip(range(len(ref_seq)),ref_seq))
-    shift.sort(key=lambda x:x[1])
+    if not len(seq) == len(ref_seq):
+        raise ValueError("Sequences must have the same length")
+
+    shift = list(zip(range(len(ref_seq)), ref_seq))
+    shift.sort(key=lambda x: x[1])
     shift = [s[0] for s in shift]
     newseq = len(ref_seq)*[0]
     for s_index in range(len(shift)):
@@ -103,7 +105,7 @@ def mirror_sort(seq, ref_seq):
 
 
 def outer_zip(seqa, seqb):
-    """An outer product, but using zip rather than *.
+    """An outer product, but using zip rather than multiplication.
 
     >>> a = 2*range(4)
     >>> b = range(8)
@@ -132,7 +134,7 @@ def sanitize_indices(indices):
     -------
     2-tuple
         ('point', indices) if all `indices` are ints, or
-        ('view', indices) if some `indices`are slices.
+        ('view', indices) if some `indices` are slices.
 
     Raises
     ------

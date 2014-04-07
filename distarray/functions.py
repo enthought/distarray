@@ -1,11 +1,11 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
-Our adaptation of NumPy's ufuncs.
+Distributed unfuncs for distributed arrays.
 """
 
 import numpy
@@ -45,7 +45,7 @@ def unary_proxy(name):
             exec_str %= (new_key, name, a.key)
 
         context._execute(exec_str)
-        return DistArray(new_key, context)
+        return DistArray.from_localarrays(new_key, context)
     return proxy_func
 
 
@@ -75,7 +75,7 @@ def binary_proxy(name):
             exec_str %= (new_key, name, a_key, b_key)
 
         context._execute(exec_str)
-        return DistArray(new_key, context)
+        return DistArray.from_localarrays(new_key, context)
     return proxy_func
 
 

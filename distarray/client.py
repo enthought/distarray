@@ -1,30 +1,31 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Imports
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
+import operator
 from itertools import product
 
 import numpy as np
-from IPython.parallel import Client
 
 import distarray
+from distarray.client_map import ClientMDMap
 from distarray.externals.six import next
 from distarray.utils import has_exactly_one, _raise_nie
 
 __all__ = ['DistArray']
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Code
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-def process_return_value(subcontext, result_key):
+def process_return_value(subcontext, result_key, targets):
     """Figure out what to return on the Client.
 
     Parameters
@@ -41,25 +42,41 @@ def process_return_value(subcontext, result_key):
     """
     type_key = subcontext._generate_key()
     type_statement = "{} = str(type({}))".format(type_key, result_key)
-    subcontext._execute(type_statement)
-    result_type_str = subcontext._pull(type_key)
+    subcontext._execute(type_statement, targets=targets)
+    result_type_str = subcontext._pull(type_key, targets=targets)
 
     def is_NoneType(typestring):
         return (typestring == "<type 'NoneType'>" or
                 typestring == "<class 'NoneType'>")
 
     def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.local.denselocalarray.DenseLocalArray'>"
+        return typestring == "<class 'distarray.local.localarray.LocalArray'>"
 
     if all(is_LocalArray(r) for r in result_type_str):
-        result = DistArray(result_key, subcontext)
+        result = DistArray.from_localarrays(result_key, subcontext)
     elif all(is_NoneType(r) for r in result_type_str):
         result = None
     else:
-        result = subcontext._pull(result_key)
+        result = subcontext._pull(result_key, targets=targets)
         if has_exactly_one(result):
             result = next(x for x in result if x is not None)
 
+    return result
+
+_DIMDATAS = """
+{dim_data_name} = {local_name}.dim_data
+"""
+
+def _make_mdmap_from_local_dimdata(local_name, context):
+    dim_data_name = context._generate_key()
+    context._execute(_DIMDATAS.format(local_name=local_name, dim_data_name=dim_data_name))
+    dim_datas = context._pull(dim_data_name)
+    return ClientMDMap.from_dim_data(context, dim_datas)
+
+def _get_attribute(context, key, name):
+    local_key = context._generate_key()
+    context._execute0('%s = %s.%s' % (local_key, key, name))
+    result = context._pull0(local_key)
     return result
 
 
@@ -67,18 +84,40 @@ class DistArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, key, context):
-        self.key = key
-        self.context = context
+    def __init__(self, mdmap, dtype):
+        """ Creates a new empty distarray according to the multi-dimensional
+        map given.
+        """
+        # FIXME: code duplication with context.py.
+        ctx = mdmap.context
+        # FIXME: this is bad...
+        comm = ctx._comm_key
+        # FIXME: and this is bad...
+        da_key = ctx._generate_key()
+        names = ctx._key_and_push(mdmap.shape, dtype, mdmap.dist, mdmap.grid_shape)
+        shape_name, dtype_name, dist_name, grid_shape_name = names
+        cmd = ('{da_key} = distarray.local.empty({shape_name}, {dtype_name},'
+                                        '{dist_name}, {grid_shape_name}, {comm})')
+        ctx._execute(cmd.format(**locals()))
+        self.mdmap = mdmap
+        self.key = da_key
+        self._dtype = dtype
+
+    @classmethod
+    def from_localarrays(cls, key, context):
+        """ The caller has already created the LocalArray objects.  `key` is
+        their name on the engines.  This classmethod creates a DistArray that
+        refers to these LocalArrays.
+
+        """
+        da = cls.__new__(cls)
+        da.key = key
+        da.mdmap = _make_mdmap_from_local_dimdata(key, context)
+        da._dtype = _get_attribute(context, key, 'dtype')
+        return da
 
     def __del__(self):
-        self.context._execute('del %s' % self.key)
-
-    def _get_attribute(self, name):
-        key = self.context._generate_key()
-        self.context._execute0('%s = %s.%s' % (key, self.key, name))
-        result = self.context._pull0(key)
-        return result
+        self.context.delete_key(self.key)
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
@@ -95,16 +134,16 @@ class DistArray(object):
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
+            targets = self.mdmap.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_getitem(%s)'
             statement = fmt % (result_key, self.key, index)
-            self.context._execute(statement)
-            result = process_return_value(self.context, result_key)
+            self.context._execute(statement, targets=targets)
+            result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
-                raise IndexError
+                raise IndexError("Index %r is out of bounds" % (index,))
             else:
                 return result
-
         else:
             raise TypeError("Invalid index type.")
 
@@ -120,48 +159,53 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
+            targets = self.mdmap.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_setitem(%s, %s)'
             statement = fmt % (result_key, self.key, index, value)
-            self.context._execute(statement)
-            result = process_return_value(self.context, result_key)
+            self.context._execute(statement, targets=targets)
+            result = process_return_value(self.context, result_key, targets=targets)
             if result is None:
-                raise IndexError()
+                raise IndexError("Index %r is out of bounds" % (index,))
 
         else:
             raise TypeError("Invalid index type.")
 
     @property
-    def shape(self):
-        return self._get_attribute('global_shape')
+    def context(self):
+        return self.mdmap.context
 
     @property
-    def size(self):
-        return self._get_attribute('size')
+    def shape(self):
+        return self.mdmap.shape
+
+    @property
+    def global_size(self):
+        return reduce(operator.mul, self.shape)
 
     @property
     def dist(self):
-        return self._get_attribute('dist')
-
-    @property
-    def dtype(self):
-        return self._get_attribute('dtype')
+        return self.mdmap.dist
 
     @property
     def grid_shape(self):
-        return self._get_attribute('grid_shape')
+        return self.mdmap.grid_shape
 
     @property
     def ndim(self):
-        return self._get_attribute('ndim')
+        return len(self.shape)
 
     @property
     def nbytes(self):
-        return self._get_attribute('nbytes')
+        return self.global_size * self.itemsize
 
     @property
-    def item_size(self):
-        return self._get_attribute('item_size')
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def itemsize(self):
+        return self._dtype.itemsize
 
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
@@ -170,9 +214,9 @@ class DistArray(object):
         self.context._execute('%s = %s.copy()' % (local_name, self.key))
         local_arrays = self.context._pull(local_name)
         for local_array in local_arrays:
-            maps = (ax_map.global_index for ax_map in local_array.maps)
+            maps = (list(ax_map.global_iter) for ax_map in local_array.maps)
             for index in product(*maps):
-                arr[index] = local_array[index]
+                arr[index] = local_array.global_index[index]
         return arr
 
     toarray = tondarray

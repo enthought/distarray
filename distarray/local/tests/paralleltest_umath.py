@@ -1,17 +1,18 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import warnings
 import unittest
+
 import numpy as np
 from numpy.testing import assert_array_equal
 
 import distarray.local as dc
-import distarray.local.denselocalarray as da
-from distarray.local import denselocalarray
+import distarray.local.localarray as localarray
+from distarray.local.localarray import LocalArray
 from distarray.local.error import IncompatibleArrayError
 from distarray.testing import MpiTestCase
 
@@ -20,45 +21,43 @@ class TestUnaryUFunc(MpiTestCase):
 
     def test_negative(self):
         """See if unary ufunc works for a LocalArray."""
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
+        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
         a.fill(1)
-        b = denselocalarray.negative(a)
+        b = localarray.negative(a)
         self.assertTrue(np.all(a.local_array == -b.local_array))
 
-        b = denselocalarray.empty_like(a)
-        b = denselocalarray.negative(a, b)
+        b = localarray.empty_like(a)
+        b = localarray.negative(a, b)
         self.assertTrue(np.all(a.local_array == -b.local_array))
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
-        self.assertRaises(IncompatibleArrayError,
-                          denselocalarray.negative,
-                          b, a)
+        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        b = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        self.assertRaises(IncompatibleArrayError, localarray.negative, b, a)
 
 
 class TestBinaryUFunc(MpiTestCase):
 
     def test_add(self):
         """See if binary ufunc works for a LocalArray."""
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
+        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        b = LocalArray((16, 16), dtype='int32', comm=self.comm)
         a.fill(1)
         b.fill(1)
-        c = denselocalarray.add(a, b)
+        c = localarray.add(a, b)
         self.assertTrue(np.all(c.local_array == 2))
 
-        c = denselocalarray.empty_like(a)
-        c = denselocalarray.add(a, b, c)
+        c = localarray.empty_like(a)
+        c = localarray.add(a, b, c)
         self.assertTrue(np.all(c.local_array == 2))
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
-        self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b)
+        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        b = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        self.assertRaises(IncompatibleArrayError, localarray.add, a, b)
 
-        a = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = denselocalarray.LocalArray((16, 16), dtype='int32', comm=self.comm)
-        c = denselocalarray.LocalArray((20, 20), dtype='int32', comm=self.comm)
-        self.assertRaises(IncompatibleArrayError, denselocalarray.add, a, b, c)
+        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        b = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        c = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        self.assertRaises(IncompatibleArrayError, localarray.add, a, b, c)
 
 
 def add_checkers(cls, ops, bad_ops):
@@ -94,8 +93,8 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
         Check the one- and two-arg ufunc versions as well as the method
         version attached to a LocalArray.
         """
-        x = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        y = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        x = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        y = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x, casting='unsafe')  # standard form
@@ -111,9 +110,9 @@ class TestLocalArrayBinaryOperations(MpiTestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        x1 = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        x2 = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        y = da.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        x1 = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        x2 = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        y = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x1, x2, casting='unsafe')  # standard form

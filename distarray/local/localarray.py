@@ -1,34 +1,111 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 from __future__ import print_function, division
 
-#----------------------------------------------------------------------------
-# Imports
-#----------------------------------------------------------------------------
+from distarray import metadata_utils
 
-from distarray.externals import six
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 import math
+import operator
+from functools import reduce
+from collections import Mapping
+from numbers import Integral
 
 import numpy as np
+
+from distarray.externals import six
+from distarray.externals.six import next
 from distarray.externals.six.moves import zip
-from collections import Mapping
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import construct, format, maps
-from distarray.local.base import BaseLocalArray, arecompatible
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-# Base LocalArray class
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+def _start_stop_block(size, proc_grid_size, proc_grid_rank):
+    nelements = size // proc_grid_size
+    if size % proc_grid_size != 0:
+        nelements += 1
+
+    start = proc_grid_rank * nelements
+    if start > size:
+        start = size
+        stop = size
+
+    stop = start + nelements
+    if stop > size:
+        stop = size
+
+    return start, stop
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
+
+def _sanitize_indices(indices):
+    if isinstance(indices, Integral) or isinstance(indices, slice):
+        return (indices,)
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
+        return indices
+    else:
+        raise TypeError("Index must be a sequence of ints and slices")
+
+def distribute_indices(dim_data):
+    """Fill in missing index related keys...
+
+    for supported dist_types.
+    """
+    distribute_fn = {
+        'n': lambda dd: None,
+        'b': distribute_block_indices,
+        'c': distribute_cyclic_indices,
+        'u': lambda dd: None,
+        }
+    for dim in dim_data:
+        distribute_fn[dim['dist_type']](dim)
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` given dimdict `dd`."""
+    if 'start' in dd:
+        return
+    else:
+        dd['start'] = dd['proc_grid_rank']
+
+
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dimdict `dd`."""
+    if ('start' in dd) and ('stop' in dd):
+        return
+
+    nelements = dd['size'] // dd['proc_grid_size']
+    if dd['size'] % dd['proc_grid_size'] != 0:
+        nelements += 1
+
+    dd['start'] = dd['proc_grid_rank'] * nelements
+    if dd['start'] > dd['size']:
+        dd['start'] = dd['size']
+        dd['stop'] = dd['size']
+
+    dd['stop'] = dd['start'] + nelements
+    if dd['stop'] > dd['size']:
+        dd['stop'] = dd['size']
+
+
+def _normalize_dim_data(dim_data):
+    ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
+    for dd in dim_data:
+        if dd['dist_type'] == 'n':
+            dd['proc_grid_size'] = 1
+            dd['proc_grid_rank'] = 0
+    return dim_data
 
 
 def make_partial_dim_data(shape, dist=None, grid_shape=None):
@@ -54,9 +131,9 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     if dist is None:
         dist = {0: 'b'}
 
-    dist_tuple = construct.init_dist(dist, len(shape))
+    dist_tuple = metadata_utils.normalize_dist(dist, len(shape))
 
-    if grid_shape:  # if None, BaseLocalArray will initialize
+    if grid_shape:  # if None, LocalArray will initialize
         grid_gen = iter(grid_shape)
 
     dim_data = []
@@ -73,13 +150,94 @@ def make_partial_dim_data(shape, dist=None, grid_shape=None):
     return tuple(dim_data)
 
 
-class DenseLocalArray(BaseLocalArray):
+class GlobalIndex(object):
+    """Object which provides access to global indexing on
+    LocalArrays.
+    """
+    def __init__(self, maps, ndarray):
+        self.maps = maps
+        self.local_array = ndarray
+
+    def checked_getitem(self, global_inds):
+        try:
+            return self.__getitem__(global_inds)
+        except IndexError:
+            return None
+
+    def checked_setitem(self, global_inds, value):
+        try:
+            self.__setitem__(global_inds, value)
+            return True
+        except IndexError:
+            return None
+
+    def global_to_local(self, *global_ind):
+        return self.maps.local_from_global(*global_ind)
+
+    def local_to_global(self, *local_ind):
+        return self.maps.global_from_local(*local_ind)
+
+    def __getitem__(self, global_inds):
+        global_inds = _sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            return self.local_array[local_inds]
+        except KeyError as err:
+            raise IndexError(err)
+
+    def __setitem__(self, global_inds, value):
+        global_inds = _sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+            self.local_array[local_inds] = value
+        except KeyError as err:
+            raise IndexError(err)
+
+
+class LocalArray(object):
 
     """Distributed memory Python arrays."""
+
+    __array_priority__ = 20.0
 
     #-------------------------------------------------------------------------
     # Methods used for initialization
     #-------------------------------------------------------------------------
+
+    def _init(self, dim_data, grid_shape, dtype=None, buf=None, comm=None):
+        """Private init method."""
+        self.dim_data = _normalize_dim_data(dim_data)
+        self.base_comm = construct.init_base_comm(comm)
+        self._init_grid_shape(grid_shape)
+
+        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
+
+        self._cache_proc_grid_rank()
+        distribute_indices(self.dim_data)
+        self.maps = maps.MDMap.from_dim_data(dim_data)
+
+        self.local_array = self._make_local_array(buf=buf, dtype=dtype)
+        # We pass a view of self.local_array because we want the
+        # GlobalIndex object to be able to change the LocalArray
+        # object's data.
+        self.global_index = GlobalIndex(self.maps, self.local_array.view())
+
+        self.base = None
+        self.ctypes = None
+
+    def _init_grid_shape(self, grid_shape):
+
+        if grid_shape is None:
+            grid_shape = metadata_utils.make_grid_shape(self.global_shape,
+                                                        self.dist,
+                                                        self.comm_size)
+        metadata_utils.validate_grid_shape(grid_shape,
+                                           self.dist,
+                                           self.comm_size)
+
+        for gs, dd in zip(grid_shape, self.dim_data):
+            dd['proc_grid_size'] = gs
+
 
     @classmethod
     def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
@@ -110,8 +268,11 @@ class DenseLocalArray(BaseLocalArray):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
-        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                              buf=buf, comm=comm)
+        # Extract grid_shape from dim_data.
+        grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
+                           for dd in dim_data)
+        self._init(dim_data=dim_data, dtype=dtype,
+                   buf=buf, comm=comm, grid_shape=grid_shape)
         return self
 
     def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
@@ -144,12 +305,98 @@ class DenseLocalArray(BaseLocalArray):
         """
         dim_data = make_partial_dim_data(shape=shape, dist=dist,
                                          grid_shape=grid_shape)
-        super(DenseLocalArray, self).__init__(dim_data=dim_data, dtype=dtype,
-                                              buf=buf, comm=comm)
+        self._init(dim_data=dim_data, grid_shape=grid_shape,
+                   dtype=dtype, buf=buf, comm=comm)
 
     def __del__(self):
-        super(DenseLocalArray, self).__del__()
+        # If the __init__ method fails, we may not have a valid comm
+        # attribute and this needs to be protected against.
+        if hasattr(self, 'comm'):
+            if self.comm is not None:
+                try:
+                    self.comm.Free()
+                except:
+                    pass
 
+    @property
+    def local_shape(self):
+        return self.maps.local_shape
+
+    @property
+    def grid_shape(self):
+        return tuple(dd['proc_grid_size'] for dd in self.dim_data)
+
+    @property
+    def global_shape(self):
+        return tuple(dd['size'] for dd in self.dim_data)
+
+    @property
+    def ndim(self):
+        return len(self.dim_data)
+
+    @property
+    def global_size(self):
+        return reduce(operator.mul, self.global_shape)
+
+    @property
+    def comm_size(self):
+        return self.base_comm.Get_size()
+
+    @property
+    def comm_rank(self):
+        return self.base_comm.Get_rank()
+
+    @property
+    def dist(self):
+        return tuple(dd['dist_type'] for dd in self.dim_data)
+
+    @property
+    def cart_coords(self):
+        rval = tuple(dd['proc_grid_rank'] for dd in self.dim_data)
+        assert rval == tuple(self.comm.Get_coords(self.comm_rank))
+        return rval
+
+    @property
+    def local_size(self):
+        return self.local_array.size
+
+    @property
+    def local_data(self):
+        return self.local_array.data
+
+    @property
+    def dtype(self):
+        return self.local_array.dtype
+
+    @property
+    def itemsize(self):
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self):
+        return self.global_size * self.itemsize
+
+    def _cache_proc_grid_rank(self):
+        cart_coords = self.comm.Get_coords(self.comm_rank)
+        assert len(cart_coords) == len(self.dim_data)
+        for dim, cart_rank in zip(self.dim_data, cart_coords):
+            dim['proc_grid_rank'] = cart_rank
+
+    def _make_local_array(self, buf=None, dtype=None):
+        """Encapsulate `buf` or create an empty local array.
+
+        Returns
+        -------
+        local_array : numpy array
+        """
+        if buf is None:
+            return np.empty(self.local_shape, dtype=dtype)
+        else:
+            mv = memoryview(buf)
+            return np.asarray(mv, dtype=dtype)
+
+    def compatibility_hash(self):
+        return hash((self.global_shape, self.dist, self.grid_shape, True))
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
     #-------------------------------------------------------------------------
@@ -213,31 +460,25 @@ class DenseLocalArray(BaseLocalArray):
         else:
             raise ValueError("Incompatible local array shape")
 
-    def rank_to_coords(self, rank):
+    def coords_from_rank(self, rank):
         return self.comm.Get_coords(rank)
 
-    def coords_to_rank(self, coords):
+    def rank_from_coords(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def global_to_local(self, *global_ind):
-        local_ind = list(global_ind)
-        for dd in self.distdims:
-            local_ind[dd] = self.maps[dd].local_index[global_ind[dd]]
-        return tuple(local_ind)
+    def local_from_global(self, *global_ind):
+        return self.maps.local_from_global(*global_ind)
 
-    def local_to_global(self, *local_ind):
-        global_ind = list(local_ind)
-        for dd in self.distdims:
-            global_ind[dd] = self.maps[dd].global_index[local_ind[dd]]
-        return tuple(global_ind)
+    def global_from_local(self, *local_ind):
+        return self.maps.global_from_local(*local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
-        lower_global = self.local_to_global(*lower_local)
+        lower_global = self.global_from_local(*lower_local)
         upper_local = [shape-1 for shape in self.local_shape]
-        upper_global = self.local_to_global(*upper_local)
+        upper_global = self.global_from_local(*upper_local)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -247,20 +488,24 @@ class DenseLocalArray(BaseLocalArray):
     #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
+        """Return a copy of this LocalArray with a new underlying dtype."""
         if newdtype is None:
             return self.copy()
         else:
             local_copy = self.local_array.astype(newdtype)
-            new_da = LocalArray(self.global_shape, dtype=newdtype, dist=self.dist,
-                                grid_shape=self.grid_shape,
-                                comm=self.base_comm, buf=local_copy)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=newdtype,
+                                                  comm=self.base_comm,
+                                                  buf=local_copy)
             return new_da
 
     def copy(self):
+        """Return a copy of this LocalArray."""
         local_copy = self.local_array.copy()
-        return LocalArray(self.global_shape, dtype=self.dtype, dist=self.dist,
-                          grid_shape=self.grid_shape, comm=self.base_comm,
-                          buf=local_copy)
+        return self.__class__.from_dim_data(dim_data=self.dim_data,
+                                            dtype=self.dtype,
+                                            comm=self.base_comm,
+                                            buf=local_copy)
 
     def local_view(self, dtype=None):
         if dtype is None:
@@ -269,12 +514,26 @@ class DenseLocalArray(BaseLocalArray):
             return self.local_array.view(dtype)
 
     def view(self, dtype=None):
+        """Return a new LocalArray whose underlying `local_array` is a view on
+        `self.local_array`.
+
+        Note
+        ----
+        Currently unimplemented for ``dtype is not None``.
+        """
         if dtype is None:
-            new_da = LocalArray(self.global_shape, self.dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+                                                  dtype=self.dtype,
+                                                  comm=self.base_comm,
+                                                  buf=self.local_array)
         else:
-            new_da = LocalArray(self.global_shape, dtype, self.dist,
-                                self.grid_shape, self.base_comm, buf=self.data)
+            _raise_nie()
+            #TODO: to implement this properly, a new dim_data will need to
+            #      generated that reflects the size and shape of the new dtype.
+            #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
+            #                                      dtype=dtype,
+            #                                      comm=self.base_comm,
+            #                                      buf=self.local_array)
         return new_da
 
     def __array__(self, dtype=None):
@@ -344,7 +603,7 @@ class DenseLocalArray(BaseLocalArray):
         # for old_local_inds, item in np.ndenumerate(local_array):
         #
         #     # Compute the new owner
-        #     global_inds = self.local_to_global(new_da.comm_rank,
+        #     global_inds = self.global_from_local(new_da.comm_rank,
         #                                        old_local_inds)
         #     new_owner = new_da.owner_rank(global_inds)
         #     if new_owner==self.owner_rank:
@@ -467,9 +726,10 @@ class DenseLocalArray(BaseLocalArray):
             _raise_nie()
         elif dtype is not None:
             dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype), self.size)))
+            return dtype.type((np.divide(self.sum(dtype=dtype),
+                                         self.global_size)))
         else:
-            return np.divide(self.sum(dtype=dtype), self.size)
+            return np.divide(self.sum(dtype=dtype), self.global_size)
 
     def var(self, axis=None, dtype=None, out=None):
         if axis or out is not None:
@@ -556,40 +816,24 @@ class DenseLocalArray(BaseLocalArray):
 
     def checked_getitem(self, global_inds):
         try:
-            return self.__getitem__(global_inds)
+            return self.global_index[global_inds]
         except IndexError:
             return None
 
     def checked_setitem(self, global_inds, value):
         try:
-            self.__setitem__(global_inds, value)
+            self.global_index[global_inds] = value
             return True
         except IndexError:
             return None
 
-    def _sanitize_indices(self, indices):
-        if isinstance(indices, int) or isinstance(indices, slice):
-            return (indices,)
-        elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
-            return indices
-        else:
-            raise TypeError("Index must be a sequence of ints and slices")
+    def __getitem__(self, index):
+        """Get a local item."""
+        return self.local_array[index]
 
-    def __getitem__(self, global_inds):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.global_to_local(*global_inds)
-            return self.local_array[local_inds]
-        except KeyError as err:
-            raise IndexError(err)
-
-    def __setitem__(self, global_inds, value):
-        global_inds = self._sanitize_indices(global_inds)
-        try:
-            local_inds = self.global_to_local(*global_inds)
-            self.local_array[local_inds] = value
-        except KeyError as err:
-            raise IndexError(err)
+    def __setitem__(self, index, value):
+        """Set a local item."""
+        self.local_array[index] = value
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
@@ -771,11 +1015,8 @@ class DenseLocalArray(BaseLocalArray):
         return invert(self)
 
 
-LocalArray = DenseLocalArray
-
-
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Functions that are friends of LocalArray
 #
 # I would really like these functions to be in a separate file, but that
@@ -787,26 +1028,20 @@ LocalArray = DenseLocalArray
 #     * Put everything in one file
 #     * Put the functions needed by LocalArray in distarray, others elsewhere
 #     * Make a subclass of LocalArray that has methods that use the functions
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Utilities needed to implement things below
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4 Basic routines
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.1 Creating arrays
-#----------------------------------------------------------------------------
-
-
-def localarray(object, dtype=None, copy=True, order=None, subok=False,
-               ndmin=0):
-    _raise_nie()
-
+# ---------------------------------------------------------------------------
 
 def aslocalarray(object, dtype=None, order=None):
     _raise_nie()
@@ -823,7 +1058,7 @@ def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 
 def empty_like(arr, dtype=None):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, LocalArray):
         if dtype is None:
             return empty(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
@@ -831,7 +1066,7 @@ def empty_like(arr, dtype=None):
             return empty(arr.global_shape, dtype, arr.dist, arr.grid_shape,
                          arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A LocalArray or subclass is expected")
 
 
 def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
@@ -841,11 +1076,11 @@ def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
 
 
 def zeros_like(arr):
-    if isinstance(arr, DenseLocalArray):
+    if isinstance(arr, LocalArray):
         return zeros(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
                      arr.base_comm)
     else:
-        raise TypeError("A DenseLocalArray or subclass is expected")
+        raise TypeError("A LocalArray or subclass is expected")
 
 
 def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
@@ -925,6 +1160,7 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         The identifier for the group to save the LocalArray to (the default is
         'buffer').
     mode : optional, {'w', 'w-', 'a'}, default 'a'
+
         ``'w'``
             Create file, truncate if exists
         ``'w-'``
@@ -976,10 +1212,10 @@ def compact_indices(dim_data):
         if ('block_size' not in dd) or (dd['block_size'] == 1):
             return slice(dd['start'], None, dd['proc_grid_size'])
         else:
-            return maps.IndexMap.from_dimdict(dd).global_index
+            return list(maps.map_from_dim_dict(dd).global_iter)
 
     def unstructured_index(dd):
-        return maps.IndexMap.from_dimdict(dd).global_index
+        return list(maps.map_from_dim_dict(dd).global_iter)
 
     index_fn_map = {'n': nodist_index,
                     'b': block_index,
@@ -1089,7 +1325,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.local_to_global(*local_inds)
+        global_inds = self.arr.global_from_local(*local_inds)
         return global_inds, value
 
 
@@ -1104,7 +1340,7 @@ def fromfunction(function, shape, **kwargs):
     comm = kwargs.pop('comm', None)
     da = empty(shape, dtype, dist, grid_shape, comm)
     for global_inds, x in ndenumerate(da):
-        da[global_inds] = function(*global_inds, **kwargs)
+        da.global_index[global_inds] = function(*global_inds, **kwargs)
     return da
 
 
@@ -1125,9 +1361,14 @@ def where(condition, x=None, y=None):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.2 Operations on two or more arrays
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+def arecompatible(a, b):
+    """Do these arrays have the same compatibility hash?"""
+    return a.compatibility_hash() == b.compatibility_hash()
+
 
 def concatenate(seq, axis=0):
     _raise_nie()
@@ -1169,9 +1410,9 @@ def allclose(a, b, rtol=10e-5, atom=10e-8):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.3 Printing arrays
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def distarray2string(a):
@@ -1189,9 +1430,9 @@ def get_printoptions():
     return np.get_printoptions()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4.5 Dealing with data types
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 dtype = np.dtype
@@ -1202,19 +1443,19 @@ sctype2char = np.sctype2char
 can_cast = np.can_cast
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5 Additional convenience routines
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.1 Shape functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.2 Basic functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def sum(a, dtype=None):
@@ -1259,29 +1500,29 @@ def linspace(start, stop, num=50, endpoint=True, retstep=False):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.3 Polynomial functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.4 Set operations
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.5 Array construction using index tricks
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.6 Other indexing devices
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.7 Two-dimensional functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def eye(n, m=None, k=0, dtype=float):
@@ -1292,9 +1533,9 @@ def diag(v, k=0):
     _raise_nie()
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.8 More data type functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 issubclass_ = np.issubclass_
@@ -1309,23 +1550,23 @@ mintypecode = np.mintypecode
 finfo = np.finfo
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.9 Functions that behave like ufuncs
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.10 Misc functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5.11 Utility functions
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Universal Functions
 #
 # I would really like these functions to be in a separate file, but that
@@ -1337,8 +1578,8 @@ finfo = np.finfo
 #     * Put everything in one file
 #     * Put the functions needed by LocalArray in distarray, others elsewhere
 #     * Make a subclass of LocalArray that has methods that use the functions
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 # Functions for manipulating shapes according to the broadcast rules.
@@ -1381,8 +1622,8 @@ class LocalArrayUnaryOperation(object):
 
     def __call__(self, x1, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, LocalArray)
+        y_isdla = isinstance(y, LocalArray)
         assert x1_isdla or isscalar(x1), "Invalid type for unary ufunc"
         assert y is None or y_isdla, "Invalid return array type"
         if y is None:
@@ -1409,9 +1650,9 @@ class LocalArrayBinaryOperation(object):
 
     def __call__(self, x1, x2, y=None, *args, **kwargs):
         # What types of input are allowed?
-        x1_isdla = isinstance(x1, DenseLocalArray)
-        x2_isdla = isinstance(x2, DenseLocalArray)
-        y_isdla = isinstance(y, DenseLocalArray)
+        x1_isdla = isinstance(x1, LocalArray)
+        x2_isdla = isinstance(x2, LocalArray)
+        y_isdla = isinstance(y, LocalArray)
         assert x1_isdla or isscalar(x1), "Invalid type for binary ufunc"
         assert x2_isdla or isscalar(x2), "Invalid type for binary ufunc"
         assert y is None or y_isdla

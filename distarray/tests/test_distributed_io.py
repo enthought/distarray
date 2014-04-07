@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Tests for distributed IO.
@@ -134,9 +134,7 @@ nu_test_data = [
 
 class TestNpyFileLoad(IpclusterTestCase):
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 2
+    ipcluster_size = 2
 
     def setUp(self):
         self.dac = Context(self.client, targets=[0, 1])
@@ -150,6 +148,8 @@ class TestNpyFileLoad(IpclusterTestCase):
         # delete the test file
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
+        # clean up the context keys
+        del self.dac
         super(TestNpyFileLoad, self).tearDown()
 
     def test_load_bn(self):
@@ -182,6 +182,7 @@ class TestHdf5FileSave(IpclusterTestCase):
         self.dac = Context(self.client)
 
     def tearDown(self): 
+        del self.dac
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         super(TestHdf5FileSave, self).tearDown()
@@ -236,9 +237,7 @@ class TestHdf5FileSave(IpclusterTestCase):
 
 class TestHdf5FileLoad(IpclusterTestCase):
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 2
+    ipcluster_size = 2
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
@@ -251,6 +250,7 @@ class TestHdf5FileLoad(IpclusterTestCase):
     def tearDown(self): 
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
+        del self.dac
         super(TestHdf5FileLoad, self).tearDown()
 
     def test_load_bn(self):

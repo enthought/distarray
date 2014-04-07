@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Estimate pi using a Monte Carlo method with distarray.
@@ -12,12 +12,12 @@ Usage:
 
 import sys
 
+import distarray
 from distarray.random import Random
-from distarray.client import Context
 
 from util import timer
 
-context = Context()
+context = distarray.Context()
 random = Random(context)
 
 
@@ -26,7 +26,7 @@ def calc_pi(n):
     """Estimate pi using distributed NumPy arrays."""
     x = random.rand((n,))
     y = random.rand((n,))
-    r = context.hypot(x, y)
+    r = distarray.hypot(x, y)
     return 4 * float((r < 1.).sum())/n
 
 if __name__ == '__main__':

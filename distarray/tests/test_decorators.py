@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Test decorators, these need a separate module because we are defining
@@ -139,10 +139,31 @@ class TestLocalDecorator(TestCase):
         return None
 
     @classmethod
-    def setUpClass(self):
-        self.context = Context()
-        self.da = self.context.empty((5, 5))
-        self.da.fill(2 * numpy.pi)
+    def setUpClass(cls):
+        cls.context = Context()
+        cls.da = cls.context.empty((5, 5))
+        cls.da.fill(2 * numpy.pi)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Release references to the local functions.
+        del cls.local_add50
+        del cls.local_add_num
+        del cls.assert_allclose
+        del cls.local_sin
+        del cls.local_sum
+        del cls.call_barrier
+        del cls.local_add_nums
+        del cls.local_add_distarrayproxies
+        del cls.local_add_mixed
+        del cls.local_add_ndarray
+        del cls.local_add_kwargs
+        del cls.local_add_supermix
+        del cls.local_none
+        del cls.parameterless
+        # Release other resources.
+        del cls.da
+        del cls.context
 
     def test_local(self):
         context = Context()
@@ -158,15 +179,26 @@ class TestLocalDecorator(TestCase):
 
         @local
         def fill_da(da):
-            for i in da.maps[0].global_index:
-                for j in da.maps[1].global_index:
-                    da[i, j] = i + j
+            for i in da.maps[0].global_iter:
+                for j in da.maps[1].global_iter:
+                    da.global_index[i, j] = i + j
             return da
 
         da = fill_da(da)
         a = fill_a(a)
 
         assert_array_equal(da.toarray(), a)
+
+    def test_different_contexts(self):
+        ctx1 = Context(targets=range(4))
+        ctx2 = Context(targets=range(3))
+        da1 = ctx1.ones((10,))
+        da2 = ctx2.ones((10,))
+        db1 = self.local_sin(da1)
+        db2 = self.local_sin(da2)
+        ndarr1 = db1.toarray()
+        ndarr2 = db2.toarray()
+        assert_array_equal(ndarr1, ndarr2)
 
     def test_local_sin(self):
         db = self.local_sin(self.da)
@@ -264,6 +296,7 @@ class TestVectorizeDecorator(TestCase):
         a = a_fn(a, a, 6)
         db = da_fn(da, da, 6)
         assert_array_equal(db.toarray(), a)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

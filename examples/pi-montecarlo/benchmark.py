@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Benchmark all the scripts. Usage:
@@ -45,7 +45,6 @@ if __name__ == '__main__':
     numpy_times = bench(pi_numpy, n_list)
     print("Benchmarking distarray")
     distarray_times = bench(pi_distarray, n_list)
-    pi_distarray.context.client.close()
 
     # plot the data
     fig = plt.figure()

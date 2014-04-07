@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """
 Calculate the Julia set for a given z <- z**2 + c with
@@ -37,9 +37,10 @@ def draw_coord(arr, re_ax, im_ax, resolution):
     """Draw the complex coordinate plane"""
     re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
     im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
-    for i in arr.maps[0].global_index:
-        for j in arr.maps[1].global_index:
-            arr[i, j] = complex(re_ax[0] + re_step*i, im_ax[0] + im_step*j)
+    for i in arr.maps[0].global_iter:
+        for j in arr.maps[1].global_iter:
+            arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
+                                             im_ax[0] + im_step*j)
     return arr
 
 

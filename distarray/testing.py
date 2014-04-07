@@ -1,8 +1,8 @@
 # encoding: utf-8
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 import unittest
 import importlib
@@ -14,9 +14,8 @@ from uuid import uuid4
 from functools import wraps
 from distarray.externals import six
 
-from IPython.parallel import Client
-
 from distarray.error import InvalidCommSizeError
+from distarray.ipython_utils import IPythonClient
 from distarray.mpiutils import MPI, create_comm_of_size
 
 
@@ -101,20 +100,19 @@ class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
-    Overload `get_comm_size` to change the default comm size (default is 4).
+    Overload the `comm_size` class attribute to change the default
+    (default is 4).
     """
 
-    @classmethod
-    def get_comm_size(cls):
-        return 4
+    comm_size = 4
 
     @classmethod
     def setUpClass(cls):
         try:
-            cls.comm = create_comm_of_size(cls.get_comm_size())
+            cls.comm = create_comm_of_size(cls.comm_size)
         except InvalidCommSizeError:
             msg = "Must run with comm size >= {}."
-            raise unittest.SkipTest(msg.format(cls.get_comm_size()))
+            raise unittest.SkipTest(msg.format(cls.comm_size))
 
     @classmethod
     def tearDownClass(cls):
@@ -126,22 +124,25 @@ class IpclusterTestCase(unittest.TestCase):
 
     """Base test class for test cases needing an ipcluster.
 
-    Overload `get_ipcluster_size` to change the default (default is 4).
+    Overload the `ipcluster_size` class attribute to change the default
+    (default is 4).
     """
 
-    @classmethod
-    def get_ipcluster_size(cls):
-        return 4
+    ipcluster_size = 4
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Client()
-        if len(cls.client) < cls.get_ipcluster_size():
-            errmsg = 'Tests need an ipcluster with at least {} engines running.'
-            raise unittest.SkipTest(errmsg.format(cls.get_ipcluster_size()))
+        cls.client = IPythonClient()
+        if len(cls.client) < cls.ipcluster_size:
+            errmsg = ('Tests need an ipcluster with at least {} engines '
+                      'running.')
+            raise unittest.SkipTest(errmsg.format(cls.ipcluster_size))
 
     def tearDown(self):
-        self.client.clear(block=True)
+        try:
+            self.context.purge_keys()
+        except AttributeError:
+            pass
 
     @classmethod
     def tearDownClass(cls):
