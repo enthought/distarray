@@ -3,6 +3,10 @@
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
+"""
+`Context` objects contain the information required for distarrays to
+communicate with localarrays.
+"""
 
 
 import uuid

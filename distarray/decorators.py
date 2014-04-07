@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 """
-Decorators
+Decorators for defining function which use `DistArrays`.
 """
 
 import functools
