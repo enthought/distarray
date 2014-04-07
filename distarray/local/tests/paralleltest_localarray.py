@@ -442,24 +442,6 @@ class TestArrayConversion(MpiTestCase):
             self.assertEqual(value, 3)
             self.assertTrue(isinstance(value, int))
 
-    def test_local_view(self):
-        """ Test that local_views can be created as expected. """
-        # Use dtype=None for same type.
-        self.int_larr.local_view(None)
-        # Use explicit dtype to change type.
-        self.int_larr.local_view(float)
-        # I am not sure what to expect for the values in the view,
-        # so those are not checked here, so this is mainly a coverage test.
-
-    @unittest.skip('Skipped for now, not working anymore.')
-    def test_view(self):
-        """ Test that views can be created as expected. """
-        # Note this is mainly a coverage test for the same reason as above.
-        # Use dtype=None for same type.
-        self.int_larr.view(None)
-        # Use explicit dtype to change type.
-        self.int_larr.view(float)
-
 
 class TestIndexing(MpiTestCase):
 
