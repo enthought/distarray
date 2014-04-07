@@ -149,7 +149,7 @@ class TestNpyFileLoad(IpclusterTestCase):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         # clean up the context keys
-        del self.dac
+        self.dac.cleanup_keys()
         super(TestNpyFileLoad, self).tearDown()
 
     def test_load_bn(self):
@@ -181,8 +181,8 @@ class TestHdf5FileSave(IpclusterTestCase):
         self.output_path = temp_filepath('.hdf5')
         self.dac = Context(self.client)
 
-    def tearDown(self): 
-        del self.dac
+    def tearDown(self):
+        self.dac.cleanup_keys()
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         super(TestHdf5FileSave, self).tearDown()
@@ -247,10 +247,10 @@ class TestHdf5FileLoad(IpclusterTestCase):
         with self.h5py.File(self.output_path, 'w') as fp:
             fp["test"] = self.expected
 
-    def tearDown(self): 
+    def tearDown(self):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
-        del self.dac
+        self.dac.cleanup_keys()
         super(TestHdf5FileLoad, self).tearDown()
 
     def test_load_bn(self):
