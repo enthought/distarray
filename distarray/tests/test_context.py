@@ -18,8 +18,8 @@ from random import shuffle
 import numpy
 
 from distarray import Context
+from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
-from distarray.testing import IpclusterTestCase
 
 
 class TestContext(unittest.TestCase):
@@ -45,8 +45,11 @@ class TestContext(unittest.TestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(IpclusterTestCase):
+class TestContextCreation(unittest.TestCase):
     """Test Context Creation"""
+    @classmethod
+    def setUpClass(cls):
+        cls.client = IPythonClient()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""

@@ -21,13 +21,13 @@ from distarray.externals.six.moves import range
 
 from distarray.client import DistArray
 from distarray.context import Context
-from distarray.testing import import_or_skip, temp_filepath, IpclusterTestCase
+from distarray.testing import import_or_skip, temp_filepath
 
 
-class TestDnpyFileIO(IpclusterTestCase):
+class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
-        dac = Context(self.client)
+        dac = Context()
         da = dac.empty((100,), dist={0: 'b'})
 
         output_paths = [temp_filepath() for target in dac.targets]
@@ -42,7 +42,7 @@ class TestDnpyFileIO(IpclusterTestCase):
                     os.remove(filepath)
 
     def test_save_load_with_prefix(self):
-        dac = Context(self.client)
+        dac = Context()
         da = dac.empty((100,), dist={0: 'b'})
 
         output_path = temp_filepath()
@@ -132,12 +132,12 @@ nu_test_data = [
     ]
 
 
-class TestNpyFileLoad(IpclusterTestCase):
+class TestNpyFileLoad(unittest.TestCase):
 
     ipcluster_size = 2
 
     def setUp(self):
-        self.dac = Context(self.client, targets=[0, 1])
+        self.dac = Context(targets=[0, 1])
 
         # make a test file
         self.output_path = temp_filepath('.npy')
@@ -150,7 +150,6 @@ class TestNpyFileLoad(IpclusterTestCase):
             os.remove(self.output_path)
         # clean up the context keys
         self.dac.cleanup_keys()
-        super(TestNpyFileLoad, self).tearDown()
 
     def test_load_bn(self):
         dim_datas = bn_test_data
@@ -174,18 +173,17 @@ class TestNpyFileLoad(IpclusterTestCase):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
 
-class TestHdf5FileSave(IpclusterTestCase):
+class TestHdf5FileSave(unittest.TestCase):
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
         self.output_path = temp_filepath('.hdf5')
-        self.dac = Context(self.client)
+        self.dac = Context()
 
     def tearDown(self):
         self.dac.cleanup_keys()
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
-        super(TestHdf5FileSave, self).tearDown()
 
     def test_save_block(self):
         datalen = 33
@@ -235,13 +233,13 @@ class TestHdf5FileSave(IpclusterTestCase):
             self.assertTrue("bar" in fp)
 
 
-class TestHdf5FileLoad(IpclusterTestCase):
+class TestHdf5FileLoad(unittest.TestCase):
 
     ipcluster_size = 2
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
-        self.dac = Context(self.client, targets=[0, 1])
+        self.dac = Context(targets=[0, 1])
         self.output_path = temp_filepath('.hdf5')
         self.expected = np.arange(20).reshape(2, 10)
         with self.h5py.File(self.output_path, 'w') as fp:
@@ -251,7 +249,6 @@ class TestHdf5FileLoad(IpclusterTestCase):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         self.dac.cleanup_keys()
-        super(TestHdf5FileLoad, self).tearDown()
 
     def test_load_bn(self):
         da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")
