@@ -10,8 +10,7 @@ import numpy as np
 from distarray.local.localarray import LocalArray, ndenumerate
 from distarray import utils
 from distarray.testing import MpiTestCase
-#from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
-from distarray.local.error import IncompatibleArrayError
+from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 from distarray.externals.six.moves import reduce
 
 
@@ -80,14 +79,14 @@ class TestInit(MpiTestCase):
         """ Test that invalid distribution type fails as expected. """
         with self.assertRaises(TypeError):
             # Invalid distribution type 'x'.
-            da.LocalArray((7,), dist={0: 'x'}, grid_shape=(4,),
-                          comm=self.comm, buf=None)
+            LocalArray((7,), dist={0: 'x'}, grid_shape=(4,),
+                       comm=self.comm, buf=None)
 
     def test_no_grid_shape(self):
         """ Create array init when passing no grid_shape. """
-        larr_nogrid = da.LocalArray((7,),
-                                    comm=self.comm,
-                                    buf=None)
+        larr_nogrid = LocalArray((7,),
+                                 comm=self.comm,
+                                 buf=None)
         grid_shape = larr_nogrid.grid_shape
         # For 1D array as created here, we expect grid_shape
         # to just be the number of engines as a tuple.
@@ -398,7 +397,7 @@ class TestGlobalInd(MpiTestCase):
 
     def test_bad_global_limits(self):
         """ Test that invalid global_limits fails as expected. """
-        a = da.LocalArray((4, 4), comm=self.comm)
+        a = LocalArray((4, 4), comm=self.comm)
         with self.assertRaises(InvalidDimensionError):
             a.global_limits(-1)
 
@@ -417,7 +416,7 @@ class TestRankCoords(MpiTestCase):
 
     def test_rank_coords(self):
         """ Test that we can go from rank to coords and back. """
-        la = da.LocalArray((4,4), comm=self.comm)
+        la = LocalArray((4,4), comm=self.comm)
         max_size = self.comm.Get_size()
         for rank in range(max_size):
             self.round_trip(la, rank=rank)
@@ -427,19 +426,19 @@ class TestArrayConversion(MpiTestCase):
     """ Test array conversion methods. """
 
     def setUp(self):
-        self.int_larr = da.LocalArray((4,), dtype=int, comm=self.comm)
+        self.int_larr = LocalArray((4,), dtype=int, comm=self.comm)
         self.int_larr.fill(3)
 
     def test_astype(self):
         """ Test that astype() works as expected. """
         # Convert int array to float.
         float_larr = self.int_larr.astype(float)
-        for global_inds, value in da.ndenumerate(float_larr):
+        for global_inds, value in ndenumerate(float_larr):
             self.assertEqual(value, 3.0)
             self.assertTrue(isinstance(value, float))
         # No type specification for a copy.
         int_larr2 = self.int_larr.astype(None)
-        for global_inds, value in da.ndenumerate(int_larr2):
+        for global_inds, value in ndenumerate(int_larr2):
             self.assertEqual(value, 3)
             self.assertTrue(isinstance(value, int))
 
@@ -626,10 +625,10 @@ class TestNotImplementedArrayMethods(MpiTestCase):
         # These would need real values for a real test,
         # but since we just check for not implemented,
         # this is not necessary here.
-        self.larr1 = da.LocalArray((4,), comm=self.comm)
-        self.larr2 = da.LocalArray((4, 4), comm=self.comm)
-        self.larrb = da.LocalArray((4, 4), dtype=bool, comm=self.comm)
-        self.larrc = da.LocalArray((4, 4), dtype=complex, comm=self.comm)
+        self.larr1 = LocalArray((4,), comm=self.comm)
+        self.larr2 = LocalArray((4, 4), comm=self.comm)
+        self.larrb = LocalArray((4, 4), dtype=bool, comm=self.comm)
+        self.larrc = LocalArray((4, 4), dtype=complex, comm=self.comm)
 
     def test_array_shape_manipulation(self):
         """ Array shape manipulation functions. """
