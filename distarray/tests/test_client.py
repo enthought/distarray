@@ -21,13 +21,12 @@ from distarray.externals.six.moves import range
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.context import Context
-from distarray.testing import IpclusterTestCase
 
 
-class TestDistArray(IpclusterTestCase):
+class TestDistArray(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context(self.client)
+        self.dac = Context()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -112,10 +111,10 @@ class TestDistArray(IpclusterTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
+class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
-        self.context = Context(self.client)
+        self.context = Context()
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
@@ -255,12 +254,12 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
         self.assertSequenceEqual(actual, expected)
 
 
-class TestDistArrayCreation(IpclusterTestCase):
+class TestDistArrayCreation(unittest.TestCase):
 
     """Test distarray creation methods"""
 
     def setUp(self):
-        self.context = Context(self.client)
+        self.context = Context()
 
     def test___init__(self):
         shape = (100, 100)

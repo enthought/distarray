@@ -5,7 +5,6 @@
 # ---------------------------------------------------------------------------
 
 import unittest
-from distarray.testing import IpclusterTestCase
 from distarray import Context
 from distarray.local import maps
 from distarray import client_map
@@ -13,15 +12,14 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-class TestClientMap(IpclusterTestCase):
+
+class TestClientMap(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = Context(self.client)
+        self.ctx = Context()
 
-     # overloads base class...
     def tearDown(self):
-        del self.ctx
-        super(TestClientMap, self).tearDown()
+        self.ctx.cleanup_keys()
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53
