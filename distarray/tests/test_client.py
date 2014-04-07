@@ -29,11 +29,6 @@ class TestDistArray(IpclusterTestCase):
     def setUp(self):
         self.dac = Context(self.client)
 
-     # overloads base class...
-    def tearDown(self):
-        del self.dac
-        super(TestDistArray, self).tearDown()
-
     def test_set_and_getitem_block_dist(self):
         size = 10
         dap = self.dac.empty((size,), dist={0: 'b'})
@@ -266,11 +261,6 @@ class TestDistArrayCreation(IpclusterTestCase):
 
     def setUp(self):
         self.context = Context(self.client)
-
-     # overloads base class...
-    def tearDown(self):
-        del self.context
-        super(TestDistArrayCreation, self).tearDown()
 
     def test___init__(self):
         shape = (100, 100)
@@ -616,16 +606,12 @@ class TestReduceMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
-
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.close()
-        del cls.darr
-        del cls.arr
-        del cls.context
+        cls.context.cleanup_keys()
 
     def test_sum(self):
         np_sum = self.arr.sum()
