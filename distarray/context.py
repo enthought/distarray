@@ -55,10 +55,6 @@ class Context(object):
         self._make_intracomm()
         self._set_engine_rank_mapping()
 
-    def __del__(self):
-        """ Clean up keys we have put on the engines. """
-        self.cleanup_keys()
-
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
         # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  We
