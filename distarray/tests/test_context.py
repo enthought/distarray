@@ -101,7 +101,7 @@ class TestContextCreation(unittest.TestCase):
         num_keys3 = len(dac.dump_keys())
         self.assertGreater(num_keys3, num_keys1)
         # Cleanup the context
-        dac.cleanup_keys()
+        dac.cleanup()
         # Key count should return to start.
         num_keys2 = len(context0.dump_keys(all_other_contexts=True))
         self.assertEqual(num_keys2, num_keys0)

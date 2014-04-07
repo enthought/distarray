@@ -610,7 +610,7 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup_keys()
+        cls.context.cleanup()
 
     def test_sum(self):
         np_sum = self.arr.sum()

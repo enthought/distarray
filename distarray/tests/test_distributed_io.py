@@ -149,7 +149,7 @@ class TestNpyFileLoad(unittest.TestCase):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         # clean up the context keys
-        self.dac.cleanup_keys()
+        self.dac.cleanup()
 
     def test_load_bn(self):
         dim_datas = bn_test_data
@@ -181,7 +181,7 @@ class TestHdf5FileSave(unittest.TestCase):
         self.dac = Context()
 
     def tearDown(self):
-        self.dac.cleanup_keys()
+        self.dac.cleanup()
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
 
@@ -248,7 +248,7 @@ class TestHdf5FileLoad(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
-        self.dac.cleanup_keys()
+        self.dac.cleanup()
 
     def test_load_bn(self):
         da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")
