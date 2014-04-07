@@ -183,7 +183,7 @@ def print_array_documentation(context,
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
     context._execute(cmd)
-    cmd = 'db_keys = distbuffer.keys()'
+    cmd = 'db_keys = list(distbuffer.keys())'
     context._execute(cmd)
     cmd = 'db_version = distbuffer["__version__"]'
     context._execute(cmd)
