@@ -57,13 +57,7 @@ class Context(object):
 
     def __del__(self):
         """ Clean up keys we have put on the engines. """
-        self._cleanup_keys()
-
-    def _cleanup_keys(self):
-        """ Delete all the keys we have created from all the engines. """
-        self.purge_keys()
-        # comm_key is now invalid.
-        self._comm_key = None
+        self.cleanup_keys()
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
@@ -152,7 +146,7 @@ class Context(object):
         cmd = 'del %s' % key
         self._execute(cmd)
 
-    def purge_keys(self, all_other_contexts=False):
+    def cleanup_keys(self, all_other_contexts=False):
         """ Delete keys that this context created from all the engines.
 
         If all_other_contexts is False (the default), then this
@@ -160,6 +154,8 @@ class Context(object):
         Otherwise, it deletes all keys from all other contexts.
 
         """
+        # make the _comm_key invalid
+        self._comm_key = None
         basename = self._key_basename()
         prefix = self._key_prefix()
         if all_other_contexts:
