@@ -440,7 +440,7 @@ class LocalArray(object):
         See the project's documentation for the Protocol's specification.
         """
         distbuffer = {
-            "__version__": "1.0.0",
+            "__version__": "0.10.0",
             "buffer": self.local_array,
             "dim_data": self.dim_data,
             }
