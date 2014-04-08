@@ -397,6 +397,7 @@ class LocalArray(object):
 
     def compatibility_hash(self):
         return hash((self.global_shape, self.dist, self.grid_shape, True))
+
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
     #-------------------------------------------------------------------------
@@ -439,10 +440,27 @@ class LocalArray(object):
 
         See the project's documentation for the Protocol's specification.
         """
+        # the DAP doesn't have an 'n' dist_type
+        translated_dim_data = tuple(dim_dict.copy() for dim_dict in
+                                    self.dim_data)
+        def b_from_n(dd):
+            """Take a dimension dictionary (`dd`) with dist_type 'n' and make
+            it the equivalent 'b'.
+            """
+            dd['dist_type'] = 'b'
+            dd['start'] = 0
+            dd['stop'] = dd['size']
+            dd['proc_grid_rank'] = 0
+            dd['proc_grid_size'] = 1
+
+        for dim_dict in translated_dim_data:
+            if dim_dict['dist_type'] == 'n':
+                b_from_n(dim_dict)
+
         distbuffer = {
             "__version__": "0.10.0",
             "buffer": self.local_array,
-            "dim_data": self.dim_data,
+            "dim_data": translated_dim_data,
             }
         return distbuffer
 
