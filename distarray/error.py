@@ -4,7 +4,7 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 """
-Errors
+Define error classes.
 """
 
 
