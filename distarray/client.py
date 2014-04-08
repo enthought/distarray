@@ -4,7 +4,7 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 """
-The Distarray data structure.`DistArray` objects are proxys for collections of
+The Distarray data structure.`DistArray` objects are proxies for collections of
 `LocalArray` objects. They are meant to roughly emulate NumPy `ndarrays`.
 """
 
