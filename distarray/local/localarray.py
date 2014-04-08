@@ -268,6 +268,27 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
+        def fill_empty_dim_dict(dim_dict, i):
+            """Empty dim_dict alias -- requires a buffer object.
+
+            See DAP v0.10.0 section 1.6.3.1.
+            """
+            if buf is None:
+                msg = "Must provide `buf` to use the empty dictionary alias."
+                raise TypeError(msg)
+            default = {'dist_type': 'b',
+                       'proc_grid_rank': 0,
+                       'proc_grid_size': 1,
+                       'start': 0,
+                       'stop': buf.shape[i],
+                       'size': buf.shape[i]}
+            dim_dict.update(default)
+
+        # Expand empty dim_dicts
+        for i, dim_dict in enumerate(dim_data):
+            if not dim_dict:  # empty dict
+                fill_empty_dim_dict(dim_dict, i)
+
         # Extract grid_shape from dim_data.
         grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
                            for dd in dim_data)
