@@ -18,9 +18,6 @@ from distarray.testing import MpiTestCase, CommNullPasser
 VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
 
 
-#TODO: Use the validator from the Distributed Array Protocol here
-
-
 @six.add_metaclass(CommNullPasser)
 class DapTestMixin(object):
 
