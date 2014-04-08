@@ -11,13 +11,6 @@ from math import sqrt
 from distarray.externals.six import next
 
 
-def divisors(n):
-    i = 2
-    while i<n:
-        if n % i == 0:
-            yield i
-        i += 1
-
 
 def multi_for(iterables):
     if not iterables:
@@ -89,18 +82,6 @@ def mirror_sort(seq, ref_seq):
     for s_index in range(len(shift)):
         newseq[shift[s_index]] = seq[s_index]
     return newseq
-
-
-def outer_zip(seqa, seqb):
-    """An outer product, but using zip rather than multiplication.
-
-    >>> a = 2*range(4)
-    >>> b = range(8)
-    >>> outer_zip(a,b)
-    [[(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7)], [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7)]]
-
-    """
-    return [[(i,j) for j in seqb] for i in seqa]
 
 
 def _raise_nie():
