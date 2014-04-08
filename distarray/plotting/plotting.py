@@ -10,7 +10,7 @@ Plotting functions for distarrays.
 
 from distarray.externals.six.moves import range
 from matplotlib import pyplot, colors, cm
-from numpy import arange, concatenate, empty, linspace, resize
+from numpy import concatenate, empty, linspace
 
 from distarray.decorators import local
 
