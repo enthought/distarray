@@ -10,7 +10,6 @@ Functions for starting and stopping ipclusters.
 
 from __future__ import print_function
 
-import sys
 from distarray.externals import six
 from time import sleep
 from subprocess import Popen, PIPE
@@ -86,6 +85,7 @@ for m in modules.copy():
         del modules[m]
 deleted_mods = sorted(orig_mods - set(modules))
 '''
+
 
 def reset(args):
     from IPython.parallel import Client
