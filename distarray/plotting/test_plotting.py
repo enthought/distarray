@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import matplotlib as mpl
+mpl.use('Agg')
 
 from distarray import Context
 # to be tested:
