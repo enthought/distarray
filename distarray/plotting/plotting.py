@@ -180,7 +180,7 @@ def plot_local_array_subfigure(subfig,
 def plot_local_arrays(darray,
                       process_coords,
                       colormap_objects,
-                      filename):
+                      filename=None):
     """ Plot the local arrays as a multi-figure matplotlib plot. """
     # Get the local arrays that are not empty.
     ndarrays = darray.get_ndarrays()
