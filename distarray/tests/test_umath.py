@@ -55,12 +55,8 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.db
-        del cls.da
-        del cls.b
-        del cls.a
+        cls.context.purge_keys()
         cls.context.close()
-        del cls.context
 
     def check_binary_op(self, op_name):
         """Check binary operation for success.
@@ -107,12 +103,8 @@ class TestSpecialMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.db
-        del cls.da
-        del cls.b
-        del cls.a
+        cls.context.purge_keys()
         cls.context.close()
-        del cls.context
 
     def check_op(self, op_name):
         distop = getattr(self.da, op_name)

@@ -34,6 +34,7 @@ class TestContext(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
+        cls.context.purge_keys()
         cls.context.close()
 
     def test_get_localarrays(self):
@@ -55,11 +56,17 @@ class TestContextCreation(IpclusterTestCase):
         del dac
 
     def test_create_Context_with_targets(self):
+        # This leaks a key on targets [2, 3].
+        # The leak persists even if an explicit dac.purge_keys()
+        # is added to the end of this function.
         """Can we create a context with a subset of engines?"""
         dac = Context(self.client, targets=[0, 1])
         self.assertIs(dac.client, self.client)
 
     def test_create_Context_with_targets_ranks(self):
+        # This leaks a key on targets [0, 1].
+        # The leak persists even if an explicit dac.purge_keys()
+        # is added to the end of this function.
         """Check that the target <=> rank mapping is consistent."""
         targets = [3, 2]
         dac = Context(self.client, targets=targets)
