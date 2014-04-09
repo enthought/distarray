@@ -19,8 +19,9 @@ class DapRoundTripEqualityMixin(object):
 
     """Mixin for running round-trip tests on DAP exports.
 
-    NOTE: dimensions with 'n' dist_type are currently translated to 'b', so
-    these tests fail.
+    NOTE: Dimensions with the 'n' dist_type are currently translated to 'b' on
+    export, so these tests would not pass for LocalArrays with 'n' distributed
+    dimensions.
 
     Overload `setUp` and add a `self.larr` LocalArray to run this test suite
     on.
