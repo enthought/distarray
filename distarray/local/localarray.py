@@ -465,6 +465,7 @@ class LocalArray(object):
         # the DAP doesn't have an 'n' dist_type
         translated_dim_data = tuple(dim_dict.copy() for dim_dict in
                                     self.dim_data)
+
         def b_from_n(dd):
             """Take a dimension dictionary (`dd`) with dist_type 'n' and make
             it the equivalent 'b'.
