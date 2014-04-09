@@ -290,6 +290,7 @@ def create_distribution_plot_and_documentation(context, params):
     title = params['title']
     labels = params['labels']
     shape = params['shape']
+    grid_shape = params.get('grid_shape', None)
     text = params.get('text', None)
     dist = params.get('dist', None)
     dimdata = params.get('dimdata', None)
@@ -301,7 +302,7 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Create array, either from dist or dimdata.
     if dist is not None:
-        array = context.empty(shape, dist=dist)
+        array = context.empty(shape, dist=dist, grid_shape=grid_shape)
     elif dimdata is not None:
         array = context.from_global_dim_data(dimdata)
     else:
@@ -405,6 +406,7 @@ def create_distribution_plot_and_documentation_all(context):
     params_list_3 = [
         # Same results as old 'b', 'n'.
         {'shape': (5, 9),
+         'grid_shape': (3, 1),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_3x1.png',
@@ -415,6 +417,7 @@ def create_distribution_plot_and_documentation_all(context):
         },
         # Same results as old 'n', 'b'.
         {'shape': (5, 9),
+         'grid_shape': (1, 3),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_1x3.png',
@@ -431,18 +434,21 @@ def create_distribution_plot_and_documentation_all(context):
     params_list_4 = [
         # Some simple description examples.
         {'shape': (5, 9),
+         'grid_shape': (2, 2),
          'title': 'Block, Block',
          'labels': ('b', 'b'),
          'filename': 'images/plot_block_block_2x2.png',
          'dist': ('b', 'b'),
         },
         {'shape': (5, 9),
+         'grid_shape': (2, 2),
          'title': 'Block, Cyclic',
          'labels': ('b', 'c'),
          'filename': 'images/plot_block_cyclic.png',
          'dist': ('b', 'c'),
         },
         {'shape': (5, 9),
+         'grid_shape': (2, 2),
          'title': 'Cyclic, Cyclic',
          'labels': ('c', 'c'),
          'filename': 'images/plot_cyclic_cyclic.png',
@@ -520,6 +526,7 @@ def create_distribution_plot_and_documentation_all(context):
         # A 3D array.
         {
          'shape': (5, 9, 3),
+         'grid_shape': (2, 2, 2),
          'title': 'Cyclic, Block, Cyclic',
          'labels': ('c', 'b', 'c'),
          'filename': 'images/plot_cyclic_block_cyclic.png',
