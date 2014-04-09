@@ -572,7 +572,7 @@ class LocalArray(object):
     def resize(self, newshape, refcheck=1, order='C'):
         _raise_nie()
 
-    def transpose(self, axes):
+    def transpose(self, axes=None):
         _raise_nie()
 
     def swapaxes(self, axis1, axis2):
