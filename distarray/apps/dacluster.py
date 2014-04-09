@@ -3,8 +3,8 @@
 import argparse
 import sys
 
-import ipcluster_tools
-import purge_cluster
+from . import ipcluster_tools
+from . import purge_cluster
 
 
 class ArgumentParser(argparse.ArgumentParser):
