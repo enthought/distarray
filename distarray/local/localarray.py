@@ -268,6 +268,28 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
+
+        def fill_empty_dim_dict(dim_dict, i):
+            """Empty dim_dict alias -- requires a buffer object.
+
+            See DAP v0.10.0 section 1.6.3.1.
+            """
+            if buf is None:
+                msg = "Must provide `buf` to use the empty dictionary alias."
+                raise TypeError(msg)
+            default = {'dist_type': 'b',
+                       'proc_grid_rank': 0,
+                       'proc_grid_size': 1,
+                       'start': 0,
+                       'stop': buf.shape[i],
+                       'size': buf.shape[i]}
+            dim_dict.update(default)
+
+        # Expand empty dim_dicts
+        for i, dim_dict in enumerate(dim_data):
+            if not dim_dict:  # empty dict
+                fill_empty_dim_dict(dim_dict, i)
+
         # Extract grid_shape from dim_data.
         grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
                            for dd in dim_data)
@@ -397,6 +419,7 @@ class LocalArray(object):
 
     def compatibility_hash(self):
         return hash((self.global_shape, self.dist, self.grid_shape, True))
+
     #-------------------------------------------------------------------------
     # Distributed Array Protocol
     #-------------------------------------------------------------------------
@@ -439,10 +462,28 @@ class LocalArray(object):
 
         See the project's documentation for the Protocol's specification.
         """
+        # the DAP doesn't have an 'n' dist_type
+        translated_dim_data = tuple(dim_dict.copy() for dim_dict in
+                                    self.dim_data)
+
+        def b_from_n(dd):
+            """Take a dimension dictionary (`dd`) with dist_type 'n' and make
+            it the equivalent 'b'.
+            """
+            dd['dist_type'] = 'b'
+            dd['start'] = 0
+            dd['stop'] = dd['size']
+            dd['proc_grid_rank'] = 0
+            dd['proc_grid_size'] = 1
+
+        for dim_dict in translated_dim_data:
+            if dim_dict['dist_type'] == 'n':
+                b_from_n(dim_dict)
+
         distbuffer = {
-            "__version__": "1.0.0",
+            "__version__": "0.10.0",
             "buffer": self.local_array,
-            "dim_data": self.dim_data,
+            "dim_data": translated_dim_data,
             }
         return distbuffer
 

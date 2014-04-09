@@ -126,6 +126,22 @@ class TestFromDimData(MpiTestCase):
 
         self.assert_alike(larr, expected)
 
+    def test_empty_dict_alias(self):
+        shape = (16, 1)
+        buf = np.zeros(shape)
+        dim0 = {
+            "dist_type": 'b',
+            "size": shape[0],
+            "proc_grid_size": 4,
+            }
+        dim1 = {}
+        dim_data = (dim0, dim1)
+
+        larr = LocalArray.from_dim_data(dim_data, buf=buf, comm=self.comm)
+        expected = LocalArray(shape, dist={0: 'b', 1: 'b'},
+                              grid_shape=(4, 1), buf=buf, comm=self.comm)
+        self.assert_alike(larr, expected)
+
     def test_cyclic(self):
         dim0 = {
             "dist_type": 'n',

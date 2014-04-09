@@ -7,7 +7,6 @@
 import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
-from distutils.version import StrictVersion
 
 import distarray.local
 from distarray.externals import six
@@ -15,21 +14,18 @@ from distarray.externals import protocol_validator
 from distarray.testing import MpiTestCase, CommNullPasser
 
 
-VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
-
-
 @six.add_metaclass(CommNullPasser)
-class DapTestMixin(object):
+class DapRoundTripEqualityMixin(object):
 
-    """Base test class for DAP test cases.
+    """Mixin for running round-trip tests on DAP exports.
+
+    NOTE: Dimensions with the 'n' dist_type are currently translated to 'b' on
+    export, so these tests would not pass for LocalArrays with 'n' distributed
+    dimensions.
 
     Overload `setUp` and add a `self.larr` LocalArray to run this test suite
     on.
     """
-
-    def test_with_validator(self):
-        valid, msg = protocol_validator.validate(self.larr.__distarray__())
-        self.assertTrue(valid, msg=msg)
 
     def test_round_trip_equality_from_object(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr,
@@ -59,7 +55,21 @@ class DapTestMixin(object):
         self.assertEqual(larr.local_array.dtype, self.larr.local_array.dtype)
         assert_array_equal(larr.local_array, self.larr.local_array)
 
-    def test_round_trip_identity(self):
+
+@six.add_metaclass(CommNullPasser)
+class DapValidatorMixin(object):
+
+    """Mixin for running the DAP validator and testing elements.
+
+    Overload `setUp` and add a `self.larr` LocalArray to run this test suite
+    on.
+    """
+
+    def test_with_validator(self):
+        valid, msg = protocol_validator.validate(self.larr.__distarray__())
+        self.assertTrue(valid, msg=msg)
+
+    def test_round_trip_elements(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr,
                                                          comm=self.comm)
         if self.comm.Get_rank() == 0:
@@ -68,14 +78,14 @@ class DapTestMixin(object):
         assert_array_equal(larr.local_array, self.larr.local_array)
 
 
-class TestDapBasic(DapTestMixin, MpiTestCase):
+class TestDapBasic(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), grid_shape=(4, 1),
                                                comm=self.comm)
 
 
-class TestDapUint(DapTestMixin, MpiTestCase):
+class TestDapUint(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='uint8',
@@ -83,7 +93,7 @@ class TestDapUint(DapTestMixin, MpiTestCase):
                                                comm=self.comm, buf=None)
 
 
-class TestDapComplex(DapTestMixin, MpiTestCase):
+class TestDapComplex(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dtype='complex128',
@@ -91,7 +101,7 @@ class TestDapComplex(DapTestMixin, MpiTestCase):
                                                comm=self.comm, buf=None)
 
 
-class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist0(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((16, 16), dist={0: 'b', 1: 'n'},
@@ -99,7 +109,7 @@ class TestDapExplicitNoDist0(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
+class TestDapExplicitNoDist1(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((30, 60), dist={0: 'n', 1: 'b'},
@@ -107,7 +117,8 @@ class TestDapExplicitNoDist1(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
+class TestDapTwoDistDims(DapRoundTripEqualityMixin, DapValidatorMixin,
+                         MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77), dist={0: 'b', 1: 'b'},
@@ -115,7 +126,8 @@ class TestDapTwoDistDims(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
+class TestDapThreeBlockDims(DapRoundTripEqualityMixin, DapValidatorMixin,
+                            MpiTestCase):
 
     comm_size = 12
 
@@ -126,7 +138,7 @@ class TestDapThreeBlockDims(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapCyclicDim(DapTestMixin, MpiTestCase):
+class TestDapCyclicDim(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77), dist={0: 'c'},
@@ -134,7 +146,8 @@ class TestDapCyclicDim(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
+class TestDapCyclicBlock(DapRoundTripEqualityMixin, DapValidatorMixin,
+                         MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77), dist={0: 'c', 1: 'b'},
@@ -142,7 +155,7 @@ class TestDapCyclicBlock(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
+class TestDapThreeMixedDims(DapValidatorMixin, MpiTestCase):
 
     def setUp(self):
         self.larr = distarray.local.LocalArray((53, 77, 99), dtype='float64',
@@ -151,7 +164,7 @@ class TestDapThreeMixedDims(DapTestMixin, MpiTestCase):
                                                comm=self.comm)
 
 
-class TestDapLopsided(DapTestMixin, MpiTestCase):
+class TestDapLopsided(DapValidatorMixin, MpiTestCase):
 
     comm_size = 2
 
