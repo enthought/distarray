@@ -613,7 +613,7 @@ class LocalArray(object):
     def resize(self, newshape, refcheck=1, order='C'):
         _raise_nie()
 
-    def transpose(self, arg):
+    def transpose(self, axes=None):
         _raise_nie()
 
     def swapaxes(self, axis1, axis2):
@@ -693,10 +693,10 @@ class LocalArray(object):
     def take(self, indices, axis=None, out=None, mode='raise'):
         _raise_nie()
 
-    def put(self, values, indices, mode='raise'):
+    def put(self, indices, values, mode='raise'):
         _raise_nie()
 
-    def putmask(self, values, mask):
+    def putmask(self, mask, values):
         _raise_nie()
 
     def repeat(self, repeats, axis=None):
