@@ -15,9 +15,6 @@ from distarray.externals import protocol_validator
 from distarray.testing import MpiTestCase, CommNullPasser
 
 
-VALID_DIST_TYPES = {'n', 'b', 'c', 'u'}
-
-
 @six.add_metaclass(CommNullPasser)
 class DapTestMixin(object):
 
