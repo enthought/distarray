@@ -10,6 +10,7 @@ Functions for starting and stopping ipclusters.
 
 from __future__ import print_function
 
+import sys
 from distarray.externals import six
 from time import sleep
 from subprocess import Popen, PIPE
@@ -23,14 +24,23 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def start(args):
+def run_ipcluster(args):
+    """Takes a list of arguments to pass to ipcluster, then tries to
+    open it.
+    """
+    command = [ipcluster_cmd].extend(args)
+    Popen(command, stdout=PIPE, stderr=PIPE)
+
+
+def start(n=4, engines=None):
     """Convenient way to start an ipcluster for testing.
 
     Doesn't exit until the ipcluster prints a success message.
     """
-    nengines = args.nengines
-    engines = "--engines=MPIEngineSetLauncher"
-    cluster = Popen([ipcluster_cmd, 'start', '-n', str(nengines), engines],
+    if engines is None:
+        engines = "--engines=MPIEngineSetLauncher"
+
+    cluster = Popen([ipcluster_cmd, 'start', '-n', str(n), engines],
                     stdout=PIPE, stderr=PIPE)
 
     started = "Engines appear to have started successfully"
@@ -46,7 +56,7 @@ def start(args):
             raise RuntimeError("ipcluster is already running.")
 
 
-def stop(args):
+def stop():
     """Convenient way to stop an ipcluster."""
     stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
 
@@ -62,20 +72,19 @@ def stop(args):
             break
 
 
-def restart(args):
+def restart():
     """Convenient way to restart an ipcluster."""
-    stop(args)
+    stop()
 
     started = False
     while not started:
         sleep(2)
         try:
-            start(args)
+            start()
         except RuntimeError:
             pass
         else:
             started = True
-
 
 _RESET_ENGINE_DISTARRAY = '''
 from sys import modules
@@ -87,7 +96,7 @@ deleted_mods = sorted(orig_mods - set(modules))
 '''
 
 
-def reset(args):
+def clear():
     from IPython.parallel import Client
     c = Client()
     dv = c[:]
@@ -100,21 +109,7 @@ def reset(args):
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers()
-
-    parser_start = subparsers.add_parser('start')
-    parser_start.add_argument('nengines', type=int)
-    parser_start.set_defaults(func=start)
-
-    parser_restart = subparsers.add_parser('restart')
-    parser_restart.add_argument('nengines', type=int)
-    parser_restart.set_defaults(func=restart)
-
-    subparsers.add_parser('stop').set_defaults(func=stop)
-    subparsers.add_parser('reset').set_defaults(func=reset)
-
-    args = parser.parse_args()
-    args.func(args)
+    cmd = sys.argv[1]
+    if cmd not in 'start stop restart reset'.split():
+        sys.exit("Error: %r not a valid command." % cmd)
+    globals()[cmd]()
