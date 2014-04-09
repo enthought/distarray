@@ -268,6 +268,7 @@ class LocalArray(object):
             (uninitialized) LocalArray.
         """
         self = cls.__new__(cls)
+
         def fill_empty_dim_dict(dim_dict, i):
             """Empty dim_dict alias -- requires a buffer object.
 
