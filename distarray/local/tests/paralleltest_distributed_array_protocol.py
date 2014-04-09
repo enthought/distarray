@@ -7,7 +7,6 @@
 import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
-from distutils.version import StrictVersion
 
 import distarray.local
 from distarray.externals import six
