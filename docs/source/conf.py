@@ -249,8 +249,9 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'DistArray', u'DistArray Documentation',
-   u'IPython Development Team and Enthought, Inc.', 'DistArray', 'One line description of project.',
-   'Miscellaneous'),
+   u'IPython Development Team and Enthought, Inc.', 'DistArray',
+   'Dense, multidimensional, distributed-memory arrays for Python.'
+   'library'),
 ]
 
 # Documents to append as an appendix to all manuals.
