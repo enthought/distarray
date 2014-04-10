@@ -76,7 +76,7 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 	@${MPI_EXEC_CMD}
 .PHONY: test_engines_with_coverage
 
-test: test_client test_engines
+test: test_client test_engines clear_distarray
 .PHONY: test
 
 test_with_coverage: test_client_with_coverage test_engines_with_coverage

@@ -146,24 +146,7 @@ class TestLocalDecorator(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Release references to the local functions.
-        del cls.local_add50
-        del cls.local_add_num
-        del cls.assert_allclose
-        del cls.local_sin
-        del cls.local_sum
-        del cls.call_barrier
-        del cls.local_add_nums
-        del cls.local_add_distarrayproxies
-        del cls.local_add_mixed
-        del cls.local_add_ndarray
-        del cls.local_add_kwargs
-        del cls.local_add_supermix
-        del cls.local_none
-        del cls.parameterless
-        # Release other resources.
-        del cls.da
-        del cls.context
+        cls.context.cleanup()
 
     def test_local(self):
         context = Context()

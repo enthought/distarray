@@ -18,8 +18,8 @@ from random import shuffle
 import numpy
 
 from distarray import Context
+from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
-from distarray.testing import IpclusterTestCase
 
 
 class TestContext(unittest.TestCase):
@@ -45,14 +45,16 @@ class TestContext(unittest.TestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(IpclusterTestCase):
+class TestContextCreation(unittest.TestCase):
     """Test Context Creation"""
+    @classmethod
+    def setUpClass(cls):
+        cls.client = IPythonClient()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
         dac = Context(self.client)
         self.assertIs(dac.client, self.client)
-        del dac
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
@@ -98,8 +100,8 @@ class TestContextCreation(IpclusterTestCase):
         self.assertGreater(num_keys2, num_keys0)
         num_keys3 = len(dac.dump_keys())
         self.assertGreater(num_keys3, num_keys1)
-        # Delete the context.
-        del dac
+        # Cleanup the context
+        dac.cleanup()
         # Key count should return to start.
         num_keys2 = len(context0.dump_keys(all_other_contexts=True))
         self.assertEqual(num_keys2, num_keys0)

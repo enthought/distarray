@@ -27,7 +27,7 @@ def purge():
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
     context = Context()
-    context.purge_keys(all_other_contexts=True)
+    context.cleanup(all_other_contexts=True)
 
 
 if __name__ == '__main__':
