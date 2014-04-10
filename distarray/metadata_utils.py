@@ -24,16 +24,6 @@ class GridShapeError(Exception):
     pass
 
 
-def make_grid_shape(global_shape, dist, comm_size):
-    """ Generate a `grid_shape` from `global_shape` tuple and `dist` tuple.
-
-    Does not assume that `dim_data` has `proc_grid_size` set for each
-    dimension.
-    """
-    distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
-    return optimize_grid_shape(global_shape, distdims, comm_size)
-
-
 def normalize_grid_shape(grid_shape, ndims):
     """ Adds 1's to grid_shape so it has `ndims` dimensions.
     """
@@ -58,8 +48,13 @@ def validate_grid_shape(grid_shape, dist, comm_size):
     return grid_shape
 
 
-def optimize_grid_shape(shape, distdims, comm_size):
-    ''' Attempts to allocate processes optimally for distributed dimensions.
+def make_grid_shape(shape, dist, comm_size):
+    """ Generate a `grid_shape` from `shape` tuple and `dist` tuple.
+
+    Does not assume that `dim_data` has `proc_grid_size` set for each
+    dimension.
+
+    Attempts to allocate processes optimally for distributed dimensions.
 
     Parameters
     ----------
@@ -78,7 +73,8 @@ def optimize_grid_shape(shape, distdims, comm_size):
     ------
         GridShapeError if not possible to distribute `comm_size` processes over
         number of dimensions.
-    '''
+    """
+    distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)
 
     if ndistdim == 1:

@@ -11,13 +11,6 @@ from math import sqrt
 from distarray.externals.six import next
 
 
-def divisors(n):
-    i = 2
-    while i<n:
-        if n % i == 0:
-            yield i
-        i += 1
-
 
 def multi_for(iterables):
     if not iterables:
@@ -26,22 +19,6 @@ def multi_for(iterables):
         for item in iterables[0]:
             for rest_tuple in multi_for(iterables[1:]):
                 yield (item,) + rest_tuple
-
-
-def create_factors(n, size=2):
-    divs = list(divisors(n))
-    factors = []
-    for indices in multi_for( [range(p) for p in size*[len(divs)]] ):
-        total = 1
-        for i in indices:
-            total = total*divs[i]
-        if n == total:
-            factor = [divs[i] for i in indices]
-            factor.sort()
-            factor = tuple(factor)
-            if factor not in factors:
-                factors.append(factor)
-    return factors
 
 
 def divisors_minmax(n, dmin, dmax):
@@ -75,10 +52,10 @@ def mult_partitions(n, s):
     >>> mult_partitions(52,2)
     [(2, 26), (4, 13)]
     """
-    return [tuple(flatten(p)) for p in mult_partitions_recurs(n,s)]
+    return [tuple(flatten(p)) for p in mult_partitions_recurs(n, s)]
 
 
-def mult_partitions_recurs(n, s, pd=1):
+def mult_partitions_recurs(n, s, pd=0):
     if s == 1:
         return [n]
     divs = divisors_minmax(n, pd, int(sqrt(n)))
@@ -105,18 +82,6 @@ def mirror_sort(seq, ref_seq):
     for s_index in range(len(shift)):
         newseq[shift[s_index]] = seq[s_index]
     return newseq
-
-
-def outer_zip(seqa, seqb):
-    """An outer product, but using zip rather than multiplication.
-
-    >>> a = 2*range(4)
-    >>> b = range(8)
-    >>> outer_zip(a,b)
-    [[(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7)], [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7)]]
-
-    """
-    return [[(i,j) for j in seqb] for i in seqa]
 
 
 def _raise_nie():
