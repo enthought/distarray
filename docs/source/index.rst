@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DistArray |release|
+DistArray |version|
 ===================
 
 The DistArray package provides dense, multidimensional, distributed-memory
