@@ -105,5 +105,30 @@ class TestContextCreation(IpclusterTestCase):
         self.assertEqual(num_keys2, num_keys0)
 
 
+class TestPrimeCluster(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context(targets=range(3))
+
+    def test_1D(self):
+        a = self.context.empty((3,))
+        self.assertEqual(a.grid_shape, (3,))
+
+    def test_2D(self):
+        a = self.context.empty((3, 3))
+        b = self.context.empty((3, 3), dist=('n', 'b'))
+        self.assertEqual(a.grid_shape, (3, 1))
+        self.assertEqual(b.grid_shape, (1, 3))
+
+    def test_3D(self):
+        a = self.context.empty((3, 3, 3))
+        b = self.context.empty((3, 3, 3), dist=('n', 'b', 'n'))
+        c = self.context.empty((3, 3, 3), dist=('n', 'n', 'b'))
+        self.assertEqual(a.grid_shape, (3, 1, 1))
+        self.assertEqual(b.grid_shape, (1, 3, 1))
+        self.assertEqual(c.grid_shape, (1, 1, 3))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
