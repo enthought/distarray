@@ -13,6 +13,25 @@
 
 import sys, os
 
+
+# Mock out difficult imports so readthedocs autodoc works
+import mock
+MOCK_MODULES = ['mpi4py', 'h5py', 'zmq',
+                'matplotlib',
+                'matplotlib.pyplot',
+                'numpy',
+                'numpy.lib',
+                'numpy.lib.format',
+                'numpy.lib.utils',
+                'numpy.compat',
+                'IPython',
+                'IPython.parallel',
+                'numbers',
+                ]
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.MagicMock()
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
