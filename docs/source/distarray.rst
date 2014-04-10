@@ -17,6 +17,14 @@ distarray
     :undoc-members:
     :show-inheritance:
 
+:mod:`client_map` Module
+------------------------
+
+.. automodule:: distarray.client_map
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`context` Module
 ---------------------
 
@@ -49,6 +57,22 @@ distarray
     :undoc-members:
     :show-inheritance:
 
+:mod:`ipython_utils` Module
+---------------------------
+
+.. automodule:: distarray.ipython_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`metadata_utils` Module
+----------------------------
+
+.. automodule:: distarray.metadata_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`mpiutils` Module
 ----------------------
 
@@ -74,6 +98,14 @@ distarray
     :show-inheritance:
 
 :mod:`utils` Module
+-------------------
+
+.. automodule:: distarray.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`world` Module
 -------------------
 
 .. automodule:: distarray.utils

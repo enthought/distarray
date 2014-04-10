@@ -17,14 +17,6 @@ local Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`localarray` Module
------------------------------
-
-.. automodule:: distarray.local.localarray
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`error` Module
 -------------------
 
@@ -37,6 +29,14 @@ local Package
 --------------------
 
 .. automodule:: distarray.local.format
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`localarray` Module
+------------------------
+
+.. automodule:: distarray.local.localarray
     :members:
     :undoc-members:
     :show-inheritance:
