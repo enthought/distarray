@@ -1,5 +1,5 @@
-distarray
-=========
+DistArray API Reference
+=======================
 
 :mod:`distarray` Package
 ------------------------

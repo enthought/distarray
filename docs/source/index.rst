@@ -87,12 +87,12 @@ Other Documentation
 -------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   DistArray API Reference <distarray.rst>
    The Distributed Array Protocol <http://distributed-array-protocol.readthedocs.org>
-   Notes on building environment-modules <environment-modules-notes.rst>
    Notes on building HDF5 and h5py <hdf5-notes.rst>
-   API Reference <modules.rst>
+   Notes on building environment-modules <environment-modules-notes.rst>
    Licensing for bundled `six` module (Python 2 / 3 compatibility) <six-license.rst>
 
 
