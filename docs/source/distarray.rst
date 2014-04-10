@@ -108,7 +108,7 @@ distarray
 :mod:`world` Module
 -------------------
 
-.. automodule:: distarray.utils
+.. automodule:: distarray.world
     :members:
     :undoc-members:
     :show-inheritance:
