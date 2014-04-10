@@ -1,5 +1,5 @@
 Notes on building environment-modules
--------------------------------------
+=====================================
 
 environment-modules is a tool, written with Tcl, that makes it convenient to
 switch environment settings. It is not required to use distarray, but we find
