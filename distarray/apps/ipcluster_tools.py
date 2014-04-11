@@ -32,7 +32,7 @@ def run_ipcluster(*args, **kwargs):
     Popen(command, stdout=PIPE, stderr=PIPE)
 
 
-def start(*args, n=4, engines=None, **kwargs):
+def start(n=4, engines=None, *args, **kwargs):
     """Convenient way to start an ipcluster for testing.
 
     Doesn't exit until the ipcluster prints a success message.
@@ -72,7 +72,7 @@ def stop(*args, **kwargs):
             break
 
 
-def restart(*args, n=4, engines=None, **kwargs):
+def restart(n=4, engines=None, *args, **kwargs):
     """Convenient way to restart an ipcluster."""
     stop()
 
