@@ -83,6 +83,14 @@ Makefile there.  For example, to build the html documentation::
 from the ``docs`` directory.
 
 
+Getting Started
+---------------
+
+To see some initial examples of what distarray can do, check out the
+``examples`` directory and our tests.  More usage examples will be forthcoming
+as the API stabilizes.
+
+
 History
 -------
 
