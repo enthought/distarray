@@ -296,8 +296,7 @@ class Context(object):
         that specifies whether the array is block, cyclic, or unstructured.
         The other keys in the dictionary are dependent on the `dist_type` key.
 
-        Block
-        ~~~~~
+        **Block**
 
         * ``dist_type`` is ``'b'``.
 
@@ -317,8 +316,7 @@ class Context(object):
         both ``boundary_padding`` and ``comm_padding`` is allowed for the
         entire dimension.
 
-        Cyclic
-        ~~~~~~
+        **Cyclic**
 
         * ``dist_type`` is ``'c'``
 
@@ -336,8 +334,7 @@ class Context(object):
 
         If not present, equivalent to being present with value of one.
 
-        Unstructured
-        ~~~~~~~~~~~~
+        **Unstructured**
 
         * ``dist_type`` is ``'u'``
 
@@ -350,8 +347,7 @@ class Context(object):
           To compute the global size of the array in this dimension, compute
           ``sum(len(ii) for ii in indices)``.
 
-        Not-distributed
-        ~~~~~~~~~~~~~~~
+        **Not-distributed**
 
         The ``'n'`` distribution type is a convenience to specify that an array
         is not distributed along this dimension.

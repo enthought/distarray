@@ -58,21 +58,22 @@ def make_grid_shape(shape, dist, comm_size):
 
     Parameters
     ----------
-        shape : tuple of int
-            The global shape of the array.
-        distdims : sequence of int
-            The indices of the distributed dimensions.
-        comm_size : int
-            Total number of processes to distribute.
+    shape : tuple of int
+        The global shape of the array.
+    distdims : sequence of int
+        The indices of the distributed dimensions.
+    comm_size : int
+        Total number of processes to distribute.
 
     Returns
     -------
-        dist_grid_shape : tuple of int
+    dist_grid_shape : tuple of int
 
     Raises
     ------
-        GridShapeError if not possible to distribute `comm_size` processes over
-        number of dimensions.
+    GridShapeError
+        if not possible to distribute `comm_size` processes over number of
+        dimensions.
     """
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)

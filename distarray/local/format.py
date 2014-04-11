@@ -93,7 +93,8 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
 
     Raises
     ------
-    ValueError if the version cannot be formatted.
+    ValueError
+        if the version cannot be formatted.
 
     """
     if major < 0 or major > 255:

@@ -122,10 +122,11 @@ class DecoratorBase(object):
 
         Returns
         -------
-        A DistArray (if locally all values are DistArray), a None (if
-        locally all values are None), or else, pull the result back to the
-        client and return it.  If all but one of the pulled values is None,
-        return that non-None value only.
+        Varied
+            A DistArray (if locally all values are DistArray), a None (if
+            locally all values are None), or else, pull the result back to the
+            client and return it.  If all but one of the pulled values is None,
+            return that non-None value only.
         """
         type_key = context._generate_key()
         type_statement = "{} = str(type({}))".format(type_key, result_key)
