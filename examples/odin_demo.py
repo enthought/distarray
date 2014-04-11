@@ -4,6 +4,10 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Demo of basic distarray functionality.
+"""
+
 from __future__ import print_function
 
 import numpy
@@ -44,6 +48,8 @@ def global_sum(da):
 
 
 if __name__ == '__main__':
+    print("Demo of basic distarray functionality.")
+    print("(Hit enter to continue after each step.)")
 
     arr_len = 40
 
