@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 """
-Create a distarray, then plot its array distribution.
+Create a distarray.
 """
 
 import distarray
