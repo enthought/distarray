@@ -4,9 +4,7 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # -----------------------------------------------------------------------------
 
-
 from setuptools import setup, find_packages
-
 
 install_requires = [
     'ipython',
@@ -16,12 +14,12 @@ install_requires = [
 
 metadata = {
     'name': 'distarray',
-    'version': '0.1',
+    'version': '0.2.0',
     'description': 'Distributed Memory Arrays for Python',
     'keywords': 'parallel mpi distributed array',
     'license': 'New BSD',
-    'author': 'Brian E. Granger',
-    'author_email': 'ellisonbg@gmail.com',
+    'author': 'IPython Development Team and Enthought, Inc.',
+    'author_email': 'ksmith@enthought.com',
     'url': 'https://github.com/enthought/distarray',
     'packages': find_packages(),
     'install_requires': install_requires
