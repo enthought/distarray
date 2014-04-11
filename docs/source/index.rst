@@ -75,12 +75,20 @@ You should then be able to run all the tests with::
 
     make test
 
-To build this documentation, navigate to the `docs` directory and use the
+To build this documentation, navigate to the ``docs`` directory and use the
 Makefile there.  For example, to build the html documentation::
 
     make html
 
-from the `docs` directory.
+from the ``docs`` directory.
+
+
+Getting Started
+---------------
+
+To see some initial examples of what distarray can do, check out the
+``examples`` directory and our tests.  More usage examples will be forthcoming
+as the API stabilizes.
 
 
 History
