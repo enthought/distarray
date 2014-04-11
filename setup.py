@@ -18,7 +18,7 @@ metadata = {
     'description': 'Distributed Memory Arrays for Python',
     'keywords': 'parallel mpi distributed array',
     'license': 'New BSD',
-    'author': 'Brian E. Granger, Kurt W. Smith, Robert D. Grant, et al.',
+    'author': 'IPython Development Team and Enthought, Inc.',
     'author_email': 'ksmith@enthought.com',
     'url': 'https://github.com/enthought/distarray',
     'packages': find_packages(),
