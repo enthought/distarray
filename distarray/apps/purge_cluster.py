@@ -13,7 +13,7 @@ import sys
 from distarray.context import Context
 
 
-def dump():
+def dump(*args, **kwargs):
     """ Print out key names that exist on the engines. """
     context = Context()
     keylist = context.dump_keys(all_other_contexts=True)
@@ -23,7 +23,7 @@ def dump():
         print('%s : %r' % (key, targets))
 
 
-def purge():
+def purge(*args, **kwargs):
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
     context = Context()

@@ -24,7 +24,7 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def run_ipcluster(args):
+def run_ipcluster(*args, **kwargs):
     """Takes a list of arguments to pass to ipcluster, then tries to
     open it.
     """
@@ -32,7 +32,7 @@ def run_ipcluster(args):
     Popen(command, stdout=PIPE, stderr=PIPE)
 
 
-def start(n=4, engines=None):
+def start(*args, n=4, engines=None, **kwargs):
     """Convenient way to start an ipcluster for testing.
 
     Doesn't exit until the ipcluster prints a success message.
@@ -56,7 +56,7 @@ def start(n=4, engines=None):
             raise RuntimeError("ipcluster is already running.")
 
 
-def stop():
+def stop(*args, **kwargs):
     """Convenient way to stop an ipcluster."""
     stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
 
@@ -72,7 +72,7 @@ def stop():
             break
 
 
-def restart():
+def restart(*args, n=4, engines=None, **kwargs):
     """Convenient way to restart an ipcluster."""
     stop()
 
@@ -80,7 +80,7 @@ def restart():
     while not started:
         sleep(2)
         try:
-            start()
+            start(n=n, engines=engines)
         except RuntimeError:
             pass
         else:
@@ -96,7 +96,7 @@ deleted_mods = sorted(orig_mods - set(modules))
 '''
 
 
-def clear():
+def clear(*args, **kwargs):
     from IPython.parallel import Client
     c = Client()
     dv = c[:]
