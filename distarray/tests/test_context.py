@@ -18,8 +18,8 @@ from random import shuffle
 import numpy
 
 from distarray import Context
+from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
-from distarray.testing import IpclusterTestCase
 
 
 class TestContext(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestContext(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
-        cls.context.close()
+        cls.context.cleanup()
 
     def test_get_localarrays(self):
         las = self.darr.get_localarrays()
@@ -45,49 +45,60 @@ class TestContext(unittest.TestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(IpclusterTestCase):
+class TestContextCreation(unittest.TestCase):
     """Test Context Creation"""
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
-        dac = Context(self.client)
-        self.assertIs(dac.client, self.client)
-        del dac
+        client = IPythonClient()
+        dac = Context(client)
+        self.assertIs(dac.client, client)
+        dac.cleanup()
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        dac = Context(self.client, targets=[0, 1])
-        self.assertIs(dac.client, self.client)
+        client = IPythonClient()
+        dac = Context(client, targets=[0, 1])
+        self.assertIs(dac.client, client)
+        dac.cleanup()
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
+        client = IPythonClient()
         targets = [3, 2]
-        dac = Context(self.client, targets=targets)
+        dac = Context(client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))
+        dac.cleanup()
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''
-        orig_targets = self.client.ids
-        ctx1 = Context(self.client, targets=shuffle(orig_targets[:]))
-        ctx2 = Context(self.client, targets=shuffle(orig_targets[:]))
+        client = IPythonClient()
+        orig_targets = client.ids
+        ctx1 = Context(client, targets=shuffle(orig_targets[:]))
+        ctx2 = Context(client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
+        ctx1.cleanup(close=False)
+        ctx2.cleanup()
 
     def test_create_delete_key(self):
         """ Check that a key can be created and then destroyed. """
-        dac = Context(self.client)
+        client = IPythonClient()
+        dac = Context(client)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
         dac._push({key: value})
         # Delete the key.
         dac.delete_key(key)
+        dac.cleanup()
 
     def test_purge_and_dump_keys(self):
         """ Check that we can get the existing keys and purge them. """
         # Get initial key count (probably 0).
-        context0 = Context(self.client)
+        client = IPythonClient()
+        context0 = Context(client)
         num_keys0 = len(context0.dump_keys(all_other_contexts=True))
         # Create a context get the count on the new context.
-        dac = Context(self.client)
+        dac = Context(client)
         num_keys1 = len(dac.dump_keys())
         # Create and push a key.
         key = dac._generate_key()
@@ -98,11 +109,12 @@ class TestContextCreation(IpclusterTestCase):
         self.assertGreater(num_keys2, num_keys0)
         num_keys3 = len(dac.dump_keys())
         self.assertGreater(num_keys3, num_keys1)
-        # Delete the context.
-        del dac
+        # Cleanup the context
+        dac.cleanup(close=False)
         # Key count should return to start.
         num_keys2 = len(context0.dump_keys(all_other_contexts=True))
         self.assertEqual(num_keys2, num_keys0)
+        context0.cleanup()
 
 
 class TestPrimeCluster(unittest.TestCase):
@@ -110,6 +122,10 @@ class TestPrimeCluster(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context(targets=range(3))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.cleanup()
 
     def test_1D(self):
         a = self.context.empty((3,))

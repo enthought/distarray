@@ -21,18 +21,15 @@ from distarray.externals.six.moves import range
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.context import Context
-from distarray.testing import IpclusterTestCase
 
 
-class TestDistArray(IpclusterTestCase):
+class TestDistArray(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context(self.client)
+        self.dac = Context()
 
-     # overloads base class...
     def tearDown(self):
-        del self.dac
-        super(TestDistArray, self).tearDown()
+        self.dac.cleanup()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -117,10 +114,13 @@ class TestDistArray(IpclusterTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
+class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
-        self.context = Context(self.client)
+        self.context = Context()
+
+    def tearDown(self):
+        self.context.cleanup()
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
@@ -260,17 +260,15 @@ class TestDistArrayCreationFromGlobalDimData(IpclusterTestCase):
         self.assertSequenceEqual(actual, expected)
 
 
-class TestDistArrayCreation(IpclusterTestCase):
+class TestDistArrayCreation(unittest.TestCase):
 
     """Test distarray creation methods"""
 
     def setUp(self):
-        self.context = Context(self.client)
+        self.context = Context()
 
-     # overloads base class...
     def tearDown(self):
-        del self.context
-        super(TestDistArrayCreation, self).tearDown()
+        self.context.cleanup()
 
     def test___init__(self):
         shape = (100, 100)
@@ -616,16 +614,12 @@ class TestReduceMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
-
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.close()
-        del cls.darr
-        del cls.arr
-        del cls.context
+        cls.context.cleanup()
 
     def test_sum(self):
         np_sum = self.arr.sum()

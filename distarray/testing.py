@@ -121,32 +121,3 @@ class MpiTestCase(unittest.TestCase):
     def tearDownClass(cls):
         if cls.comm != MPI.COMM_NULL:
             cls.comm.Free()
-
-
-class IpclusterTestCase(unittest.TestCase):
-
-    """Base test class for test cases needing an ipcluster.
-
-    Overload the `ipcluster_size` class attribute to change the default
-    (default is 4).
-    """
-
-    ipcluster_size = 4
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = IPythonClient()
-        if len(cls.client) < cls.ipcluster_size:
-            errmsg = ('Tests need an ipcluster with at least {} engines '
-                      'running.')
-            raise unittest.SkipTest(errmsg.format(cls.ipcluster_size))
-
-    def tearDown(self):
-        try:
-            self.context.purge_keys()
-        except AttributeError:
-            pass
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
