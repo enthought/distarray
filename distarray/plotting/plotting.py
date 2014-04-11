@@ -44,7 +44,8 @@ def cmap_discretize(cmap, N):
     colormap
         The desired discrete colormap.
 
-    Example usage:
+    Example
+    -------
     >>> x = resize(arange(100), (5,100))
     >>> djet = cmap_discretize(cm.jet, 5)
     >>> pyplot.imshow(x, cmap=djet)

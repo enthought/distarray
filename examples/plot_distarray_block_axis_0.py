@@ -17,5 +17,7 @@ from distarray import plotting
 
 c = distarray.Context()
 a = c.zeros((64, 64))
-plotting.plot_array_distribution(a, cell_label=False, legend=True)
+process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
+plotting.plot_array_distribution(a, process_coords, cell_label=False,
+                                 legend=True)
 pyplot.show()

@@ -1,5 +1,5 @@
-distarray
-=========
+DistArray API Reference
+=======================
 
 :mod:`distarray` Package
 ------------------------
@@ -13,6 +13,14 @@ distarray
 --------------------
 
 .. automodule:: distarray.client
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`client_map` Module
+------------------------
+
+.. automodule:: distarray.client_map
     :members:
     :undoc-members:
     :show-inheritance:
@@ -49,6 +57,22 @@ distarray
     :undoc-members:
     :show-inheritance:
 
+:mod:`ipython_utils` Module
+---------------------------
+
+.. automodule:: distarray.ipython_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`metadata_utils` Module
+----------------------------
+
+.. automodule:: distarray.metadata_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`mpiutils` Module
 ----------------------
 
@@ -77,6 +101,14 @@ distarray
 -------------------
 
 .. automodule:: distarray.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`world` Module
+-------------------
+
+.. automodule:: distarray.world
     :members:
     :undoc-members:
     :show-inheritance:

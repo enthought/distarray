@@ -56,12 +56,12 @@ def julia_calc(z, c, z_max, n_max):
     return n
 
 # Grid parameteres
-re_ax = (-1., 1.)
-im_ax = (-1., 1.)
+re_ax = (-1.5, 1.5)
+im_ax = (-1.5, 1.5)
 dimensions = (500, 500)
 # Julia set parameters, changing these is fun.
 c = complex(float(sys.argv[1]), float(sys.argv[2]))
-z_max = 20
+z_max = 10
 n_max = 100
 # Array distribution parameters
 dist = {0: 'c', 1: 'c'}
