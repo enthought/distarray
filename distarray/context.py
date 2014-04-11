@@ -146,7 +146,7 @@ class Context(object):
         cmd = 'del %s' % key
         self._execute(cmd)
 
-    def cleanup(self, all_other_contexts=False):
+    def cleanup(self, close=True, all_other_contexts=False):
         """ Delete keys that this context created from all the engines.
 
         If all_other_contexts is False (the default), then this
@@ -169,6 +169,8 @@ class Context(object):
                          if k.startswith('%s'):
                              del globals()[k]""" % (prefix)
         self._execute(cmd)
+        if close:
+            self.close()
 
     def dump_keys(self, all_other_contexts=False):
         """ Return a list of the key names present on the engines.

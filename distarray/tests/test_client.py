@@ -28,6 +28,9 @@ class TestDistArray(unittest.TestCase):
     def setUp(self):
         self.dac = Context()
 
+    def tearDown(self):
+        self.dac.cleanup()
+
     def test_set_and_getitem_block_dist(self):
         size = 10
         dap = self.dac.empty((size,), dist={0: 'b'})
@@ -115,6 +118,9 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
         self.context = Context()
+
+    def tearDown(self):
+        self.context.cleanup()
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
@@ -260,6 +266,9 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def setUp(self):
         self.context = Context()
+
+    def tearDown(self):
+        self.context.cleanup()
 
     def test___init__(self):
         shape = (100, 100)
