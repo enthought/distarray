@@ -1,0 +1,6 @@
+include Makefile
+include *.rst
+graft docs
+graft examples
+graft utils
+prune docs/build
