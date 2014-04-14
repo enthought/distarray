@@ -24,6 +24,23 @@ metadata = {
     'packages': find_packages(),
     'install_requires': install_requires,
     'long_description': open('README.rst').read(),
+    'url': 'https://github.com/enthought/distarray',
+    'license': 'BSD',
+    'platforms': ["Linux" "Mac OS-X"],
+    'classifiers': [c.strip() for c in """\
+        Development Status :: 2 - Pre-Alpha
+        Intended Audience :: Developers
+        Intended Audience :: Science/Research
+        License :: OSI Approved :: BSD License
+        Operating System :: MacOS
+        Operating System :: OS Independent
+        Operating System :: POSIX
+        Operating System :: Unix
+        Programming Language :: Python
+        Topic :: Scientific/Engineering
+        Topic :: Software Development
+        Topic :: Software Development :: Libraries
+        """.splitlines() if len(c.strip()) > 0],
 }
 
 setup(**metadata)
