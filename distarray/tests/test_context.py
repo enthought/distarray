@@ -77,7 +77,7 @@ class TestContextCreation(unittest.TestCase):
         ctx1 = Context(client, targets=shuffle(orig_targets[:]))
         ctx2 = Context(client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
-        ctx1.cleanup(close=False)
+        ctx1.cleanup()
         ctx2.cleanup()
 
     def test_create_delete_key(self):
@@ -110,7 +110,7 @@ class TestContextCreation(unittest.TestCase):
         num_keys3 = len(dac.dump_keys())
         self.assertGreater(num_keys3, num_keys1)
         # Cleanup the context
-        dac.cleanup(close=False)
+        dac.cleanup()
         # Key count should return to start.
         num_keys2 = len(context0.dump_keys(all_other_contexts=True))
         self.assertEqual(num_keys2, num_keys0)

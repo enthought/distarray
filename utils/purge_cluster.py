@@ -10,7 +10,9 @@ from __future__ import print_function
 
 import sys
 
-from distarray.context import Context
+from distarray.context import DISTARRAY_BASE_NAME, Context
+from distarray.cleanup import cleanup
+from distarray.ipython_utils import IPythonClient
 
 
 def dump():
@@ -22,12 +24,10 @@ def dump():
     for key, targets in keylist:
         print('%s : %r' % (key, targets))
 
-
-def purge():
+def purge(view, prefix):
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
-    context = Context()
-    context.cleanup(all_other_contexts=True)
+    cleanup(view=view, prefix=prefix)
 
 
 if __name__ == '__main__':
@@ -35,6 +35,8 @@ if __name__ == '__main__':
     if cmd == 'dump':
         dump()
     elif cmd == 'purge':
-        purge()
+        client = IPythonClient()
+        view = client[:]
+        purge(view, DISTARRAY_BASE_NAME)
     else:
         raise ValueError("%s command not found" % (cmd,))

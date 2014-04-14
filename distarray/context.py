@@ -10,14 +10,19 @@ communicate with localarrays.
 
 
 import uuid
-from distarray.externals import six
 import collections
+import atexit
 
 import numpy
 
+from distarray import cleanup
+from distarray.externals import six
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.ipython_utils import IPythonClient
+
+DISTARRAY_BASE_NAME = '__distarray__'
+atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
 
 
 class Context(object):
@@ -121,9 +126,10 @@ class Context(object):
         uid = uuid.uuid4()
         self.key_context = uid.hex[:16]
 
-    def _key_basename(self):
+    @staticmethod
+    def _key_basename():
         """ Get the base name for all keys. """
-        return '_distarray_key'
+        return DISTARRAY_BASE_NAME
 
     def _key_prefix(self):
         """ Generate a prefix for a key name for this context. """
@@ -146,31 +152,9 @@ class Context(object):
         cmd = 'del %s' % key
         self._execute(cmd)
 
-    def cleanup(self, close=True, all_other_contexts=False):
-        """ Delete keys that this context created from all the engines.
-
-        If all_other_contexts is False (the default), then this
-        deletes from the engines all the keys from only this context.
-        Otherwise, it deletes all keys from all other contexts.
-
-        """
-        # make the _comm_key invalid
-        self._comm_key = None
-        basename = self._key_basename()
-        prefix = self._key_prefix()
-        if all_other_contexts:
-            # Delete distarray keys from all contexts except this one.
-            cmd = """for k in list(globals().keys()):
-                         if (k.startswith('%s')) and (not k.startswith('%s')):
-                             del globals()[k]""" % (basename, prefix)
-        else:
-            # Delete keys only from this context.
-            cmd = """for k in list(globals().keys()):
-                         if k.startswith('%s'):
-                             del globals()[k]""" % (prefix)
-        self._execute(cmd)
-        if close:
-            self.close()
+    def cleanup(self):
+        """ Delete keys that this context created from all the engines. """
+        cleanup.cleanup(view=self.view, prefix=self._key_prefix())
 
     def dump_keys(self, all_other_contexts=False):
         """ Return a list of the key names present on the engines.
@@ -620,6 +604,3 @@ class Context(object):
         subs = (new_key, func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
         return DistArray.from_localarrays(new_key, self)
-
-    def close(self):
-        self.client.close()
