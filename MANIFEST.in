@@ -1,0 +1,4 @@
+include Makefile
+include *.rst
+graft docs
+prune docs/build
