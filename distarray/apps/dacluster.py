@@ -14,7 +14,6 @@ import argparse
 import sys
 
 from . import ipcluster_tools
-from . import purge_cluster
 
 
 def main():
@@ -85,8 +84,8 @@ def main():
     parser_stop.set_defaults(func=ipcluster_tools.stop)
     parser_restart.set_defaults(func=ipcluster_tools.restart)
     parser_clear.set_defaults(func=ipcluster_tools.clear)
-    parser_purge.set_defaults(func=purge_cluster.purge)
-    parser_dump.set_defaults(func=purge_cluster.dump)
+    parser_purge.set_defaults(func=ipcluster_tools.purge)
+    parser_dump.set_defaults(func=ipcluster_tools.dump)
 
     # run it
     args = parser.parse_args()

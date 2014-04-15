@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import sys
 from distarray.externals import six
+from distarray.context import Context
 from time import sleep
 from subprocess import Popen, PIPE
 
@@ -99,6 +100,22 @@ def clear(*args, **kwargs):
         print('    ' + mod)
     dv.clear()
 
+
+def dump(*args, **kwargs):
+    """ Print out key names that exist on the engines. """
+    context = Context()
+    keylist = context.dump_keys(all_other_contexts=True)
+    num_keys = len(keylist)
+    print('*** %d ENGINE KEYS ***' % (num_keys))
+    for key, targets in keylist:
+        print('%s : %r' % (key, targets))
+
+
+def purge(*args, **kwargs):
+    """ Remove keys from the engine namespaces. """
+    print('Purging keys from engines...')
+    context = Context()
+    context.cleanup(all_other_contexts=True)
 
 if __name__ == '__main__':
     cmd = sys.argv[1]
