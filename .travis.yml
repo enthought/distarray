@@ -23,11 +23,11 @@ install:
     - python setup.py install
     - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
 before_script:
-    - (cd $TRAVIS_BUILD_DIR && make setup_cluster)
+    - (cd $TRAVIS_BUILD_DIR && dacluster start)
 script:
     - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
 after_script:
-    - (cd $TRAVIS_BUILD_DIR && make teardown_cluster)
+    - (cd $TRAVIS_BUILD_DIR && dacluster stop)
 after_success:
     - coverage combine
     - coveralls

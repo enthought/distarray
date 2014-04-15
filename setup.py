@@ -27,6 +27,8 @@ metadata = {
     'url': 'https://github.com/enthought/distarray',
     'license': 'BSD',
     'platforms': ["Linux", "Mac OS-X"],
+    'entry_points': {'console_scripts': ['dacluster = '
+                                         'distarray.apps.dacluster:main']},
     'classifiers': [c.strip() for c in """\
         Development Status :: 2 - Pre-Alpha
         Intended Audience :: Developers
