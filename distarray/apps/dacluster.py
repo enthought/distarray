@@ -50,8 +50,8 @@ def main():
     """
 
     purge_description = """
-    Clear all the DistArray objects from the engines. This has a few
-    leaks.
+    Clear all the DistArray objects from the engines. This sometimes
+    fails to delete all keys.
     """
 
     dump_description = """
