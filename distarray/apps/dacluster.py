@@ -17,20 +17,13 @@ from . import ipcluster_tools
 from . import purge_cluster
 
 
-class ArgumentParser(argparse.ArgumentParser):
-    def error(self, message):
-        # We failed parsing the args, pass them directly to ipcluster
-        # to see if it can handle them.
-        ipcluster_tools.run_ipcluster(sys.argv[1:])
-
-
 def main():
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
     all the commands IPython's `ipcluster` can, and a few extras that are
     distarray specific.
     """
-    parser = ArgumentParser(description=main_description)
+    parser = argparse.ArgumentParser(description=main_description)
 
     # Print help if no command line args are supplied
     if len(sys.argv) == 1:

@@ -24,14 +24,6 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def run_ipcluster(*args, **kwargs):
-    """Takes a list of arguments to pass to ipcluster, then tries to
-    open it.
-    """
-    command = [ipcluster_cmd].extend(args)
-    Popen(command, stdout=PIPE, stderr=PIPE)
-
-
 def start(n=4, engines=None, *args, **kwargs):
     """Convenient way to start an ipcluster for testing.
 
