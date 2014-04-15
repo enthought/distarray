@@ -91,31 +91,6 @@ class TestContextCreation(unittest.TestCase):
         dac.delete_key(key)
         dac.cleanup()
 
-    # def test_purge_and_dump_keys(self):
-        # """ Check that we can get the existing keys and purge them. """
-        # # Get initial key count (probably 0).
-        # client = IPythonClient()
-        # context0 = Context(client)
-        # num_keys0 = len(context0.dump_keys(all_other_contexts=True))
-        # # Create a context get the count on the new context.
-        # dac = Context(client)
-        # num_keys1 = len(dac.dump_keys())
-        # # Create and push a key.
-        # key = dac._generate_key()
-        # dac._execute('%s = 42' % (key))
-        # # Size of list of keys should have grown, both from the
-        # # all other context, and just the one context, point of view.
-        # num_keys2 = len(context0.dump_keys(all_other_contexts=True))
-        # self.assertGreater(num_keys2, num_keys0)
-        # num_keys3 = len(dac.dump_keys())
-        # self.assertGreater(num_keys3, num_keys1)
-        # # Cleanup the context
-        # dac.cleanup()
-        # # Key count should return to start.
-        # num_keys2 = len(context0.dump_keys(all_other_contexts=True))
-        # self.assertEqual(num_keys2, num_keys0)
-        # context0.cleanup()
-
 
 class TestPrimeCluster(unittest.TestCase):
 
