@@ -39,7 +39,14 @@ class Context(object):
     '''
 
     def __init__(self, client=None, targets=None):
-        self.client = client if client is not None else IPythonClient()
+
+        if client is None:
+            self.client = IPythonClient()
+            self.owns_client = True
+        else:
+            self.client = client
+            self.owns_client = False
+
         self.view = self.client[:]
 
         all_targets = self.view.targets
@@ -156,47 +163,11 @@ class Context(object):
         """ Delete keys that this context created from all the engines. """
         cleanup.cleanup(view=self.view, prefix=self._key_prefix())
 
-    def dump_keys(self, all_other_contexts=False):
-        """ Return a list of the key names present on the engines.
-
-        If all_other_contexts is False (the default), then this
-        returns only the keys for this context.
-        Otherwise, it returns the keys for all other contexts.
-
-        The list is a list of tuples (key name, list of targets),
-        and is sorted by key name. This is intended to be convenient
-        and readable to print out.
-        """
-        dump_key = self._generate_key()
-        cmd = '%s = [k for k in globals().keys() if k.startswith("%s")]' % (
-            dump_key, self._key_basename())
-        self._execute(cmd)
-        keylists = self._pull(dump_key)
-        # The values returned by the engines are a nested list,
-        # the outer per engine, and the inner listing each key name.
-        # Convert to dict with key=key, value=list of targets.
-        engine_keys = {}
-        prefix = self._key_prefix()
-        for iengine, keylist in enumerate(keylists):
-            for key in keylist:
-                # Limit to the keys we care about.
-                if not all_other_contexts:
-                    # Skip keys not from this context.
-                    if not key.startswith(prefix):
-                        continue
-                else:
-                    # Skip keys from this context.
-                    if key.startswith(prefix):
-                        continue
-                if key not in engine_keys:
-                    engine_keys[key] = []
-                engine_keys[key].append(self.targets[iengine])
-        # Convert to sorted list of tuples (key name, list of targets).
-        keylist = []
-        for key in sorted(engine_keys.keys()):
-            targets = engine_keys[key]
-            keylist.append((key, targets))
-        return keylist
+    def close(self):
+        self.cleanup()
+        if self.owns_client:
+            self.client.close()
+        self._comm_key = None
 
     # End of key management routines.
 

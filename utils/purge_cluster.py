@@ -10,18 +10,17 @@ from __future__ import print_function
 
 import sys
 
-from distarray.context import DISTARRAY_BASE_NAME, Context
-from distarray.cleanup import cleanup
+from distarray.context import DISTARRAY_BASE_NAME
+from distarray.cleanup import cleanup, get_local_keys
 from distarray.ipython_utils import IPythonClient
 
 
-def dump():
+def dump(view, prefix):
     """ Print out key names that exist on the engines. """
-    context = Context()
-    keylist = context.dump_keys(all_other_contexts=True)
-    num_keys = len(keylist)
+    targets_from_key = get_local_keys(view, prefix)
+    num_keys = len(targets_from_key)
     print('*** %d ENGINE KEYS ***' % (num_keys))
-    for key, targets in keylist:
+    for key, targets in sorted(targets_from_key):
         print('%s : %r' % (key, targets))
 
 def purge(view, prefix):
@@ -32,11 +31,12 @@ def purge(view, prefix):
 
 if __name__ == '__main__':
     cmd = sys.argv[1]
+    client = IPythonClient()
+    view = client[:]
+    prefix = DISTARRAY_BASE_NAME
     if cmd == 'dump':
-        dump()
+        dump(view, prefix)
     elif cmd == 'purge':
-        client = IPythonClient()
-        view = client[:]
-        purge(view, DISTARRAY_BASE_NAME)
+        purge(view, prefix)
     else:
         raise ValueError("%s command not found" % (cmd,))
