@@ -4,7 +4,7 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-from ipython_utils import IPythonClient
+from distarray.ipython_utils import IPythonClient
 
 
 def cleanup(view, prefix):

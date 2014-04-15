@@ -102,7 +102,7 @@ def clear(**kwargs):
     view = c[:]
 
     result = view.apply_async(clear_engine).get_dict()
-    nmods = len(result.values()[0])
+    nmods = len(list(result.values())[0])
 
     msg = "*** Removing %d distarray modules from engines' namespace. ***"
     print(msg % nmods)
