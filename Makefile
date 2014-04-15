@@ -29,9 +29,6 @@ MPI_EXEC_CMD = (${MPIEXEC} ${MPIEXEC_ARGS} ${PARALLEL_TEST} ; OUT=$$? ; \
 			   for f in ${MPI_OUT_PREFIX}* ; do echo "====> " $$f ; cat $$f ; done ; \
 			   exit $$OUT)
 
-IPCLUSTER_SCRIPT := utils/ipcluster.py
-PURGE_SCRIPT := utils/purge_cluster.py
-
 # default number of engines to use.
 NENGINES := 4
 
@@ -52,7 +49,7 @@ install:
 # ----------------------------------------------------------------------------
 
 test_client:
-	${PYTHON} -m unittest discover -v
+	${PYTHON} -m unittest discover
 .PHONY: test_client
 
 test_client_with_coverage:
@@ -86,34 +83,6 @@ coverage_report:
 	${COVERAGE} combine
 	${COVERAGE} html
 .PHONY: coverage_report
-
-# ----------------------------------------------------------------------------
-#  Cluster management
-# ----------------------------------------------------------------------------
-
-setup_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} start ${NENGINES}
-.PHONY: setup_cluster
-
-restart_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} restart ${NENGINES}
-.PHONY: restart_cluster
-
-teardown_cluster:
-	${PYTHON} ${IPCLUSTER_SCRIPT} stop
-.PHONY: teardown_cluster
-
-clear_distarray:
-	${PYTHON} ${IPCLUSTER_SCRIPT} reset
-.PHONY: clear_distarray
-
-purge_cluster:
-	${PYTHON} ${PURGE_SCRIPT} purge
-.PHONY: purge_cluster
-
-dump_cluster:
-	${PYTHON} ${PURGE_SCRIPT} dump
-.PHONY: dump_cluster
 
 # ----------------------------------------------------------------------------
 #  Cleanup.
