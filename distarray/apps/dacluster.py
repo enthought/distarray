@@ -17,6 +17,8 @@ import sys
 from time import sleep
 from subprocess import Popen, PIPE
 
+from IPython.parallel import Client
+
 from distarray.externals import six
 from distarray.context import DISTARRAY_BASE_NAME
 from distarray.cleanup import cleanup, get_local_keys
@@ -84,31 +86,30 @@ def restart(n=4, engines=None, **kwargs):
         else:
             started = True
 
-_RESET_ENGINE_DISTARRAY = '''
-from sys import modules
-orig_mods = set(modules)
-for m in modules.copy():
-    if m.startswith('distarray'):
-        del modules[m]
-deleted_mods = sorted(orig_mods - set(modules))
-'''
-
 
 def clear(**kwargs):
-    from IPython.parallel import Client
+    """ Removes all distarray-related modules from engines' sys.modules."""
+
+    def clear_engine():
+        from sys import modules
+        orig_mods = set(modules)
+        for m in modules.copy():
+            if m.startswith('distarray'):
+                del modules[m]
+        return sorted(orig_mods - set(modules))
+
     c = Client()
-    dv = c[:]
-    dv.execute(_RESET_ENGINE_DISTARRAY, block=True)
-    mods = dv['deleted_mods']
-    print("The following modules were removed from the engines' namespaces:")
-    for mod in mods[0]:
-        print('    ' + mod)
-    dv.clear()
+    view = c[:]
+
+    result = view.apply_async(clear_engine).get_dict()
+    nmods = len(result.values()[0])
+
+    msg = "*** Removing %d distarray modules from engines' namespace. ***"
+    print(msg % nmods)
 
 
 def dump(**kwargs):
     """ Print out key names that exist on the engines. """
-    from IPython.parallel import Client
     c = Client()
     view = c[:]
     targets_from_key = get_local_keys(view=view, prefix=DISTARRAY_BASE_NAME)
@@ -121,7 +122,6 @@ def dump(**kwargs):
 def purge(**kwargs):
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
-    from IPython.parallel import Client
     c = Client()
     view = c[:]
     cleanup(view=view, prefix=DISTARRAY_BASE_NAME)
