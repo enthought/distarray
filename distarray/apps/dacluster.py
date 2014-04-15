@@ -20,7 +20,8 @@ def main():
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
     all the commands IPython's `ipcluster` can, and a few extras that are
-    distarray specific.
+    distarray specific. For details on a subcommand, try `dacluster
+    <subcommand> --help`.
     """
     parser = argparse.ArgumentParser(description=main_description)
 
