@@ -46,3 +46,27 @@ def get_local_keys(view, prefix):
             targets_from_key.setdefault(key, []).append(target)
     
     return targets_from_key
+
+def clear(view):
+    """ Removes all distarray-related modules from engines' sys.modules."""
+
+    def clear_engine():
+        from sys import modules
+        orig_mods = set(modules)
+        for m in modules.copy():
+            if m.startswith('distarray'):
+                del modules[m]
+        return sorted(orig_mods - set(modules))
+
+    view.apply_async(clear_engine)
+
+def clear_all():
+    try:
+        c = IPythonClient()
+    except IOError:  # If we can't create a client, return silently.
+        return
+    try:
+        v = c[:]
+        clear(v)
+    finally:
+        c.close()

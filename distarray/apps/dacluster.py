@@ -87,46 +87,6 @@ def restart(n=4, engines=None, **kwargs):
             started = True
 
 
-def clear(**kwargs):
-    """ Removes all distarray-related modules from engines' sys.modules."""
-
-    def clear_engine():
-        from sys import modules
-        orig_mods = set(modules)
-        for m in modules.copy():
-            if m.startswith('distarray'):
-                del modules[m]
-        return sorted(orig_mods - set(modules))
-
-    c = Client()
-    view = c[:]
-
-    result = view.apply_async(clear_engine).get_dict()
-    nmods = len(list(result.values())[0])
-
-    msg = "*** Removing %d distarray modules from engines' namespace. ***"
-    print(msg % nmods)
-
-
-def dump(**kwargs):
-    """ Print out key names that exist on the engines. """
-    c = Client()
-    view = c[:]
-    targets_from_key = get_local_keys(view=view, prefix=DISTARRAY_BASE_NAME)
-    num_keys = len(targets_from_key)
-    print('*** %d ENGINE KEYS ***' % (num_keys))
-    for key, targets in sorted(targets_from_key):
-        print('%s : %r' % (key, targets))
-
-
-def purge(**kwargs):
-    """ Remove keys from the engine namespaces. """
-    print('Purging keys from engines...')
-    c = Client()
-    view = c[:]
-    cleanup(view=view, prefix=DISTARRAY_BASE_NAME)
-
-
 def main():
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
@@ -155,31 +115,12 @@ def main():
     Restart a IPython.parallel cluster.
     """
 
-    clear_description = """
-    Clear the namespace and imports on the cluster. This should be the
-    same as restarting the engines, but faster.
-    """
-
-    purge_description = """
-    Clear all the DistArray objects from the engines. This sometimes
-    fails to delete all keys.
-    """
-
-    dump_description = """
-    Print out key names that exist on the engines.
-    """
-
     # subparses for all our commands
     parser_start = subparsers.add_parser('start',
                                          description=start_description)
     parser_stop = subparsers.add_parser('stop', description=stop_description)
     parser_restart = subparsers.add_parser('restart',
                                            description=restart_description)
-    parser_clear = subparsers.add_parser('clear',
-                                         description=clear_description)
-    parser_purge = subparsers.add_parser('purge',
-                                         description=purge_description)
-    parser_dump = subparsers.add_parser('dump', description=dump_description)
 
     engine_help = """
     Number of engines to start.
@@ -195,9 +136,6 @@ def main():
     parser_start.set_defaults(func=start)
     parser_stop.set_defaults(func=stop)
     parser_restart.set_defaults(func=restart)
-    parser_clear.set_defaults(func=clear)
-    parser_purge.set_defaults(func=purge)
-    parser_dump.set_defaults(func=dump)
 
     # run it
     args = parser.parse_args()

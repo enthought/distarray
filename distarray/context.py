@@ -23,6 +23,7 @@ from distarray.ipython_utils import IPythonClient
 
 DISTARRAY_BASE_NAME = '__distarray__'
 atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
+atexit.register(cleanup.clear_all)
 
 
 class Context(object):
