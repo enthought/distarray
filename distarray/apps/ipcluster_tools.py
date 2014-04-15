@@ -25,7 +25,7 @@ else:
     raise NotImplementedError("Not run with Python 2 *or* 3?")
 
 
-def start(n=4, engines=None, *args, **kwargs):
+def start(n=4, engines=None, **kwargs):
     """Convenient way to start an ipcluster for testing.
 
     Doesn't exit until the ipcluster prints a success message.
@@ -49,7 +49,7 @@ def start(n=4, engines=None, *args, **kwargs):
             raise RuntimeError("ipcluster is already running.")
 
 
-def stop(*args, **kwargs):
+def stop(**kwargs):
     """Convenient way to stop an ipcluster."""
     stopping = Popen([ipcluster_cmd, 'stop'], stdout=PIPE, stderr=PIPE)
 
@@ -65,7 +65,7 @@ def stop(*args, **kwargs):
             break
 
 
-def restart(n=4, engines=None, *args, **kwargs):
+def restart(n=4, engines=None, **kwargs):
     """Convenient way to restart an ipcluster."""
     stop()
 
@@ -89,7 +89,7 @@ deleted_mods = sorted(orig_mods - set(modules))
 '''
 
 
-def clear(*args, **kwargs):
+def clear(**kwargs):
     from IPython.parallel import Client
     c = Client()
     dv = c[:]
@@ -101,7 +101,7 @@ def clear(*args, **kwargs):
     dv.clear()
 
 
-def dump(*args, **kwargs):
+def dump(**kwargs):
     """ Print out key names that exist on the engines. """
     context = Context()
     keylist = context.dump_keys(all_other_contexts=True)
@@ -111,7 +111,7 @@ def dump(*args, **kwargs):
         print('%s : %r' % (key, targets))
 
 
-def purge(*args, **kwargs):
+def purge(**kwargs):
     """ Remove keys from the engine namespaces. """
     print('Purging keys from engines...')
     context = Context()
