@@ -36,6 +36,7 @@ from distarray.metadata_utils import (normalize_dist,
                                       make_grid_shape,
                                       validate_grid_shape)
 
+
 def _compactify_dicts(dicts):
     """ Internal helper function to take a list of dimension dictionaries with
     duplicates and remove the dupes.
@@ -54,6 +55,7 @@ def _compactify_dicts(dicts):
                 result.append(d)
         return result
 
+
 # ---------------------------------------------------------------------------
 # Functions for creating Map objects
 # ---------------------------------------------------------------------------
@@ -61,11 +63,11 @@ def _compactify_dicts(dicts):
 def choose_map(dist_type):
     """Choose a map classe given one of the distribution types."""
     cls_from_dist_type = {
-            'b': BlockMap,
-            'c': BlockCyclicMap,
-            'n': NoDistMap,
-            'u': UnstructuredMap,
-            }
+        'b': BlockMap,
+        'c': BlockCyclicMap,
+        'n': NoDistMap,
+        'u': UnstructuredMap,
+        }
     if dist_type not in cls_from_dist_type:
         raise ValueError("unknown distribution type for %r" % dist_type)
     return cls_from_dist_type[dist_type]
@@ -185,11 +187,12 @@ class NoDistMap(MapBase):
         return [0] if idx >= 0 and idx < self.size else []
 
     def get_dimdicts(self):
-        return ({'dist_type' : 'n',
-                'size' : self.size,
-                'proc_grid_size' : 1,
-                'proc_grid_rank' : 0,
-                },)
+        return ({
+            'dist_type': 'n',
+            'size': self.size,
+            'proc_grid_size': 1,
+            'proc_grid_rank': 0,
+            },)
 
 
 class BlockMap(MapBase):
@@ -229,8 +232,8 @@ class BlockMap(MapBase):
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), self.grid_size))
         self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
-        self.boundary_padding, self.comm_padding = dd.get('padding', (0,0))
-        
+        self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
+
         return self
 
     def __init__(self, size, grid_size):
@@ -254,14 +257,19 @@ class BlockMap(MapBase):
         padding[0][0] = self.boundary_padding
         padding[-1][-1] = self.boundary_padding
         data_tuples = zip(grid_ranks, padding, self.bounds)
-        return tuple(({'dist_type' : 'b',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'start' : start,
-                        'stop' : stop,
-                        'padding': padding,
-                        }) for grid_rank, padding, (start, stop) in data_tuples)
+        # Build the result
+        out = []
+        for grid_rank, padding, (start, stop) in data_tuples:
+            out.append({
+                'dist_type': 'b',
+                'size': self.size,
+                'proc_grid_size': self.grid_size,
+                'proc_grid_rank': grid_rank,
+                'start': start,
+                'stop': stop,
+                'padding': padding,
+                })
+        return tuple(out)
 
 
 class BlockCyclicMap(MapBase):
@@ -303,11 +311,11 @@ class BlockCyclicMap(MapBase):
         return [idx_block % self.grid_size]
 
     def get_dimdicts(self):
-        return tuple(({'dist_type' : 'c',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'start' : grid_rank * self.block_size,
+        return tuple(({'dist_type': 'c',
+                        'size': self.size,
+                        'proc_grid_size': self.grid_size,
+                        'proc_grid_rank': grid_rank,
+                        'start': grid_rank * self.block_size,
                         'block_size': self.block_size,
                         }) for grid_rank in range(self.grid_size))
 
@@ -321,10 +329,10 @@ class UnstructuredMap(MapBase):
         if glb_dim_dict['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        indices_sequence = tuple(np.asarray(ind) for ind in glb_dim_dict['indices'])
-        size = sum(len(ii) for ii in indices_sequence)
-        grid_size = len(indices_sequence)
-        return cls(size, grid_size, indices=indices_sequence)
+        indices = tuple(np.asarray(i) for i in glb_dim_dict['indices'])
+        size = sum(len(i) for i in indices)
+        grid_size = len(indices)
+        return cls(size, grid_size, indices=indices)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -359,12 +367,13 @@ class UnstructuredMap(MapBase):
     def get_dimdicts(self):
         if self.indices is None:
             raise ValueError()
-        return tuple(({'dist_type' : 'u',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'indices' : ii,
-                        }) for grid_rank, ii in enumerate(self.indices))
+        return tuple(({
+            'dist_type': 'u',
+            'size': self.size,
+            'proc_grid_size': self.grid_size,
+            'proc_grid_rank': grid_rank,
+            'indices': ii,
+            }) for grid_rank, ii in enumerate(self.indices))
 
 
 # ---------------------------------------------------------------------------
@@ -411,7 +420,7 @@ class Distribution(object):
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
-        self.rank_from_coords = { c: r for (r, c) in enumerate(coords)}
+        self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
 
         dim_data_per_dim = [_compactify_dicts(dict_tuple)
                             for dict_tuple in zip(*dim_datas)]
