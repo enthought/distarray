@@ -42,7 +42,7 @@ def client_map_factory(size, dist, grid_size):
     """
     cls_from_dist = {
             'b': BlockMap,
-            'c': ClientBlockCyclicMap,
+            'c': BlockCyclicMap,
             'n': NoDistMap,
             'u': ClientUnstructuredMap,
             }
@@ -190,7 +190,7 @@ class BlockMap(MapBase):
                         }) for grid_rank, padding, (start, stop) in data_tuples)
 
 
-class ClientBlockCyclicMap(MapBase):
+class BlockCyclicMap(MapBase):
 
     dist = 'c'
 
@@ -341,7 +341,7 @@ def map_from_dim_datas(dim_datas):
     dist_type = dim_datas[0]['dist_type']
     selector = {'n': NoDistMap.from_dim_data,
                 'b': BlockMap.from_dim_data,
-                'c': ClientBlockCyclicMap.from_dim_data,
+                'c': BlockCyclicMap.from_dim_data,
                 'u': ClientUnstructuredMap.from_dim_data}
     if dist_type not in selector:
         raise ValueError("Unknown dist_type %r" % dist_type)
@@ -352,7 +352,7 @@ def map_from_global_dim_dict(global_dim_dict):
     dist_type = global_dim_dict['dist_type']
     selector = {'n': NoDistMap.from_global_dim_dict,
                 'b': BlockMap.from_global_dim_dict,
-                'c': ClientBlockCyclicMap.from_global_dim_dict,
+                'c': BlockCyclicMap.from_global_dim_dict,
                 'u': ClientUnstructuredMap.from_global_dim_dict,
                 }
     if dist_type not in selector:
