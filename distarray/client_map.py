@@ -5,15 +5,15 @@
 # ---------------------------------------------------------------------------
 
 """
-ClientMDMap class and auxiliary ClientMap classes.
+Distribution class and auxiliary ClientMap classes.
 
-The ClientMDMap is a multi-dimensional map class that manages the
-one-dimensional maps for each DistArray dimension.  The ClientMDMap class
+The Distribution is a multi-dimensional map class that manages the
+one-dimensional maps for each DistArray dimension.  The Distribution class
 represents the *distribution* information for a distributed array, independent
-of the distributed array's *data*. ClientMDMaps allow DistArrays to reduce
+of the distributed array's *data*. Distributions allow DistArrays to reduce
 overall communication when indexing and slicing by determining which processes
 own (or may possibly own) the indices in question.  Two DistArray objects can
-share the same ClientMDMap if they have the exact same distribution.
+share the same Distribution if they have the exact same distribution.
 
 The one-dimensional ClientMap classes keep track of which process owns which
 index in that dimension.  This class has several subclasses for specific
@@ -360,7 +360,7 @@ def map_from_global_dim_dict(global_dim_dict):
     return selector[dist_type](global_dim_dict)
 
 
-class ClientMDMap(object):
+class Distribution(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
 
@@ -385,7 +385,7 @@ class ClientMDMap(object):
 
     @classmethod
     def from_dim_data(cls, context, dim_datas):
-        """ Creates a ClientMDMap from a sequence of `dim_data` dictionary
+        """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
         """
 
