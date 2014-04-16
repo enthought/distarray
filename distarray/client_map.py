@@ -117,6 +117,10 @@ def map_from_sizes(size, dist_type, grid_size):
     return map_class(size, grid_size)
 
 
+# ---------------------------------------------------------------------------
+# Map classes
+# ---------------------------------------------------------------------------
+
 @add_metaclass(ABCMeta)
 class MapBase(object):
     """ Base class for one-dimensional client-side maps.
@@ -140,6 +144,10 @@ class MapBase(object):
         """
         raise IndexError()
 
+
+# ---------------------------------------------------------------------------
+# 1-D Map classes
+# ---------------------------------------------------------------------------
 
 class NoDistMap(MapBase):
 
@@ -359,7 +367,9 @@ class UnstructuredMap(MapBase):
                         }) for grid_rank, ii in enumerate(self.indices))
 
 
-
+# ---------------------------------------------------------------------------
+# N-Dimensional map.
+# ---------------------------------------------------------------------------
 
 class Distribution(object):
     """ Governs the mapping between global indices and process ranks for
