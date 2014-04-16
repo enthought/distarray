@@ -38,7 +38,7 @@ from distarray.metadata_utils import (normalize_dist,
 
 
 def client_map_factory(size, dist, grid_size):
-    """ Returns an instance of the appropriate subclass of ClientMapBase.
+    """ Returns an instance of the appropriate subclass of MapBase.
     """
     cls_from_dist = {
             'b': ClientBlockMap,
@@ -52,14 +52,14 @@ def client_map_factory(size, dist, grid_size):
 
 
 @add_metaclass(ABCMeta)
-class ClientMapBase(object):
+class MapBase(object):
     """ Base class for one-dimensional client-side maps.
 
     Maps keep track of the relevant distribution information for a single
     dimension of a distributed array.  Maps allow distributed arrays to keep
     track of which process to talk to when indexing and slicing.
 
-    Classes that inherit from `ClientMapBase` must implement the `owners()`
+    Classes that inherit from `MapBase` must implement the `owners()`
     abstractmethod.
 
     """
@@ -75,7 +75,7 @@ class ClientMapBase(object):
         raise IndexError()
 
 
-class ClientNoDistMap(ClientMapBase):
+class ClientNoDistMap(MapBase):
 
     dist = 'n'
 
@@ -118,7 +118,7 @@ class ClientNoDistMap(ClientMapBase):
                 },)
 
 
-class ClientBlockMap(ClientMapBase):
+class ClientBlockMap(MapBase):
 
     dist = 'b'
 
@@ -190,7 +190,7 @@ class ClientBlockMap(ClientMapBase):
                         }) for grid_rank, padding, (start, stop) in data_tuples)
 
 
-class ClientBlockCyclicMap(ClientMapBase):
+class ClientBlockCyclicMap(MapBase):
 
     dist = 'c'
 
@@ -238,7 +238,7 @@ class ClientBlockCyclicMap(ClientMapBase):
                         }) for grid_rank in range(self.grid_size))
 
 
-class ClientUnstructuredMap(ClientMapBase):
+class ClientUnstructuredMap(MapBase):
 
     dist = 'u'
 
@@ -327,7 +327,7 @@ def map_from_dim_datas(dim_datas):
 
     Returns
     -------
-        An instance of a subclass of ClientMapBase.
+        An instance of a subclass of MapBase.
 
     """
     # check that all proccesses / ranks are accounted for.
