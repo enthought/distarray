@@ -43,7 +43,7 @@ def client_map_factory(size, dist, grid_size):
     cls_from_dist = {
             'b': ClientBlockMap,
             'c': ClientBlockCyclicMap,
-            'n': ClientNoDistMap,
+            'n': NoDistMap,
             'u': ClientUnstructuredMap,
             }
     if dist not in cls_from_dist:
@@ -75,7 +75,7 @@ class MapBase(object):
         raise IndexError()
 
 
-class ClientNoDistMap(MapBase):
+class NoDistMap(MapBase):
 
     dist = 'n'
 
@@ -103,7 +103,7 @@ class ClientNoDistMap(MapBase):
 
     def __init__(self, size, grid_size):
         if grid_size != 1:
-            msg = "grid_size for ClientNoDistMap must be 1 (given %s)"
+            msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
 
@@ -339,7 +339,7 @@ def map_from_dim_datas(dim_datas):
     dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
 
     dist_type = dim_datas[0]['dist_type']
-    selector = {'n': ClientNoDistMap.from_dim_data,
+    selector = {'n': NoDistMap.from_dim_data,
                 'b': ClientBlockMap.from_dim_data,
                 'c': ClientBlockCyclicMap.from_dim_data,
                 'u': ClientUnstructuredMap.from_dim_data}
@@ -350,7 +350,7 @@ def map_from_dim_datas(dim_datas):
 def map_from_global_dim_dict(global_dim_dict):
 
     dist_type = global_dim_dict['dist_type']
-    selector = {'n': ClientNoDistMap.from_global_dim_dict,
+    selector = {'n': NoDistMap.from_global_dim_dict,
                 'b': ClientBlockMap.from_global_dim_dict,
                 'c': ClientBlockCyclicMap.from_global_dim_dict,
                 'u': ClientUnstructuredMap.from_global_dim_dict,
