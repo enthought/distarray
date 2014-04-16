@@ -44,7 +44,7 @@ def client_map_factory(size, dist, grid_size):
             'b': BlockMap,
             'c': BlockCyclicMap,
             'n': NoDistMap,
-            'u': ClientUnstructuredMap,
+            'u': UnstructuredMap,
             }
     if dist not in cls_from_dist:
         raise ValueError("unknown distribution type for %r" % dist)
@@ -238,7 +238,7 @@ class BlockCyclicMap(MapBase):
                         }) for grid_rank in range(self.grid_size))
 
 
-class ClientUnstructuredMap(MapBase):
+class UnstructuredMap(MapBase):
 
     dist = 'u'
 
@@ -342,7 +342,7 @@ def map_from_dim_datas(dim_datas):
     selector = {'n': NoDistMap.from_dim_data,
                 'b': BlockMap.from_dim_data,
                 'c': BlockCyclicMap.from_dim_data,
-                'u': ClientUnstructuredMap.from_dim_data}
+                'u': UnstructuredMap.from_dim_data}
     if dist_type not in selector:
         raise ValueError("Unknown dist_type %r" % dist_type)
     return selector[dist_type](dim_datas)
@@ -353,7 +353,7 @@ def map_from_global_dim_dict(global_dim_dict):
     selector = {'n': NoDistMap.from_global_dim_dict,
                 'b': BlockMap.from_global_dim_dict,
                 'c': BlockCyclicMap.from_global_dim_dict,
-                'u': ClientUnstructuredMap.from_global_dim_dict,
+                'u': UnstructuredMap.from_global_dim_dict,
                 }
     if dist_type not in selector:
         raise ValueError("Unknown dist_type %r" % dist_type)
