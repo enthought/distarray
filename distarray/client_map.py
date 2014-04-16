@@ -41,7 +41,7 @@ def client_map_factory(size, dist, grid_size):
     """ Returns an instance of the appropriate subclass of MapBase.
     """
     cls_from_dist = {
-            'b': ClientBlockMap,
+            'b': BlockMap,
             'c': ClientBlockCyclicMap,
             'n': NoDistMap,
             'u': ClientUnstructuredMap,
@@ -118,7 +118,7 @@ class NoDistMap(MapBase):
                 },)
 
 
-class ClientBlockMap(MapBase):
+class BlockMap(MapBase):
 
     dist = 'b'
 
@@ -340,7 +340,7 @@ def map_from_dim_datas(dim_datas):
 
     dist_type = dim_datas[0]['dist_type']
     selector = {'n': NoDistMap.from_dim_data,
-                'b': ClientBlockMap.from_dim_data,
+                'b': BlockMap.from_dim_data,
                 'c': ClientBlockCyclicMap.from_dim_data,
                 'u': ClientUnstructuredMap.from_dim_data}
     if dist_type not in selector:
@@ -351,7 +351,7 @@ def map_from_global_dim_dict(global_dim_dict):
 
     dist_type = global_dim_dict['dist_type']
     selector = {'n': NoDistMap.from_global_dim_dict,
-                'b': ClientBlockMap.from_global_dim_dict,
+                'b': BlockMap.from_global_dim_dict,
                 'c': ClientBlockCyclicMap.from_global_dim_dict,
                 'u': ClientUnstructuredMap.from_global_dim_dict,
                 }
