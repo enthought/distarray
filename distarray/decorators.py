@@ -11,9 +11,28 @@ Decorators for defining functions that use `DistArrays`.
 import functools
 
 from distarray.client import DistArray
-from distarray.context import Context
+from distarray.context import Context, DISTARRAY_BASE_NAME
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
+
+def _rpc(func, args, kwargs, result_key):
+
+    args = list(args)
+    for idx, a in enumerate(args):
+        if isinstance(a, basestring):
+            if a.startswith(DISTARRAY_BASE_NAME):
+                args[idx] = eval(a)
+
+    for k, v in kwargs.items():
+        if isinstance(v, basestring):
+            if v.startswith(DISTARRAY_BASE_NAME):
+                kwargs[k] = eval(v)
+
+    res = func(*args, **kwargs)
+    if isinstance(res, LocalArray):
+        globals()[result_key] = res
+        res = result_key
+    return res
 
 
 class DecoratorBase(object):
@@ -22,41 +41,30 @@ class DecoratorBase(object):
     decorator to take an optional kwarg.
     """
 
-    def __init__(self, fn):
+    def __init__(self, fn, context):
         self.fn = fn
         self.fn_key = self.fn.__name__
         functools.update_wrapper(self, fn)
-        self.context = None
+        self.context = context
+        self.push_fn()
 
-    def push_fn(self, context, fn_key, fn):
+    def push_fn(self):
         """Push function to the engines."""
-        context._push({fn_key: fn})
+        self.context._push({self.fn_key: self.fn})
 
-    def determine_context(self, args, kwargs):
+    def check_contexts(self, args, kwargs):
         """ Determine a context from a functions arguments."""
 
-        contexts = []
         # inspect args for a context
         for arg in args + tuple(kwargs.values()):
             if isinstance(arg, DistArray):
-                contexts.append(arg.context)
-            elif isinstance(arg, Context):
-                contexts.append(arg)
+                if arg.context != self.context:
+                    msg = "DistArray %r not in same context as registered function %r."
+                    raise ContextError(msg % (arg, self.fn))
 
-        # check the args had a context
-        if contexts == []:
-            raise TypeError('Function must take DistArray or Context objects.')
+        return self.context
 
-        # check that all contexts are equal
-        if not contexts.count(contexts[0]) == len(contexts):
-            msg = ("Arguments must use the same Context (given arguments of "
-                   "type %r)")
-            msg %= (tuple(set(contexts)),)
-            raise ContextError(msg)
-
-        return contexts[0]
-
-    def key_and_push_args(self, args, kwargs, context=None, da_handler=None):
+    def build_args(self, args, kwargs):
         """
         Push a tuple of args and dict of kwargs to the engines. Return a
         tuple with keys corresponding to args values on the engines. And a
@@ -73,46 +81,19 @@ class DecoratorBase(object):
         >>>     context.execute(exec_str)
         """
 
-        if context is None:
-            context = self.determine_context(args, kwargs)
-
-        # handle positional arguments
-        arg_keys = []
-        push_keys = {}
-        for arg in args:
+        args = list(args)
+        for idx, arg in enumerate(args):
             if isinstance(arg, DistArray):
-                if da_handler is None:
-                    arg_keys.append(arg.key)
-                # da_handler handles distarrays.
-                else:
-                    arg_keys = da_handler(arg, arg_keys)
-            else:
-                new_key = context._generate_key()
-                arg_keys.append(new_key)
-                push_keys[new_key] = arg
+                args[idx] = arg.key
 
         # handle key word arguments
-        for kw in kwargs:
-            if isinstance(kwargs[kw], DistArray):
-                kwargs[kw] = kwargs[kw].key
-            else:
-                new_key = context._generate_key()
-                push_keys[new_key] = kwargs[kw]
-                kwargs[kw] = new_key
+        for k, v in kwargs.items():
+            if isinstance(v, DistArray):
+                kwargs[k] = v.key
 
-        # push the keys to the engines
-        context._push(push_keys)
+        return args, kwargs
 
-        # build arg string
-        arg_str = '(' + ', '.join(arg_keys) + ',)'
-
-        # build kwarg string
-        kwarg_iter = ["'%s': %s" % (k, v) for (k, v) in kwargs.items()]
-        kwarg_str = '{' + ', '.join(kwarg_iter) + '}'
-
-        return arg_str, kwarg_str
-
-    def process_return_value(self, context, result_key):
+    def process_return_value(self, result_from_target):
         """Figure out what to return on the Client.
 
         Parameters
@@ -128,28 +109,22 @@ class DecoratorBase(object):
             client and return it.  If all but one of the pulled values is None,
             return that non-None value only.
         """
-        type_key = context._generate_key()
-        type_statement = "{} = str(type({}))".format(type_key, result_key)
-        context._execute(type_statement)
-        result_type_str = context._pull(type_key)
+        # type_key = self.context._generate_key()
+        # type_statement = "{} = str(type({}))".format(type_key, result_key)
+        # context._execute(type_statement)
+        # result_type_str = context._pull(type_key)
 
-        def is_NoneType(typestring):
-            return (typestring == "<type 'NoneType'>" or
-                    typestring == "<class 'NoneType'>")
+        results = list(result_from_target.values())
 
-        def is_LocalArray(typestring):
-            return (typestring == "<class 'distarray.local.localarray."
-                                  "LocalArray'>")
-
-        if all(is_LocalArray(r) for r in result_type_str):
-            result = DistArray.from_localarrays(result_key, context)
-        elif all(is_NoneType(r) for r in result_type_str):
+        if all(isinstance(r, basestring) and r.startswith(DISTARRAY_BASE_NAME)
+                for r in results):
+            result = DistArray.from_localarrays(results[0], self.context)
+        elif all(r is None for r in results):
             result = None
         else:
-            result = context._pull(result_key)
-            if has_exactly_one(result):
-                result = next(x for x in result if x is not None)
-
+            non_nones = [r for r in results if r is not None]
+            if len(non_nones) == 1:
+                result = non_nones[0]
         return result
 
 
@@ -159,21 +134,13 @@ class local(DecoratorBase):
     def __call__(self, *args, **kwargs):
         # get context from args
         context = self.determine_context(args, kwargs)
-        # push function
-        self.push_fn(context, self.fn_key, self.fn)
-
-        args, kwargs = self.key_and_push_args(args, kwargs,
-                                              context=context)
+        args, kwargs = self.build_args(args, kwargs)
         result_key = context._generate_key()
-
-        exec_str = "%s = %s(*%s, **%s)"
-        exec_str %= (result_key, self.fn_key, args, kwargs)
-        context._execute(exec_str)
-
-        return self.process_return_value(context, result_key)
+        results = context.view.apply_async(_rpc, self.func, args, kwargs, result_key).get_dict()
+        return self.process_return_value(results)
 
 
-class vectorize(DecoratorBase):
+class _vectorize(DecoratorBase):
     """
     Analogous to numpy.vectorize. Input DistArray's must all be the
     same shape, and this will be the shape of the output distarray.

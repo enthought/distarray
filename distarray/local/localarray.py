@@ -29,6 +29,12 @@ from distarray.local import construct, format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
+def _rpc(payload):
+    funcname, args, kwargs = payload
+    func = globals()[funcname]
+    return func(*args, **kwargs)
+
+
 def _start_stop_block(size, proc_grid_size, proc_grid_rank):
     nelements = size // proc_grid_size
     if size % proc_grid_size != 0:

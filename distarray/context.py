@@ -109,6 +109,11 @@ class Context(object):
             block=True
         )
 
+    # Function registration.
+
+    def register(self, func):
+        setattr(self, func.__name__, func)
+
     # Key management routines:
 
     def _setup_key_context(self):
