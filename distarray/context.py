@@ -133,7 +133,7 @@ class Context(object):
         self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
 
     @staticmethod
-    def _key_basename():
+    def _key_prefix():
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
 
