@@ -58,7 +58,7 @@ def clear(view):
                 del modules[m]
         return sorted(orig_mods - set(modules))
 
-    view.apply_async(clear_engine)
+    return view.apply_async(clear_engine).get_dict()
 
 def clear_all():
     try:
@@ -67,6 +67,7 @@ def clear_all():
         return
     try:
         v = c[:]
-        clear(v)
+        mods = clear(v)
     finally:
         c.close()
+    return mods

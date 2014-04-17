@@ -17,11 +17,8 @@ import sys
 from time import sleep
 from subprocess import Popen, PIPE
 
-from IPython.parallel import Client
-
 from distarray.externals import six
-from distarray.context import DISTARRAY_BASE_NAME
-from distarray.cleanup import cleanup, get_local_keys
+from distarray.cleanup import clear_all
 
 
 if six.PY2:
@@ -87,6 +84,14 @@ def restart(n=4, engines=None, **kwargs):
             started = True
 
 
+def clear(**kwargs):
+    """ Removes all distarray-related modules from engines' sys.modules."""
+    mods = clear_all()
+
+    msg = "*** Removing %d distarray modules from engines' namespace. ***"
+    print(msg % len(list(mods.values())[0]))
+
+
 def main():
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
@@ -115,12 +120,18 @@ def main():
     Restart a IPython.parallel cluster.
     """
 
+    clear_description = """
+    Clear the namespace and imports on the cluster. This should be the
+    same as restarting the engines, but faster.
+    """
     # subparses for all our commands
     parser_start = subparsers.add_parser('start',
                                          description=start_description)
     parser_stop = subparsers.add_parser('stop', description=stop_description)
     parser_restart = subparsers.add_parser('restart',
                                            description=restart_description)
+    parser_clear = subparsers.add_parser('clear',
+                                         description=clear_description)
 
     engine_help = """
     Number of engines to start.
@@ -136,6 +147,7 @@ def main():
     parser_start.set_defaults(func=start)
     parser_stop.set_defaults(func=stop)
     parser_restart.set_defaults(func=restart)
+    parser_clear.set_defaults(func=clear)
 
     # run it
     args = parser.parse_args()
