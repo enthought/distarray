@@ -30,14 +30,11 @@ class Distribution(object):
 
     Manages one or more one-dimensional map classes.
     """
-    
-    @classmethod
-    def from_dim_data(cls, dim_data):
-        self = cls.__new__(cls)
+
+    def __init__(self, dim_data):
         self.maps = tuple(map_from_dim_dict(dimdict)
                             for dimdict in dim_data)
         self.ndim = len(self.maps)
-        return self
 
     def __getitem__(self, idx):
         return self.maps[idx]
