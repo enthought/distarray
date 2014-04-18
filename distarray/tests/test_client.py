@@ -288,7 +288,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         ]
         self.assertSequenceEqual(actual, expected)
 
-    def test_from_global_dim_data_bb(self):
+    def test_irregular_block_assignment(self):
         global_shape = (5, 9)
         global_dim_data = (
                 {
