@@ -23,15 +23,11 @@ from distarray.client import DistArray
 from distarray.context import Context
 from distarray.testing import import_or_skip, temp_filepath
 
-from distarray.ipython_utils import IPythonClient
-
-client = IPythonClient()
-
 
 class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
-        dac = Context(client)
+        dac = Context()
         da = dac.empty((100,), dist={0: 'b'})
 
         output_paths = [temp_filepath() for target in dac.targets]
@@ -46,7 +42,7 @@ class TestDnpyFileIO(unittest.TestCase):
                     os.remove(filepath)
 
     def test_save_load_with_prefix(self):
-        dac = Context(client)
+        dac = Context()
         da = dac.empty((100,), dist={0: 'b'})
 
         output_path = temp_filepath()
@@ -139,7 +135,7 @@ nu_test_data = [
 class TestNpyFileLoad(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context(client, targets=[0, 1])
+        self.dac = Context(targets=[0, 1])
 
         # make a test file
         self.output_path = temp_filepath('.npy')
@@ -180,7 +176,7 @@ class TestHdf5FileSave(unittest.TestCase):
     def setUp(self):
         self.h5py = import_or_skip('h5py')
         self.output_path = temp_filepath('.hdf5')
-        self.dac = Context(client)
+        self.dac = Context()
 
     def tearDown(self):
         self.dac.close()
@@ -239,7 +235,7 @@ class TestHdf5FileLoad(unittest.TestCase):
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
-        self.dac = Context(client, targets=[0, 1])
+        self.dac = Context(targets=[0, 1])
         self.output_path = temp_filepath('.hdf5')
         self.expected = np.arange(20).reshape(2, 10)
         with self.h5py.File(self.output_path, 'w') as fp:

@@ -21,14 +21,13 @@ from distarray import Context
 from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
-client = IPythonClient()
 
 class TestContext(unittest.TestCase):
     """Test Context methods"""
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(client)
+        cls.context = Context()
         cls.ndarr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.ndarr)
 
@@ -102,7 +101,7 @@ class TestPrimeCluster(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(client, targets=range(3))
+        cls.context = Context(targets=range(3))
 
     @classmethod
     def tearDownClass(cls):

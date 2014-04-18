@@ -19,10 +19,6 @@ from numpy.testing import assert_array_equal
 import distarray
 from distarray import Context
 
-from distarray.ipython_utils import IPythonClient
-
-client = IPythonClient()
-
 
 def add_checkers(cls, ops, checker_name):
     """Helper function to dynamically add a list of tests.
@@ -49,7 +45,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(client)
+        cls.context = Context()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
@@ -96,7 +92,7 @@ class TestSpecialMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(client)
+        cls.context = Context()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2

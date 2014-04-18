@@ -20,6 +20,8 @@ from distarray.externals import six
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 
+from distarray.ipython_utils import IPythonClient
+
 DISTARRAY_BASE_NAME = '__distarray__'
 atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
 
@@ -37,10 +39,14 @@ class Context(object):
 
     '''
 
-    def __init__(self, client, targets=None):
+    def __init__(self, client=None, targets=None):
 
-        self.client = client
-        self.owns_client = False
+        if client is None:
+            self.client = IPythonClient()
+            self.owns_client = True
+        else:
+            self.client = client
+            self.owns_client = False
 
         self.view = self.client[:]
 

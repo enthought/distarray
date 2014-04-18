@@ -22,13 +22,11 @@ from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.context import Context
 
-from distarray.ipython_utils import IPythonClient
-client = IPythonClient()
 
 class TestDistArray(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context(client)
+        self.dac = Context()
 
     def tearDown(self):
         self.dac.close()
@@ -119,7 +117,7 @@ class TestDistArray(unittest.TestCase):
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
-        self.context = Context(client)
+        self.context = Context()
 
     def tearDown(self):
         self.context.close()
@@ -267,7 +265,7 @@ class TestDistArrayCreation(unittest.TestCase):
     """Test distarray creation methods"""
 
     def setUp(self):
-        self.context = Context(client)
+        self.context = Context()
 
     def tearDown(self):
         self.context.close()
@@ -615,7 +613,7 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(client)
+        cls.context = Context()
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
 
