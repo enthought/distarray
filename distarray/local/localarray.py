@@ -214,7 +214,7 @@ class LocalArray(object):
 
         self._cache_proc_grid_rank()
         distribute_indices(self.dim_data)
-        self.maps = maps.MDMap.from_dim_data(dim_data)
+        self.maps = maps.Distribution(dim_data)
 
         self.local_array = self._make_local_array(buf=buf, dtype=dtype)
         # We pass a view of self.local_array because we want the
