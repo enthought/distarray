@@ -7,9 +7,9 @@
 """
 Classes to manage the distribution-specific aspects of a LocalArray.
 
-The Distribution class is the main entry point and is meant to be used by LocalArrays
-to help translate between local and global index spaces.  It manages `ndim`
-one-dimensional map objects.
+The Distribution class is the main entry point and is meant to be used by
+LocalArrays to help translate between local and global index spaces.  It
+manages `ndim` one-dimensional map objects.
 
 The one-dimensional map classes BlockMap, CyclicMap, BlockCyclicMap, and
 UnstructuredMap all manage the mapping tasks for their particular dimension.
@@ -32,8 +32,7 @@ class Distribution(object):
     """
 
     def __init__(self, dim_data):
-        self.maps = tuple(map_from_dim_dict(dimdict)
-                            for dimdict in dim_data)
+        self.maps = tuple(map_from_dim_dict(dimdict) for dimdict in dim_data)
         self.ndim = len(self.maps)
 
     def __getitem__(self, idx):
