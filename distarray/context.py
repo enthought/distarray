@@ -311,9 +311,7 @@ class Context(object):
         # global_dim_data is a sequence of dictionaries, one per dimension.
         mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
         dim_data_per_rank = mdmap.get_local_dim_datas()
-        return self._from_dim_data(dim_data_per_rank, dtype=dtype)
 
-    def _from_dim_data(self, dim_data_per_rank, dtype=float):
         if len(self.targets) != len(dim_data_per_rank):
             errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
             raise TypeError(errmsg)
