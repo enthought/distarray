@@ -11,6 +11,10 @@ import unittest
 from distarray.context import Context
 from distarray.random import Random
 
+from distarray.ipython_utils import IPythonClient
+
+client = IPythonClient()
+
 
 class TestRandom(unittest.TestCase):
     """Test the Random classes methods, since the expected results are
@@ -20,8 +24,12 @@ class TestRandom(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        cls.context = Context(client)
         cls.random = Random(cls.context)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.close()
 
     def test_rand(self):
         shape = (3, 4)

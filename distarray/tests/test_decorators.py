@@ -21,12 +21,16 @@ from distarray.context import Context
 from distarray.decorators import DecoratorBase, local, vectorize
 from distarray.error import ContextError
 
+from distarray.ipython_utils import IPythonClient
+
+client = IPythonClient()
+
 
 class TestDecoratorBase(TestCase):
 
     def test_determine_context(self):
-        context = Context()
-        context2 = Context()  # for cross Context checking
+        context = Context(client)
+        context2 = Context(client)  # for cross Context checking
         da = context.ones((2, 2))
 
         def dummy_func(*args, **kwargs):
@@ -43,7 +47,7 @@ class TestDecoratorBase(TestCase):
         self.assertRaises(ContextError, dummy_func, context, context2)
 
     def test_key_and_push_args(self):
-        context = Context()
+        context = Context(client)
 
         da = context.ones((2, 2))
         db = da*2
@@ -140,16 +144,16 @@ class TestLocalDecorator(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        cls.context = Context(client)
         cls.da = cls.context.empty((5, 5))
         cls.da.fill(2 * numpy.pi)
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_local(self):
-        context = Context()
+        context = Context(client)
 
         """Test the @local decorator"""
         da = context.empty((4, 4))
@@ -173,8 +177,8 @@ class TestLocalDecorator(TestCase):
         assert_array_equal(da.toarray(), a)
 
     def test_different_contexts(self):
-        ctx1 = Context(targets=range(4))
-        ctx2 = Context(targets=range(3))
+        ctx1 = Context(client, targets=range(4))
+        ctx2 = Context(client, targets=range(3))
         da1 = ctx1.ones((10,))
         da2 = ctx2.ones((10,))
         db1 = self.local_sin(da1)
@@ -263,7 +267,7 @@ class TestVectorizeDecorator(TestCase):
     def test_vectorize(self):
         """Test the @vectorize decorator for parity with NumPy's"""
 
-        context = Context()
+        context = Context(client)
 
         a = numpy.arange(16).reshape(4, 4)
         da = context.fromndarray(a)

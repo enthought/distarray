@@ -22,14 +22,16 @@ from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.context import Context
 
+from distarray.ipython_utils import IPythonClient
+client = IPythonClient()
 
 class TestDistArray(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context()
+        self.dac = Context(client)
 
     def tearDown(self):
-        self.dac.cleanup()
+        self.dac.close()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -117,10 +119,10 @@ class TestDistArray(unittest.TestCase):
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
-        self.context = Context()
+        self.context = Context(client)
 
     def tearDown(self):
-        self.context.cleanup()
+        self.context.close()
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
@@ -265,10 +267,10 @@ class TestDistArrayCreation(unittest.TestCase):
     """Test distarray creation methods"""
 
     def setUp(self):
-        self.context = Context()
+        self.context = Context(client)
 
     def tearDown(self):
-        self.context.cleanup()
+        self.context.close()
 
     def test___init__(self):
         shape = (100, 100)
@@ -613,13 +615,13 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        cls.context = Context(client)
         cls.arr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.arr)
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_sum(self):
         np_sum = self.arr.sum()

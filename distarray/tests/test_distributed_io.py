@@ -23,11 +23,15 @@ from distarray.client import DistArray
 from distarray.context import Context
 from distarray.testing import import_or_skip, temp_filepath
 
+from distarray.ipython_utils import IPythonClient
+
+client = IPythonClient()
+
 
 class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
-        dac = Context()
+        dac = Context(client)
         da = dac.empty((100,), dist={0: 'b'})
 
         output_paths = [temp_filepath() for target in dac.targets]
@@ -42,7 +46,7 @@ class TestDnpyFileIO(unittest.TestCase):
                     os.remove(filepath)
 
     def test_save_load_with_prefix(self):
-        dac = Context()
+        dac = Context(client)
         da = dac.empty((100,), dist={0: 'b'})
 
         output_path = temp_filepath()
@@ -135,7 +139,7 @@ nu_test_data = [
 class TestNpyFileLoad(unittest.TestCase):
 
     def setUp(self):
-        self.dac = Context(targets=[0, 1])
+        self.dac = Context(client, targets=[0, 1])
 
         # make a test file
         self.output_path = temp_filepath('.npy')
@@ -147,7 +151,7 @@ class TestNpyFileLoad(unittest.TestCase):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         # clean up the context keys
-        self.dac.cleanup()
+        self.dac.close()
 
     def test_load_bn(self):
         dim_datas = bn_test_data
@@ -176,10 +180,10 @@ class TestHdf5FileSave(unittest.TestCase):
     def setUp(self):
         self.h5py = import_or_skip('h5py')
         self.output_path = temp_filepath('.hdf5')
-        self.dac = Context()
+        self.dac = Context(client)
 
     def tearDown(self):
-        self.dac.cleanup()
+        self.dac.close()
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
 
@@ -235,7 +239,7 @@ class TestHdf5FileLoad(unittest.TestCase):
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
-        self.dac = Context(targets=[0, 1])
+        self.dac = Context(client, targets=[0, 1])
         self.output_path = temp_filepath('.hdf5')
         self.expected = np.arange(20).reshape(2, 10)
         with self.h5py.File(self.output_path, 'w') as fp:
@@ -244,7 +248,7 @@ class TestHdf5FileLoad(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
-        self.dac.cleanup()
+        self.dac.close()
 
     def test_load_bn(self):
         da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")

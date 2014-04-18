@@ -12,14 +12,19 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
+from distarray.ipython_utils import IPythonClient
+
+
+client = IPythonClient()
+
 
 class TestClientMap(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = Context()
+        self.ctx = Context(client)
 
     def tearDown(self):
-        self.ctx.cleanup()
+        self.ctx.close()
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53

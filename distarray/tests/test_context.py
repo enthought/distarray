@@ -21,20 +21,21 @@ from distarray import Context
 from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
+client = IPythonClient()
 
 class TestContext(unittest.TestCase):
     """Test Context methods"""
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        cls.context = Context(client)
         cls.ndarr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.ndarr)
 
     @classmethod
     def tearDownClass(cls):
         """Close the client connections"""
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_get_localarrays(self):
         las = self.darr.get_localarrays()
@@ -53,14 +54,16 @@ class TestContextCreation(unittest.TestCase):
         client = IPythonClient()
         dac = Context(client)
         self.assertIs(dac.client, client)
-        dac.cleanup()
+        dac.close()
+        client.close()
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
         client = IPythonClient()
         dac = Context(client, targets=[0, 1])
         self.assertIs(dac.client, client)
-        dac.cleanup()
+        dac.close()
+        client.close()
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
@@ -68,7 +71,8 @@ class TestContextCreation(unittest.TestCase):
         targets = [3, 2]
         dac = Context(client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))
-        dac.cleanup()
+        dac.close()
+        client.close()
 
     def test_context_target_reordering(self):
         '''Are contexts' targets reordered in a consistent way?'''
@@ -77,8 +81,9 @@ class TestContextCreation(unittest.TestCase):
         ctx1 = Context(client, targets=shuffle(orig_targets[:]))
         ctx2 = Context(client, targets=shuffle(orig_targets[:]))
         self.assertEqual(ctx1.targets, ctx2.targets)
-        ctx1.cleanup()
-        ctx2.cleanup()
+        ctx1.close()
+        ctx2.close()
+        client.close()
 
     def test_create_delete_key(self):
         """ Check that a key can be created and then destroyed. """
@@ -89,18 +94,19 @@ class TestContextCreation(unittest.TestCase):
         dac._push({key: value})
         # Delete the key.
         dac.delete_key(key)
-        dac.cleanup()
+        dac.close()
+        client.close()
 
 
 class TestPrimeCluster(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context(targets=range(3))
+        cls.context = Context(client, targets=range(3))
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_1D(self):
         a = self.context.empty((3,))
