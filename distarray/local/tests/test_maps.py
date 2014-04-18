@@ -12,16 +12,11 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-from distarray.ipython_utils import IPythonClient
-
-
-client = IPythonClient()
-
 
 class TestClientMap(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = Context(client)
+        self.ctx = Context()
 
     def tearDown(self):
         self.ctx.close()
