@@ -23,6 +23,10 @@ class TestRandom(unittest.TestCase):
         cls.context = Context()
         cls.random = Random(cls.context)
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.close()
+
     def test_rand(self):
         shape = (3, 4)
         a = self.random.rand(shape)

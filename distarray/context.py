@@ -19,6 +19,7 @@ from distarray import cleanup
 from distarray.externals import six
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
+
 from distarray.ipython_utils import IPythonClient
 
 DISTARRAY_BASE_NAME = '__distarray__'

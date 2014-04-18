@@ -29,7 +29,7 @@ class TestDistArray(unittest.TestCase):
         self.dac = Context()
 
     def tearDown(self):
-        self.dac.cleanup()
+        self.dac.close()
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -120,7 +120,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         self.context = Context()
 
     def tearDown(self):
-        self.context.cleanup()
+        self.context.close()
 
     def test_from_global_dim_data_irregular_block(self):
         global_size = 10
@@ -268,7 +268,7 @@ class TestDistArrayCreation(unittest.TestCase):
         self.context = Context()
 
     def tearDown(self):
-        self.context.cleanup()
+        self.context.close()
 
     def test___init__(self):
         shape = (100, 100)
@@ -619,7 +619,7 @@ class TestReduceMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_sum(self):
         np_sum = self.arr.sum()

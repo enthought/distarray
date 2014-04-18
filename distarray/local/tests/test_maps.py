@@ -19,7 +19,7 @@ class TestClientMap(unittest.TestCase):
         self.ctx = Context()
 
     def tearDown(self):
-        self.ctx.cleanup()
+        self.ctx.close()
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53

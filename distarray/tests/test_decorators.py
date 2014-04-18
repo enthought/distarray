@@ -146,7 +146,7 @@ class TestLocalDecorator(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.cleanup()
+        cls.context.close()
 
     def test_local(self):
         context = Context()
