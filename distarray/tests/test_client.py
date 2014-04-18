@@ -288,6 +288,23 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         ]
         self.assertSequenceEqual(actual, expected)
 
+    def test_from_global_dim_data_bb(self):
+        global_shape = (5, 9)
+        global_dim_data = (
+                {
+                    'dist_type': 'b',
+                    'bounds': (0, 5),
+                },
+                {
+                    'dist_type': 'b',
+                    'bounds': (0, 2, 6, 7, 9),
+                }
+            )
+        distarr = self.context.from_global_dim_data(global_dim_data)
+        for i in range(global_shape[0]):
+            for j in range(global_shape[1]):
+                distarr[i, j] = i + j
+
 
 class TestDistArrayCreation(unittest.TestCase):
 
