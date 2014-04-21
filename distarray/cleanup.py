@@ -15,13 +15,16 @@ def engine_cleanup(module_name, prefix):
     """
     mod = __import__(module_name)
     ns = mod.__dict__
-    keys = ns.keys()
+    keys = tuple(ns.keys())
     deleted = 0
     for k in keys:
         if k.startswith(prefix):
             del ns[k]
             deleted += 1
-    count = sum([1 for k in ns if k.startswith(prefix)])
+    count = 0
+    for k in ns:
+        if k.startswith(prefix):
+            count += 1
     return (deleted, count)
 
 
