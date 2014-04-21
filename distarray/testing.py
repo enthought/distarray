@@ -34,6 +34,8 @@ def raise_typeerror(fn):
         good, msg = fn(*args, **kwargs)
         if not good:
             raise TypeError(msg)
+        else:
+            return (good, msg)
 
     return wrapper
 
