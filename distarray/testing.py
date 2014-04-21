@@ -16,10 +16,33 @@ import types
 from uuid import uuid4
 from functools import wraps
 from distarray.externals import six
+from distarray.externals import protocol_validator
 
 from distarray.error import InvalidCommSizeError
-from distarray.ipython_utils import IPythonClient
 from distarray.mpiutils import MPI, create_comm_of_size
+
+
+def raise_typeerror(fn):
+    """Decorator for protocol validator functions.
+
+    These functions return (success, err_msg), but sometimes we would rather
+    have an exception.
+    """
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        good, msg = fn(*args, **kwargs)
+        if not good:
+            raise TypeError(msg)
+        else:
+            return (good, msg)
+
+    return wrapper
+
+
+validate_dim_dict = raise_typeerror(protocol_validator.validate_dim_dict)
+validate_dim_data = raise_typeerror(protocol_validator.validate_dim_data)
+validate_distbuffer = raise_typeerror(protocol_validator.validate)
 
 
 def temp_filepath(extension=''):

@@ -10,8 +10,7 @@ from numpy.testing import assert_array_equal
 
 import distarray.local
 from distarray.externals import six
-from distarray.externals import protocol_validator
-from distarray.testing import MpiTestCase, CommNullPasser
+from distarray.testing import MpiTestCase, CommNullPasser, validate_distbuffer
 
 
 @six.add_metaclass(CommNullPasser)
@@ -66,8 +65,7 @@ class DapValidatorMixin(object):
     """
 
     def test_with_validator(self):
-        valid, msg = protocol_validator.validate(self.larr.__distarray__())
-        self.assertTrue(valid, msg=msg)
+        validate_distbuffer(self.larr.__distarray__())
 
     def test_round_trip_elements(self):
         larr = distarray.local.LocalArray.from_distarray(self.larr,
