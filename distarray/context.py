@@ -19,11 +19,11 @@ from distarray import cleanup
 from distarray.externals import six
 from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
-
 from distarray.ipython_utils import IPythonClient
 
+
 DISTARRAY_BASE_NAME = '__distarray__'
-atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
+_CLEANUP_REGISTERED = False
 
 
 class Context(object):
@@ -40,6 +40,11 @@ class Context(object):
     '''
 
     def __init__(self, client=None, targets=None):
+        global _CLEANUP_REGISTERED
+
+        if not _CLEANUP_REGISTERED:
+            atexit.register(cleanup.cleanup_all, '__main__', DISTARRAY_BASE_NAME)
+            _CLEANUP_REGISTERED = True
 
         if client is None:
             self.client = IPythonClient()
@@ -162,7 +167,7 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, prefix=self._key_prefix())
+        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self._key_prefix())
 
     def close(self):
         self.cleanup()
