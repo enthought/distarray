@@ -24,9 +24,11 @@ install:
     - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
 before_script:
     - (cd $TRAVIS_BUILD_DIR && dacluster start)
+    - lsof | grep python | wc -l
 script:
     - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
 after_script:
+    - lsof | grep python | wc -l
     - (cd $TRAVIS_BUILD_DIR && dacluster stop)
 after_success:
     - coverage combine
