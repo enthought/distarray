@@ -8,8 +8,8 @@
 
 import unittest
 
-from distarray.context import Context
-from distarray.random import Random
+from distarray.client.context import Context
+from distarray.client.random import Random
 
 
 class TestRandom(unittest.TestCase):

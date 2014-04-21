@@ -11,7 +11,7 @@ Distributed unfuncs for distributed arrays.
 import numpy
 
 from distarray.error import ContextError
-from distarray.client import DistArray
+from distarray.client.client import DistArray
 
 
 __all__ = []  # unary_names and binary_names added to __all__ below.

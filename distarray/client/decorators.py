@@ -10,8 +10,8 @@ Decorators for defining functions that use `DistArrays`.
 
 import functools
 
-from distarray.client import DistArray
-from distarray.context import Context
+from distarray.client.client import DistArray
+from distarray.client.context import Context
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
 

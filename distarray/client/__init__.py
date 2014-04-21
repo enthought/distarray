@@ -4,4 +4,6 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-__version__ = "0.3.0-dev"
+from distarray.client.client import DistArray
+from distarray.client.context import Context
+from distarray.client.functions import *

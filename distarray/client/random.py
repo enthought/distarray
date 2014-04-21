@@ -7,9 +7,8 @@
 
 """Emulate numpy.random"""
 
-
-from distarray.client import DistArray
-from distarray.client_map import Distribution
+from distarray.client.client import DistArray
+from distarray.client.client_map import Distribution
 
 
 class Random(object):
