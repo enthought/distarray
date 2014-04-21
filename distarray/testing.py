@@ -19,7 +19,6 @@ from distarray.externals import six
 from distarray.externals import protocol_validator
 
 from distarray.error import InvalidCommSizeError
-from distarray.ipython_utils import IPythonClient
 from distarray.mpiutils import MPI, create_comm_of_size
 
 
