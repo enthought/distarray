@@ -21,9 +21,9 @@ from distarray.client.distarray import DistArray
 from distarray.client.client_map import Distribution
 
 from distarray.ipython_utils import IPythonClient
+from distarray import DISTARRAY_BASE_NAME
 
-
-DISTARRAY_BASE_NAME = '__distarray__'
+atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
 
 
 class Context(object):
