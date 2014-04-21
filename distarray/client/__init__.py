@@ -4,6 +4,8 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
 from distarray.client.distarray import DistArray
 from distarray.client.context import Context
 from distarray.client.functions import *

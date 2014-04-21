@@ -10,7 +10,7 @@ from random import randrange
 from distarray.externals.six.moves import range
 
 from distarray.client.context import Context
-from distarray.client import client_map
+from distarray.client import maps as client_map
 
 
 class TestClientMap(unittest.TestCase):

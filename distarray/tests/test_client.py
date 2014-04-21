@@ -19,7 +19,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from distarray.externals.six.moves import range
 from distarray.client.distarray import DistArray
-from distarray.client.client_map import Distribution
+from distarray.client.maps import Distribution
 from distarray.client.context import Context
 
 

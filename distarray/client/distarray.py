@@ -12,14 +12,15 @@ The Distarray data structure.`DistArray` objects are proxies for collections of
 # Imports
 # ---------------------------------------------------------------------------
 
-print(__name__)
+from __future__ import absolute_import
+
 import operator
 from itertools import product
 
 import numpy as np
 
 import distarray
-from distarray.client.client_map import Distribution
+from distarray.client.maps import Distribution
 from distarray.externals.six import next
 from distarray.utils import has_exactly_one, _raise_nie
 

@@ -7,6 +7,8 @@
 
 """Emulate numpy.random"""
 
+from __future__ import absolute_import
+
 from distarray.client.distarray import DistArray
 from distarray.client.client_map import Distribution
 

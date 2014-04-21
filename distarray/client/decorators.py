@@ -8,6 +8,8 @@
 Decorators for defining functions that use `DistArrays`.
 """
 
+from __future__ import absolute_import
+
 import functools
 
 from distarray.client.distarray import DistArray

@@ -8,6 +8,8 @@
 Distributed unfuncs for distributed arrays.
 """
 
+from __future__ import absolute_import
+
 import numpy
 
 from distarray.error import ContextError
