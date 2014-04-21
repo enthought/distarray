@@ -17,7 +17,7 @@ import numpy
 
 from distarray import cleanup
 from distarray.externals import six
-from distarray.client.client import DistArray
+from distarray.client.distarray import DistArray
 from distarray.client.client_map import Distribution
 
 from distarray.ipython_utils import IPythonClient
