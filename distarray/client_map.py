@@ -387,23 +387,6 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_global_dim_data(cls, context, glb_dim_data):
-        self = cls.__new__(cls)
-        self.context = context
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
-        self.shape = tuple(m.size for m in self.maps)
-        self.ndim = len(self.maps)
-        self.dist = tuple(m.dist for m in self.maps)
-        self.grid_shape = tuple(m.grid_size for m in self.maps)
-
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
-
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
-
-        return self
-
-    @classmethod
     def from_dim_data(cls, context, dim_datas):
         """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
@@ -432,8 +415,10 @@ class Distribution(object):
 
         return self
 
-    def __init__(self, context, shape, dist, grid_shape=None):
+    @classmethod
+    def from_shape(cls, context, shape, dist, grid_shape=None):
 
+        self = cls.__new__(cls)
         self.context = context
         self.shape = shape
         self.ndim = len(shape)
@@ -455,6 +440,20 @@ class Distribution(object):
         # List of `ClientMap` objects, one per dimension.
         self.maps = [map_from_sizes(*args)
                      for args in zip(self.shape, self.dist, self.grid_shape)]
+        return self
+
+    def __init__(self, context, glb_dim_data):
+        self.context = context
+        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
+
+        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+
+        nelts = reduce(operator.mul, self.grid_shape)
+        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
