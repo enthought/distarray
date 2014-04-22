@@ -18,7 +18,7 @@ from itertools import product
 import numpy as np
 
 import distarray
-from distarray.client_map import ClientMDMap
+from distarray.client_map import Distribution
 from distarray.externals.six import next
 from distarray.utils import has_exactly_one, _raise_nie
 
@@ -75,7 +75,7 @@ def _make_mdmap_from_local_dimdata(local_name, context):
     dim_data_name = context._generate_key()
     context._execute(_DIMDATAS.format(local_name=local_name, dim_data_name=dim_data_name))
     dim_datas = context._pull(dim_data_name)
-    return ClientMDMap.from_dim_data(context, dim_datas)
+    return Distribution.from_dim_data(context, dim_datas)
 
 def _get_attribute(context, key, name):
     local_key = context._generate_key()

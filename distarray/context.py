@@ -18,7 +18,7 @@ import numpy
 from distarray import cleanup
 from distarray.externals import six
 from distarray.client import DistArray
-from distarray.client_map import ClientMDMap
+from distarray.client_map import Distribution
 from distarray.ipython_utils import IPythonClient
 
 
@@ -313,7 +313,7 @@ class Context(object):
 
         """
         # global_dim_data is a sequence of dictionaries, one per dimension.
-        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
+        mdmap = Distribution.from_global_dim_data(self, global_dim_data)
         dim_data_per_rank = mdmap.get_local_dim_datas()
 
         if len(self.targets) != len(dim_data_per_rank):

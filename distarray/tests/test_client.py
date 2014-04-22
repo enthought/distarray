@@ -19,7 +19,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from distarray.externals.six.moves import range
 from distarray.client import DistArray
-from distarray.client_map import ClientMDMap
+from distarray.client_map import Distribution
 from distarray.context import Context
 
 
@@ -233,7 +233,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                  'size': cols,
                  },
                 )
-        mdmap = ClientMDMap.from_global_dim_data(self.context, glb_dim_data)
+        mdmap = Distribution.from_global_dim_data(self.context, glb_dim_data)
         actual = mdmap.get_local_dim_datas()
 
         expected = [
@@ -318,7 +318,7 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def test___init__(self):
         shape = (100, 100)
-        mdmap = ClientMDMap(self.context, shape, ('b', 'c'))
+        mdmap = Distribution(self.context, shape, ('b', 'c'))
         da = DistArray(mdmap, dtype=int)
         da.fill(42)
         nda = numpy.empty(shape, dtype=int)
