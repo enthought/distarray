@@ -21,9 +21,8 @@ from distarray.client import DistArray
 from distarray.client_map import Distribution
 from distarray.ipython_utils import IPythonClient
 
+
 DISTARRAY_BASE_NAME = '__distarray__'
-atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
-atexit.register(cleanup.clear_all)
 
 
 class Context(object):
@@ -39,7 +38,13 @@ class Context(object):
 
     '''
 
+    _CLEANUP = None
+
     def __init__(self, client=None, targets=None):
+
+        if not Context._CLEANUP:
+            Context._CLEANUP = (atexit.register(cleanup.clear_all),
+                                atexit.register(cleanup.cleanup_all, '__main__', DISTARRAY_BASE_NAME))
 
         if client is None:
             self.client = IPythonClient()
@@ -160,7 +165,7 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, prefix=self._key_prefix())
+        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self._key_prefix())
 
     def close(self):
         self.cleanup()
