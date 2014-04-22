@@ -523,9 +523,9 @@ class LocalArray(object):
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
-    # 3.2 ndarray methods
+    # ndarray methods
     #-------------------------------------------------------------------------
-    # 3.2.1 Array conversion
+    # Array conversion
     #-------------------------------------------------------------------------
 
     def astype(self, newdtype):
@@ -600,81 +600,6 @@ class LocalArray(object):
     def fill(self, scalar):
         self.local_array.fill(scalar)
 
-    #-------------------------------------------------------------------------
-    # 3.2.2 Array shape manipulation
-    #-------------------------------------------------------------------------
-
-    def reshape(self, newshape):
-        _raise_nie()
-
-    def redist(self, newshape, newdist={0: 'b'}, newgrid_shape=None):
-        _raise_nie()
-
-    def resize(self, newshape, refcheck=1, order='C'):
-        _raise_nie()
-
-    def transpose(self, axes=None):
-        _raise_nie()
-
-    def swapaxes(self, axis1, axis2):
-        _raise_nie()
-
-    def flatten(self, order='C'):
-        _raise_nie()
-
-    def ravel(self, order='C'):
-        _raise_nie()
-
-    def squeeze(self):
-        _raise_nie()
-
-    def asdist(self, shape, dist={0: 'b'}, grid_shape=None):
-        pass
-        # new_da = LocalArray(shape, self.dtype, dist, grid_shape,
-        #                     self.base_comm)
-        # base_comm = self.base_comm
-        # local_array = self.local_array
-        # new_local_array = da.local_array
-        # recv_counts = np.zeros(self.comm_size, dtype=int)
-        #
-        # status = MPI.Status()
-        # MPI.Attach_buffer(np.empty(128+MPI.BSEND_OVERHEAD,dtype=float))
-        # done_count = 0
-        #
-        # for old_local_inds, item in np.ndenumerate(local_array):
-        #
-        #     # Compute the new owner
-        #     global_inds = self.global_from_local(new_da.comm_rank,
-        #                                        old_local_inds)
-        #     new_owner = new_da.owner_rank(global_inds)
-        #     if new_owner==self.owner_rank:
-        #         pass
-        #         # Just move the data to the right place in new_local_array
-        #     else:
-        #         # Send to the new owner with default tag
-        #         # Bsend is probably best, but Isend is also a possibility.
-        #         request = comm.Isend(item, dest=new_owner)
-        #
-        #     # Recv
-        #     incoming = comm.Iprobe(MPI.ANY_SOURCE, MPI.ANY_TAG, status)
-        #     if incoming:
-        #         old_owner = status.Get_source()
-        #         tag = status.Get_tag()
-        #         data = comm.Recv(old_owner, tag)
-        #         if tag==2:
-        #             done_count += 1
-        #         # Figure out where new location of old_owner, tag
-        #         new_local_ind = local_ind_by_owner_and_location(old_owner,
-        #                                                         location)
-        #         new_local_array[new_local_ind] = y
-        #         recv_counts[old_owner] = recv_counts[old_owner]+1
-        #
-        # while done_count < self.comm_size:
-        #     pass
-        #
-        #
-        # MPI.Detach_buffer()
-
     def asdist_like(self, other):
         """
         Return a version of self that has shape, dist and grid_shape like
@@ -685,76 +610,6 @@ class LocalArray(object):
         else:
             raise IncompatibleArrayError("DistArrays have incompatible shape,"
                                          "dist or grid_shape")
-
-    #-------------------------------------------------------------------------
-    # 3.2.3 Array item selection and manipulation
-    #-------------------------------------------------------------------------
-
-    def take(self, indices, axis=None, out=None, mode='raise'):
-        _raise_nie()
-
-    def put(self, indices, values, mode='raise'):
-        _raise_nie()
-
-    def putmask(self, mask, values):
-        _raise_nie()
-
-    def repeat(self, repeats, axis=None):
-        _raise_nie()
-
-    def choose(self, choices, out=None, mode='raise'):
-        _raise_nie()
-
-    def sort(self, axis=-1, kind='quick'):
-        _raise_nie()
-
-    def argsort(self, axis=-1, kind='quick'):
-        _raise_nie()
-
-    def searchsorted(self, values):
-        _raise_nie()
-
-    def nonzero(self):
-        _raise_nie()
-
-    def compress(self, condition, axis=None, out=None):
-        _raise_nie()
-
-    def diagonal(self, offset=0, axis1=0, axis2=1):
-        _raise_nie()
-
-    #-------------------------------------------------------------------------
-    # 3.2.4 Array item selection and manipulation
-    #-------------------------------------------------------------------------
-
-    def max(self, axis=None, out=None):
-        _raise_nie()
-
-    def argmax(self, axis=None, out=None):
-        _raise_nie()
-
-    def min(axis=None, out=None):
-        _raise_nie()
-
-    def argmin(self, axis=None, out=None):
-        _raise_nie()
-
-    def ptp(self, axis=None, out=None):
-        _raise_nie()
-
-    def clip(self, min, max, out=None):
-        _raise_nie()
-
-    def conj(self, out=None):
-        _raise_nie()
-
-    conjugate = conj
-
-    def round(self, decimals=0, out=None):
-        _raise_nie()
-
-    def trace(self, offset=0, axis1=0, axis2=1, dtype=None, out=None):
-        _raise_nie()
 
     #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
@@ -788,37 +643,8 @@ class LocalArray(object):
         else:
             return math.sqrt(self.var())
 
-    def cumsum(self, axis=None, dtype=None, out=None):
-        _raise_nie()
-
-    def prod(self, axis=None, dtype=None, out=None):
-        _raise_nie()
-
-    def cumprod(self, axis=None, dtype=None, out=None):
-        _raise_nie()
-
-    def all(self, axis=None, out=None):
-        _raise_nie()
-
-    def any(self, axis=None, out=None):
-        _raise_nie()
-
     #-------------------------------------------------------------------------
-    # 3.3 Array special methods
-    #-------------------------------------------------------------------------
-
-    #-------------------------------------------------------------------------
-    # 3.3.1 Methods for standard library functions
-    #-------------------------------------------------------------------------
-
-    def __copy__(self):
-        _raise_nie()
-
-    def __deepcopy__(self):
-        _raise_nie()
-
-    #-------------------------------------------------------------------------
-    # 3.3.2 Basic customization
+    # Basic customization
     #-------------------------------------------------------------------------
 
     def __lt__(self, other):
@@ -845,11 +671,8 @@ class LocalArray(object):
     def __repr__(self):
         return str(self.local_array)
 
-    def __nonzero__(self):
-        _raise_nie()
-
     #-------------------------------------------------------------------------
-    # 3.3.3 Container customization
+    # Container customization
     #-------------------------------------------------------------------------
 
     def __len__(self):
@@ -895,7 +718,7 @@ class LocalArray(object):
         return tuple(packed_ind//strides_array % self.global_shape)
 
     #--------------------------------------------------------------------------
-    # 3.3.4 Arithmetic customization - binary
+    # Arithmetic customization - binary
     #--------------------------------------------------------------------------
 
     # Binary
@@ -934,9 +757,6 @@ class LocalArray(object):
 
     def __mod__(self, other):
         return self._binary_op_from_ufunc(other, mod, '__rdiv__')
-
-    def __divmod__(self, other):
-        _raise_nie()
 
     def __pow__(self, other, modulo=None):
         return self._binary_op_from_ufunc(other, power, '__rpower__')
@@ -979,9 +799,6 @@ class LocalArray(object):
     def __rmod__(self, other):
         return self._rbinary_op_from_ufunc(other, mod, '__mod__')
 
-    def __rdivmod__(self, other):
-        _raise_nie()
-
     def __rpow__(self, other, modulo=None):
         return self._rbinary_op_from_ufunc(other, power, '__pow__')
 
@@ -999,47 +816,6 @@ class LocalArray(object):
 
     def __rxor__(self, other):
         return self._rbinary_op_from_ufunc(other, bitwise_xor, '__xor__')
-
-    # Inplace
-
-    def __iadd__(self, other):
-        _raise_nie()
-
-    def __isub__(self, other):
-        _raise_nie()
-
-    def __imul__(self, other):
-        _raise_nie()
-
-    def __idiv__(self, other):
-        _raise_nie()
-
-    def __itruediv__(self, other):
-        _raise_nie()
-
-    def __ifloordiv__(self, other):
-        _raise_nie()
-
-    def __imod__(self, other):
-        _raise_nie()
-
-    def __ipow__(self, other, modulo=None):
-        _raise_nie()
-
-    def __ilshift__(self, other):
-        _raise_nie()
-
-    def __irshift__(self, other):
-        _raise_nie()
-
-    def __iand__(self, other):
-        _raise_nie()
-
-    def __ior__(self, other):
-        _raise_nie()
-
-    def __ixor__(self, other):
-        _raise_nie()
 
     # Unary
 
@@ -1073,25 +849,8 @@ class LocalArray(object):
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Utilities needed to implement things below
+# Creating arrays
 # ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# 4 Basic routines
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# 4.1 Creating arrays
-# ---------------------------------------------------------------------------
-
-def aslocalarray(object, dtype=None, order=None):
-    _raise_nie()
-
-
-def arange(start, stop=None, step=1, dtype=None, dist={0: 'b'},
-           grid_shape=None, comm=None):
-    _raise_nie()
-
 
 def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
     return LocalArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
@@ -1393,71 +1152,13 @@ def fromlocalarray_like(local_arr, like_arr):
                      like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
     return res
 
-
-def identity(n, dtype=np.intp):
-    _raise_nie()
-
-
-def where(condition, x=None, y=None):
-    _raise_nie()
-
-
 # ---------------------------------------------------------------------------
-# 4.2 Operations on two or more arrays
+# Operations on two or more arrays
 # ---------------------------------------------------------------------------
 
 def arecompatible(a, b):
     """Do these arrays have the same compatibility hash?"""
     return a.compatibility_hash() == b.compatibility_hash()
-
-
-def concatenate(seq, axis=0):
-    _raise_nie()
-
-
-def correlate(x, y, mode='valid'):
-    _raise_nie()
-
-
-def convolve(x, y, mode='valid'):
-    _raise_nie()
-
-
-def outer(a, b):
-    _raise_nie()
-
-
-def inner(a, b):
-    _raise_nie()
-
-
-def dot(a, b):
-    _raise_nie()
-
-
-def vdot(a, b):
-    _raise_nie()
-
-
-def tensordot(a, b, axes=(-1, 0)):
-    _raise_nie()
-
-
-def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
-    _raise_nie()
-
-
-def allclose(a, b, rtol=10e-5, atom=10e-8):
-    _raise_nie()
-
-
-# ---------------------------------------------------------------------------
-# 4.3 Printing arrays
-# ---------------------------------------------------------------------------
-
-
-def distarray2string(a):
-    _raise_nie()
 
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
@@ -1472,7 +1173,7 @@ def get_printoptions():
 
 
 # ---------------------------------------------------------------------------
-# 4.5 Dealing with data types
+# Dealing with data types
 # ---------------------------------------------------------------------------
 
 
@@ -1485,17 +1186,7 @@ can_cast = np.can_cast
 
 
 # ---------------------------------------------------------------------------
-# 5 Additional convenience routines
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.1 Shape functions
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.2 Basic functions
+# Basic functions
 # ---------------------------------------------------------------------------
 
 
@@ -1505,77 +1196,8 @@ def sum(a, dtype=None):
     return global_sum
 
 
-def average(a, axis=None, weights=None, returned=0):
-    _raise_nie()
-
-
-def cov(x, y=None, rowvar=1, bias=0):
-    _raise_nie()
-
-
-def corrcoef(x, y=None, rowvar=1, bias=0):
-    _raise_nie()
-
-
-def median(m):
-    _raise_nie()
-
-
-def digitize(x, bins):
-    _raise_nie()
-
-
-def histogram(x, bins=None, range=None, normed=False):
-    _raise_nie()
-
-
-def histogram2d(x, y, bins, normed=False):
-    _raise_nie()
-
-
-def logspace(start, stop, num=50, endpoint=True, base=10.0):
-    _raise_nie()
-
-
-def linspace(start, stop, num=50, endpoint=True, retstep=False):
-    _raise_nie()
-
-
 # ---------------------------------------------------------------------------
-# 5.3 Polynomial functions
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.4 Set operations
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.5 Array construction using index tricks
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.6 Other indexing devices
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.7 Two-dimensional functions
-# ---------------------------------------------------------------------------
-
-
-def eye(n, m=None, k=0, dtype=float):
-    _raise_nie()
-
-
-def diag(v, k=0):
-    _raise_nie()
-
-
-# ---------------------------------------------------------------------------
-# 5.8 More data type functions
+# More data type functions
 # ---------------------------------------------------------------------------
 
 
@@ -1589,39 +1211,6 @@ real_if_close = np.real_if_close
 cast = np.cast
 mintypecode = np.mintypecode
 finfo = np.finfo
-
-
-# ---------------------------------------------------------------------------
-# 5.9 Functions that behave like ufuncs
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.10 Misc functions
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# 5.11 Utility functions
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Universal Functions
-#
-# I would really like these functions to be in a separate file, but that
-# is not possible because of circular import problems.  Basically, these
-# functions need access to the LocalArray object in this module, and the
-# LocalArray object needs to use these functions.  There are 3 options for
-# solving this problem:
-#
-#     * Put everything in one file
-#     * Put the functions needed by LocalArray in distarray, others elsewhere
-#     * Make a subclass of LocalArray that has methods that use the functions
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
 
 # Functions for manipulating shapes according to the broadcast rules.
 
