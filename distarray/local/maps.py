@@ -7,9 +7,9 @@
 """
 Classes to manage the distribution-specific aspects of a LocalArray.
 
-The MDMap class is the main entry point and is meant to be used by LocalArrays
-to help translate between local and global index spaces.  It manages `ndim`
-one-dimensional map objects.
+The Distribution class is the main entry point and is meant to be used by
+LocalArrays to help translate between local and global index spaces.  It
+manages `ndim` one-dimensional map objects.
 
 The one-dimensional map classes BlockMap, CyclicMap, BlockCyclicMap, and
 UnstructuredMap all manage the mapping tasks for their particular dimension.
@@ -24,20 +24,16 @@ import numpy as np
 from distarray.externals.six.moves import range, zip
 
 
-class MDMap(object):
-    """ Multi-dimensional Map class.
+class Distribution(object):
+
+    """Multi-dimensional Map class.
 
     Manages one or more one-dimensional map classes.
-
     """
-    
-    @classmethod
-    def from_dim_data(cls, dim_data):
-        self = cls.__new__(cls)
-        self.maps = tuple(map_from_dim_dict(dimdict)
-                            for dimdict in dim_data)
+
+    def __init__(self, dim_data):
+        self.maps = tuple(map_from_dim_dict(dimdict) for dimdict in dim_data)
         self.ndim = len(self.maps)
-        return self
 
     def __getitem__(self, idx):
         return self.maps[idx]
