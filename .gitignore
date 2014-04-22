@@ -113,5 +113,8 @@ unittest*.out*
 
 # Nose related files #
 ######################
-
 .noseids
+
+# Rope related files #
+######################
+.ropeproject/
