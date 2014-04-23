@@ -15,23 +15,29 @@ from distarray.context import Context, DISTARRAY_BASE_NAME
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
 
-def _rpc(func, args, kwargs, result_key):
+def _rpc(func, args, kwargs, result_key, prefix):
+
+    main = __import__('__main__')
+
+    from distarray.local.localarray import LocalArray
 
     args = list(args)
     for idx, a in enumerate(args):
         if isinstance(a, basestring):
-            if a.startswith(DISTARRAY_BASE_NAME):
-                args[idx] = eval(a)
+            if a.startswith(prefix):
+                args[idx] = getattr(main, a)
 
     for k, v in kwargs.items():
         if isinstance(v, basestring):
-            if v.startswith(DISTARRAY_BASE_NAME):
-                kwargs[k] = eval(v)
+            if v.startswith(prefix):
+                kwargs[k] = getattr(main, v)
+
+    print args, kwargs
 
     res = func(*args, **kwargs)
     if isinstance(res, LocalArray):
-        globals()[result_key] = res
-        res = result_key
+        setattr(main, result_key, res)
+        return result_key
     return res
 
 
@@ -41,16 +47,16 @@ class DecoratorBase(object):
     decorator to take an optional kwarg.
     """
 
-    def __init__(self, fn, context):
-        self.fn = fn
-        self.fn_key = self.fn.__name__
-        functools.update_wrapper(self, fn)
+    def __init__(self, func, context):
+        self.func = func
+        self.func_key = self.func.__name__
+        functools.update_wrapper(self, func)
         self.context = context
-        self.push_fn()
+        self.push_func()
 
-    def push_fn(self):
+    def push_func(self):
         """Push function to the engines."""
-        self.context._push({self.fn_key: self.fn})
+        self.context._push({self.func_key: self.func})
 
     def check_contexts(self, args, kwargs):
         """ Determine a context from a functions arguments."""
@@ -60,7 +66,7 @@ class DecoratorBase(object):
             if isinstance(arg, DistArray):
                 if arg.context != self.context:
                     msg = "DistArray %r not in same context as registered function %r."
-                    raise ContextError(msg % (arg, self.fn))
+                    raise ContextError(msg % (arg, self.func))
 
         return self.context
 
@@ -125,6 +131,8 @@ class DecoratorBase(object):
             non_nones = [r for r in results if r is not None]
             if len(non_nones) == 1:
                 result = non_nones[0]
+            else:
+                result = results
         return result
 
 
@@ -133,10 +141,10 @@ class local(DecoratorBase):
 
     def __call__(self, *args, **kwargs):
         # get context from args
-        context = self.determine_context(args, kwargs)
+        context = self.check_contexts(args, kwargs)
         args, kwargs = self.build_args(args, kwargs)
         result_key = context._generate_key()
-        results = context.view.apply_async(_rpc, self.func, args, kwargs, result_key).get_dict()
+        results = context.view.apply_async(_rpc, self.func, args, kwargs, result_key, DISTARRAY_BASE_NAME).get_dict()
         return self.process_return_value(results)
 
 
@@ -151,11 +159,11 @@ class _vectorize(DecoratorBase):
 
     def __call__(self, *args, **kwargs):
         # get context from args
-        context = self.determine_context(args, kwargs)
+        context = self.check_contexts(args, kwargs)
         # push function
-        self.push_fn(context, self.fn_key, self.fn)
+        self.push_func(context, self.func_key, self.func)
         # vectorize the function
-        exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
+        exec_str = "%s = numpy.vectorize(%s)" % (self.func_key, self.func_key)
         context._execute(exec_str)
 
         # Find the first distarray, they should all be the same up to the data.
@@ -173,7 +181,7 @@ class _vectorize(DecoratorBase):
                 # Call the function
                 exec_str = ("if %s.local_array.size != 0: %s.local_array = "
                             "%s(*%s, **%s)")
-                exec_str %= (out.key, out.key, self.fn_key, args_str,
+                exec_str %= (out.key, out.key, self.func_key, args_str,
                              kwargs_str)
                 context._execute(exec_str)
                 return out

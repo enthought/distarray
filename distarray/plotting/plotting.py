@@ -10,22 +10,7 @@ Plotting functions for distarrays.
 
 from six.moves import range
 from matplotlib import pyplot, colors, cm
-from numpy import arange, concatenate, empty, linspace, resize
-
-from distarray.decorators import local
-
-
-@local
-def _get_ranks(arr):
-    """
-    Given a distarray arr, return a distarray with the same shape, but
-    with the elements equal to the rank of the process the element is
-    on.
-    """
-    out = arr.copy()
-    out.local_array[:] = arr.comm_rank
-    out.local_array = out.local_array.astype(int)
-    return out
+from numpy import concatenate, empty, linspace
 
 
 def cmap_discretize(cmap, N):
@@ -272,8 +257,22 @@ def plot_array_distribution(darray,
     # This is based somewhat on:
     #   http://matplotlib.org/examples/api/colorbar_only.html
 
+    def _get_ranks(arr):
+        """
+        Given a distarray arr, return a distarray with the same shape, but
+        with the elements equal to the rank of the process the element is
+        on.
+        """
+        out = arr.copy()
+        out.local_array[:] = arr.comm_rank
+        out.local_array = out.local_array.astype(int)
+        return out
+
+    ctx = darray.context
+    ctx.register(_get_ranks)
+
     # Process per element.
-    process_darray = _get_ranks(darray)
+    process_darray = ctx._get_ranks(darray)
     process_array = process_darray.toarray()
 
     # Values per element.

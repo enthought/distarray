@@ -19,6 +19,8 @@ from distarray.client import DistArray
 from distarray.client_map import ClientMDMap
 from distarray.ipython_utils import IPythonClient
 
+DISTARRAY_BASE_NAME = '__distarray__'
+
 
 class Context(object):
     '''
@@ -112,7 +114,9 @@ class Context(object):
     # Function registration.
 
     def register(self, func):
-        setattr(self, func.__name__, func)
+        from distarray.decorators import local
+        lf = local(func, self)
+        setattr(self, func.__name__, lf)
 
     # Key management routines:
 
@@ -128,7 +132,7 @@ class Context(object):
 
     def _key_basename(self):
         """ Get the base name for all keys. """
-        return '_distarray_key'
+        return DISTARRAY_BASE_NAME
 
     def _key_prefix(self):
         """ Generate a prefix for a key name for this context. """
