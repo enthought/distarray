@@ -40,7 +40,7 @@ class TestCreateCommAlternate(unittest.TestCase):
         nrows = size * 3
         a = zeros((nrows, 20), comm=comm)
         expected = numpy.zeros((nrows // size, 20))
-        assert_array_equal(a.local_array, expected)
+        assert_array_equal(a.ndarray, expected)
         # Cleanup.
         comm.Free()
 

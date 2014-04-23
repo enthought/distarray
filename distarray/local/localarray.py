@@ -156,7 +156,7 @@ class GlobalIndex(object):
     """
     def __init__(self, maps, ndarray):
         self.maps = maps
-        self.local_array = ndarray
+        self.ndarray = ndarray
 
     def checked_getitem(self, global_inds):
         try:
@@ -181,7 +181,7 @@ class GlobalIndex(object):
         global_inds = _sanitize_indices(global_inds)
         try:
             local_inds = self.global_to_local(*global_inds)
-            return self.local_array[local_inds]
+            return self.ndarray[local_inds]
         except KeyError as err:
             raise IndexError(err)
 
@@ -189,7 +189,7 @@ class GlobalIndex(object):
         global_inds = _sanitize_indices(global_inds)
         try:
             local_inds = self.global_to_local(*global_inds)
-            self.local_array[local_inds] = value
+            self.ndarray[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
 
@@ -216,11 +216,11 @@ class LocalArray(object):
         distribute_indices(self.dim_data)
         self.maps = maps.Distribution(dim_data)
 
-        self.local_array = self._make_local_array(buf=buf, dtype=dtype)
-        # We pass a view of self.local_array because we want the
+        self.ndarray = self._make_ndarray(buf=buf, dtype=dtype)
+        # We pass a view of self.ndarray because we want the
         # GlobalIndex object to be able to change the LocalArray
         # object's data.
-        self.global_index = GlobalIndex(self.maps, self.local_array.view())
+        self.global_index = GlobalIndex(self.maps, self.ndarray.view())
 
         self.base = None  # mimic numpy.ndarray.base
         self.ctypes = None  # mimic numpy.ndarray.ctypes
@@ -380,15 +380,15 @@ class LocalArray(object):
 
     @property
     def local_size(self):
-        return self.local_array.size
+        return self.ndarray.size
 
     @property
     def local_data(self):
-        return self.local_array.data
+        return self.ndarray.data
 
     @property
     def dtype(self):
-        return self.local_array.dtype
+        return self.ndarray.dtype
 
     @property
     def itemsize(self):
@@ -404,12 +404,12 @@ class LocalArray(object):
         for dim, cart_rank in zip(self.dim_data, cart_coords):
             dim['proc_grid_rank'] = cart_rank
 
-    def _make_local_array(self, buf=None, dtype=None):
+    def _make_ndarray(self, buf=None, dtype=None):
         """Encapsulate `buf` or create an empty local array.
 
         Returns
         -------
-        local_array : numpy array
+        ndarray : numpy array
         """
         if buf is None:
             return np.empty(self.local_shape, dtype=dtype)
@@ -482,7 +482,7 @@ class LocalArray(object):
 
         distbuffer = {
             "__version__": "0.10.0",
-            "buffer": self.local_array,
+            "buffer": self.ndarray,
             "dim_data": translated_dim_data,
             }
         return distbuffer
@@ -497,7 +497,7 @@ class LocalArray(object):
     def set_localarray(self, a):
         arr = np.asarray(a, dtype=self.dtype, order='C')
         if arr.shape == self.local_shape:
-            self.local_array = arr
+            self.ndarray = arr
         else:
             raise ValueError("Incompatible local array shape")
 
@@ -533,7 +533,7 @@ class LocalArray(object):
         if newdtype is None:
             return self.copy()
         else:
-            local_copy = self.local_array.astype(newdtype)
+            local_copy = self.ndarray.astype(newdtype)
             new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
                                                   dtype=newdtype,
                                                   comm=self.base_comm,
@@ -542,7 +542,7 @@ class LocalArray(object):
 
     def copy(self):
         """Return a copy of this LocalArray."""
-        local_copy = self.local_array.copy()
+        local_copy = self.ndarray.copy()
         return self.__class__.from_dim_data(dim_data=self.dim_data,
                                             dtype=self.dtype,
                                             comm=self.base_comm,
@@ -550,13 +550,13 @@ class LocalArray(object):
 
     def local_view(self, dtype=None):
         if dtype is None:
-            return self.local_array.view()
+            return self.ndarray.view()
         else:
-            return self.local_array.view(dtype)
+            return self.ndarray.view(dtype)
 
     def view(self, dtype=None):
-        """Return a new LocalArray whose underlying `local_array` is a view on
-        `self.local_array`.
+        """Return a new LocalArray whose underlying `ndarray` is a view on
+        `self.ndarray`.
 
         Note
         ----
@@ -566,7 +566,7 @@ class LocalArray(object):
             new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
                                                   dtype=self.dtype,
                                                   comm=self.base_comm,
-                                                  buf=self.local_array)
+                                                  buf=self.ndarray)
         else:
             _raise_nie()
             #TODO: to implement this properly, a new dim_data will need to
@@ -574,16 +574,16 @@ class LocalArray(object):
             #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
             #                                      dtype=dtype,
             #                                      comm=self.base_comm,
-            #                                      buf=self.local_array)
+            #                                      buf=self.ndarray)
         return new_da
 
     def __array__(self, dtype=None):
         if dtype is None:
-            return self.local_array
+            return self.ndarray
         elif np.dtype(dtype) == self.dtype:
-            return self.local_array
+            return self.ndarray
         else:
-            return self.local_array.astype(dtype)
+            return self.ndarray.astype(dtype)
 
     def __array_wrap__(self, obj, context=None):
         """
@@ -598,7 +598,7 @@ class LocalArray(object):
                               self.grid_shape, self.base_comm, buf=obj)
 
     def fill(self, scalar):
-        self.local_array.fill(scalar)
+        self.ndarray.fill(scalar)
 
     def asdist_like(self, other):
         """
@@ -666,10 +666,10 @@ class LocalArray(object):
         return self._binary_op_from_ufunc(other, greater_equal, '__ge__')
 
     def __str__(self):
-        return str(self.local_array)
+        return str(self.ndarray)
 
     def __repr__(self):
-        return str(self.local_array)
+        return str(self.ndarray)
 
     #-------------------------------------------------------------------------
     # Container customization
@@ -693,17 +693,17 @@ class LocalArray(object):
 
     def __getitem__(self, index):
         """Get a local item."""
-        return self.local_array[index]
+        return self.ndarray[index]
 
     def __setitem__(self, index, value):
         """Set a local item."""
-        self.local_array[index] = value
+        self.ndarray[index] = value
 
     def sync(self):
         raise NotImplementedError("`sync` not yet implemented.")
 
     def __contains__(self, item):
-        return item in self.local_array
+        return item in self.ndarray
 
     def pack_index(self, inds):
         inds_array = np.array(inds)
@@ -1191,7 +1191,7 @@ can_cast = np.can_cast
 
 
 def sum(a, dtype=None):
-    local_sum = a.local_array.sum(dtype=dtype)
+    local_sum = a.ndarray.sum(dtype=dtype)
     global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
     return global_sum
 
@@ -1262,7 +1262,7 @@ class LocalArrayUnaryOperation(object):
             if x1_isdla:
                 if not arecompatible(x1, y):
                     raise IncompatibleArrayError("Incompatible LocalArrays")
-            self.func(x1, y.local_array, *args, **kwargs)
+            self.func(x1, y.ndarray, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")
@@ -1299,7 +1299,7 @@ class LocalArrayBinaryOperation(object):
                 if not arecompatible(x2, y):
                     raise IncompatibleArrayError("Incompatible LocalArrays")
             kwargs.pop('y', None)
-            self.func(x1, x2, y.local_array, *args, **kwargs)
+            self.func(x1, x2, y.ndarray, *args, **kwargs)
             return y
         else:
             raise TypeError("Invalid return type for unary ufunc")

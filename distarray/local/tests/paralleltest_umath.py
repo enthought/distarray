@@ -24,11 +24,11 @@ class TestUnaryUFunc(MpiTestCase):
         a = LocalArray((16, 16), dtype='int32', comm=self.comm)
         a.fill(1)
         b = localarray.negative(a)
-        self.assertTrue(np.all(a.local_array == -b.local_array))
+        self.assertTrue(np.all(a.ndarray == -b.ndarray))
 
         b = localarray.empty_like(a)
         b = localarray.negative(a, b)
-        self.assertTrue(np.all(a.local_array == -b.local_array))
+        self.assertTrue(np.all(a.ndarray == -b.ndarray))
 
         a = LocalArray((16, 16), dtype='int32', comm=self.comm)
         b = LocalArray((20, 20), dtype='int32', comm=self.comm)
@@ -44,11 +44,11 @@ class TestBinaryUFunc(MpiTestCase):
         a.fill(1)
         b.fill(1)
         c = localarray.add(a, b)
-        self.assertTrue(np.all(c.local_array == 2))
+        self.assertTrue(np.all(c.ndarray == 2))
 
         c = localarray.empty_like(a)
         c = localarray.add(a, b, c)
-        self.assertTrue(np.all(c.local_array == 2))
+        self.assertTrue(np.all(c.ndarray == 2))
 
         a = LocalArray((16, 16), dtype='int32', comm=self.comm)
         b = LocalArray((20, 20), dtype='int32', comm=self.comm)
@@ -99,7 +99,7 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x, casting='unsafe')  # standard form
             op(x, y=y, casting='unsafe')  # two-arg form
-        assert_array_equal(result0.local_array, y.local_array)
+        assert_array_equal(result0.ndarray, y.ndarray)
 
 
 class TestLocalArrayBinaryOperations(MpiTestCase):
@@ -117,7 +117,7 @@ class TestLocalArrayBinaryOperations(MpiTestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x1, x2, casting='unsafe')  # standard form
             op(x1, x2, y=y, casting='unsafe')  # three-arg form
-        assert_array_equal(result0.local_array, y.local_array)
+        assert_array_equal(result0.ndarray, y.ndarray)
 
 
 uops = (dc.absolute, dc.arccos, dc.arccosh, dc.arcsin, dc.arcsinh, dc.arctan,
