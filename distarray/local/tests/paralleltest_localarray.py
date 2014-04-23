@@ -41,10 +41,10 @@ class TestInit(MpiTestCase):
             self.assertEqual(self.larr_1d.local_shape, (1,))
         else:
             self.assertEqual(self.larr_1d.local_shape, (2,))
-        self.assertEqual(self.larr_1d.local_array.shape, self.larr_1d.local_shape)
-        self.assertEqual(self.larr_1d.local_array.size, self.larr_1d.local_size)
+        self.assertEqual(self.larr_1d.ndarray.shape, self.larr_1d.local_shape)
+        self.assertEqual(self.larr_1d.ndarray.size, self.larr_1d.local_size)
         self.assertEqual(self.larr_1d.local_size, self.larr_1d.local_shape[0])
-        self.assertEqual(self.larr_1d.local_array.dtype, self.larr_1d.dtype)
+        self.assertEqual(self.larr_1d.ndarray.dtype, self.larr_1d.dtype)
 
     def test_basic_2d(self):
         """Test basic LocalArray creation."""
@@ -63,12 +63,12 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr_2d.local_shape, (4, 16))
         self.assertEqual(self.larr_2d.local_size,
                          np.array(self.larr_2d.local_shape).prod())
-        self.assertEqual(self.larr_2d.local_array.shape, self.larr_2d.local_shape)
-        self.assertEqual(self.larr_2d.local_array.size, self.larr_2d.local_size)
-        self.assertEqual(self.larr_2d.local_array.dtype, self.larr_2d.dtype)
+        self.assertEqual(self.larr_2d.ndarray.shape, self.larr_2d.local_shape)
+        self.assertEqual(self.larr_2d.ndarray.size, self.larr_2d.local_size)
+        self.assertEqual(self.larr_2d.ndarray.dtype, self.larr_2d.dtype)
 
     def test_localarray(self):
-        """Can the local_array be set and get?"""
+        """Can the ndarray be set and get?"""
         self.larr_2d.get_localarray()
         la = np.random.random(self.larr_2d.local_shape)
         la = np.asarray(la, dtype=self.larr_2d.dtype)
@@ -128,8 +128,8 @@ class TestFromDimData(MpiTestCase):
         self.assertEqual(len(l0.maps), len(l1.maps))
         self.assertEqual(l0.grid_shape, l1.grid_shape)
         self.assertEqual(l0.local_shape, l1.local_shape)
-        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
-        self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+        self.assertEqual(l0.ndarray.shape, l1.ndarray.shape)
+        self.assertEqual(l0.ndarray.dtype, l1.ndarray.dtype)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_size, l1.local_size)
         self.assertEqual(list(l0.maps[0].global_iter),
@@ -253,10 +253,10 @@ class TestGridShape(MpiTestCase):
         self.assertEqual(len(larr_5d.maps), 5)
         self.assertEqual(larr_5d.global_shape, glb_shape)
         self.assertEqual(larr_5d.local_shape, (2, 2, 2, 2, 2))
-        self.assertEqual(larr_5d.local_array.shape, larr_5d.local_shape)
-        self.assertEqual(larr_5d.local_array.size, larr_5d.local_size)
+        self.assertEqual(larr_5d.ndarray.shape, larr_5d.local_shape)
+        self.assertEqual(larr_5d.ndarray.size, larr_5d.local_size)
         self.assertEqual(larr_5d.local_size, reduce(int.__mul__, glb_shape) // self.comm_size)
-        self.assertEqual(larr_5d.local_array.dtype, larr_5d.dtype)
+        self.assertEqual(larr_5d.ndarray.dtype, larr_5d.dtype)
 
 
 class TestDistMatrix(MpiTestCase):
@@ -561,15 +561,15 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(l0.comm_rank, l1.comm_rank)
         self.assertEqual(l0.comm.Get_topo(), l1.comm.Get_topo())
         self.assertEqual(l0.local_shape, l1.local_shape)
-        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
+        self.assertEqual(l0.ndarray.shape, l1.ndarray.shape)
         if check_dtype:
-            self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+            self.assertEqual(l0.ndarray.dtype, l1.ndarray.dtype)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_size, l1.local_size)
         self.assertEqual(len(l0.maps), len(l1.maps))
         for m0, m1 in zip(l0.maps, l1.maps):
             self.assertEqual(list(m0.global_iter), list(m1.global_iter))
-        np.testing.assert_allclose(l0.local_array, l1.local_array)
+        np.testing.assert_allclose(l0.ndarray, l1.ndarray)
 
     def test_copy_bn(self):
         a = LocalArray((16, 16), dtype=np.int_, dist=('b', 'n'), comm=self.comm)
@@ -591,7 +591,7 @@ class TestLocalArrayMethods(MpiTestCase):
         b = a.astype(new_dtype)
         self.assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
-        self.assertEqual(b.local_array.dtype, new_dtype)
+        self.assertEqual(b.ndarray.dtype, new_dtype)
 
     def test_astype_cbc(self):
         new_dtype = np.int8
@@ -601,7 +601,7 @@ class TestLocalArrayMethods(MpiTestCase):
         b = a.astype(new_dtype)
         self.assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
-        self.assertEqual(b.local_array.dtype, new_dtype)
+        self.assertEqual(b.ndarray.dtype, new_dtype)
 
     def test_view_bn(self):
         a = LocalArray((16, 16), dtype=np.int32, dist=('b', 'n'), comm=self.comm)
