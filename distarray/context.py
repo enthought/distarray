@@ -193,29 +193,30 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k, targets=self.targets[0], block=True)
 
-    def _create_local(self, local_call, shape, dtype, dist, grid_shape):
+    def _create_local(self, local_call, shape, dist, grid_shape, dtype):
         """ Creates a local array, according to the method named in `local_call`."""
-        shape_name, dtype_name, dist_name, grid_shape_name = self._key_and_push(shape, dtype, dist, grid_shape)
+        shape_name, dist_name, grid_shape_name, dtype_name = \
+                self._key_and_push(shape, dist, grid_shape, dtype)
         da_key = self._generate_key()
-        comm = self._comm_key
-        cmd = '{da_key} = {local_call}({shape_name}, {dtype_name}, {dist_name}, {grid_shape_name}, {comm})'
+        comm_key = self._comm_key
+        cmd = '{da_key} = {local_call}(distarray.local.maps.Distribution.from_shape({shape_name}, {dist_name}, {grid_shape_name}, {comm_key}), {dtype_name})'
         self._execute(cmd.format(**locals()))
         return DistArray.from_localarrays(da_key, self)
 
     def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         return self._create_local(local_call='distarray.local.zeros',
-                                  shape=shape, dtype=dtype,
-                                  dist=dist, grid_shape=grid_shape)
+                                  shape=shape, dist=dist,
+                                  grid_shape=grid_shape, dtype=dtype)
 
     def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         return self._create_local(local_call='distarray.local.ones',
-                                  shape=shape, dtype=dtype,
-                                  dist=dist, grid_shape=grid_shape)
+                                  shape=shape, dist=dist,
+                                  grid_shape=grid_shape, dtype=dtype,)
 
     def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
         return self._create_local(local_call='distarray.local.empty',
-                                  shape=shape, dtype=dtype,
-                                  dist=dist, grid_shape=grid_shape)
+                                  shape=shape, dist=dist,
+                                  grid_shape=grid_shape, dtype=dtype)
 
     def from_global_dim_data(self, global_dim_data, dtype=float):
         """Make a DistArray from global dim_data structures.
@@ -319,10 +320,11 @@ class Context(object):
 
         da_key = self._generate_key()
         subs = ((da_key,) + self._key_and_push(dim_data_per_rank) +
-                (self._comm_key,) + self._key_and_push(dtype) + (self._comm_key,))
+                (self._comm_key, self._comm_key) + self._key_and_push(dtype))
 
-        cmd = ('%s = distarray.local.LocalArray.'
-               'from_dim_data(%s[%s.Get_rank()], dtype=%s, comm=%s)')
+        cmd = ('%s = distarray.local.LocalArray('
+                    'distarray.local.maps.Distribution(%s[%s.Get_rank()], comm=%s),'
+                    ' dtype=%s)')
         self._execute(cmd % subs)
 
         return DistArray.from_localarrays(da_key, self)

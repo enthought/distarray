@@ -6,7 +6,6 @@
 
 import unittest
 from random import randrange
-from distarray.local import maps
 
 from distarray.externals.six.moves import range
 

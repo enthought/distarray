@@ -95,13 +95,14 @@ class DistArray(object):
         # FIXME: code duplication with context.py.
         ctx = mdmap.context
         # FIXME: this is bad...
-        comm = ctx._comm_key
+        comm_name = ctx._comm_key
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
-        names = ctx._key_and_push(mdmap.shape, dtype, mdmap.dist, mdmap.grid_shape)
-        shape_name, dtype_name, dist_name, grid_shape_name = names
-        cmd = ('{da_key} = distarray.local.empty({shape_name}, {dtype_name},'
-                                        '{dist_name}, {grid_shape_name}, {comm})')
+        names = ctx._key_and_push(mdmap.shape, mdmap.dist, mdmap.grid_shape, dtype)
+        shape_name, dist_name, grid_shape_name, dtype_name = names
+        cmd = ('{da_key} = distarray.local.empty('
+               'distarray.local.maps.Distribution.from_shape({shape_name}, '
+               '{dist_name}, {grid_shape_name}, {comm_name}), {dtype_name})')
         ctx._execute(cmd.format(**locals()))
         self.mdmap = mdmap
         self.key = da_key
@@ -218,7 +219,8 @@ class DistArray(object):
         self.context._execute('%s = %s.copy()' % (local_name, self.key))
         local_arrays = self.context._pull(local_name)
         for local_array in local_arrays:
-            maps = (list(ax_map.global_iter) for ax_map in local_array.maps)
+            maps = (list(ax_map.global_iter) for ax_map in
+                    local_array.distribution)
             for index in product(*maps):
                 arr[index] = local_array.global_index[index]
         return arr

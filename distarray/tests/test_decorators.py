@@ -162,8 +162,8 @@ class TestLocalDecorator(TestCase):
 
         @local
         def fill_da(da):
-            for i in da.maps[0].global_iter:
-                for j in da.maps[1].global_iter:
+            for i in da.distribution[0].global_iter:
+                for j in da.distribution[1].global_iter:
                     da.global_index[i, j] = i + j
             return da
 
