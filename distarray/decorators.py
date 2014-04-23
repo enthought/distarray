@@ -11,9 +11,9 @@ Decorators for defining functions that use `DistArrays`.
 import functools
 
 from distarray.client import DistArray
-from distarray.context import Context, DISTARRAY_BASE_NAME
+from distarray.context import DISTARRAY_BASE_NAME
 from distarray.error import ContextError
-from distarray.utils import has_exactly_one
+
 
 def _rpc(func, args, kwargs, result_key, prefix):
 
