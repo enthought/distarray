@@ -20,8 +20,16 @@ allow more compact and efficient operations.
 
 from __future__ import division
 
+import operator
+from functools import reduce
+
 import numpy as np
 from distarray.externals.six.moves import range, zip
+
+from distarray.local import construct
+from distarray.metadata_utils import (validate_grid_shape, make_grid_shape,
+                                      normalize_grid_shape, normalize_dist,
+                                      distribute_indices)
 
 
 class Distribution(object):
@@ -31,28 +39,109 @@ class Distribution(object):
     Manages one or more one-dimensional map classes.
     """
 
-    def __init__(self, dim_data):
-        self.maps = tuple(map_from_dim_dict(dimdict) for dimdict in dim_data)
-        self.ndim = len(self.maps)
+    def __init__(self, dim_data, comm=None):
+        """Create a Distribution from a `dim_data` structure."""
+        self._maps = tuple(map_from_dim_dict(dim_dict) for dim_dict in dim_data)
+        self.base_comm = construct.init_base_comm(comm)
+        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
+
+    @classmethod
+    def from_shape(cls, shape, dist=None, grid_shape=None, comm=None):
+        """Create a Distribution from a `shape` and optional arguments."""
+        dist = {0: 'b'} if dist is None else dist
+        ndim = len(shape)
+        dist_tuple = normalize_dist(dist, ndim)
+        base_comm = construct.init_base_comm(comm)
+        comm_size = base_comm.Get_size()
+
+        if grid_shape is None:  # Make a new grid_shape if not provided.
+            grid_shape = make_grid_shape(shape, dist_tuple, comm_size)
+        else:  # Otherwise normalize the one passed in.
+            grid_shape = normalize_grid_shape(grid_shape, ndim)
+        # In either case, validate.
+        validate_grid_shape(grid_shape, dist_tuple, comm_size)
+
+        comm = construct.init_comm(base_comm, grid_shape)
+        grid_coords = comm.Get_coords(comm.Get_rank())
+
+        dim_data = []
+        for dist, size, grid_rank, grid_size in zip(dist_tuple, shape,
+                                                    grid_coords, grid_shape):
+            dim_dict = dict(dist_type=dist,
+                            size=size,
+                            proc_grid_rank=grid_rank,
+                            proc_grid_size=grid_size)
+            distribute_indices(dim_dict)
+            dim_data.append(dim_dict)
+
+        return cls(dim_data, comm=base_comm)
 
     def __getitem__(self, idx):
-        return self.maps[idx]
+        return self._maps[idx]
 
     def __len__(self):
-        return len(self.maps)
+        return len(self._maps)
+
+    @property
+    def dim_data(self):
+        return tuple(m.dim_dict for m in self._maps)
+
+    @property
+    def grid_shape(self):
+        return tuple(m.grid_size for m in self._maps)
+
+    @property
+    def global_shape(self):
+        return tuple(m.global_size for m in self._maps)
+
+    @property
+    def global_size(self):
+        return reduce(operator.mul, self.global_shape)
 
     @property
     def local_shape(self):
-        return tuple(m.size for m in self.maps)
+        return tuple(m.size for m in self._maps)
+
+    @property
+    def local_size(self):
+        return reduce(operator.mul, self.local_shape)
+
+    @property
+    def ndim(self):
+        return len(self._maps)
+
+    @property
+    def comm_size(self):
+        return self.base_comm.Get_size()
+
+    @property
+    def comm_rank(self):
+        return self.base_comm.Get_rank()
+
+    @property
+    def dist(self):
+        return tuple(m.dist for m in self._maps)
+
+    @property
+    def cart_coords(self):
+        coords = tuple(m.grid_rank for m in self._maps)
+        assert coords == tuple(self.comm.Get_coords(self.comm_rank))
+        return coords
+
+    def coords_from_rank(self, rank):
+        return self.comm.Get_coords(rank)
+
+    def rank_from_coords(self, coords):
+        return self.comm.Get_cart_rank(coords)
 
     def local_from_global(self, *global_ind):
         """ Given `global_ind` indices, translate into local indices."""
-        return tuple(self.maps[dim].local_from_global(global_ind[dim])
+        return tuple(self._maps[dim].local_from_global(global_ind[dim])
                      for dim in range(self.ndim))
 
     def global_from_local(self, *local_ind):
         """ Given `local_ind` indices, translate into global indices."""
-        return tuple(self.maps[dim].global_from_local(local_ind[dim])
+        return tuple(self._maps[dim].global_from_local(local_ind[dim])
                      for dim in range(self.ndim))
 
 
@@ -204,6 +293,7 @@ class BlockCyclicMap(MapBase):
         self.block_size = block_size
         global_nblocks, partial = divmod(global_size, block_size)
         self.grid_size = grid_size
+        self.grid_rank = grid_rank
 
         local_nblocks = (global_nblocks - 1 - grid_rank) // grid_size + 1
         local_partial = partial if grid_rank == 0 else 0

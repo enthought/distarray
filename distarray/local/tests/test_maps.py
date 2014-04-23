@@ -10,10 +10,11 @@ from distarray.externals.six.moves import range
 from distarray.local import maps
 
 
-class TestNotDistMap(unittest.TestCase):
+class TestNoDistMap(unittest.TestCase):
 
     def setUp(self):
-        dimdict = dict(dist_type='n', size=20)
+        size = 20
+        dimdict = dict(dist_type='n', size=size)
         self.m = maps.map_from_dim_dict(dimdict)
 
     def test_local_from_global(self):
@@ -126,7 +127,6 @@ class TestBlockCyclicMap(unittest.TestCase):
     def test_global_from_local_IndexError(self):
         li = 5
         self.assertRaises(IndexError, self.m.global_from_local, li)
-
 
 class TestMapEquivalences(unittest.TestCase):
 

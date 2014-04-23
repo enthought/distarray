@@ -9,6 +9,7 @@ import numpy
 from numpy.testing import assert_array_equal
 
 from distarray.local.localarray import zeros
+from distarray.local.maps import Distribution
 from distarray.error import InvalidCommSizeError, InvalidRankError
 from distarray.mpiutils import MPI, create_comm_of_size, create_comm_with_list
 
@@ -38,7 +39,8 @@ class TestCreateCommAlternate(unittest.TestCase):
         # Run a simple test to confirm this comm works.
         size = len(nodes)
         nrows = size * 3
-        a = zeros((nrows, 20), comm=comm)
+        d = Distribution.from_shape((nrows, 20), comm=comm)
+        a = zeros(d)
         expected = numpy.zeros((nrows // size, 20))
         assert_array_equal(a.local_array, expected)
         # Cleanup.

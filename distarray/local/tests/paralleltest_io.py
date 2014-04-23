@@ -4,7 +4,6 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-import tempfile
 import os
 import numpy
 
@@ -13,12 +12,14 @@ from distarray.testing import MpiTestCase, import_or_skip, temp_filepath
 from distarray.local import LocalArray, ndenumerate
 from distarray.local import (save_dnpy, load_dnpy, save_hdf5, load_hdf5,
                              load_npy)
+from distarray.local.maps import Distribution
 
 
 class TestDnpyFileIO(MpiTestCase):
 
     def setUp(self):
-        self.larr0 = LocalArray((7,), comm=self.comm)
+        d = Distribution.from_shape((7,), comm=self.comm)
+        self.larr0 = LocalArray(d)
 
         # a different file on every engine
         self.output_path = temp_filepath(extension='.dnpy')
@@ -195,7 +196,8 @@ class TestHdf5FileSave(MpiTestCase):
         self.output_path = self.comm.bcast(self.output_path, root=0)
 
     def test_save_1d(self):
-        la = LocalArray((51,), comm=self.comm)
+        d = Distribution.from_shape((51,), comm=self.comm)
+        la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)
         save_hdf5(self.output_path, la, key=self.key, mode='w')
@@ -207,7 +209,8 @@ class TestHdf5FileSave(MpiTestCase):
                 self.assertEqual(v, fp[self.key][i])
 
     def test_save_2d(self):
-        la = LocalArray((11, 15), comm=self.comm)
+        d = Distribution.from_shape((11, 15), comm=self.comm)
+        la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)
         save_hdf5(self.output_path, la, key=self.key, mode='w')
