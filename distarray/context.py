@@ -143,10 +143,11 @@ class Context(object):
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
 
-    def uid(self):
+    @staticmethod
+    def uid():
         """Generate a unique valid python name."""
         # Full length seems excessively verbose so use 16 characters.
-        return self._key_prefix() + uuid.uuid4().hex[:16]
+        return Context._key_prefix() + uuid.uuid4().hex[:16]
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
