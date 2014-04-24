@@ -18,12 +18,11 @@ import numpy
 from distarray import cleanup
 from distarray.externals import six
 from distarray.client import DistArray
-from distarray.client_map import ClientMDMap
-
+from distarray.client_map import Distribution
 from distarray.ipython_utils import IPythonClient
 
+
 DISTARRAY_BASE_NAME = '__distarray__'
-atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
 
 
 class Context(object):
@@ -39,7 +38,13 @@ class Context(object):
 
     '''
 
+    _CLEANUP = None
+
     def __init__(self, client=None, targets=None):
+
+        if not Context._CLEANUP:
+            Context._CLEANUP = (atexit.register(cleanup.clear_all),
+                                atexit.register(cleanup.cleanup_all, '__main__', DISTARRAY_BASE_NAME))
 
         if client is None:
             self.client = IPythonClient()
@@ -68,9 +73,47 @@ class Context(object):
                           "import distarray.mpiutils; "
                           "import numpy")
 
-        self._setup_key_context()
-        self._make_intracomm()
+        self.context_key = self._setup_context_key()
+        self._comm_key = self._make_intracomm()
         self._set_engine_rank_mapping()
+
+    def _setup_context_key(self):
+        """
+        Create a dict on the engines which will hold everything from
+        this context.
+        """
+        context_key = DISTARRAY_BASE_NAME + self.uid()
+        cmd = '%s = {}' % (context_key)
+        self._execute(cmd, targets=range(len(self.view)))
+        return context_key
+
+    def _make_intracomm(self):
+        def get_rank():
+            from distarray.mpiutils import COMM_PRIVATE
+            return COMM_PRIVATE.Get_rank()
+
+        # self.view's engines must encompass all ranks in the MPI communicator,
+        # i.e., everything in rank_map.values().
+        def get_size():
+            from distarray.mpiutils import COMM_PRIVATE
+            return COMM_PRIVATE.Get_size()
+
+        # get a mapping of IPython engine ID to MPI rank
+        rank_map = self.view.apply_async(get_rank).get_dict()
+        ranks = [ rank_map[engine] for engine in self.targets ]
+
+        comm_size = self.view.apply_async(get_size).get()[0]
+        if set(rank_map.values()) != set(range(comm_size)):
+            raise ValueError('Engines in view must encompass all MPI ranks.')
+
+        # create a new communicator with the subset of engines note that
+        # MPI_Comm_create must be called on all engines, not just those
+        # involved in the new communicator.
+        comm_key = self._generate_key()
+        cmd = "%s = distarray.mpiutils.create_comm_with_list(%s)"
+        cmd %= (comm_key, ranks)
+        self.view.execute(cmd, block=True)
+        return comm_key
 
     def _set_engine_rank_mapping(self):
         # The MPI intracomm referred to by self._comm_key may have a different
@@ -94,60 +137,20 @@ class Context(object):
         # the intracomm.
         self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
 
-    def _make_intracomm(self):
-        def get_rank():
-            from distarray.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_rank()
-
-        # get a mapping of IPython engine ID to MPI rank
-        rank_map = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_map[engine] for engine in self.targets ]
-
-        # self.view's engines must encompass all ranks in the MPI communicator,
-        # i.e., everything in rank_map.values().
-        def get_size():
-            from distarray.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_size()
-
-        comm_size = self.view.apply_async(get_size).get()[0]
-        if set(rank_map.values()) != set(range(comm_size)):
-            raise ValueError('Engines in view must encompass all MPI ranks.')
-
-        # create a new communicator with the subset of engines note that
-        # MPI_Comm_create must be called on all engines, not just those
-        # involved in the new communicator.
-        self._comm_key = self._generate_key()
-        self.view.execute(
-            '%s = distarray.mpiutils.create_comm_with_list(%s)' % (self._comm_key, ranks),
-            block=True
-        )
-
-    # Key management routines:
-
-    def _setup_key_context(self):
-        """ Generate a unique string for this context.
-
-        This will be included in the names of all keys we create.
-        This prefix allows us to delete only keys from this context.
-        """
-        # Full length seems excessively verbose so use 16 characters.
-        uid = uuid.uuid4()
-        self.key_context = uid.hex[:16]
-
     @staticmethod
-    def _key_basename():
+    def _key_prefix():
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
 
-    def _key_prefix(self):
-        """ Generate a prefix for a key name for this context. """
-        header = self._key_basename() + '_' + self.key_context
-        return header
+    # Key management routines:
+    def uid(self):
+        """Generate a unique valid python name."""
+        # Full length seems excessively verbose so use 16 characters.
+        return 'da' + uuid.uuid4().hex[:16]
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        uid = uuid.uuid4()
-        key = self._key_prefix() + '_' + uid.hex
+        key = "%s['%s']" % (self.context_key, 'key_' + self.uid())
         return key
 
     def _key_and_push(self, *values):
@@ -162,7 +165,7 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, prefix=self._key_prefix())
+        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self._key_prefix())
 
     def close(self):
         self.cleanup()
@@ -311,7 +314,7 @@ class Context(object):
 
         """
         # global_dim_data is a sequence of dictionaries, one per dimension.
-        mdmap = ClientMDMap.from_global_dim_data(self, global_dim_data)
+        mdmap = Distribution(self, global_dim_data)
         dim_data_per_rank = mdmap.get_local_dim_datas()
 
         if len(self.targets) != len(dim_data_per_rank):

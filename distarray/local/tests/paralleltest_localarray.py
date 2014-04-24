@@ -43,10 +43,10 @@ class TestInit(MpiTestCase):
             self.assertEqual(self.larr_1d.local_shape, (1,))
         else:
             self.assertEqual(self.larr_1d.local_shape, (2,))
-        self.assertEqual(self.larr_1d.local_array.shape, self.larr_1d.local_shape)
-        self.assertEqual(self.larr_1d.local_array.size, self.larr_1d.local_size)
+        self.assertEqual(self.larr_1d.ndarray.shape, self.larr_1d.local_shape)
+        self.assertEqual(self.larr_1d.ndarray.size, self.larr_1d.local_size)
         self.assertEqual(self.larr_1d.local_size, self.larr_1d.local_shape[0])
-        self.assertEqual(self.larr_1d.local_array.dtype, self.larr_1d.dtype)
+        self.assertEqual(self.larr_1d.ndarray.dtype, self.larr_1d.dtype)
 
     def test_basic_2d(self):
         """Test basic LocalArray creation."""
@@ -61,12 +61,12 @@ class TestInit(MpiTestCase):
         self.assertEqual(self.larr_2d.local_shape, (4, 16))
         self.assertEqual(self.larr_2d.local_size,
                          np.array(self.larr_2d.local_shape).prod())
-        self.assertEqual(self.larr_2d.local_array.shape, self.larr_2d.local_shape)
-        self.assertEqual(self.larr_2d.local_array.size, self.larr_2d.local_size)
-        self.assertEqual(self.larr_2d.local_array.dtype, self.larr_2d.dtype)
+        self.assertEqual(self.larr_2d.ndarray.shape, self.larr_2d.local_shape)
+        self.assertEqual(self.larr_2d.ndarray.size, self.larr_2d.local_size)
+        self.assertEqual(self.larr_2d.ndarray.dtype, self.larr_2d.dtype)
 
     def test_localarray(self):
-        """Can the local_array be set and get?"""
+        """Can the ndarray be set and get?"""
         self.larr_2d.get_localarray()
         la = np.random.random(self.larr_2d.local_shape)
         la = np.asarray(la, dtype=self.larr_2d.dtype)
@@ -415,11 +415,11 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(l0.grid_shape, l1.grid_shape)
         self.assertEqual(l0.local_shape, l1.local_shape)
         self.assertEqual(l0.local_size, l1.local_size)
-        self.assertEqual(l0.local_array.shape, l1.local_array.shape)
+        self.assertEqual(l0.ndarray.shape, l1.ndarray.shape)
         if check_dtype:
-            self.assertEqual(l0.local_array.dtype, l1.local_array.dtype)
+            self.assertEqual(l0.ndarray.dtype, l1.ndarray.dtype)
         self.assertEqual(len(l0.distribution), len(l1.distribution))
-        np.testing.assert_allclose(l0.local_array, l1.local_array)
+        np.testing.assert_allclose(l0.ndarray, l1.ndarray)
 
     def test_copy_bn(self):
         distribution = Distribution.from_shape((16, 16),
@@ -446,7 +446,7 @@ class TestLocalArrayMethods(MpiTestCase):
         b = a.astype(new_dtype)
         self.assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
-        self.assertEqual(b.local_array.dtype, new_dtype)
+        self.assertEqual(b.ndarray.dtype, new_dtype)
 
     def test_astype_cbc(self):
         new_dtype = np.int8
@@ -456,7 +456,7 @@ class TestLocalArrayMethods(MpiTestCase):
         b = a.astype(new_dtype)
         self.assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
-        self.assertEqual(b.local_array.dtype, new_dtype)
+        self.assertEqual(b.ndarray.dtype, new_dtype)
 
     def test_view_bn(self):
         d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
@@ -478,103 +478,6 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(d)
         b = LocalArray(d2)
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
-
-
-class TestNotImplementedArrayMethods(MpiTestCase):
-    """ Test that the not implemented functions can be called,
-    and raise an exception. As these methods get implemented,
-    they will start failing this test, and can be removed from it.
-    Eventually this test case should become empty! """
-
-    def setUp(self):
-        # These would need real values for a real test,
-        # but since we just check for not implemented,
-        # this is not necessary here.
-        self.larr1 = LocalArray(Distribution.from_shape((4,),
-                                                        comm=self.comm))
-        self.larr2 = LocalArray(Distribution.from_shape((4, 4),
-                                                        comm=self.comm))
-        self.larrb = LocalArray(Distribution.from_shape((4, 4),
-                                                        comm=self.comm),
-                                dtype=bool)
-        self.larrc = LocalArray(Distribution.from_shape((4, 4),
-                                                        comm=self.comm),
-                                dtype=complex)
-
-    def test_array_shape_manipulation(self):
-        """ Array shape manipulation functions. """
-        with self.assertRaises(NotImplementedError):
-            self.larr2.reshape((8, 2))
-        with self.assertRaises(NotImplementedError):
-            self.larr2.redist((8, 2), newdist={0: 'n'})
-        with self.assertRaises(NotImplementedError):
-            self.larr2.resize((8, 4))
-        with self.assertRaises(NotImplementedError):
-            self.larr2.transpose(None)
-        with self.assertRaises(NotImplementedError):
-            self.larr2.swapaxes(0, 1)
-        with self.assertRaises(NotImplementedError):
-            self.larr2.flatten()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.ravel()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.squeeze()
-
-    def test_array_item_selection_323(self):
-        """ Array item selection functions 3.2.3. """
-        with self.assertRaises(NotImplementedError):
-            self.larr2.take([[0, 0], [1, 1]])
-        with self.assertRaises(NotImplementedError):
-            self.larr2.put([0, 3], [42, 27])
-        with self.assertRaises(NotImplementedError):
-            self.larr1.putmask([True, True, False, False], [12, 47])
-        with self.assertRaises(NotImplementedError):
-            self.larr1.repeat(3)
-        with self.assertRaises(NotImplementedError):
-            self.larr1.choose([[1], [2]])
-        with self.assertRaises(NotImplementedError):
-            self.larr1.sort()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.argsort()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.searchsorted([2, 3, 4])
-        with self.assertRaises(NotImplementedError):
-            self.larr1.nonzero()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.compress([False, True, False, True])
-        with self.assertRaises(NotImplementedError):
-            self.larr2.diagonal()
-
-    def test_array_item_selection_324(self):
-        """ Array item selection functions 3.2.4. """
-        with self.assertRaises(NotImplementedError):
-            self.larr1.max()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.argmax()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.min()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.argmin()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.ptp()
-        with self.assertRaises(NotImplementedError):
-            self.larr1.clip(2, 5)
-        with self.assertRaises(NotImplementedError):
-            self.larrc.conj()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.round()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.trace()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.cumsum()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.prod()
-        with self.assertRaises(NotImplementedError):
-            self.larr2.cumprod()
-        with self.assertRaises(NotImplementedError):
-            self.larrb.all()
-        with self.assertRaises(NotImplementedError):
-            self.larrb.any()
 
 
 class TestNDEnumerate(MpiTestCase):

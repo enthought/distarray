@@ -64,7 +64,7 @@ class TestCreationFunctions(MpiTestCase):
         d = Distribution.from_shape((nrows, 20), comm=self.comm)
         a = localarray.zeros(d)
         expected = np.zeros((nrows // size, 20))
-        assert_array_equal(a.local_array, expected)
+        assert_array_equal(a.ndarray, expected)
 
     def test_ones(self):
         size = self.comm_size
@@ -72,7 +72,7 @@ class TestCreationFunctions(MpiTestCase):
         d = Distribution.from_shape((nrows, 20), comm=self.comm)
         a = localarray.ones(d)
         expected = np.ones((nrows // size, 20))
-        assert_array_equal(a.local_array, expected)
+        assert_array_equal(a.ndarray, expected)
 
 
 if __name__ == '__main__':

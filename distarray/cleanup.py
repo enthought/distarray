@@ -4,21 +4,37 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+from __future__ import print_function
+
 from distarray.ipython_utils import IPythonClient
 
 
-def cleanup(view, prefix):
-    """ Delete keys with prefix from client's engines. """
-    # Delete keys only from this context.
-    def engine_cleanup(prefix):
-        glb = globals()
-        global_keys = list(globals())
-        for gk in global_keys:
-            if gk.startswith(prefix):
-                del glb[gk]
-    view.apply_async(engine_cleanup, prefix)
+def engine_cleanup(module_name, prefix):
+    """ Remove variables with ``prefix`` prefix from the namespace of the
+    module with ``module_name``. 
+    """
+    mod = __import__(module_name)
+    ns = mod.__dict__
+    keys = tuple(ns.keys())
+    deleted = 0
+    for k in keys:
+        if k.startswith(prefix):
+            del ns[k]
+            deleted += 1
+    count = 0
+    for k in ns:
+        if k.startswith(prefix):
+            count += 1
+    return (deleted, count)
 
-def cleanup_all(prefix):
+
+def cleanup(view, module_name, prefix):
+    """ Delete keys with prefix from client's engines. """
+    remaining = view.apply_async(engine_cleanup, module_name, prefix).get_dict()
+    return remaining
+
+
+def cleanup_all(module_name, prefix):
     """ Connects to all engines and runs ``cleanup()`` on them. """
     try:
         c = IPythonClient()
@@ -26,9 +42,10 @@ def cleanup_all(prefix):
         return
     try:
         v = c[:]
-        cleanup(v, prefix)
+        cleanup(v, module_name, prefix)
     finally:
         c.close()
+
 
 def get_local_keys(view, prefix):
     """ Returns a dictionary of keyname -> target_list mapping for all names
@@ -46,3 +63,28 @@ def get_local_keys(view, prefix):
             targets_from_key.setdefault(key, []).append(target)
     
     return targets_from_key
+
+def clear(view):
+    """ Removes all distarray-related modules from engines' sys.modules."""
+
+    def clear_engine():
+        from sys import modules
+        orig_mods = set(modules)
+        for m in modules.copy():
+            if m.startswith('distarray'):
+                del modules[m]
+        return sorted(orig_mods - set(modules))
+
+    return view.apply_async(clear_engine).get_dict()
+
+def clear_all():
+    try:
+        c = IPythonClient()
+    except IOError:  # If we can't create a client, return silently.
+        return
+    try:
+        v = c[:]
+        mods = clear(v)
+    finally:
+        c.close()
+    return mods

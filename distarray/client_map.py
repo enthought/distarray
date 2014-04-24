@@ -5,15 +5,15 @@
 # ---------------------------------------------------------------------------
 
 """
-ClientMDMap class and auxiliary ClientMap classes.
+Distribution class and auxiliary ClientMap classes.
 
-The ClientMDMap is a multi-dimensional map class that manages the
-one-dimensional maps for each DistArray dimension.  The ClientMDMap class
+The Distribution is a multi-dimensional map class that manages the
+one-dimensional maps for each DistArray dimension.  The Distribution class
 represents the *distribution* information for a distributed array, independent
-of the distributed array's *data*. ClientMDMaps allow DistArrays to reduce
+of the distributed array's *data*. Distributions allow DistArrays to reduce
 overall communication when indexing and slicing by determining which processes
 own (or may possibly own) the indices in question.  Two DistArray objects can
-share the same ClientMDMap if they have the exact same distribution.
+share the same Distribution if they have the exact same distribution.
 
 The one-dimensional ClientMap classes keep track of which process owns which
 index in that dimension.  This class has several subclasses for specific
@@ -37,29 +37,101 @@ from distarray.metadata_utils import (normalize_dist,
                                       validate_grid_shape)
 
 
-def client_map_factory(size, dist, grid_size):
-    """ Returns an instance of the appropriate subclass of ClientMapBase.
-    """
-    cls_from_dist = {
-            'b': ClientBlockMap,
-            'c': ClientBlockCyclicMap,
-            'n': ClientNoDistMap,
-            'u': ClientUnstructuredMap,
-            }
-    if dist not in cls_from_dist:
-        raise ValueError("unknown distribution type for %r" % dist)
-    return cls_from_dist[dist](size, grid_size)
+def _compactify_dicts(dicts):
+    """ Internal helper function to take a list of dimension dictionaries with
+    duplicates and remove the dupes.
 
+    """
+    # Workaround to make the dictionary's contents hashable.
+    for d in dicts:
+        if 'indices' in d:
+            d['indices'] = tuple(d['indices'])
+    try:
+        return [dict(u) for u in set(tuple(sorted(d.items())) for d in dicts)]
+    except TypeError:
+        result = []
+        for i, d in enumerate(dicts):
+            if d not in dicts[i+1:]:
+                result.append(d)
+        return result
+
+
+# ---------------------------------------------------------------------------
+# Functions for creating Map objects
+# ---------------------------------------------------------------------------
+
+def choose_map(dist_type):
+    """Choose a map classe given one of the distribution types."""
+    cls_from_dist_type = {
+        'b': BlockMap,
+        'c': BlockCyclicMap,
+        'n': NoDistMap,
+        'u': UnstructuredMap,
+        }
+    if dist_type not in cls_from_dist_type:
+        raise ValueError("unknown distribution type for %r" % dist_type)
+    return cls_from_dist_type[dist_type]
+
+
+def map_from_dim_datas(dim_datas):
+    """ Generates a ClientMap instance from a santized sequence of dim_data
+    dictionaries.
+
+    Parameters
+    ----------
+    dim_datas : sequence of dictionaries
+        Each dictionary is a "dimension dictionary" from the distributed array
+        protocol, one per process in this dimension of the process grid.  The
+        dimension dictionaries shall all have the same keys and values for
+        global attributes: `dist_type`, `size`, `proc_grid_size`, and perhaps
+        others.
+
+    Returns
+    -------
+        An instance of a subclass of MapBase.
+
+    """
+    # check that all proccesses / ranks are accounted for.
+    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
+    if proc_ranks != list(range(len(dim_datas))):
+        msg = "Ranks of processes (%r) not consistent."
+        raise ValueError(msg % proc_ranks)
+    # Sort dim_datas according to proc_grid_rank.
+    dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
+
+    dist_type = dim_datas[0]['dist_type']
+    map_class = choose_map(dist_type)
+    return map_class.from_dim_data(dim_datas)
+
+
+def map_from_global_dim_dict(global_dim_dict):
+    """Given a global_dim_dict return map."""
+
+    dist_type = global_dim_dict['dist_type']
+    map_class = choose_map(dist_type)
+    return map_class.from_global_dim_dict(global_dim_dict)
+
+
+def map_from_sizes(size, dist_type, grid_size):
+    """ Returns an instance of the appropriate subclass of MapBase.
+    """
+    map_class = choose_map(dist_type)
+    return map_class(size, grid_size)
+
+
+# ---------------------------------------------------------------------------
+# Map classes
+# ---------------------------------------------------------------------------
 
 @add_metaclass(ABCMeta)
-class ClientMapBase(object):
+class MapBase(object):
     """ Base class for one-dimensional client-side maps.
 
     Maps keep track of the relevant distribution information for a single
     dimension of a distributed array.  Maps allow distributed arrays to keep
     track of which process to talk to when indexing and slicing.
 
-    Classes that inherit from `ClientMapBase` must implement the `owners()`
+    Classes that inherit from `MapBase` must implement the `owners()`
     abstractmethod.
 
     """
@@ -75,7 +147,11 @@ class ClientMapBase(object):
         raise IndexError()
 
 
-class ClientNoDistMap(ClientMapBase):
+# ---------------------------------------------------------------------------
+# 1-D Map classes
+# ---------------------------------------------------------------------------
+
+class NoDistMap(MapBase):
 
     dist = 'n'
 
@@ -103,7 +179,7 @@ class ClientNoDistMap(ClientMapBase):
 
     def __init__(self, size, grid_size):
         if grid_size != 1:
-            msg = "grid_size for ClientNoDistMap must be 1 (given %s)"
+            msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
 
@@ -111,14 +187,15 @@ class ClientNoDistMap(ClientMapBase):
         return [0] if idx >= 0 and idx < self.size else []
 
     def get_dimdicts(self):
-        return ({'dist_type' : 'n',
-                'size' : self.size,
-                'proc_grid_size' : 1,
-                'proc_grid_rank' : 0,
-                },)
+        return ({
+            'dist_type': 'n',
+            'size': self.size,
+            'proc_grid_size': 1,
+            'proc_grid_rank': 0,
+            },)
 
 
-class ClientBlockMap(ClientMapBase):
+class BlockMap(MapBase):
 
     dist = 'b'
 
@@ -155,8 +232,8 @@ class ClientBlockMap(ClientMapBase):
                    "inconsistent with proc_grid_size (%r).")
             raise ValueError(msg % (len(dim_data_seq), self.grid_size))
         self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
-        self.boundary_padding, self.comm_padding = dd.get('padding', (0,0))
-        
+        self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
+
         return self
 
     def __init__(self, size, grid_size):
@@ -180,17 +257,22 @@ class ClientBlockMap(ClientMapBase):
         padding[0][0] = self.boundary_padding
         padding[-1][-1] = self.boundary_padding
         data_tuples = zip(grid_ranks, padding, self.bounds)
-        return tuple(({'dist_type' : 'b',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'start' : start,
-                        'stop' : stop,
-                        'padding': padding,
-                        }) for grid_rank, padding, (start, stop) in data_tuples)
+        # Build the result
+        out = []
+        for grid_rank, padding, (start, stop) in data_tuples:
+            out.append({
+                'dist_type': 'b',
+                'size': self.size,
+                'proc_grid_size': self.grid_size,
+                'proc_grid_rank': grid_rank,
+                'start': start,
+                'stop': stop,
+                'padding': padding,
+                })
+        return tuple(out)
 
 
-class ClientBlockCyclicMap(ClientMapBase):
+class BlockCyclicMap(MapBase):
 
     dist = 'c'
 
@@ -229,16 +311,16 @@ class ClientBlockCyclicMap(ClientMapBase):
         return [idx_block % self.grid_size]
 
     def get_dimdicts(self):
-        return tuple(({'dist_type' : 'c',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'start' : grid_rank * self.block_size,
+        return tuple(({'dist_type': 'c',
+                        'size': self.size,
+                        'proc_grid_size': self.grid_size,
+                        'proc_grid_rank': grid_rank,
+                        'start': grid_rank * self.block_size,
                         'block_size': self.block_size,
                         }) for grid_rank in range(self.grid_size))
 
 
-class ClientUnstructuredMap(ClientMapBase):
+class UnstructuredMap(MapBase):
 
     dist = 'u'
 
@@ -247,10 +329,10 @@ class ClientUnstructuredMap(ClientMapBase):
         if glb_dim_dict['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
-        indices_sequence = tuple(np.asarray(ind) for ind in glb_dim_dict['indices'])
-        size = sum(len(ii) for ii in indices_sequence)
-        grid_size = len(indices_sequence)
-        return cls(size, grid_size, indices=indices_sequence)
+        indices = tuple(np.asarray(i) for i in glb_dim_dict['indices'])
+        size = sum(len(i) for i in indices)
+        grid_size = len(indices)
+        return cls(size, grid_size, indices=indices)
 
     @classmethod
     def from_dim_data(cls, dim_data_seq):
@@ -285,107 +367,28 @@ class ClientUnstructuredMap(ClientMapBase):
     def get_dimdicts(self):
         if self.indices is None:
             raise ValueError()
-        return tuple(({'dist_type' : 'u',
-                        'size' : self.size,
-                        'proc_grid_size' : self.grid_size,
-                        'proc_grid_rank' : grid_rank,
-                        'indices' : ii,
-                        }) for grid_rank, ii in enumerate(self.indices))
+        return tuple(({
+            'dist_type': 'u',
+            'size': self.size,
+            'proc_grid_size': self.grid_size,
+            'proc_grid_rank': grid_rank,
+            'indices': ii,
+            }) for grid_rank, ii in enumerate(self.indices))
 
 
-def _compactify_dicts(dicts):
-    """ Internal helper function to take a list of dimension dictionaries with
-    duplicates and remove the dupes.
+# ---------------------------------------------------------------------------
+# N-Dimensional map.
+# ---------------------------------------------------------------------------
 
-    """
-    # Workaround to make the dictionary's contents hashable.
-    for d in dicts:
-        if 'indices' in d:
-            d['indices'] = tuple(d['indices'])
-    try:
-        return [dict(u) for u in set(tuple(sorted(d.items())) for d in dicts)]
-    except TypeError:
-        result = []
-        for i, d in enumerate(dicts):
-            if d not in dicts[i+1:]:
-                result.append(d)
-        return result
-
-
-def map_from_dim_datas(dim_datas):
-    """ Generates a ClientMap instance from a santized sequence of dim_data
-    dictionaries.
-
-    Parameters
-    ----------
-    dim_datas : sequence of dictionaries
-        Each dictionary is a "dimension dictionary" from the distributed array
-        protocol, one per process in this dimension of the process grid.  The
-        dimension dictionaries shall all have the same keys and values for
-        global attributes: `dist_type`, `size`, `proc_grid_size`, and perhaps
-        others.
-
-    Returns
-    -------
-        An instance of a subclass of ClientMapBase.
-
-    """
-    # check that all proccesses / ranks are accounted for.
-    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
-    if proc_ranks != list(range(len(dim_datas))):
-        msg = "Ranks of processes (%r) not consistent."
-        raise ValueError(msg % proc_ranks)
-    # Sort dim_datas according to proc_grid_rank.
-    dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
-
-    dist_type = dim_datas[0]['dist_type']
-    selector = {'n': ClientNoDistMap.from_dim_data,
-                'b': ClientBlockMap.from_dim_data,
-                'c': ClientBlockCyclicMap.from_dim_data,
-                'u': ClientUnstructuredMap.from_dim_data}
-    if dist_type not in selector:
-        raise ValueError("Unknown dist_type %r" % dist_type)
-    return selector[dist_type](dim_datas)
-
-def map_from_global_dim_dict(global_dim_dict):
-
-    dist_type = global_dim_dict['dist_type']
-    selector = {'n': ClientNoDistMap.from_global_dim_dict,
-                'b': ClientBlockMap.from_global_dim_dict,
-                'c': ClientBlockCyclicMap.from_global_dim_dict,
-                'u': ClientUnstructuredMap.from_global_dim_dict,
-                }
-    if dist_type not in selector:
-        raise ValueError("Unknown dist_type %r" % dist_type)
-    return selector[dist_type](global_dim_dict)
-
-
-class ClientMDMap(object):
+class Distribution(object):
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
 
     """
 
     @classmethod
-    def from_global_dim_data(cls, context, glb_dim_data):
-        self = cls.__new__(cls)
-        self.context = context
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
-        self.shape = tuple(m.size for m in self.maps)
-        self.ndim = len(self.maps)
-        self.dist = tuple(m.dist for m in self.maps)
-        self.grid_shape = tuple(m.grid_size for m in self.maps)
-
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
-
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
-
-        return self
-
-    @classmethod
     def from_dim_data(cls, context, dim_datas):
-        """ Creates a ClientMDMap from a sequence of `dim_data` dictionary
+        """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
         """
 
@@ -400,7 +403,7 @@ class ClientMDMap(object):
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
-        self.rank_from_coords = { c: r for (r, c) in enumerate(coords)}
+        self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
 
         dim_data_per_dim = [_compactify_dicts(dict_tuple)
                             for dict_tuple in zip(*dim_datas)]
@@ -412,8 +415,10 @@ class ClientMDMap(object):
 
         return self
 
-    def __init__(self, context, shape, dist, grid_shape=None):
+    @classmethod
+    def from_shape(cls, context, shape, dist, grid_shape=None):
 
+        self = cls.__new__(cls)
         self.context = context
         self.shape = shape
         self.ndim = len(shape)
@@ -433,8 +438,22 @@ class ClientMDMap(object):
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
         # List of `ClientMap` objects, one per dimension.
-        self.maps = [client_map_factory(*args)
+        self.maps = [map_from_sizes(*args)
                      for args in zip(self.shape, self.dist, self.grid_shape)]
+        return self
+
+    def __init__(self, context, glb_dim_data):
+        self.context = context
+        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
+
+        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+
+        nelts = reduce(operator.mul, self.grid_shape)
+        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the

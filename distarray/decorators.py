@@ -179,8 +179,8 @@ class vectorize(DecoratorBase):
     same shape, and this will be the shape of the output distarray.
     """
 
-    def get_local_array(self, da, arg_keys):
-        return arg_keys + [da.key + '.local_array']
+    def get_ndarray(self, da, arg_keys):
+        return arg_keys + [da.key + '.ndarray']
 
     def __call__(self, *args, **kwargs):
         # get context from args
@@ -201,10 +201,10 @@ class vectorize(DecoratorBase):
                 # parse args
                 args_str, kwargs_str = self.key_and_push_args(
                     args, kwargs, context=context,
-                    da_handler=self.get_local_array)
+                    da_handler=self.get_ndarray)
 
                 # Call the function
-                exec_str = ("if %s.local_array.size != 0: %s.local_array = "
+                exec_str = ("if %s.ndarray.size != 0: %s.ndarray = "
                             "%s(*%s, **%s)")
                 exec_str %= (out.key, out.key, self.fn_key, args_str,
                              kwargs_str)

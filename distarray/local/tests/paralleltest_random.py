@@ -25,8 +25,8 @@ class TestBasic(MpiTestCase):
         self.assertEqual(len(la.distribution), 2)
         self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.local_shape, (4, 16))
-        self.assertEqual(la.local_array.shape, la.local_shape)
-        self.assertEqual(la.local_array.dtype, la.dtype)
+        self.assertEqual(la.ndarray.shape, la.local_shape)
+        self.assertEqual(la.ndarray.dtype, la.dtype)
 
     def test_label_state(self):
         """ Test we can label the local random generator with the rank. """

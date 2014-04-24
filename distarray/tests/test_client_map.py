@@ -23,7 +23,8 @@ class TestClientMap(unittest.TestCase):
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53
-        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), {0:'b'}, (4,1))
+        cm = client_map.Distribution.from_shape(self.ctx, (nrows, ncols),
+                                                {0: 'b'}, (4, 1))
         chunksize = (nrows // 4) + 1
         for _ in range(100):
             r, c = randrange(nrows), randrange(ncols)
@@ -33,7 +34,8 @@ class TestClientMap(unittest.TestCase):
     def test_2D_bb(self):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
-        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), ('b', 'b'),
+        cm = client_map.Distribution.from_shape(
+                self.ctx, (nrows, ncols), ('b', 'b'),
                 (nprocs_per_dim, nprocs_per_dim))
         row_chunks = nrows // nprocs_per_dim + 1
         col_chunks = ncols // nprocs_per_dim + 1
@@ -46,7 +48,8 @@ class TestClientMap(unittest.TestCase):
     def test_2D_cc(self):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
-        cm = client_map.ClientMDMap(self.ctx, (nrows, ncols), ('c', 'c'),
+        cm = client_map.Distribution.from_shape(
+                self.ctx, (nrows, ncols), ('c', 'c'),
                 (nprocs_per_dim, nprocs_per_dim))
         for r in range(nrows):
             for c in range(ncols):

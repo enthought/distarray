@@ -42,7 +42,7 @@ class TestCreateCommAlternate(unittest.TestCase):
         d = Distribution.from_shape((nrows, 20), comm=comm)
         a = zeros(d)
         expected = numpy.zeros((nrows // size, 20))
-        assert_array_equal(a.local_array, expected)
+        assert_array_equal(a.ndarray, expected)
         # Cleanup.
         comm.Free()
 
