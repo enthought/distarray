@@ -30,11 +30,10 @@ import numpy as np
 
 from distarray.externals.six import add_metaclass
 from distarray.externals.six.moves import range, reduce
-from distarray.local.localarray import _start_stop_block
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
-                                      validate_grid_shape)
+                                      validate_grid_shape, _start_stop_block)
 
 
 def _compactify_dicts(dicts):

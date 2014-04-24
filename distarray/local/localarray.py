@@ -25,22 +25,6 @@ from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-def _start_stop_block(size, proc_grid_size, proc_grid_rank):
-    nelements = size // proc_grid_size
-    if size % proc_grid_size != 0:
-        nelements += 1
-
-    start = proc_grid_rank * nelements
-    if start > size:
-        start = size
-        stop = size
-
-    stop = start + nelements
-    if stop > size:
-        stop = size
-
-    return start, stop
-
 # Register numpy integer types with numbers.Integral ABC.
 Integral.register(np.signedinteger)
 Integral.register(np.unsignedinteger)

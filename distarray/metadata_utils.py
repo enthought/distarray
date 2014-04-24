@@ -184,3 +184,20 @@ def distribute_indices(dd):
     except KeyError:
         msg = "dist_type %r not supported."
         raise TypeError(msg % dist_type)
+
+
+def _start_stop_block(size, proc_grid_size, proc_grid_rank):
+    nelements = size // proc_grid_size
+    if size % proc_grid_size != 0:
+        nelements += 1
+
+    start = proc_grid_rank * nelements
+    if start > size:
+        start = size
+        stop = size
+
+    stop = start + nelements
+    if stop > size:
+        stop = size
+
+    return start, stop
