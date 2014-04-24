@@ -149,9 +149,9 @@ class TestLocalDecorator(TestCase):
         cls.context.close()
 
     def test_local(self):
+        """Test the @local decorator"""
         context = Context()
 
-        """Test the @local decorator"""
         da = context.empty((4, 4))
         a = numpy.empty((4, 4))
 
