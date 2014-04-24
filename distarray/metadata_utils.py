@@ -147,46 +147,8 @@ def normalize_dist(dist, ndim):
         raise TypeError("Dist must be a string, tuple, list or dict")
 
 
-def distribute_cyclic_indices(dd):
-    """Fill in `start` in dim dict `dd`."""
-    if 'start' in dd:
-        return
-    else:
-        dd['start'] = dd['proc_grid_rank']
-
-
-def distribute_block_indices(dd):
-    """Fill in `start` and `stop` in dim dict `dd`."""
-    if ('start' in dd) and ('stop' in dd):
-        return
-
-    nelements = dd['size'] // dd['proc_grid_size']
-    if dd['size'] % dd['proc_grid_size'] != 0:
-        nelements += 1
-
-    dd['start'] = dd['proc_grid_rank'] * nelements
-    if dd['start'] > dd['size']:
-        dd['start'] = dd['size']
-        dd['stop'] = dd['size']
-
-    dd['stop'] = dd['start'] + nelements
-    if dd['stop'] > dd['size']:
-        dd['stop'] = dd['size']
-
-
-def distribute_indices(dd):
-    """Fill in index related keys in dim dict `dd`."""
-    dist_type = dd['dist_type']
-    try:
-        {'n': lambda dd: None,
-         'b': distribute_block_indices,
-         'c': distribute_cyclic_indices}[dist_type](dd)
-    except KeyError:
-        msg = "dist_type %r not supported."
-        raise TypeError(msg % dist_type)
-
-
 def _start_stop_block(size, proc_grid_size, proc_grid_rank):
+    """Return `start` and `stop` for a regularly distributed block dim."""
     nelements = size // proc_grid_size
     if size % proc_grid_size != 0:
         nelements += 1
@@ -201,3 +163,33 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
         stop = size
 
     return start, stop
+
+
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dim dict `dd`."""
+    if ('start' in dd) and ('stop' in dd):
+        return
+    else:
+        dd['start'], dd['stop'] = _start_stop_block(dd['size'],
+                                                    dd['proc_grid_size'],
+                                                    dd['proc_grid_rank'])
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` in dim dict `dd`."""
+    if 'start' in dd:
+        return
+    else:
+        dd['start'] = dd['proc_grid_rank']
+
+
+def distribute_indices(dd):
+    """Fill in index related keys in dim dict `dd`."""
+    dist_type = dd['dist_type']
+    try:
+        {'n': lambda dd: None,
+         'b': distribute_block_indices,
+         'c': distribute_cyclic_indices}[dist_type](dd)
+    except KeyError:
+        msg = "dist_type %r not supported."
+        raise TypeError(msg % dist_type)
