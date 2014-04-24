@@ -487,7 +487,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_npy(self, filename, dim_data_per_rank, grid_shape=None):
+    def load_npy(self, filename, dim_data_per_rank):
         """
         Load a DistArray from a dataset in a ``.npy`` file.
 
@@ -498,8 +498,6 @@ class Context(object):
         dim_data_per_rank : sequence of tuples of dict
             A "dim_data" data structure for every rank.  Described here:
             https://github.com/enthought/distributed-array-protocol
-        grid_shape : tuple of int, optional
-            Shape of process grid.
 
         Returns
         -------
@@ -521,8 +519,7 @@ class Context(object):
 
         return DistArray.from_localarrays(da_key, self)
 
-    def load_hdf5(self, filename, dim_data_per_rank, key='buffer',
-                  grid_shape=None):
+    def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -536,8 +533,6 @@ class Context(object):
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
-        grid_shape : tuple of int, optional
-            Shape of process grid.
 
         Returns
         -------
