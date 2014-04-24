@@ -12,7 +12,7 @@ from collections import Sequence, Mapping
 import numpy
 
 from distarray import utils
-from distarray.externals.six import next, string_types
+from distarray.externals.six import next
 from distarray.externals.six.moves import map
 
 
