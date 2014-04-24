@@ -206,17 +206,23 @@ class Context(object):
         self._execute(cmd.format(**locals()))
         return DistArray.from_localarrays(da_key, self)
 
-    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def zeros(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.zeros',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype)
 
-    def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def ones(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.ones',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype,)
 
-    def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def empty(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.empty',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype)
@@ -560,8 +566,10 @@ class Context(object):
 
         return DistArray.from_localarrays(da_key, self)
 
-    def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
+    def fromndarray(self, arr, dist=None, grid_shape=None):
         """Convert an ndarray to a distarray."""
+        if dist is None:
+            dist = {0: 'b'}
         out = self.empty(arr.shape, dtype=arr.dtype, dist=dist,
                          grid_shape=grid_shape)
         for index, value in numpy.ndenumerate(arr):
