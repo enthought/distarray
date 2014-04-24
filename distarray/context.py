@@ -26,7 +26,7 @@ DISTARRAY_BASE_NAME = '__distarray__'
 
 
 class Context(object):
-    '''
+    """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
     an MPI intracommunicator that they use to communicate with worker
@@ -36,7 +36,7 @@ class Context(object):
     although it is possible to have more than one context with a different
     selection of engines.
 
-    '''
+    """
 
     _CLEANUP = None
 
