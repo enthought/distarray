@@ -5,13 +5,12 @@
 # ---------------------------------------------------------------------------
 
 import unittest
+
 import numpy as np
 
-from distarray.externals.six.moves import reduce
-
 from distarray import utils
-from distarray.testing import MpiTestCase
-
+from distarray.testing import (MpiTestCase, assert_localarrays_allclose,
+                               assert_localarrays_equal)
 from distarray.local.localarray import LocalArray, ndenumerate
 from distarray.local.maps import Distribution
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
@@ -404,23 +403,6 @@ class TestLocalArrayMethods(MpiTestCase):
          })
          ]
 
-    def assert_localarrays_allclose(self, l0, l1, check_dtype=False):
-        self.assertEqual(l0.dist, l1.dist)
-        self.assertEqual(l0.global_shape, l1.global_shape)
-        self.assertEqual(l0.ndim, l1.ndim)
-        self.assertEqual(l0.global_size, l1.global_size)
-        self.assertEqual(l0.comm_size, l1.comm_size)
-        self.assertEqual(l0.comm_rank, l1.comm_rank)
-        self.assertEqual(l0.cart_coords, l1.cart_coords)
-        self.assertEqual(l0.grid_shape, l1.grid_shape)
-        self.assertEqual(l0.local_shape, l1.local_shape)
-        self.assertEqual(l0.local_size, l1.local_size)
-        self.assertEqual(l0.ndarray.shape, l1.ndarray.shape)
-        if check_dtype:
-            self.assertEqual(l0.ndarray.dtype, l1.ndarray.dtype)
-        self.assertEqual(len(l0.distribution), len(l1.distribution))
-        np.testing.assert_allclose(l0.ndarray, l1.ndarray)
-
     def test_copy_bn(self):
         distribution = Distribution.from_shape((16, 16),
                                                dist=('b', 'n'),
@@ -428,7 +410,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(distribution, dtype=np.int_)
         a.fill(11)
         b = a.copy()
-        self.assert_localarrays_allclose(a, b, check_dtype=True)
+        assert_localarrays_equal(a, b, check_dtype=True)
 
     def test_copy_cbc(self):
         distribution = Distribution(self.ddpp[self.comm.Get_rank()],
@@ -436,7 +418,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(distribution, dtype=np.int_)
         a.fill(12)
         b = a.copy()
-        self.assert_localarrays_allclose(a, b, check_dtype=True)
+        assert_localarrays_equal(a, b, check_dtype=True)
 
     def test_astype_bn(self):
         new_dtype = np.float32
@@ -444,7 +426,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(d, dtype=np.int_)
         a.fill(11)
         b = a.astype(new_dtype)
-        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
         self.assertEqual(b.ndarray.dtype, new_dtype)
 
@@ -454,7 +436,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(d, dtype=np.int32)
         a.fill(12)
         b = a.astype(new_dtype)
-        self.assert_localarrays_allclose(a, b, check_dtype=False)
+        assert_localarrays_allclose(a, b, check_dtype=False)
         self.assertEqual(b.dtype, new_dtype)
         self.assertEqual(b.ndarray.dtype, new_dtype)
 
@@ -463,7 +445,7 @@ class TestLocalArrayMethods(MpiTestCase):
         a = LocalArray(d, dtype=np.int32)
         a.fill(11)
         b = a.view()
-        self.assert_localarrays_allclose(a, b)
+        assert_localarrays_equal(a, b)
         self.assertEqual(id(a.local_data), id(b.local_data))
 
     def test_asdist_like(self):
