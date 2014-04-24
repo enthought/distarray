@@ -37,7 +37,7 @@ class Random(object):
             self.context._comm_key)
         self.context._execute(cmd)
 
-    def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
+    def rand(self, size=None, dist=None, grid_shape=None):
         """
         rand(size=(d0, d1, ..., dn))
 
@@ -63,6 +63,8 @@ class Random(object):
             Random values.
 
         """
+        if dist is None:
+            dist = {0: 'b'}
         keys = self.context._key_and_push(size, dist, grid_shape)
         new_key = self.context._generate_key()
         subs = (new_key,) + keys + (self.context._comm_key,)
