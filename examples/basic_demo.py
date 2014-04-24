@@ -35,11 +35,15 @@ def local_sin_plus_50(da):
 def global_sum(da):
     """Reproducing the `sum` function in densedistarray."""
     from distarray.mpiutils import MPI
-    local_sum = da.local_array.sum()
-    global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
+    from distarray.local import LocalArray
+    from distarray.local.maps import Distribution
+
+    local_sum = da.ndarray.sum()
+    global_sum = da.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    new_distarray = distarray.local.LocalArray((1,), buf=new_arr)
+    distribution = distarray.local.maps.Distribution.from_shape((1,))
+    new_distarray = distarray.local.LocalArray(distribution, buf=new_arr)
     return new_distarray
 
 
