@@ -33,7 +33,8 @@ from distarray.externals.six.moves import range, reduce
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
-                                      validate_grid_shape, _start_stop_block)
+                                      validate_grid_shape,
+                                      _start_stop_block)
 
 
 def _compactify_dicts(dicts):
