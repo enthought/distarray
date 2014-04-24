@@ -428,7 +428,6 @@ class Context(object):
 
         """
         da_key = self._generate_key()
-        subs = (da_key, name, self._comm_key)
 
         if isinstance(name, six.string_types):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
