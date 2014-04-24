@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from distarray.testing import MpiTestCase
+from distarray.testing import MpiTestCase, assert_localarrays_equal
 from distarray.local import arecompatible
 import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
@@ -55,6 +55,12 @@ class TestFunctions(MpiTestCase):
         for global_inds, value in localarray.ndenumerate(a):
             self.assertEqual(sum(global_inds), value)
 
+    def test_fromndarray_like(self):
+        """Can we build an array using fromndarray_like?"""
+        d = Distribution.from_shape((16, 16), dist=('c', 'b'), comm=self.comm)
+        la0 = LocalArray(d, dtype='int8')
+        la1 = localarray.fromndarray_like(la0.ndarray, la0)
+        assert_localarrays_equal(la0, la1, check_dtype=True)
 
 class TestCreationFunctions(MpiTestCase):
 

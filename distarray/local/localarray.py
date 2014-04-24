@@ -903,11 +903,10 @@ def fromfunction(function, distribution, **kwargs):
     return da
 
 
-def fromlocalarray_like(local_arr, like_arr):
-    """Create a new LocalArray using a given local array (+its dtype)."""
-    res = LocalArray(like_arr.global_shape, local_arr.dtype, like_arr.dist,
-                     like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
-    return res
+def fromndarray_like(ndarray, like_arr):
+    """Create a new LocalArray like `like_arr` with buffer set to `ndarray`.
+    """
+    return LocalArray(like_arr.distribution, buf=ndarray)
 
 # ---------------------------------------------------------------------------
 # Operations on two or more arrays
