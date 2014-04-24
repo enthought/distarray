@@ -64,6 +64,13 @@ class TestFunctions(MpiTestCase):
 
 class TestCreationFunctions(MpiTestCase):
 
+    def test_empty(self):
+        size = self.comm_size
+        nrows = size * 3
+        d = Distribution.from_shape((nrows, 20), comm=self.comm)
+        a = localarray.empty(d)
+        self.assertEqual(a.global_shape, (nrows, 20))
+
     def test_zeros(self):
         size = self.comm_size
         nrows = size * 3
