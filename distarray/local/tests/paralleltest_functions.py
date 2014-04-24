@@ -23,13 +23,13 @@ class TestFunctions(MpiTestCase):
         d0 = Distribution.from_shape((16,16), comm=self.comm)
         a = LocalArray(d0, dtype='int64')
         b = LocalArray(d0, dtype='float32')
-        self.assertEqual(arecompatible(a,b), True)
+        self.assertTrue(arecompatible(a,b))
 
         da = Distribution.from_shape((16, 16), dist='c', comm=self.comm)
         a = LocalArray(da, dtype='int64')
         db = Distribution.from_shape((16, 16), dist='b', comm=self.comm)
         b = LocalArray(db, dtype='float32')
-        self.assertEqual(arecompatible(a,b), False)
+        self.assertFalse(arecompatible(a,b))
 
     def test_fromfunction(self):
         """Can we build an array using fromfunction and a trivial function?"""
