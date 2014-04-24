@@ -184,7 +184,7 @@ class NoDistMap(MapBase):
         self.size = size
 
     def owners(self, idx):
-        return [0] if idx >= 0 and idx < self.size else []
+        return [0] if 0 <= idx < self.size else []
 
     def get_dimdicts(self):
         return ({
@@ -246,7 +246,7 @@ class BlockMap(MapBase):
     def owners(self, idx):
         coords = []
         for (coord, (lower, upper)) in enumerate(self.bounds):
-            if idx >= lower and idx < upper:
+            if lower <= idx < upper:
                 coords.append(coord)
         return coords
 
