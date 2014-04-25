@@ -59,12 +59,15 @@ class TestBasic(MpiTestCase):
         self.shape_asserts(la)
 
     def test_randint(self):
-        la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4, 1),
-                                  comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.randint(0, 10, distribution=d)
         self.shape_asserts(la)
 
     def test_randn(self):
-        la = local_random.randn((16, 16), grid_shape=(4, 1), comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.randn(distribution=d)
         self.shape_asserts(la)
 
 

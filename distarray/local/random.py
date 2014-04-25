@@ -8,7 +8,6 @@ from hashlib import sha256
 import numpy as np
 
 from distarray.local.localarray import LocalArray
-from distarray.local.maps import Distribution
 
 
 def label_state(comm):
@@ -78,26 +77,21 @@ def rand(distribution=None):
         return la
 
 
-def randint(low, high=None, size=None, dist=None, grid_shape=None,
-            comm=None):
-    if size is None:
+def randint(low, high=None, distribution=None):
+    if distribution is None:
         return np.random.randint(low, high)
     else:
         dtype = np.random.randint(low, high, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.randint(low, high, size=la.local_shape)
         return la
 
 
-def randn(size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def randn(distribution=None):
+    if distribution is None:
         return np.random.randn()
     else:
         dtype = np.random.randn(1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.randn(*la.local_shape)
         return la
