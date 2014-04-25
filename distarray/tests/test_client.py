@@ -18,9 +18,9 @@ import numpy
 from numpy.testing import assert_array_equal, assert_allclose
 
 from distarray.externals.six.moves import range
-from distarray.client.distarray import DistArray
-from distarray.client.maps import Distribution
-from distarray.client.context import Context
+from distarray.dist.distarray import DistArray
+from distarray.dist.maps import Distribution
+from distarray.dist.context import Context
 
 
 class TestDistArray(unittest.TestCase):

@@ -9,8 +9,8 @@
 
 from __future__ import absolute_import
 
-from distarray.client.distarray import DistArray
-from distarray.client.client_map import Distribution
+from distarray.dist.distarray import DistArray
+from distarray.dist.client_map import Distribution
 
 
 class Random(object):

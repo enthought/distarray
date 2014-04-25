@@ -18,8 +18,8 @@ import numpy
 
 from distarray import cleanup
 from distarray.externals import six
-from distarray.client.distarray import DistArray
-from distarray.client.maps import Distribution
+from distarray.dist.distarray import DistArray
+from distarray.dist.maps import Distribution
 
 from distarray.ipython_utils import IPythonClient
 from distarray import DISTARRAY_BASE_NAME

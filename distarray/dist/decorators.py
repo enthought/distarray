@@ -12,8 +12,8 @@ from __future__ import absolute_import
 
 import functools
 
-from distarray.client.distarray import DistArray
-from distarray.client.context import Context
+from distarray.dist.distarray import DistArray
+from distarray.dist.context import Context
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
 

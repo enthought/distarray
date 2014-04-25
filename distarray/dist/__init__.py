@@ -6,6 +6,6 @@
 
 from __future__ import absolute_import
 
-from distarray.client.distarray import DistArray
-from distarray.client.context import Context
-from distarray.client.functions import *
+from distarray.dist.distarray import DistArray
+from distarray.dist.context import Context
+from distarray.dist.functions import *
