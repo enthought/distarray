@@ -68,14 +68,12 @@ def normal(loc=0.0, scale=1.0, distribution=None):
         return la
 
 
-def rand(size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def rand(distribution=None):
+    if distribution is None:
         return np.random.rand()
     else:
         dtype = np.random.rand(1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.rand(*la.local_shape)
         return la
 
