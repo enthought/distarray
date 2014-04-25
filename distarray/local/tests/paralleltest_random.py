@@ -8,6 +8,7 @@ import unittest
 import numpy as np
 
 from distarray.local import random as local_random
+from distarray.local.maps import Distribution
 from distarray.testing import MpiTestCase
 
 
@@ -40,8 +41,9 @@ class TestBasic(MpiTestCase):
         self.assertFalse(state_equal)
 
     def test_beta(self):
-        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4, 1),
-                               comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.beta(2, 5, distribution=d)
         self.shape_asserts(la)
 
     def test_normal(self):

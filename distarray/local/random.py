@@ -48,14 +48,12 @@ def label_state(comm):
     np.random.set_state((s0, mod_array, s2, s3, s4))
 
 
-def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def beta(a, b, distribution=None):
+    if distribution is None:
         return np.random.beta(a, b)
     else:
         dtype = np.random.beta(a, b, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.beta(a, b, size=la.local_shape)
         return la
 
