@@ -4,7 +4,9 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+
 """Emulate numpy.random"""
+
 
 from distarray.client import DistArray
 
@@ -65,13 +67,18 @@ class Random(object):
         """
         if dist is None:
             dist = {0: 'b'}
-        keys = self.context._key_and_push(size, dist, grid_shape)
-        new_key = self.context._generate_key()
-        subs = (new_key,) + keys + (self.context._comm_key,)
+        da_key = self.context._generate_key()
+        size_key, dist_key, grid_shape_key = \
+            self.context._key_and_push(size, dist, grid_shape)
+        comm_key = self.context._comm_key
         self.context._execute(
-            '%s = distarray.local.random.rand(%s,%s,%s,%s)' % subs
+            '{da_key} = distarray.local.random.rand('
+            'distribution=distarray.local.maps.Distribution.from_shape('
+            'shape={size_key}, dist={dist_key},'
+            'grid_shape={grid_shape_key}, comm={comm_key}'
+            '))'.format(**locals())
         )
-        return DistArray.from_localarrays(new_key, self.context)
+        return DistArray.from_localarrays(da_key, self.context)
 
     def normal(self, loc=0.0, scale=1.0, size=None, dist=None,
                grid_shape=None):
@@ -132,13 +139,19 @@ class Random(object):
         """
         if dist is None:
             dist = {0: 'b'}
-        keys = self.context._key_and_push(loc, scale, size, dist, grid_shape)
-        new_key = self.context._generate_key()
-        subs = (new_key,) + keys + (self.context._comm_key,)
+        da_key = self.context._generate_key()
+        loc_key, scale_key, size_key, dist_key, grid_shape_key = \
+            self.context._key_and_push(loc, scale, size, dist, grid_shape)
+        comm_key = self.context._comm_key
         self.context._execute(
-            '%s = distarray.local.random.normal(%s,%s,%s,%s,%s,%s)' % subs
+            '{da_key} = distarray.local.random.normal('
+            'loc={loc_key}, scale={scale_key},'
+            'distribution=distarray.local.maps.Distribution.from_shape('
+            'shape={size_key}, dist={dist_key},'
+            'grid_shape={grid_shape_key}, comm={comm_key}'
+            '))'.format(**locals())
         )
-        return DistArray.from_localarrays(new_key, self.context)
+        return DistArray.from_localarrays(da_key, self.context)
 
     def randint(self, low, high=None, size=None, dist=None, grid_shape=None):
         """
@@ -176,14 +189,19 @@ class Random(object):
         """
         if dist is None:
             dist = {0: 'b'}
-
-        keys = self.context._key_and_push(low, high, size, dist, grid_shape)
-        new_key = self.context._generate_key()
-        subs = (new_key,) + keys + (self.context._comm_key,)
+        da_key = self.context._generate_key()
+        low_key, high_key, size_key, dist_key, grid_shape_key = \
+            self.context._key_and_push(low, high, size, dist, grid_shape)
+        comm_key = self.context._comm_key
         self.context._execute(
-            '%s = distarray.local.random.randint(%s,%s,%s,%s,%s,%s)' % subs
+            '{da_key} = distarray.local.random.randint('
+            'low={low_key}, high={high_key},'
+            'distribution=distarray.local.maps.Distribution.from_shape('
+            'shape={size_key}, dist={dist_key},'
+            'grid_shape={grid_shape_key}, comm={comm_key}'
+            '))'.format(**locals())
         )
-        return DistArray.from_localarrays(new_key, self.context)
+        return DistArray.from_localarrays(da_key, self.context)
 
     def randn(self, size=None, dist=None, grid_shape=None):
         """
@@ -210,10 +228,15 @@ class Random(object):
         """
         if dist is None:
             dist = {0: 'b'}
-        keys = self.context._key_and_push(size, dist, grid_shape)
-        new_key = self.context._generate_key()
-        subs = (new_key,) + keys + (self.context._comm_key,)
+        da_key = self.context._generate_key()
+        size_key, dist_key, grid_shape_key = \
+            self.context._key_and_push(size, dist, grid_shape)
+        comm_key = self.context._comm_key
         self.context._execute(
-            '%s = distarray.local.random.randn(%s,%s,%s,%s)' % subs
+            '{da_key} = distarray.local.random.randn('
+            'distribution=distarray.local.maps.Distribution.from_shape('
+            'shape={size_key}, dist={dist_key},'
+            'grid_shape={grid_shape_key}, comm={comm_key}'
+            '))'.format(**locals())
         )
-        return DistArray.from_localarrays(new_key, self.context)
+        return DistArray.from_localarrays(da_key, self.context)
