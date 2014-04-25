@@ -58,15 +58,12 @@ def beta(a, b, distribution=None):
         return la
 
 
-def normal(loc=0.0, scale=1.0, size=None, dist=None, grid_shape=None,
-           comm=None):
-    if size is None:
+def normal(loc=0.0, scale=1.0, distribution=None):
+    if distribution is None:
         return np.random.normal(loc, scale)
     else:
         dtype = np.random.normal(loc, scale, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.normal(loc, scale, size=la.local_shape)
         return la
 
