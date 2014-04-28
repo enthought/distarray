@@ -156,7 +156,6 @@ def _start_stop_block(size, proc_grid_size, proc_grid_rank):
     start = proc_grid_rank * nelements
     if start > size:
         start = size
-        stop = size
 
     stop = start + nelements
     if stop > size:

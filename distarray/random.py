@@ -37,7 +37,7 @@ class Random(object):
             self.context._comm_key)
         self.context._execute(cmd)
 
-    def rand(self, size=None, dist={0: 'b'}, grid_shape=None):
+    def rand(self, size=None, dist=None, grid_shape=None):
         """
         rand(size=(d0, d1, ..., dn))
 
@@ -63,6 +63,8 @@ class Random(object):
             Random values.
 
         """
+        if dist is None:
+            dist = {0: 'b'}
         keys = self.context._key_and_push(size, dist, grid_shape)
         new_key = self.context._generate_key()
         subs = (new_key,) + keys + (self.context._comm_key,)
@@ -71,7 +73,7 @@ class Random(object):
         )
         return DistArray.from_localarrays(new_key, self.context)
 
-    def normal(self, loc=0.0, scale=1.0, size=None, dist={0: 'b'},
+    def normal(self, loc=0.0, scale=1.0, size=None, dist=None,
                grid_shape=None):
         """
         normal(loc=0.0, scale=1.0, size=None, dist={0: 'b'}, grid_shape=None)
@@ -128,6 +130,8 @@ class Random(object):
                pp. 51, 51, 125.
 
         """
+        if dist is None:
+            dist = {0: 'b'}
         keys = self.context._key_and_push(loc, scale, size, dist, grid_shape)
         new_key = self.context._generate_key()
         subs = (new_key,) + keys + (self.context._comm_key,)
@@ -136,8 +140,7 @@ class Random(object):
         )
         return DistArray.from_localarrays(new_key, self.context)
 
-    def randint(self, low, high=None, size=None, dist={0: 'b'},
-                grid_shape=None):
+    def randint(self, low, high=None, size=None, dist=None, grid_shape=None):
         """
         randint(low, high=None, size=None)
 
@@ -171,6 +174,8 @@ class Random(object):
             distribution, or a single such random int if `size` not provided.
 
         """
+        if dist is None:
+            dist = {0: 'b'}
 
         keys = self.context._key_and_push(low, high, size, dist, grid_shape)
         new_key = self.context._generate_key()
@@ -180,7 +185,7 @@ class Random(object):
         )
         return DistArray.from_localarrays(new_key, self.context)
 
-    def randn(self, size=None, dist={0: 'b'}, grid_shape=None):
+    def randn(self, size=None, dist=None, grid_shape=None):
         """
         randn(size=(d0, d1, ..., dn))
 
@@ -203,6 +208,8 @@ class Random(object):
             from the standard normal distribution.
 
         """
+        if dist is None:
+            dist = {0: 'b'}
         keys = self.context._key_and_push(size, dist, grid_shape)
         new_key = self.context._generate_key()
         subs = (new_key,) + keys + (self.context._comm_key,)

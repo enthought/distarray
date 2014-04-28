@@ -919,9 +919,7 @@ def arecompatible(a, b):
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
                      linewidth=None, suppress=None):
-    res = np.set_printoptions(precision, threshold, edgeitems, linewidth,
-                              suppress)
-    return res
+    np.set_printoptions(precision, threshold, edgeitems, linewidth, suppress)
 
 
 def get_printoptions():

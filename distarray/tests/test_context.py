@@ -74,7 +74,7 @@ class TestContextCreation(unittest.TestCase):
         client.close()
 
     def test_context_target_reordering(self):
-        '''Are contexts' targets reordered in a consistent way?'''
+        """Are contexts' targets reordered in a consistent way?"""
         client = IPythonClient()
         orig_targets = client.ids
         ctx1 = Context(client, targets=shuffle(orig_targets[:]))

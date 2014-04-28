@@ -26,7 +26,7 @@ DISTARRAY_BASE_NAME = '__distarray__'
 
 
 class Context(object):
-    '''
+    """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
     an MPI intracommunicator that they use to communicate with worker
@@ -36,7 +36,7 @@ class Context(object):
     although it is possible to have more than one context with a different
     selection of engines.
 
-    '''
+    """
 
     _CLEANUP = None
 
@@ -206,17 +206,23 @@ class Context(object):
         self._execute(cmd.format(**locals()))
         return DistArray.from_localarrays(da_key, self)
 
-    def zeros(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def zeros(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.zeros',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype)
 
-    def ones(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def ones(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.ones',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype,)
 
-    def empty(self, shape, dtype=float, dist={0:'b'}, grid_shape=None):
+    def empty(self, shape, dtype=float, dist=None, grid_shape=None):
+        if dist is None:
+            dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.empty',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype)
@@ -422,7 +428,6 @@ class Context(object):
 
         """
         da_key = self._generate_key()
-        subs = (da_key, name, self._comm_key)
 
         if isinstance(name, six.string_types):
             subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
@@ -482,7 +487,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_npy(self, filename, dim_data_per_rank, grid_shape=None):
+    def load_npy(self, filename, dim_data_per_rank):
         """
         Load a DistArray from a dataset in a ``.npy`` file.
 
@@ -493,8 +498,6 @@ class Context(object):
         dim_data_per_rank : sequence of tuples of dict
             A "dim_data" data structure for every rank.  Described here:
             https://github.com/enthought/distributed-array-protocol
-        grid_shape : tuple of int, optional
-            Shape of process grid.
 
         Returns
         -------
@@ -516,8 +519,7 @@ class Context(object):
 
         return DistArray.from_localarrays(da_key, self)
 
-    def load_hdf5(self, filename, dim_data_per_rank, key='buffer',
-                  grid_shape=None):
+    def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -531,8 +533,6 @@ class Context(object):
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
-        grid_shape : tuple of int, optional
-            Shape of process grid.
 
         Returns
         -------
@@ -560,8 +560,10 @@ class Context(object):
 
         return DistArray.from_localarrays(da_key, self)
 
-    def fromndarray(self, arr, dist={0: 'b'}, grid_shape=None):
+    def fromndarray(self, arr, dist=None, grid_shape=None):
         """Convert an ndarray to a distarray."""
+        if dist is None:
+            dist = {0: 'b'}
         out = self.empty(arr.shape, dtype=arr.dtype, dist=dist,
                          grid_shape=grid_shape)
         for index, value in numpy.ndenumerate(arr):
