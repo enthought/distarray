@@ -8,7 +8,6 @@ from hashlib import sha256
 import numpy as np
 
 from distarray.local.localarray import LocalArray
-from distarray.local.maps import Distribution
 
 
 def label_state(comm):
@@ -48,63 +47,51 @@ def label_state(comm):
     np.random.set_state((s0, mod_array, s2, s3, s4))
 
 
-def beta(a, b, size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def beta(a, b, distribution=None):
+    if distribution is None:
         return np.random.beta(a, b)
     else:
         dtype = np.random.beta(a, b, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.beta(a, b, size=la.local_shape)
         return la
 
 
-def normal(loc=0.0, scale=1.0, size=None, dist=None, grid_shape=None,
-           comm=None):
-    if size is None:
+def normal(loc=0.0, scale=1.0, distribution=None):
+    if distribution is None:
         return np.random.normal(loc, scale)
     else:
         dtype = np.random.normal(loc, scale, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.normal(loc, scale, size=la.local_shape)
         return la
 
 
-def rand(size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def rand(distribution=None):
+    if distribution is None:
         return np.random.rand()
     else:
         dtype = np.random.rand(1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.rand(*la.local_shape)
         return la
 
 
-def randint(low, high=None, size=None, dist=None, grid_shape=None,
-            comm=None):
-    if size is None:
+def randint(low, high=None, distribution=None):
+    if distribution is None:
         return np.random.randint(low, high)
     else:
         dtype = np.random.randint(low, high, size=1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.randint(low, high, size=la.local_shape)
         return la
 
 
-def randn(size=None, dist=None, grid_shape=None, comm=None):
-    if size is None:
+def randn(distribution=None):
+    if distribution is None:
         return np.random.randn()
     else:
         dtype = np.random.randn(1).dtype
-        d = Distribution.from_shape(size, dist=dist, grid_shape=grid_shape,
-                                    comm=comm)
-        la = LocalArray(d, dtype=dtype)
+        la = LocalArray(distribution, dtype=dtype)
         la.ndarray[:] = np.random.randn(*la.local_shape)
         return la

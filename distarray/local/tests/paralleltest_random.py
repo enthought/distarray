@@ -8,6 +8,7 @@ import unittest
 import numpy as np
 
 from distarray.local import random as local_random
+from distarray.local.maps import Distribution
 from distarray.testing import MpiTestCase
 
 
@@ -40,27 +41,33 @@ class TestBasic(MpiTestCase):
         self.assertFalse(state_equal)
 
     def test_beta(self):
-        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4, 1),
-                               comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.beta(2, 5, distribution=d)
         self.shape_asserts(la)
 
     def test_normal(self):
-        la = local_random.normal(size=(16, 16), grid_shape=(4, 1),
-                                 comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.normal(distribution=d)
         self.shape_asserts(la)
 
     def test_rand(self):
-        la = local_random.rand(size=(16, 16), grid_shape=(4, 1),
-                               comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.rand(d)
         self.shape_asserts(la)
 
     def test_randint(self):
-        la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4, 1),
-                                  comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.randint(0, 10, distribution=d)
         self.shape_asserts(la)
 
     def test_randn(self):
-        la = local_random.randn((16, 16), grid_shape=(4, 1), comm=self.comm)
+        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
+                                    comm=self.comm)
+        la = local_random.randn(distribution=d)
         self.shape_asserts(la)
 
 
