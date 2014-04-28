@@ -13,6 +13,7 @@ from numpy.testing import assert_array_equal
 import distarray.local as dc
 import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
+from distarray.local.maps import Distribution
 from distarray.local.error import IncompatibleArrayError
 from distarray.testing import MpiTestCase
 
@@ -21,7 +22,8 @@ class TestUnaryUFunc(MpiTestCase):
 
     def test_negative(self):
         """See if unary ufunc works for a LocalArray."""
-        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        d = Distribution.from_shape((16, 16), comm=self.comm)
+        a = LocalArray(d, dtype='int32')
         a.fill(1)
         b = localarray.negative(a)
         self.assertTrue(np.all(a.ndarray == -b.ndarray))
@@ -30,8 +32,9 @@ class TestUnaryUFunc(MpiTestCase):
         b = localarray.negative(a, b)
         self.assertTrue(np.all(a.ndarray == -b.ndarray))
 
-        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        d2 = Distribution.from_shape((20, 20), comm=self.comm)
+        a = LocalArray(d, dtype='int32')
+        b = LocalArray(d2, dtype='int32')
         self.assertRaises(IncompatibleArrayError, localarray.negative, b, a)
 
 
@@ -39,8 +42,9 @@ class TestBinaryUFunc(MpiTestCase):
 
     def test_add(self):
         """See if binary ufunc works for a LocalArray."""
-        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = LocalArray((16, 16), dtype='int32', comm=self.comm)
+        d = Distribution.from_shape((16, 16), comm=self.comm)
+        a = LocalArray(d, dtype='int32')
+        b = LocalArray(d, dtype='int32')
         a.fill(1)
         b.fill(1)
         c = localarray.add(a, b)
@@ -50,13 +54,17 @@ class TestBinaryUFunc(MpiTestCase):
         c = localarray.add(a, b, c)
         self.assertTrue(np.all(c.ndarray == 2))
 
-        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        d0 = Distribution.from_shape((16, 16), comm=self.comm)
+        d1 = Distribution.from_shape((20, 20), comm=self.comm)
+        a = LocalArray(d0, dtype='int32')
+        b = LocalArray(d1, dtype='int32')
         self.assertRaises(IncompatibleArrayError, localarray.add, a, b)
 
-        a = LocalArray((16, 16), dtype='int32', comm=self.comm)
-        b = LocalArray((16, 16), dtype='int32', comm=self.comm)
-        c = LocalArray((20, 20), dtype='int32', comm=self.comm)
+        d0 = Distribution.from_shape((16, 16), comm=self.comm)
+        d1 = Distribution.from_shape((20, 20), comm=self.comm)
+        a = LocalArray(d0, dtype='int32')
+        b = LocalArray(d0, dtype='int32')
+        c = LocalArray(d1, dtype='int32')
         self.assertRaises(IncompatibleArrayError, localarray.add, a, b, c)
 
 
@@ -93,8 +101,9 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
         Check the one- and two-arg ufunc versions as well as the method
         version attached to a LocalArray.
         """
-        x = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        y = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
+        x = localarray.ones(d)
+        y = localarray.ones(d)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x, casting='unsafe')  # standard form
@@ -110,9 +119,10 @@ class TestLocalArrayBinaryOperations(MpiTestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        x1 = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        x2 = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
-        y = localarray.ones((16, 16), dist=('b', 'n'), comm=self.comm)
+        d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
+        x1 = localarray.ones(d)
+        x2 = localarray.ones(d)
+        y = localarray.ones(d)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result0 = op(x1, x2, casting='unsafe')  # standard form

@@ -6,48 +6,29 @@
 
 from __future__ import print_function, division
 
-from distarray import metadata_utils
 
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
 import math
-import operator
-from functools import reduce
 from collections import Mapping
 from numbers import Integral
 
 import numpy as np
 
 from distarray.externals import six
-from distarray.externals.six import next
 from distarray.externals.six.moves import zip
 
 from distarray.mpiutils import MPI
 from distarray.utils import _raise_nie
-from distarray.local import construct, format, maps
+from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
-
-def _start_stop_block(size, proc_grid_size, proc_grid_rank):
-    nelements = size // proc_grid_size
-    if size % proc_grid_size != 0:
-        nelements += 1
-
-    start = proc_grid_rank * nelements
-    if start > size:
-        start = size
-        stop = size
-
-    stop = start + nelements
-    if stop > size:
-        stop = size
-
-    return start, stop
 
 # Register numpy integer types with numbers.Integral ABC.
 Integral.register(np.signedinteger)
 Integral.register(np.unsignedinteger)
+
 
 def _sanitize_indices(indices):
     if isinstance(indices, Integral) or isinstance(indices, slice):
@@ -57,105 +38,13 @@ def _sanitize_indices(indices):
     else:
         raise TypeError("Index must be a sequence of ints and slices")
 
-def distribute_indices(dim_data):
-    """Fill in missing index related keys...
-
-    for supported dist_types.
-    """
-    distribute_fn = {
-        'n': lambda dd: None,
-        'b': distribute_block_indices,
-        'c': distribute_cyclic_indices,
-        'u': lambda dd: None,
-        }
-    for dim in dim_data:
-        distribute_fn[dim['dist_type']](dim)
-
-
-def distribute_cyclic_indices(dd):
-    """Fill in `start` given dimdict `dd`."""
-    if 'start' in dd:
-        return
-    else:
-        dd['start'] = dd['proc_grid_rank']
-
-
-def distribute_block_indices(dd):
-    """Fill in `start` and `stop` in dimdict `dd`."""
-    if ('start' in dd) and ('stop' in dd):
-        return
-
-    nelements = dd['size'] // dd['proc_grid_size']
-    if dd['size'] % dd['proc_grid_size'] != 0:
-        nelements += 1
-
-    dd['start'] = dd['proc_grid_rank'] * nelements
-    if dd['start'] > dd['size']:
-        dd['start'] = dd['size']
-        dd['stop'] = dd['size']
-
-    dd['stop'] = dd['start'] + nelements
-    if dd['stop'] > dd['size']:
-        dd['stop'] = dd['size']
-
-
-def _normalize_dim_data(dim_data):
-    ''' Adds `proc_grid_size` and `proc_grid_rank` for 'n' disttype.'''
-    for dd in dim_data:
-        if dd['dist_type'] == 'n':
-            dd['proc_grid_size'] = 1
-            dd['proc_grid_rank'] = 0
-    return dim_data
-
-
-def make_partial_dim_data(shape, dist=None, grid_shape=None):
-    """Create an (incomplete) dim_data structure from simple parameters.
-
-    Parameters
-    ----------
-    shape : tuple of int
-        Number of elements in each dimension.
-    dist : dict mapping int -> str, default is {0: 'b'}
-        Keys are dimension number, values are dist_type, e.g 'b', 'c', or 'n'.
-    grid_shape : tuple of int, optional
-        Size of process grid in each dimension
-
-    Returns
-    -------
-    dim_data : tuple of dict
-        Partial dim_data structure as outlined in the Distributed Array
-        Protocol.
-    """
-    supported_dist_types = ('n', 'b', 'c')
-
-    if dist is None:
-        dist = {0: 'b'}
-
-    dist_tuple = metadata_utils.normalize_dist(dist, len(shape))
-
-    if grid_shape:  # if None, LocalArray will initialize
-        grid_gen = iter(grid_shape)
-
-    dim_data = []
-    for size, dist_type in zip(shape, dist_tuple):
-        if dist_type not in supported_dist_types:
-            msg = "dist_type {} not supported. Try `from_dim_data`."
-            raise TypeError(msg.format(dist_type))
-        dimdict = dict(dist_type=dist_type, size=size)
-        if grid_shape is not None and dist_type != 'n':
-            dimdict["proc_grid_size"] = next(grid_gen)
-
-        dim_data.append(dimdict)
-
-    return tuple(dim_data)
-
 
 class GlobalIndex(object):
     """Object which provides access to global indexing on
     LocalArrays.
     """
-    def __init__(self, maps, ndarray):
-        self.maps = maps
+    def __init__(self, distribution, ndarray):
+        self.distribution = distribution
         self.ndarray = ndarray
 
     def checked_getitem(self, global_inds):
@@ -172,10 +61,10 @@ class GlobalIndex(object):
             return None
 
     def global_to_local(self, *global_ind):
-        return self.maps.local_from_global(*global_ind)
+        return self.distribution.local_from_global(*global_ind)
 
     def local_to_global(self, *local_ind):
-        return self.maps.global_from_local(*local_ind)
+        return self.distribution.global_from_local(*local_ind)
 
     def __getitem__(self, global_inds):
         global_inds = _sanitize_indices(global_inds)
@@ -195,7 +84,6 @@ class GlobalIndex(object):
 
 
 class LocalArray(object):
-
     """Distributed memory Python arrays."""
 
     __array_priority__ = 20.0
@@ -204,62 +92,12 @@ class LocalArray(object):
     # Methods used for initialization
     #-------------------------------------------------------------------------
 
-    def _init(self, dim_data, grid_shape, dtype=None, buf=None, comm=None):
-        """Private init method."""
-        self.dim_data = _normalize_dim_data(dim_data)
-        self.base_comm = construct.init_base_comm(comm)
-        self._init_grid_shape(grid_shape)
-
-        self.comm = construct.init_comm(self.base_comm, self.grid_shape)
-
-        self._cache_proc_grid_rank()
-        distribute_indices(self.dim_data)
-        self.maps = maps.Distribution(dim_data)
-
-        self.ndarray = self._make_ndarray(buf=buf, dtype=dtype)
-        # We pass a view of self.ndarray because we want the
-        # GlobalIndex object to be able to change the LocalArray
-        # object's data.
-        self.global_index = GlobalIndex(self.maps, self.ndarray.view())
-
-        self.base = None  # mimic numpy.ndarray.base
-        self.ctypes = None  # mimic numpy.ndarray.ctypes
-
-    def _init_grid_shape(self, grid_shape):
-
-        if grid_shape is None:
-            grid_shape = metadata_utils.make_grid_shape(self.global_shape,
-                                                        self.dist,
-                                                        self.comm_size)
-        metadata_utils.validate_grid_shape(grid_shape,
-                                           self.dist,
-                                           self.comm_size)
-
-        for gs, dd in zip(grid_shape, self.dim_data):
-            dd['proc_grid_size'] = gs
-
-
-    @classmethod
-    def from_dim_data(cls, dim_data, dtype=None, buf=None, comm=None):
+    def __init__(self, distribution, dtype=None, buf=None):
         """Make a LocalArray from a `dim_data` tuple.
 
         Parameters
         ----------
-        dim_data : tuple of dictionaries
-            A dict for each dimension, with the data described here:
-            https://github.com/enthought/distributed-array-protocol
-        dtype : numpy dtype, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `dtype` is given, an empty array of that dtype will be
-            created.
-        buf : buffer object, optional
-            If both `dtype` and `buf` are provided, `buf` will be
-            encapsulated and interpreted with the given dtype.  If neither
-            are, an empty array will be created with a dtype of 'float'.  If
-            only `buf` is given, `self.dtype` will be set to its dtype.
-        comm : MPI comm object, optional
+        distribution : local._maps.Distribution object
 
         Returns
         -------
@@ -267,68 +105,23 @@ class LocalArray(object):
             A LocalArray encapsulating `buf`, or else an empty
             (uninitialized) LocalArray.
         """
-        self = cls.__new__(cls)
+        self.distribution = distribution
 
-        def fill_empty_dim_dict(dim_dict, i):
-            """Empty dim_dict alias -- requires a buffer object.
+        # create the buffer
+        if buf is None:
+            self.ndarray = np.empty(self.local_shape, dtype=dtype)
+        else:
+            mv = memoryview(buf)
+            self.ndarray = np.asarray(mv, dtype=dtype)
 
-            See DAP v0.10.0 section 1.6.3.1.
-            """
-            if buf is None:
-                msg = "Must provide `buf` to use the empty dictionary alias."
-                raise TypeError(msg)
-            default = {'dist_type': 'b',
-                       'proc_grid_rank': 0,
-                       'proc_grid_size': 1,
-                       'start': 0,
-                       'stop': buf.shape[i],
-                       'size': buf.shape[i]}
-            dim_dict.update(default)
+        # We pass a view of self.ndarray because we want the
+        # GlobalIndex object to be able to change the LocalArray
+        # object's data.
+        self.global_index = GlobalIndex(self.distribution,
+                                        self.ndarray.view())
 
-        # Expand empty dim_dicts
-        for i, dim_dict in enumerate(dim_data):
-            if not dim_dict:  # empty dict
-                fill_empty_dim_dict(dim_dict, i)
-
-        # Extract grid_shape from dim_data.
-        grid_shape = tuple(1 if dd['dist_type'] == 'n' else dd['proc_grid_size']
-                           for dd in dim_data)
-        self._init(dim_data=dim_data, dtype=dtype,
-                   buf=buf, comm=comm, grid_shape=grid_shape)
-        return self
-
-    def __init__(self, shape, dtype=None, dist=None, grid_shape=None,
-                 comm=None, buf=None):
-        """Create a LocalArray from a simple set of parameters.
-
-        This initializer restricts you to 'b' and 'c' dist_types and evenly
-        distributed data.  See `LocalArray.from_dim_data` for a more general
-        method.
-
-        Parameters
-        ----------
-        shape : tuple of int
-            Number of elements in each dimension.
-        dtype : numpy dtype, optional
-        dist : dict mapping int -> str, default is {0: 'b'}, optional
-            Keys are dimension number, values are dist_type, e.g 'b', 'c', or
-            'n'.
-        grid_shape : tuple of int, optional
-            A size of each dimension of the process grid.
-            There should be a dimension size for each distributed
-            dimension in `dist`.
-        comm : MPI communicator object, optional
-        buf : buffer object, optional
-            If not given, an empty array is created.
-
-        See also
-        --------
-        LocalArray.from_dim_data
-        """
-        dim_data = make_partial_dim_data(shape=shape, dist=dist,
-                                         grid_shape=grid_shape)
-        self._init(dim_data=dim_data, grid_shape=grid_shape,
-                   dtype=dtype, buf=buf, comm=comm)
+        self.base = None  # mimic numpy.ndarray.base
+        self.ctypes = None  # mimic numpy.ndarray.ctypes
 
     def __del__(self):
         # If the __init__ method fails, we may not have a valid comm
@@ -341,46 +134,52 @@ class LocalArray(object):
                     pass
 
     @property
-    def local_shape(self):
-        return self.maps.local_shape
-
-    @property
-    def grid_shape(self):
-        return tuple(dd['proc_grid_size'] for dd in self.dim_data)
-
-    @property
-    def global_shape(self):
-        return tuple(dd['size'] for dd in self.dim_data)
-
-    @property
-    def ndim(self):
-        return len(self.dim_data)
-
-    @property
-    def global_size(self):
-        return reduce(operator.mul, self.global_shape)
-
-    @property
-    def comm_size(self):
-        return self.base_comm.Get_size()
-
-    @property
-    def comm_rank(self):
-        return self.base_comm.Get_rank()
+    def dim_data(self):
+        return self.distribution.dim_data
 
     @property
     def dist(self):
-        return tuple(dd['dist_type'] for dd in self.dim_data)
+        return self.distribution.dist
+
+    @property
+    def global_shape(self):
+        return self.distribution.global_shape
+
+    @property
+    def ndim(self):
+        return self.distribution.ndim
+
+    @property
+    def global_size(self):
+        return self.distribution.global_size
+
+    @property
+    def comm_size(self):
+        return self.distribution.comm_size
+
+    @property
+    def comm_rank(self):
+        return self.distribution.comm_rank
 
     @property
     def cart_coords(self):
-        rval = tuple(dd['proc_grid_rank'] for dd in self.dim_data)
-        assert rval == tuple(self.comm.Get_coords(self.comm_rank))
-        return rval
+        return self.distribution.cart_coords
+
+    @property
+    def grid_shape(self):
+        return self.distribution.grid_shape
+
+    @property
+    def local_shape(self):
+        lshape = self.distribution.local_shape
+        assert lshape == self.distribution.local_shape
+        return lshape
 
     @property
     def local_size(self):
-        return self.ndarray.size
+        lsize = self.distribution.local_size
+        assert lsize == self.ndarray.size
+        return lsize
 
     @property
     def local_data(self):
@@ -397,25 +196,6 @@ class LocalArray(object):
     @property
     def nbytes(self):
         return self.global_size * self.itemsize
-
-    def _cache_proc_grid_rank(self):
-        cart_coords = self.comm.Get_coords(self.comm_rank)
-        assert len(cart_coords) == len(self.dim_data)
-        for dim, cart_rank in zip(self.dim_data, cart_coords):
-            dim['proc_grid_rank'] = cart_rank
-
-    def _make_ndarray(self, buf=None, dtype=None):
-        """Encapsulate `buf` or create an empty local array.
-
-        Returns
-        -------
-        ndarray : numpy array
-        """
-        if buf is None:
-            return np.empty(self.local_shape, dtype=dtype)
-        else:
-            mv = memoryview(buf)
-            return np.asarray(mv, dtype=dtype)
 
     def compatibility_hash(self):
         return hash((self.global_shape, self.dist, self.grid_shape, True))
@@ -453,7 +233,8 @@ class LocalArray(object):
         buf = np.asarray(distbuffer['buffer'])
         dim_data = distbuffer['dim_data']
 
-        return cls.from_dim_data(dim_data=dim_data, buf=buf, comm=comm)
+        distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+        return cls(distribution=distribution, buf=buf)
 
     def __distarray__(self):
         """Returns the data structure required by the DAP.
@@ -462,29 +243,11 @@ class LocalArray(object):
 
         See the project's documentation for the Protocol's specification.
         """
-        # the DAP doesn't have an 'n' dist_type
-        translated_dim_data = tuple(dim_dict.copy() for dim_dict in
-                                    self.dim_data)
-
-        def b_from_n(dd):
-            """Take a dimension dictionary (`dd`) with dist_type 'n' and make
-            it the equivalent 'b'.
-            """
-            dd['dist_type'] = 'b'
-            dd['start'] = 0
-            dd['stop'] = dd['size']
-            dd['proc_grid_rank'] = 0
-            dd['proc_grid_size'] = 1
-
-        for dim_dict in translated_dim_data:
-            if dim_dict['dist_type'] == 'n':
-                b_from_n(dim_dict)
-
         distbuffer = {
             "__version__": "0.10.0",
             "buffer": self.ndarray,
-            "dim_data": translated_dim_data,
-            }
+            "dim_data": self.dim_data,
+        }
         return distbuffer
 
     #-------------------------------------------------------------------------
@@ -502,23 +265,23 @@ class LocalArray(object):
             raise ValueError("Incompatible local array shape")
 
     def coords_from_rank(self, rank):
-        return self.comm.Get_coords(rank)
+        return self.distribution.coords_from_rank(rank)
 
     def rank_from_coords(self, coords):
-        return self.comm.Get_cart_rank(coords)
+        return self.distribution.rank_from_coords(coords)
 
     def local_from_global(self, *global_ind):
-        return self.maps.local_from_global(*global_ind)
+        return self.distribution.local_from_global(*global_ind)
 
     def global_from_local(self, *local_ind):
-        return self.maps.global_from_local(*local_ind)
+        return self.distribution.global_from_local(*local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
         lower_global = self.global_from_local(*lower_local)
-        upper_local = [shape-1 for shape in self.local_shape]
+        upper_local = [shape - 1 for shape in self.local_shape]
         upper_global = self.global_from_local(*upper_local)
         return lower_global[dim], upper_global[dim]
 
@@ -534,19 +297,17 @@ class LocalArray(object):
             return self.copy()
         else:
             local_copy = self.ndarray.astype(newdtype)
-            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
-                                                  dtype=newdtype,
-                                                  comm=self.base_comm,
-                                                  buf=local_copy)
+            new_da = self.__class__(distribution=self.distribution,
+                                    dtype=newdtype,
+                                    buf=local_copy)
             return new_da
 
     def copy(self):
         """Return a copy of this LocalArray."""
         local_copy = self.ndarray.copy()
-        return self.__class__.from_dim_data(dim_data=self.dim_data,
-                                            dtype=self.dtype,
-                                            comm=self.base_comm,
-                                            buf=local_copy)
+        return self.__class__(distribution=self.distribution,
+                              dtype=self.dtype,
+                              buf=local_copy)
 
     def local_view(self, dtype=None):
         if dtype is None:
@@ -563,18 +324,16 @@ class LocalArray(object):
         Currently unimplemented for ``dtype is not None``.
         """
         if dtype is None:
-            new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
-                                                  dtype=self.dtype,
-                                                  comm=self.base_comm,
-                                                  buf=self.ndarray)
+            new_da = self.__class__(distribution=self.distribution,
+                                    dtype=self.dtype,
+                                    buf=self.ndarray)
         else:
             _raise_nie()
-            #TODO: to implement this properly, a new dim_data will need to
-            #      generated that reflects the size and shape of the new dtype.
-            #new_da = self.__class__.from_dim_data(dim_data=self.dim_data,
-            #                                      dtype=dtype,
-            #                                      comm=self.base_comm,
-            #                                      buf=self.ndarray)
+            # TODO: to implement this properly, a new dim_data will need to be
+            #  generated that reflects the size and shape of the new dtype.
+            #new_da = self.__class__(distribution=self.distribution
+#                                    dtype=dtype,
+            #                        buf=self.ndarray)
         return new_da
 
     def __array__(self, dtype=None):
@@ -589,13 +348,12 @@ class LocalArray(object):
         """
         Return a LocalArray based on obj.
 
-        This method constructs a new LocalArray object using (shape, dist,
-        grid_shape and base_comm) from self and dtype, buffer from obj.
+        This method constructs a new LocalArray object using the distribution
+        from self and the buffer from obj.
 
         This is used to construct return arrays for ufuncs.
         """
-        return self.__class__(self.global_shape, obj.dtype, self.dist,
-                              self.grid_shape, self.base_comm, buf=obj)
+        return self.__class__(self.distribution, buf=obj)
 
     def fill(self, scalar):
         self.ndarray.fill(scalar)
@@ -603,7 +361,7 @@ class LocalArray(object):
     def asdist_like(self, other):
         """
         Return a version of self that has shape, dist and grid_shape like
-        other.
+        `other`.
         """
         if arecompatible(self, other):
             return self
@@ -631,7 +389,7 @@ class LocalArray(object):
         if axis or out is not None:
             _raise_nie()
         mu = self.mean()
-        temp = (self - mu)**2
+        temp = (self - mu) ** 2
         return temp.mean(dtype=dtype)
 
     def std(self, axis=None, dtype=None, out=None):
@@ -708,14 +466,14 @@ class LocalArray(object):
     def pack_index(self, inds):
         inds_array = np.array(inds)
         strides_array = np.cumprod([1] + list(self.global_shape)[:0:-1])[::-1]
-        return np.sum(inds_array*strides_array)
+        return np.sum(inds_array * strides_array)
 
     def unpack_index(self, packed_ind):
-        if packed_ind > np.prod(self.global_shape)-1 or packed_ind < 0:
+        if packed_ind > np.prod(self.global_shape) - 1 or packed_ind < 0:
             raise ValueError("Invalid index, must be 0 <= x <= number of"
                              "elements.")
         strides_array = np.cumprod([1] + list(self.global_shape)[:0:-1])[::-1]
-        return tuple(packed_ind//strides_array % self.global_shape)
+        return tuple(packed_ind // strides_array % self.global_shape)
 
     #--------------------------------------------------------------------------
     # Arithmetic customization - binary
@@ -852,39 +610,43 @@ class LocalArray(object):
 # Creating arrays
 # ---------------------------------------------------------------------------
 
-def empty(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    return LocalArray(shape, dtype=dtype, dist=dist, grid_shape=grid_shape,
-                      comm=comm)
+def empty(distribution, dtype=float):
+    """Create an empty LocalArray."""
+    return LocalArray(distribution=distribution, dtype=dtype)
 
 
 def empty_like(arr, dtype=None):
+    """Create an empty LocalArray with a distribution like `arr`."""
     if isinstance(arr, LocalArray):
         if dtype is None:
-            return empty(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
-                         arr.base_comm)
+            return empty(distribution=arr.distribution, dtype=arr.dtype)
         else:
-            return empty(arr.global_shape, dtype, arr.dist, arr.grid_shape,
-                         arr.base_comm)
+            return empty(distribution=arr.distribution, dtype=dtype)
     else:
         raise TypeError("A LocalArray or subclass is expected")
 
 
-def zeros(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+def zeros(distribution, dtype=float):
+    """Create a LocalArray filled with zeros."""
+    la = LocalArray(distribution=distribution, dtype=dtype)
     la.fill(0)
     return la
 
 
-def zeros_like(arr):
+def zeros_like(arr, dtype=float):
+    """Create a LocalArray of zeros with a distribution like `arr`."""
     if isinstance(arr, LocalArray):
-        return zeros(arr.global_shape, arr.dtype, arr.dist, arr.grid_shape,
-                     arr.base_comm)
+        if dtype is None:
+            return zeros(distribution=arr.distribution, dtype=arr.dtype)
+        else:
+            return zeros(distribution=arr.distribution, dtype=dtype)
     else:
         raise TypeError("A LocalArray or subclass is expected")
 
 
-def ones(shape, dtype=float, dist=None, grid_shape=None, comm=None):
-    la = LocalArray(shape, dtype, dist, grid_shape, comm)
+def ones(distribution, dtype=float):
+    """Create a LocalArray filled with ones."""
+    la = LocalArray(distribution=distribution, dtype=dtype)
     la.fill(1)
     return la
 
@@ -975,7 +737,8 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
         errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
         raise ImportError(errmsg)
 
-    with h5py.File(filename, mode, driver='mpio', comm=arr.comm) as fp:
+    with h5py.File(filename, mode, driver='mpio',
+                   comm=arr.distribution.comm) as fp:
         dset = fp.create_dataset(key, arr.global_shape, dtype=arr.dtype)
         for index, value in ndenumerate(arr):
             dset[index] = value
@@ -984,7 +747,7 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
 def compact_indices(dim_data):
     """Given a `dim_data` structure, return a tuple of compact indices.
 
-    For every dimension in `dim_data`, return a representation of the indicies
+    For every dimension in `dim_data`, return a representation of the indices
     indicated by that dim_dict; return a slice if possible, else, return the
     list of global indices.
 
@@ -1000,7 +763,6 @@ def compact_indices(dim_data):
     index : tuple of slices and/or lists of int
         Efficient structure usable for indexing into a numpy-array-like data
         structure.
-
     """
     def nodist_index(dd):
         return slice(None)
@@ -1021,7 +783,7 @@ def compact_indices(dim_data):
                     'b': block_index,
                     'c': cyclic_index,
                     'u': unstructured_index,
-                    }
+                   }
 
     index = []
     for dd in dim_data:
@@ -1075,7 +837,8 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
         buf = dset[index]
         dtype = dset.dtype
 
-    return LocalArray.from_dim_data(dim_data, dtype=dtype, buf=buf, comm=comm)
+    distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+    return LocalArray(distribution=distribution, dtype=dtype, buf=buf)
 
 
 def load_npy(filename, dim_data, comm=None):
@@ -1110,12 +873,11 @@ def load_npy(filename, dim_data, comm=None):
     # http://stackoverflow.com/questions/6397495/unmap-of-numpy-memmap
 
     #data._mmap.close()
-    return LocalArray.from_dim_data(dim_data, dtype=data.dtype, buf=buf,
-                                    comm=comm)
+    distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+    return LocalArray(distribution=distribution, dtype=data.dtype, buf=buf)
 
 
 class GlobalIterator(six.Iterator):
-
     def __init__(self, arr):
         self.arr = arr
         self.nditerator = np.ndenumerate(self.arr.local_view())
@@ -1133,24 +895,18 @@ def ndenumerate(arr):
     return GlobalIterator(arr)
 
 
-def fromfunction(function, shape, **kwargs):
-    dtype = kwargs.pop('dtype', int)
-    dist = kwargs.pop('dist', {0: 'b'})
-    grid_shape = kwargs.pop('grid_shape', None)
-    comm = kwargs.pop('comm', None)
-    da = empty(shape, dtype, dist, grid_shape, comm)
+def fromfunction(function, distribution, **kwargs):
+    dtype = kwargs.pop('dtype', float)
+    da = empty(distribution=distribution, dtype=dtype)
     for global_inds, x in ndenumerate(da):
         da.global_index[global_inds] = function(*global_inds, **kwargs)
     return da
 
 
-def fromlocalarray_like(local_arr, like_arr):
+def fromndarray_like(ndarray, like_arr):
+    """Create a new LocalArray like `like_arr` with buffer set to `ndarray`.
     """
-    Create a new LocalArray using a given local array (+its dtype).
-    """
-    res = LocalArray(like_arr.global_shape, local_arr.dtype, like_arr.dist,
-                     like_arr.grid_shape, like_arr.base_comm, buf=local_arr)
-    return res
+    return LocalArray(like_arr.distribution, buf=ndarray)
 
 # ---------------------------------------------------------------------------
 # Operations on two or more arrays
@@ -1192,7 +948,7 @@ can_cast = np.can_cast
 
 def sum(a, dtype=None):
     local_sum = a.ndarray.sum(dtype=dtype)
-    global_sum = a.comm.allreduce(local_sum, None, op=MPI.SUM)
+    global_sum = a.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
     return global_sum
 
 
@@ -1217,7 +973,7 @@ finfo = np.finfo
 def _expand_shape(s, length, element=1):
     add = length - len(s)
     if add > 0:
-        return add*(element,)+s
+        return add * (element,) + s
     else:
         return s
 
@@ -1244,7 +1000,6 @@ def _are_shapes_bcast(shape, target_shape):
 
 
 class LocalArrayUnaryOperation(object):
-
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
         self.__doc__ = getattr(numpy_ufunc, "__doc__", str(numpy_ufunc))
@@ -1272,7 +1027,6 @@ class LocalArrayUnaryOperation(object):
 
 
 class LocalArrayBinaryOperation(object):
-
     def __init__(self, numpy_ufunc):
         self.func = numpy_ufunc
         self.__doc__ = getattr(numpy_ufunc, "__doc__", str(numpy_ufunc))
@@ -1287,10 +1041,10 @@ class LocalArrayBinaryOperation(object):
         assert x2_isdla or isscalar(x2), "Invalid type for binary ufunc"
         assert y is None or y_isdla
         if y is None:
-                if x1_isdla and x2_isdla:
-                    if not arecompatible(x1, x2):
-                        raise IncompatibleArrayError("Incompatible DistArrays")
-                return self.func(x1, x2, *args, **kwargs)
+            if x1_isdla and x2_isdla:
+                if not arecompatible(x1, x2):
+                    raise IncompatibleArrayError("Incompatible DistArrays")
+            return self.func(x1, x2, *args, **kwargs)
         elif y_isdla:
             if x1_isdla:
                 if not arecompatible(x1, y):

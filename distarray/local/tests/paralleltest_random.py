@@ -15,18 +15,15 @@ class TestBasic(MpiTestCase):
     """Run basic shape/size tests on functions in `random.py`."""
 
     def shape_asserts(self, la):
+        self.assertEqual(la.dist, ('b', 'b'))
         self.assertEqual(la.global_shape, (16, 16))
-        self.assertEqual(la.dist, ('b', 'n'))
-        self.assertEqual(la.grid_shape, (4, 1))
-        self.assertEqual(la.base_comm, self.comm)
+        self.assertEqual(la.ndim, 2)
+        self.assertEqual(la.global_size, 16*16)
         self.assertEqual(la.comm_size, 4)
         self.assertTrue(la.comm_rank in range(4))
-        self.assertEqual(la.comm.Get_topo(),
-                         (list(la.grid_shape),
-                          [0, 0], list(la.cart_coords)))
-        self.assertEqual(len(la.maps), 2)
-        self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.grid_shape, (4, 1))
+        self.assertEqual(len(la.distribution), 2)
+        self.assertEqual(la.global_shape, (16, 16))
         self.assertEqual(la.local_shape, (4, 16))
         self.assertEqual(la.ndarray.shape, la.local_shape)
         self.assertEqual(la.ndarray.dtype, la.dtype)
@@ -43,20 +40,23 @@ class TestBasic(MpiTestCase):
         self.assertFalse(state_equal)
 
     def test_beta(self):
-        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4, 1), comm=self.comm)
+        la = local_random.beta(2, 5, size=(16, 16), grid_shape=(4, 1),
+                               comm=self.comm)
         self.shape_asserts(la)
 
     def test_normal(self):
-        la = local_random.normal(size=(16, 16), grid_shape=(4, 1), comm=self.comm)
+        la = local_random.normal(size=(16, 16), grid_shape=(4, 1),
+                                 comm=self.comm)
         self.shape_asserts(la)
 
     def test_rand(self):
-        la = local_random.rand(size=(16, 16), grid_shape=(4, 1), comm=self.comm)
+        la = local_random.rand(size=(16, 16), grid_shape=(4, 1),
+                               comm=self.comm)
         self.shape_asserts(la)
 
     def test_randint(self):
         la = local_random.randint(0, 10, size=(16, 16), grid_shape=(4, 1),
-                        comm=self.comm)
+                                  comm=self.comm)
         self.shape_asserts(la)
 
     def test_randn(self):

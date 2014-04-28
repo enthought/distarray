@@ -12,7 +12,7 @@ from collections import Sequence, Mapping
 import numpy
 
 from distarray import utils
-from distarray.externals.six import next, string_types
+from distarray.externals.six import next
 from distarray.externals.six.moves import map
 
 
@@ -25,8 +25,7 @@ class GridShapeError(Exception):
 
 
 def normalize_grid_shape(grid_shape, ndims):
-    """ Adds 1's to grid_shape so it has `ndims` dimensions.
-    """
+    """Adds 1s to grid_shape so it has `ndims` dimensions."""
     return tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
 
 
@@ -37,11 +36,6 @@ def validate_grid_shape(grid_shape, dist, comm_size):
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
-    # check that if dist[i] == 'n' then grid_shape[i] == 1
-    for dim, (gs, dd) in enumerate(zip(grid_shape, dist)):
-        if dd == 'n' and gs != 1:
-            msg = "dimension %s is not distributed but has a grid size of %s."
-            raise InvalidGridShapeError(msg % (dim, gs))
     if reduce(operator.mul, grid_shape) != comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
         raise InvalidGridShapeError(msg % (grid_shape, comm_size))
@@ -60,8 +54,8 @@ def make_grid_shape(shape, dist, comm_size):
     ----------
     shape : tuple of int
         The global shape of the array.
-    distdims : sequence of int
-        The indices of the distributed dimensions.
+    dist: tuple of str
+        dist_type character per dimension.
     comm_size : int
         Total number of processes to distribute.
 
@@ -145,14 +139,57 @@ def normalize_dist(dist, ndim):
     >>> normalize_dist({0: 'b', 3: 'c'}, 4)
     ('b', 'n', 'n', 'c')
     """
-    if isinstance(dist, string_types):
-        if len(dist) != 1:
-            msg = "dist argument %r has must have length 1."
-            raise ValueError(msg % (dist,))
-        return ndim*(dist,)
-    elif isinstance(dist, Sequence):
+    if isinstance(dist, Sequence):
         return tuple(dist) + ('n',) * (ndim - len(dist))
     elif isinstance(dist, Mapping):
         return tuple(dist.get(i, 'n') for i in range(ndim))
     else:
         raise TypeError("Dist must be a string, tuple, list or dict")
+
+
+def _start_stop_block(size, proc_grid_size, proc_grid_rank):
+    """Return `start` and `stop` for a regularly distributed block dim."""
+    nelements = size // proc_grid_size
+    if size % proc_grid_size != 0:
+        nelements += 1
+
+    start = proc_grid_rank * nelements
+    if start > size:
+        start = size
+        stop = size
+
+    stop = start + nelements
+    if stop > size:
+        stop = size
+
+    return start, stop
+
+
+def distribute_block_indices(dd):
+    """Fill in `start` and `stop` in dim dict `dd`."""
+    if ('start' in dd) and ('stop' in dd):
+        return
+    else:
+        dd['start'], dd['stop'] = _start_stop_block(dd['size'],
+                                                    dd['proc_grid_size'],
+                                                    dd['proc_grid_rank'])
+
+
+def distribute_cyclic_indices(dd):
+    """Fill in `start` in dim dict `dd`."""
+    if 'start' in dd:
+        return
+    else:
+        dd['start'] = dd['proc_grid_rank']
+
+
+def distribute_indices(dd):
+    """Fill in index related keys in dim dict `dd`."""
+    dist_type = dd['dist_type']
+    try:
+        {'n': lambda dd: None,
+         'b': distribute_block_indices,
+         'c': distribute_cyclic_indices}[dist_type](dd)
+    except KeyError:
+        msg = "dist_type %r not supported."
+        raise TypeError(msg % dist_type)

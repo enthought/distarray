@@ -15,6 +15,7 @@ import types
 
 from uuid import uuid4
 from functools import wraps
+import numpy as np
 from distarray.externals import six
 from distarray.externals import protocol_validator
 
@@ -144,3 +145,37 @@ class MpiTestCase(unittest.TestCase):
     def tearDownClass(cls):
         if cls.comm != MPI.COMM_NULL:
             cls.comm.Free()
+
+
+def _assert_localarray_metadata_equal(l0, l1, check_dtype=False):
+    np.testing.assert_equal(l0.dist, l1.dist)
+    np.testing.assert_equal(l0.global_shape, l1.global_shape)
+    np.testing.assert_equal(l0.ndim, l1.ndim)
+    np.testing.assert_equal(l0.global_size, l1.global_size)
+    np.testing.assert_equal(l0.comm_size, l1.comm_size)
+    np.testing.assert_equal(l0.comm_rank, l1.comm_rank)
+    np.testing.assert_equal(l0.cart_coords, l1.cart_coords)
+    np.testing.assert_equal(l0.grid_shape, l1.grid_shape)
+    np.testing.assert_equal(l0.local_shape, l1.local_shape)
+    np.testing.assert_equal(l0.local_size, l1.local_size)
+    np.testing.assert_equal(l0.ndarray.shape, l1.ndarray.shape)
+    if check_dtype:
+        np.testing.assert_equal(l0.ndarray.dtype, l1.ndarray.dtype)
+
+
+def assert_localarrays_allclose(l0, l1, check_dtype=False, rtol=1e-07, atol=0):
+    """Call np.testing.assert_allclose on `l0` and `l1`.
+
+    Also, check that LocalArray properties are equal.
+    """
+    _assert_localarray_metadata_equal(l0, l1, check_dtype=check_dtype)
+    np.testing.assert_allclose(l0.ndarray, l1.ndarray, rtol=rtol, atol=atol)
+
+
+def assert_localarrays_equal(l0, l1, check_dtype=False):
+    """Call np.testing.assert_equal on `l0` and `l1`.
+
+    Also, check that LocalArray properties are equal.
+    """
+    _assert_localarray_metadata_equal(l0, l1, check_dtype=check_dtype)
+    np.testing.assert_array_equal(l0.ndarray, l1.ndarray)

@@ -23,8 +23,8 @@ def _get_ranks(arr):
     on.
     """
     out = arr.copy()
-    out.local_array[:] = arr.comm_rank
-    out.local_array = out.local_array.astype(int)
+    out.ndarray[:] = arr.comm_rank
+    out.ndarray= out.ndarray.astype(int)
     return out
 
 
