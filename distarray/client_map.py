@@ -73,13 +73,13 @@ def choose_map(dist_type):
     return cls_from_dist_type[dist_type]
 
 
-def map_from_dim_data_per_rank(dim_datas):
+def map_from_dim_data_per_rank(dim_data_per_rank):
     """ Generates a ClientMap instance from a sanitized sequence of dim_data
     dictionaries.
 
     Parameters
     ----------
-    dim_datas : sequence of dictionaries
+    dim_data_per_rank : sequence of dictionaries
         Each dictionary is a "dimension dictionary" from the distributed array
         protocol, one per process in this dimension of the process grid.  The
         dimension dictionaries shall all have the same keys and values for
@@ -92,16 +92,17 @@ def map_from_dim_data_per_rank(dim_datas):
 
     """
     # check that all processes / ranks are accounted for.
-    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
-    if proc_ranks != list(range(len(dim_datas))):
+    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_data_per_rank)
+    if proc_ranks != list(range(len(dim_data_per_rank))):
         msg = "Ranks of processes (%r) not consistent."
         raise ValueError(msg % proc_ranks)
-    # Sort dim_datas according to proc_grid_rank.
-    dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
+    # Sort dim_data_per_rank according to proc_grid_rank.
+    dim_data_per_rank = sorted(dim_data_per_rank,
+                               key=lambda d: d['proc_grid_rank'])
 
-    dist_type = dim_datas[0]['dist_type']
+    dist_type = dim_data_per_rank[0]['dist_type']
     map_class = choose_map(dist_type)
-    return map_class.from_dim_data(dim_datas)
+    return map_class.from_dim_data(dim_data_per_rank)
 
 
 def map_from_global_dim_dict(global_dim_dict):
