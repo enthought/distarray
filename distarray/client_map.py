@@ -74,7 +74,7 @@ def choose_map(dist_type):
 
 
 def map_from_dim_data_per_rank(dim_datas):
-    """ Generates a ClientMap instance from a santized sequence of dim_data
+    """ Generates a ClientMap instance from a sanitized sequence of dim_data
     dictionaries.
 
     Parameters
@@ -91,7 +91,7 @@ def map_from_dim_data_per_rank(dim_datas):
         An instance of a subclass of MapBase.
 
     """
-    # check that all proccesses / ranks are accounted for.
+    # check that all processes / ranks are accounted for.
     proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
     if proc_ranks != list(range(len(dim_datas))):
         msg = "Ranks of processes (%r) not consistent."
