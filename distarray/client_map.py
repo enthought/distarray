@@ -388,7 +388,7 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data(cls, context, dim_datas):
+    def from_dim_data_per_rank(cls, context, dim_datas):
         """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
         """
