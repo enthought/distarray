@@ -102,7 +102,7 @@ def map_from_dim_data_per_rank(dim_data_per_rank):
 
     dist_type = dim_data_per_rank[0]['dist_type']
     map_class = choose_map(dist_type)
-    return map_class.from_dim_data(dim_data_per_rank)
+    return map_class.from_dim_data_per_rank(dim_data_per_rank)
 
 
 def map_from_global_dim_dict(global_dim_dict):
@@ -165,7 +165,7 @@ class NoDistMap(MapBase):
         return cls(size, grid_size=1)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_seq):
         if len(dim_data_seq) != 1:
             msg = ("Number of dimension dictionaries "
                    "non-unitary for non-distributed dimension.")
@@ -220,7 +220,7 @@ class BlockMap(MapBase):
         return self
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_seq):
         self = cls.__new__(cls)
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'b':
@@ -288,7 +288,7 @@ class BlockCyclicMap(MapBase):
         return cls(size, grid_size, block_size)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_seq):
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'c':
             msg = "Wrong dist_type (%r) for cyclic map."
@@ -336,7 +336,7 @@ class UnstructuredMap(MapBase):
         return cls(size, grid_size, indices=indices)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_seq):
         dd = dim_data_seq[0]
         if dd['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
