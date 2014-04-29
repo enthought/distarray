@@ -215,8 +215,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                  'size': cols,
                  },
                 )
-        mdmap = Distribution(self.context, glb_dim_data)
-        actual = mdmap.get_dim_data_per_rank()
+        distribution = Distribution(self.context, glb_dim_data)
+        actual = distribution.get_dim_data_per_rank()
 
         expected = [
             ({'block_size': 2,
@@ -300,8 +300,8 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def test___init__(self):
         shape = (100, 100)
-        mdmap = Distribution.from_shape(self.context, shape, ('b', 'c'))
-        da = DistArray(mdmap, dtype=int)
+        distribution = Distribution.from_shape(self.context, shape, ('b', 'c'))
+        da = DistArray(distribution, dtype=int)
         da.fill(42)
         nda = numpy.empty(shape, dtype=int)
         nda.fill(42)

@@ -61,7 +61,7 @@ def _compactify_dicts(dicts):
 # ---------------------------------------------------------------------------
 
 def choose_map(dist_type):
-    """Choose a map classe given one of the distribution types."""
+    """Choose a map class given one of the distribution types."""
     cls_from_dist_type = {
         'b': BlockMap,
         'c': BlockCyclicMap,

@@ -71,11 +71,11 @@ _DIM_DATA_PER_RANK = """
 {ddpr_name} = {local_name}.dim_data
 """
 
-def _make_mdmap_from_local_dimdata(local_name, context):
-    ddpr_name = context._generate_key()
+def _make_distribution_from_dim_data_per_rank(local_name, context):
+    dim_data_name = context._generate_key()
     context._execute(_DIM_DATA_PER_RANK.format(local_name=local_name,
-                                               ddpr_name=ddpr_name))
-    dim_data_per_rank = context._pull(ddpr_name)
+                                               ddpr_name=dim_data_name))
+    dim_data_per_rank = context._pull(dim_data_name)
     return Distribution.from_dim_data_per_rank(context, dim_data_per_rank)
 
 def _get_attribute(context, key, name):
@@ -89,23 +89,22 @@ class DistArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, mdmap, dtype):
-        """ Creates a new empty distarray according to the multi-dimensional
-        map given.
-        """
+    def __init__(self, distribution, dtype):
+        """Creates an empty DistArray according to the `distribution` given."""
         # FIXME: code duplication with context.py.
-        ctx = mdmap.context
+        ctx = distribution.context
         # FIXME: this is bad...
         comm_name = ctx._comm_key
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
-        names = ctx._key_and_push(mdmap.shape, mdmap.dist, mdmap.grid_shape, dtype)
+        names = ctx._key_and_push(distribution.shape, distribution.dist,
+                                  distribution.grid_shape, dtype)
         shape_name, dist_name, grid_shape_name, dtype_name = names
         cmd = ('{da_key} = distarray.local.empty('
                'distarray.local.maps.Distribution.from_shape({shape_name}, '
                '{dist_name}, {grid_shape_name}, {comm_name}), {dtype_name})')
         ctx._execute(cmd.format(**locals()))
-        self.mdmap = mdmap
+        self.distribution = distribution
         self.key = da_key
         self._dtype = dtype
 
@@ -118,7 +117,8 @@ class DistArray(object):
         """
         da = cls.__new__(cls)
         da.key = key
-        da.mdmap = _make_mdmap_from_local_dimdata(key, context)
+        da.distribution = _make_distribution_from_dim_data_per_rank(key,
+                                                                    context)
         da._dtype = _get_attribute(context, key, 'dtype')
         return da
 
@@ -140,7 +140,7 @@ class DistArray(object):
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
-            targets = self.mdmap.owning_targets(index)
+            targets = self.distribution.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_getitem(%s)'
             statement = fmt % (result_key, self.key, index)
@@ -165,7 +165,7 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
-            targets = self.mdmap.owning_targets(index)
+            targets = self.distribution.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_setitem(%s, %s)'
             statement = fmt % (result_key, self.key, index, value)
@@ -179,11 +179,11 @@ class DistArray(object):
 
     @property
     def context(self):
-        return self.mdmap.context
+        return self.distribution.context
 
     @property
     def shape(self):
-        return self.mdmap.shape
+        return self.distribution.shape
 
     @property
     def global_size(self):
@@ -191,11 +191,11 @@ class DistArray(object):
 
     @property
     def dist(self):
-        return self.mdmap.dist
+        return self.distribution.dist
 
     @property
     def grid_shape(self):
-        return self.mdmap.grid_shape
+        return self.distribution.grid_shape
 
     @property
     def ndim(self):
