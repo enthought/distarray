@@ -168,7 +168,7 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self._key_prefix())
+        cleanup.cleanup(view=self.view, module_name='__main__', context_name=self.context_key)
 
     def close(self):
         self.cleanup()
