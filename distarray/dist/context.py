@@ -24,8 +24,6 @@ from distarray.dist.maps import Distribution
 from distarray.ipython_utils import IPythonClient
 from distarray import DISTARRAY_BASE_NAME
 
-atexit.register(cleanup.cleanup_all, DISTARRAY_BASE_NAME)
-
 
 class Context(object):
     """
