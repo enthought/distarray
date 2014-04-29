@@ -71,7 +71,7 @@ _DIMDATAS = """
 {dim_data_name} = {local_name}.dim_data
 """
 
-def _make_mdmap_from_local_dimdata(local_name, context):
+def _make_distribution_from_local_dimdata(local_name, context):
     dim_data_name = context._generate_key()
     context._execute(_DIMDATAS.format(local_name=local_name, dim_data_name=dim_data_name))
     dim_datas = context._pull(dim_data_name)
@@ -116,7 +116,7 @@ class DistArray(object):
         """
         da = cls.__new__(cls)
         da.key = key
-        da.mdmap = _make_mdmap_from_local_dimdata(key, context)
+        da.mdmap = _make_distribution_from_local_dimdata(key, context)
         da._dtype = _get_attribute(context, key, 'dtype')
         return da
 
