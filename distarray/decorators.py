@@ -120,7 +120,7 @@ def _rpc_localize(func, args, kwargs, result_key, prefix):
 
 
 class Localize(FunctionRegistrationBase):
-    """Decorator to run a function locally on the engines."""
+    """Runs a function locally on the engines."""
 
     def __call__(self, *args, **kwargs):
         context = self.determine_context(args, kwargs)
@@ -156,12 +156,9 @@ def _rpc_vectorize(func, args, kwargs, out, prefix):
 
 class Vectorize(FunctionRegistrationBase):
     """
-    Analogous to numpy.vectorize. Input DistArray's must all be the
-    same shape, and this will be the shape of the output distarray.
+    Like `Localize`, but vectorizes the function with numpy.vectorize and runs
+    it on the engines.
     """
-
-    def get_local_array(self, da, arg_keys):
-        return arg_keys + [da.key + '.local_array']
 
     def __call__(self, *args, **kwargs):
         context = self.determine_context(args, kwargs)
