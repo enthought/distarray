@@ -82,7 +82,7 @@ class Context(object):
         Create a dict on the engines which will hold everything from
         this context.
         """
-        context_key = DISTARRAY_BASE_NAME + self.uid()
+        context_key = self.uid()
         cmd = '%s = {}' % (context_key)
         self._execute(cmd, targets=range(len(self.view)))
         return context_key
@@ -137,20 +137,21 @@ class Context(object):
         # the intracomm.
         self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
 
+    # Key management routines:
     @staticmethod
     def _key_prefix():
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
 
-    # Key management routines:
-    def uid(self):
+    @staticmethod
+    def uid():
         """Generate a unique valid python name."""
         # Full length seems excessively verbose so use 16 characters.
-        return 'da' + uuid.uuid4().hex[:16]
+        return Context._key_prefix() + uuid.uuid4().hex[:16]
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s['%s']" % (self.context_key, 'key_' + self.uid())
+        key = "%s['%s']" % (self.context_key, self.uid())
         return key
 
     def _key_and_push(self, *values):
