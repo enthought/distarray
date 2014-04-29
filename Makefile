@@ -91,5 +91,9 @@ coverage_report:
 clean:
 	-${PYTHON} setup.py clean --all
 	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} -r '{}' +
-	-${RM} -r ${PARALLEL_OUT_DIR} build MANIFEST dist distarray.egg-info coverage_report
+	-${RM} -r ${PARALLEL_OUT_DIR} build coverage_report
 .PHONY: clean
+
+cleanall: clean
+	-${RM} -r MANIFEST dist distarray.egg-info
+.PHONY: cleanall
