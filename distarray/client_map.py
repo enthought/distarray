@@ -388,13 +388,13 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data_per_rank(cls, context, dim_datas):
+    def from_dim_data_per_rank(cls, context, dim_data_per_rank):
         """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
         """
 
         self = cls.__new__(cls)
-        dd0 = dim_datas[0]
+        dd0 = dim_data_per_rank[0]
         self.context = context
         self.shape = tuple(dd['size'] for dd in dd0)
         self.ndim = len(dd0)
@@ -403,11 +403,12 @@ class Distribution(object):
 
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
-        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
+        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
+                  dim_data_per_rank]
         self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
 
         dim_data_per_dim = [_compactify_dicts(dict_tuple)
-                            for dict_tuple in zip(*dim_datas)]
+                            for dict_tuple in zip(*dim_data_per_rank)]
 
         if len(dim_data_per_dim) != self.ndim:
             raise ValueError("Inconsistent dimensions.")
