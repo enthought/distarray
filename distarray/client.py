@@ -103,7 +103,7 @@ class DistArray(object):
                'distarray.local.maps.Distribution.from_shape({shape_name}, '
                '{dist_name}, {grid_shape_name}, {comm_name}), {dtype_name})')
         ctx._execute(cmd.format(**locals()))
-        self.mdmap = distribution
+        self.distribution = distribution
         self.key = da_key
         self._dtype = dtype
 
@@ -116,7 +116,7 @@ class DistArray(object):
         """
         da = cls.__new__(cls)
         da.key = key
-        da.mdmap = _make_distribution_from_local_dimdata(key, context)
+        da.distribution = _make_distribution_from_local_dimdata(key, context)
         da._dtype = _get_attribute(context, key, 'dtype')
         return da
 
@@ -138,7 +138,7 @@ class DistArray(object):
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
-            targets = self.mdmap.owning_targets(index)
+            targets = self.distribution.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_getitem(%s)'
             statement = fmt % (result_key, self.key, index)
@@ -163,7 +163,7 @@ class DistArray(object):
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
-            targets = self.mdmap.owning_targets(index)
+            targets = self.distribution.owning_targets(index)
             result_key = self.context._generate_key()
             fmt = '%s = %s.checked_setitem(%s, %s)'
             statement = fmt % (result_key, self.key, index, value)
@@ -177,11 +177,11 @@ class DistArray(object):
 
     @property
     def context(self):
-        return self.mdmap.context
+        return self.distribution.context
 
     @property
     def shape(self):
-        return self.mdmap.shape
+        return self.distribution.shape
 
     @property
     def global_size(self):
@@ -189,11 +189,11 @@ class DistArray(object):
 
     @property
     def dist(self):
-        return self.mdmap.dist
+        return self.distribution.dist
 
     @property
     def grid_shape(self):
-        return self.mdmap.grid_shape
+        return self.distribution.grid_shape
 
     @property
     def ndim(self):
