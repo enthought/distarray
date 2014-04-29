@@ -114,13 +114,13 @@ class Context(object):
     # `localize` and `vectorize` allow extra functions to be added to the context.
 
     def localize(self, func):
-        from distarray.decorators import local
-        lf = local(func, self)
+        from distarray.decorators import Localize
+        lf = Localize(func, self)
         setattr(self, func.__name__, lf)
 
     def vectorize(self, func):
-        from distarray.decorators import vectorize
-        lf = vectorize(func, self)
+        from distarray.decorators import Vectorize
+        lf = Vectorize(func, self)
         setattr(self, func.__name__, lf)
 
     # Key management routines:
