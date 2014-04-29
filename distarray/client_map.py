@@ -483,7 +483,7 @@ class Distribution(object):
         """
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]
 
-    def get_local_dim_datas(self):
+    def get_dim_data_per_rank(self):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]

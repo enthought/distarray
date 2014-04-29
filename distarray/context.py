@@ -321,7 +321,7 @@ class Context(object):
         """
         # global_dim_data is a sequence of dictionaries, one per dimension.
         mdmap = Distribution(self, global_dim_data)
-        dim_data_per_rank = mdmap.get_local_dim_datas()
+        dim_data_per_rank = mdmap.get_dim_data_per_rank()
 
         if len(self.targets) != len(dim_data_per_rank):
             errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
