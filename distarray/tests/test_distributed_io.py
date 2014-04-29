@@ -150,22 +150,22 @@ class TestNpyFileLoad(unittest.TestCase):
         self.dac.close()
 
     def test_load_bn(self):
-        dim_datas = bn_test_data
-        da = self.dac.load_npy(self.output_path, dim_datas)
+        dim_data_per_rank = bn_test_data
+        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nc(self):
-        dim_datas = nc_test_data
-        da = self.dac.load_npy(self.output_path, dim_datas)
+        dim_data_per_rank = nc_test_data
+        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nu(self):
-        dim_datas = nu_test_data
-        da = self.dac.load_npy(self.output_path, dim_datas)
+        dim_data_per_rank = nu_test_data
+        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])

@@ -162,9 +162,10 @@ class TestInitShapeEquivalence(MpiTestCase):
             "size": 16,
             }
         dd1 = (dim10, dim11)
-        dim_datas = (dd0, dd1)
+        dim_data_per_rank = (dd0, dd1)
 
-        d0 = Distribution(dim_datas[self.comm.Get_rank()], comm=self.comm)
+        d0 = Distribution(dim_data_per_rank[self.comm.Get_rank()],
+                          comm=self.comm)
         d1 = Distribution.from_shape((16, 16), dist={0: 'b'},
                                      grid_shape=(2, 1), comm=self.comm)
         self.assert_alike(d0, d1)
@@ -197,10 +198,10 @@ class TestInitShapeEquivalence(MpiTestCase):
             }
         dd1 = (dim10, dim11)
 
-        dim_datas = (dd0, dd1)
+        dim_data_per_rank = (dd0, dd1)
 
-
-        larr = Distribution(dim_datas[self.comm.Get_rank()], comm=self.comm)
+        larr = Distribution(dim_data_per_rank[self.comm.Get_rank()],
+                            comm=self.comm)
         expected = Distribution.from_shape((16, 16), dist={1: 'c'},
                                            grid_shape=(1, 2), comm=self.comm)
 

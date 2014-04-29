@@ -73,13 +73,13 @@ def choose_map(dist_type):
     return cls_from_dist_type[dist_type]
 
 
-def map_from_dim_datas(dim_datas):
-    """ Generates a ClientMap instance from a santized sequence of dim_data
+def map_from_dim_data_per_rank(dim_data_per_rank):
+    """ Generates a ClientMap instance from a sanitized sequence of dim_data
     dictionaries.
 
     Parameters
     ----------
-    dim_datas : sequence of dictionaries
+    dim_data_per_rank : sequence of dictionaries
         Each dictionary is a "dimension dictionary" from the distributed array
         protocol, one per process in this dimension of the process grid.  The
         dimension dictionaries shall all have the same keys and values for
@@ -91,17 +91,18 @@ def map_from_dim_datas(dim_datas):
         An instance of a subclass of MapBase.
 
     """
-    # check that all proccesses / ranks are accounted for.
-    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_datas)
-    if proc_ranks != list(range(len(dim_datas))):
+    # check that all processes / ranks are accounted for.
+    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_data_per_rank)
+    if proc_ranks != list(range(len(dim_data_per_rank))):
         msg = "Ranks of processes (%r) not consistent."
         raise ValueError(msg % proc_ranks)
-    # Sort dim_datas according to proc_grid_rank.
-    dim_datas = sorted(dim_datas, key=lambda d: d['proc_grid_rank'])
+    # Sort dim_data_per_rank according to proc_grid_rank.
+    dim_data_per_rank = sorted(dim_data_per_rank,
+                               key=lambda d: d['proc_grid_rank'])
 
-    dist_type = dim_datas[0]['dist_type']
+    dist_type = dim_data_per_rank[0]['dist_type']
     map_class = choose_map(dist_type)
-    return map_class.from_dim_data(dim_datas)
+    return map_class.from_dim_data_per_rank(dim_data_per_rank)
 
 
 def map_from_global_dim_dict(global_dim_dict):
@@ -164,12 +165,12 @@ class NoDistMap(MapBase):
         return cls(size, grid_size=1)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
-        if len(dim_data_seq) != 1:
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        if len(dim_data_per_rank) != 1:
             msg = ("Number of dimension dictionaries "
                    "non-unitary for non-distributed dimension.")
             raise ValueError(msg)
-        dd = dim_data_seq[0]
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'n':
             msg = "Wrong dist_type (%r) for non-distributed map."
             raise ValueError(msg % dd['dist_type'])
@@ -219,19 +220,19 @@ class BlockMap(MapBase):
         return self
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
         self = cls.__new__(cls)
-        dd = dim_data_seq[0]
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
         self.size = dd['size']
         self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(dim_data_seq):
+        if self.grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
+            raise ValueError(msg % (len(dim_data_per_rank), self.grid_size))
+        self.bounds = [(d['start'], d['stop']) for d in dim_data_per_rank]
         self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
 
         return self
@@ -287,17 +288,17 @@ class BlockCyclicMap(MapBase):
         return cls(size, grid_size, block_size)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
-        dd = dim_data_seq[0]
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'c':
             msg = "Wrong dist_type (%r) for cyclic map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_seq):
+        if grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), grid_size))
+            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
         block_size = dd.get('block_size', 1)
         return cls(size, grid_size, block_size)
 
@@ -335,18 +336,18 @@ class UnstructuredMap(MapBase):
         return cls(size, grid_size, indices=indices)
 
     @classmethod
-    def from_dim_data(cls, dim_data_seq):
-        dd = dim_data_seq[0]
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_seq):
+        if grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), grid_size))
-        indices = [dd['indices'] for dd in dim_data_seq]
+            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
+        indices = [dd['indices'] for dd in dim_data_per_rank]
         return cls(size, grid_size, indices=indices)
 
     def __init__(self, size, grid_size, indices=None):
@@ -387,13 +388,13 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data(cls, context, dim_datas):
+    def from_dim_data_per_rank(cls, context, dim_data_per_rank):
         """ Creates a Distribution from a sequence of `dim_data` dictionary
         tuples from each LocalArray.
         """
 
         self = cls.__new__(cls)
-        dd0 = dim_datas[0]
+        dd0 = dim_data_per_rank[0]
         self.context = context
         self.shape = tuple(dd['size'] for dd in dd0)
         self.ndim = len(dd0)
@@ -402,16 +403,17 @@ class Distribution(object):
 
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
-        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in dim_datas]
+        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
+                  dim_data_per_rank]
         self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
 
         dim_data_per_dim = [_compactify_dicts(dict_tuple)
-                            for dict_tuple in zip(*dim_datas)]
+                            for dict_tuple in zip(*dim_data_per_rank)]
 
         if len(dim_data_per_dim) != self.ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [map_from_dim_datas(ddpd) for ddpd in dim_data_per_dim]
+        self.maps = [map_from_dim_data_per_rank(ddpd) for ddpd in dim_data_per_dim]
 
         return self
 
@@ -481,7 +483,7 @@ class Distribution(object):
         """
         return [self.context.targets[r] for r in self.owning_ranks(idxs)]
 
-    def get_local_dim_datas(self):
+    def get_dim_data_per_rank(self):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]

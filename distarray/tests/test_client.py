@@ -216,7 +216,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                  },
                 )
         mdmap = Distribution(self.context, glb_dim_data)
-        actual = mdmap.get_local_dim_datas()
+        actual = mdmap.get_dim_data_per_rank()
 
         expected = [
             ({'block_size': 2,
