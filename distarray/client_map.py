@@ -165,12 +165,12 @@ class NoDistMap(MapBase):
         return cls(size, grid_size=1)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_seq):
-        if len(dim_data_seq) != 1:
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        if len(dim_data_per_rank) != 1:
             msg = ("Number of dimension dictionaries "
                    "non-unitary for non-distributed dimension.")
             raise ValueError(msg)
-        dd = dim_data_seq[0]
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'n':
             msg = "Wrong dist_type (%r) for non-distributed map."
             raise ValueError(msg % dd['dist_type'])
@@ -220,19 +220,19 @@ class BlockMap(MapBase):
         return self
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_seq):
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
         self = cls.__new__(cls)
-        dd = dim_data_seq[0]
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
         self.size = dd['size']
         self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(dim_data_seq):
+        if self.grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in dim_data_seq]
+            raise ValueError(msg % (len(dim_data_per_rank), self.grid_size))
+        self.bounds = [(d['start'], d['stop']) for d in dim_data_per_rank]
         self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
 
         return self
@@ -288,17 +288,17 @@ class BlockCyclicMap(MapBase):
         return cls(size, grid_size, block_size)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_seq):
-        dd = dim_data_seq[0]
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'c':
             msg = "Wrong dist_type (%r) for cyclic map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_seq):
+        if grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), grid_size))
+            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
         block_size = dd.get('block_size', 1)
         return cls(size, grid_size, block_size)
 
@@ -336,18 +336,18 @@ class UnstructuredMap(MapBase):
         return cls(size, grid_size, indices=indices)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_seq):
-        dd = dim_data_seq[0]
+    def from_dim_data_per_rank(cls, dim_data_per_rank):
+        dd = dim_data_per_rank[0]
         if dd['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_seq):
+        if grid_size != len(dim_data_per_rank):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_seq), grid_size))
-        indices = [dd['indices'] for dd in dim_data_seq]
+            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
+        indices = [dd['indices'] for dd in dim_data_per_rank]
         return cls(size, grid_size, indices=indices)
 
     def __init__(self, size, grid_size, indices=None):
