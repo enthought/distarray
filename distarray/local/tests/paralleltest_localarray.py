@@ -341,7 +341,7 @@ class TestIndexing(MpiTestCase):
 
 class TestLocalArrayMethods(MpiTestCase):
 
-    ddpp = [
+    ddpr = [
         ({'dist_type': 'c',
           'block_size': 1,
           'size': 4,
@@ -413,7 +413,7 @@ class TestLocalArrayMethods(MpiTestCase):
         assert_localarrays_equal(a, b, check_dtype=True)
 
     def test_copy_cbc(self):
-        distribution = Distribution(self.ddpp[self.comm.Get_rank()],
+        distribution = Distribution(self.ddpr[self.comm.Get_rank()],
                                     comm=self.comm)
         a = LocalArray(distribution, dtype=np.int_)
         a.fill(12)
@@ -432,7 +432,7 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_astype_cbc(self):
         new_dtype = np.int8
-        d = Distribution(self.ddpp[self.comm.Get_rank()], comm=self.comm)
+        d = Distribution(self.ddpr[self.comm.Get_rank()], comm=self.comm)
         a = LocalArray(d, dtype=np.int32)
         a.fill(12)
         b = a.astype(new_dtype)
