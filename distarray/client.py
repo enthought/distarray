@@ -68,14 +68,14 @@ def process_return_value(subcontext, result_key, targets):
     return result
 
 _DIM_DATA_PER_RANK = """
-{dim_data_name} = {local_name}.dim_data
+{ddpr_name} = {local_name}.dim_data
 """
 
 def _make_mdmap_from_local_dimdata(local_name, context):
-    dim_data_name = context._generate_key()
+    ddpr_name = context._generate_key()
     context._execute(_DIM_DATA_PER_RANK.format(local_name=local_name,
-                                               dim_data_name=dim_data_name))
-    dim_data_per_rank = context._pull(dim_data_name)
+                                               ddpr_name=ddpr_name))
+    dim_data_per_rank = context._pull(ddpr_name)
     return Distribution.from_dim_data_per_rank(context, dim_data_per_rank)
 
 def _get_attribute(context, key, name):
