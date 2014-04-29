@@ -73,7 +73,7 @@ def choose_map(dist_type):
     return cls_from_dist_type[dist_type]
 
 
-def map_from_dim_datas(dim_datas):
+def map_from_dim_data_per_rank(dim_datas):
     """ Generates a ClientMap instance from a santized sequence of dim_data
     dictionaries.
 
@@ -411,7 +411,7 @@ class Distribution(object):
         if len(dim_data_per_dim) != self.ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [map_from_dim_datas(ddpd) for ddpd in dim_data_per_dim]
+        self.maps = [map_from_dim_data_per_rank(ddpd) for ddpd in dim_data_per_dim]
 
         return self
 
