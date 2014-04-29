@@ -300,8 +300,8 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def test___init__(self):
         shape = (100, 100)
-        mdmap = Distribution.from_shape(self.context, shape, ('b', 'c'))
-        da = DistArray(mdmap, dtype=int)
+        distribution = Distribution.from_shape(self.context, shape, ('b', 'c'))
+        da = DistArray(distribution, dtype=int)
         da.fill(42)
         nda = numpy.empty(shape, dtype=int)
         nda.fill(42)
