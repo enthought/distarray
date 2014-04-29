@@ -88,23 +88,22 @@ class DistArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, mdmap, dtype):
-        """ Creates a new empty distarray according to the multi-dimensional
-        map given.
-        """
+    def __init__(self, distribution, dtype):
+        """Creates an empty DistArray according to the `distribution` given."""
         # FIXME: code duplication with context.py.
-        ctx = mdmap.context
+        ctx = distribution.context
         # FIXME: this is bad...
         comm_name = ctx._comm_key
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
-        names = ctx._key_and_push(mdmap.shape, mdmap.dist, mdmap.grid_shape, dtype)
+        names = ctx._key_and_push(distribution.shape, distribution.dist,
+                                  distribution.grid_shape, dtype)
         shape_name, dist_name, grid_shape_name, dtype_name = names
         cmd = ('{da_key} = distarray.local.empty('
                'distarray.local.maps.Distribution.from_shape({shape_name}, '
                '{dist_name}, {grid_shape_name}, {comm_name}), {dtype_name})')
         ctx._execute(cmd.format(**locals()))
-        self.mdmap = mdmap
+        self.mdmap = distribution
         self.key = da_key
         self._dtype = dtype
 
