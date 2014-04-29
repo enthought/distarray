@@ -18,131 +18,126 @@ import numpy
 from numpy.testing import assert_array_equal
 
 from distarray.context import Context
-from distarray.decorators import DecoratorBase, local
+from distarray.decorators import FunctionRegistrationBase
 from distarray.error import ContextError
 
 
-# class TestDecoratorBase(TestCase):
+class TestFunctionRegistrationBase(TestCase):
 
-    # def test_determine_context(self):
-        # context = Context()
-        # context2 = Context()  # for cross Context checking
-        # da = context.ones((2, 2))
+    def test_determine_context(self):
+        context = Context()
+        context2 = Context()  # for cross Context checking
+        da = context.ones((2, 2))
 
-        # def dummy_func(*args, **kwargs):
-            # fn = lambda x: x
-            # db = DecoratorBase(fn)
-            # return db.determine_context(args, kwargs)
+        def dummy_func(ctx, *args, **kwargs):
+            def fn(x):
+                return x
+            db = FunctionRegistrationBase(fn, ctx)
+            return db.determine_context(args, kwargs)
 
-        # self.assertEqual(dummy_func(6, 7, context), context)
-        # self.assertEqual(dummy_func('ab', da), context)
-        # self.assertEqual(dummy_func(a=da), context)
-        # self.assertEqual(dummy_func(context, a=da), context)
+        self.assertEqual(dummy_func(context, 6, 7), context)
+        self.assertEqual(dummy_func(context, 'ab', da), context)
+        self.assertEqual(dummy_func(context, a=da), context)
+        self.assertEqual(dummy_func(context, a=da), context)
 
-        # self.assertRaises(TypeError, dummy_func, 'foo')
-        # self.assertRaises(ContextError, dummy_func, context, context2)
+        db = context2.ones((2, 2))
+        self.assertRaises(ContextError, dummy_func, context, db)
 
-    # def test_key_and_push_args(self):
-        # context = Context()
+    def test_key_and_push_args(self):
+        context = Context()
 
-        # da = context.ones((2, 2))
-        # db = da*2
+        da = context.ones((2, 2))
+        db = da*2
 
-        # def dummy_func(*args, **kwargs):
-            # fn = lambda x: x
-            # db = DecoratorBase(fn)
-            # return db.key_and_push_args(args, kwargs)
+        def dummy_func(ctx, *args, **kwargs):
+            def fn(x):
+                return x
+            db = FunctionRegistrationBase(fn, ctx)
+            return db.build_args(args, kwargs)
 
-        # # Push some distarrays
-        # arg_keys1, kw_keys1 = dummy_func(da, db, foo=da, bar=db)
-        # # with some other data too
-        # arg_keys2, kw_keys2 = dummy_func(da, 'question', answer=42, foo=db)
+        # Push some distarrays
+        arg_keys1, kw_keys1 = dummy_func(context, da, db, foo=da, bar=db)
+        # with some other data too
+        arg_keys2, kw_keys2 = dummy_func(context, da, 'question', answer=42, foo=db)
 
-        # self.assertEqual(arg_keys1, "(%s, %s,)" % (da.key, db.key))
-        # # assert we pushed the right key, keystr pair
-        # self.assertTrue("'foo': %s" % (da.key) in kw_keys1)
-        # self.assertTrue("'bar': %s" % (db.key) in kw_keys1)
+        self.assertSequenceEqual(arg_keys1, (da.key, db.key))
+        # assert we pushed the right key, keystr pair
+        self.assertDictEqual({'foo': da.key,  'bar': db.key}, kw_keys1)
 
-        # # lots of string manipulation to parse out the relevant pieces
-        # # of the python commands.
-        # self.assertEqual(arg_keys2[1: -2].split(', ')[0], da.key)
+        # lots of string manipulation to parse out the relevant pieces
+        # of the python commands.
+        self.assertSequenceEqual(arg_keys2, (da.key, 'question'))
 
-        # _key = arg_keys2[1: -2].split(', ')[1]
-        # self.assertEqual(context._pull0(_key), 'question')
-        # self.assertTrue("'answer'" in kw_keys2)
-
-        # self.assertTrue("'foo'" in kw_keys2)
-        # self.assertTrue(db.key in kw_keys2)
+        self.assertSetEqual(set("answer foo".split()), set(kw_keys2.keys()))
+        self.assertIn(db.key, kw_keys2.values())
 
 
 class TestLocalDecorator(TestCase):
-
 
     @classmethod
     def setUpClass(cls):
         cls.context = ctx = Context()
         cls.da = cls.context.empty((5, 5))
         cls.da.fill(2 * numpy.pi)
-        # Functions for @local decorator tests. These are here so we can
-        # guarantee they are pushed to the engines before we try to use them.
+
         def local_add50(da):
             return da + 50
-        ctx.register(local_add50)
+        ctx.localize(local_add50)
 
         def local_add_num(da, num):
             return da + num
-        ctx.register(local_add_num)
+        ctx.localize(local_add_num)
 
         def assert_allclose(da, db):
             assert numpy.allclose(da, db), "Arrays not equal within tolerance."
-        ctx.register(assert_allclose)
+        ctx.localize(assert_allclose)
 
         def local_sin(da):
             return numpy.sin(da)
-        ctx.register(local_sin)
+        ctx.localize(local_sin)
 
         def local_sum(da):
             return numpy.sum(da.get_localarray())
-        ctx.register(local_sum)
+        ctx.localize(local_sum)
 
         def call_barrier(da):
             from mpi4py import MPI
             MPI.COMM_WORLD.Barrier()
             return da
-        ctx.register(call_barrier)
+        ctx.localize(call_barrier)
 
         def local_add_nums(da, num1, num2, num3):
             return da + num1 + num2 + num3
-        ctx.register(local_add_nums)
+        ctx.localize(local_add_nums)
 
         def local_add_distarrayproxies(da, dg):
             return da + dg
-        ctx.register(local_add_distarrayproxies)
+        ctx.localize(local_add_distarrayproxies)
 
         def local_add_mixed(da, num1, dg, num2):
             return da + num1 + dg + num2
-        ctx.register(local_add_mixed)
+        ctx.localize(local_add_mixed)
 
         def local_add_ndarray(da, num, ndarr):
             return da + num + ndarr
-        ctx.register(local_add_ndarray)
+        ctx.localize(local_add_ndarray)
 
         def local_add_kwargs(da, num1, num2=55):
             return da + num1 + num2
-        ctx.register(local_add_kwargs)
+        ctx.localize(local_add_kwargs)
 
         def local_add_supermix(da, num1, db, num2, dc, num3=99, num4=66):
             return da + num1 + db + num2 + dc + num3 + num4
-        ctx.register(local_add_supermix)
+        ctx.localize(local_add_supermix)
 
         def local_none(da):
             return None
-        ctx.register(local_none)
+        ctx.localize(local_none)
 
         def parameterless():
             """This is a parameterless function."""
             return None
-        ctx.register(parameterless)
+        ctx.localize(parameterless)
 
     @classmethod
     def tearDownClass(cls):
@@ -165,23 +160,12 @@ class TestLocalDecorator(TestCase):
                 for j in da.maps[1].global_iter:
                     da.global_index[i, j] = i + j
             return da
-        context.register(fill_da)
+        context.localize(fill_da)
 
         da = context.fill_da(da)
         a = fill_a(a)
 
         assert_array_equal(da.toarray(), a)
-
-    # def test_different_contexts(self):
-        # ctx1 = Context(targets=range(4))
-        # ctx2 = Context(targets=range(3))
-        # da1 = ctx1.ones((10,))
-        # da2 = ctx2.ones((10,))
-        # db1 = self.local_sin(da1)
-        # db2 = self.local_sin(da2)
-        # ndarr1 = db1.toarray()
-        # ndarr2 = db2.toarray()
-        # assert_array_equal(ndarr1, ndarr2)
 
     def test_local_sin(self):
         db = self.context.local_sin(self.da)
@@ -259,27 +243,27 @@ class TestLocalDecorator(TestCase):
         self.assertEqual(self.context.parameterless.__doc__, docstring)
 
 
-# class TestVectorizeDecorator(TestCase):
+class TestVectorizeDecorator(TestCase):
 
-    # def test_vectorize(self):
-        # """Test the @vectorize decorator for parity with NumPy's"""
+    def test_vectorize(self):
+        """Test the @vectorize decorator for parity with NumPy's"""
 
-        # context = Context()
+        ctx = Context()
 
-        # a = numpy.arange(16).reshape(4, 4)
-        # da = context.fromndarray(a)
+        a = numpy.arange(16).reshape(4, 4)
+        da = ctx.fromndarray(a)
 
-        # @vectorize
-        # def da_fn(a, b, c):
-            # return a**2 + b + c
+        def da_fn(a, b, c):
+            return a**2 + b + c
+        ctx.vectorize(da_fn)
 
-        # @numpy.vectorize
-        # def a_fn(a, b, c):
-            # return a**2 + b + c
+        @numpy.vectorize
+        def a_fn(a, b, c):
+            return a**2 + b + c
 
-        # a = a_fn(a, a, 6)
-        # db = da_fn(da, da, 6)
-        # assert_array_equal(db.toarray(), a)
+        a = a_fn(a, a, 6)
+        db = ctx.da_fn(da, da, 6)
+        assert_array_equal(db.toarray(), a)
 
 
 if __name__ == '__main__':

@@ -111,11 +111,16 @@ class Context(object):
             block=True
         )
 
-    # Function registration.
+    # `localize` and `vectorize` allow extra functions to be added to the context.
 
-    def register(self, func):
+    def localize(self, func):
         from distarray.decorators import local
         lf = local(func, self)
+        setattr(self, func.__name__, lf)
+
+    def vectorize(self, func):
+        from distarray.decorators import vectorize
+        lf = vectorize(func, self)
         setattr(self, func.__name__, lf)
 
     # Key management routines:
