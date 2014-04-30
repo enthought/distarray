@@ -109,17 +109,37 @@ class DistArray(object):
         self._dtype = dtype
 
     @classmethod
-    def from_localarrays(cls, key, context):
-        """ The caller has already created the LocalArray objects.  `key` is
+    def from_localarrays(cls, key, context=None, distribution=None,
+                         dtype=None):
+        """The caller has already created the LocalArray objects.  `key` is
         their name on the engines.  This classmethod creates a DistArray that
         refers to these LocalArrays.
 
+        Either a `context` or a `distribution` must also be provided.  If
+        `context` is provided, a ``dim_data_per_rank`` will be pulled from
+        the existing ``LocalArray``s and a ``Distribution`` will be created
+        from it.   If `distribution` is provided, it should accurately
+        reflect the  distribution of the existing ``LocalArray``s.
+
+        If `dtype` is not provided, it will be fetched from the engines.
         """
         da = cls.__new__(cls)
         da.key = key
-        da.distribution = _make_distribution_from_dim_data_per_rank(key,
-                                                                    context)
-        da._dtype = _get_attribute(context, key, 'dtype')
+
+        if (context is None) == (distribution is None):
+            errmsg = "Must provide `context` or `distribution` but not both."
+            raise RuntimeError(errmsg)
+        elif (distribution is not None):
+            da.distribution = distribution
+        elif (context is not None):
+            da.distribution = _make_distribution_from_dim_data_per_rank(key,
+                                                                        context)
+
+        if dtype is None:
+            da._dtype = _get_attribute(context, key, 'dtype')
+        else:
+            da._dtype = dtype
+
         return da
 
     def __del__(self):
