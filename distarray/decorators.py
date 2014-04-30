@@ -13,6 +13,7 @@ import functools
 from distarray.client import DistArray
 from distarray.context import DISTARRAY_BASE_NAME
 from distarray.error import ContextError
+from distarray.externals.six import string_types
 
 
 class FunctionRegistrationBase(object):
@@ -81,7 +82,7 @@ class FunctionRegistrationBase(object):
 
         results = list(result_from_target.values())
 
-        if all(isinstance(r, basestring) and r.startswith(DISTARRAY_BASE_NAME)
+        if all(isinstance(r, string_types) and r.startswith(DISTARRAY_BASE_NAME)
                 for r in results):
             result = DistArray.from_localarrays(results[0], self.context)
         elif all(r is None for r in results):
@@ -100,15 +101,16 @@ def _rpc_localize(func, args, kwargs, result_key, prefix):
     ns = __import__('__main__')
 
     from distarray.local.localarray import LocalArray
+    from distarray.externals.six import string_types
 
     args = list(args)
     for idx, a in enumerate(args):
-        if isinstance(a, basestring):
+        if isinstance(a, string_types):
             if a.startswith(prefix):
                 args[idx] = getattr(ns, a)
 
     for k, v in kwargs.items():
-        if isinstance(v, basestring):
+        if isinstance(v, string_types):
             if v.startswith(prefix):
                 kwargs[k] = getattr(ns, v)
 
@@ -136,15 +138,16 @@ def _rpc_vectorize(func, args, kwargs, out, prefix):
 
     ns = __import__('__main__')
     import numpy as np
+    from distarray.externals.six import string_types
 
     args = list(args)
     for idx, a in enumerate(args):
-        if isinstance(a, basestring):
+        if isinstance(a, string_types):
             if a.startswith(prefix):
                 args[idx] = getattr(ns, a).local_array
 
     for k, v in kwargs.items():
-        if isinstance(v, basestring):
+        if isinstance(v, string_types):
             if v.startswith(prefix):
                 kwargs[k] = getattr(ns, v).local_array
 
