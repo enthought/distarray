@@ -82,8 +82,10 @@ class Context(object):
         Create a dict on the engines which will hold everything from
         this context.
         """
-        context_key = self.uid()
-        cmd = '%s = {}' % (context_key)
+        context_key = DISTARRAY_BASE_NAME + self.uid()
+        cmd = ("import types, sys;"
+               "%s = types.ModuleType('%s');")
+        cmd %= (context_key, context_key)
         self._execute(cmd, targets=range(len(self.view)))
         return context_key
 
@@ -151,7 +153,7 @@ class Context(object):
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s['%s']" % (self.context_key, self.uid())
+        key = "%s.%s" % (self.context_key, 'key_' + self.uid())
         return key
 
     def _key_and_push(self, *values):
@@ -166,7 +168,7 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self._key_prefix())
+        cleanup.cleanup(view=self.view, module_name='__main__', context_name=self.context_key)
 
     def close(self):
         self.cleanup()
