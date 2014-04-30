@@ -38,21 +38,22 @@ from distarray.metadata_utils import (normalize_dist,
                                       _start_stop_block)
 
 
-def _compactify_dicts(dicts):
-    """ Internal helper function to take a list of dimension dictionaries with
-    duplicates and remove the dupes.
-
+def _dedup_dim_dicts(dim_dicts):
+    """ Internal helper function to take a list of dimension dictionaries
+    and remove the dupes.  What remains should be one dictionary per rank
+    (for this dimension of the process grid).
     """
     # Workaround to make the dictionary's contents hashable.
-    for d in dicts:
+    for d in dim_dicts:
         if 'indices' in d:
             d['indices'] = tuple(d['indices'])
     try:
-        return [dict(u) for u in set(tuple(sorted(d.items())) for d in dicts)]
+        return [dict(u) for u in
+                set(tuple(sorted(d.items())) for d in dim_dicts)]
     except TypeError:
         result = []
-        for i, d in enumerate(dicts):
-            if d not in dicts[i+1:]:
+        for i, d in enumerate(dim_dicts):
+            if d not in dim_dicts[i+1:]:
                 result.append(d)
         return result
 
@@ -74,13 +75,13 @@ def choose_map(dist_type):
     return cls_from_dist_type[dist_type]
 
 
-def map_from_dim_data_per_rank(dim_data_per_rank):
-    """ Generates a ClientMap instance from a sanitized sequence of dim_data
-    dictionaries.
+def _map_from_axis_dim_dicts(axis_dim_dicts):
+    """ Generates a ClientMap instance from a sanitized sequence of
+    dimension dictionaries.
 
     Parameters
     ----------
-    dim_data_per_rank : sequence of dictionaries
+    axis_dim_dicts: sequence of dictionaries
         Each dictionary is a "dimension dictionary" from the distributed array
         protocol, one per process in this dimension of the process grid.  The
         dimension dictionaries shall all have the same keys and values for
@@ -93,17 +94,16 @@ def map_from_dim_data_per_rank(dim_data_per_rank):
 
     """
     # check that all processes / ranks are accounted for.
-    proc_ranks = sorted(dd['proc_grid_rank'] for dd in dim_data_per_rank)
-    if proc_ranks != list(range(len(dim_data_per_rank))):
+    proc_ranks = sorted(dd['proc_grid_rank'] for dd in axis_dim_dicts)
+    if proc_ranks != list(range(len(axis_dim_dicts))):
         msg = "Ranks of processes (%r) not consistent."
         raise ValueError(msg % proc_ranks)
-    # Sort dim_data_per_rank according to proc_grid_rank.
-    dim_data_per_rank = sorted(dim_data_per_rank,
-                               key=lambda d: d['proc_grid_rank'])
+    # Sort axis_dim_dicts according to proc_grid_rank.
+    axis_dim_dicts = sorted(axis_dim_dicts, key=lambda d: d['proc_grid_rank'])
 
-    dist_type = dim_data_per_rank[0]['dist_type']
+    dist_type = axis_dim_dicts[0]['dist_type']
     map_class = choose_map(dist_type)
-    return map_class.from_dim_data_per_rank(dim_data_per_rank)
+    return map_class.from_axis_dim_dicts(axis_dim_dicts)
 
 
 def map_from_global_dim_dict(global_dim_dict):
@@ -166,12 +166,12 @@ class NoDistMap(MapBase):
         return cls(size, grid_size=1)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_per_rank):
-        if len(dim_data_per_rank) != 1:
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        if len(axis_dim_dicts) != 1:
             msg = ("Number of dimension dictionaries "
                    "non-unitary for non-distributed dimension.")
             raise ValueError(msg)
-        dd = dim_data_per_rank[0]
+        dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'n':
             msg = "Wrong dist_type (%r) for non-distributed map."
             raise ValueError(msg % dd['dist_type'])
@@ -221,19 +221,19 @@ class BlockMap(MapBase):
         return self
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_per_rank):
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
         self = cls.__new__(cls)
-        dd = dim_data_per_rank[0]
+        dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
         self.size = dd['size']
         self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(dim_data_per_rank):
+        if self.grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_per_rank), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in dim_data_per_rank]
+            raise ValueError(msg % (len(axis_dim_dicts), self.grid_size))
+        self.bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
         self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
 
         return self
@@ -289,17 +289,17 @@ class BlockCyclicMap(MapBase):
         return cls(size, grid_size, block_size)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_per_rank):
-        dd = dim_data_per_rank[0]
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'c':
             msg = "Wrong dist_type (%r) for cyclic map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_per_rank):
+        if grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
         block_size = dd.get('block_size', 1)
         return cls(size, grid_size, block_size)
 
@@ -337,18 +337,18 @@ class UnstructuredMap(MapBase):
         return cls(size, grid_size, indices=indices)
 
     @classmethod
-    def from_dim_data_per_rank(cls, dim_data_per_rank):
-        dd = dim_data_per_rank[0]
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'u':
             msg = "Wrong dist_type (%r) for unstructured map."
             raise ValueError(msg % dd['dist_type'])
         size = dd['size']
         grid_size = dd['proc_grid_size']
-        if grid_size != len(dim_data_per_rank):
+        if grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(dim_data_per_rank), grid_size))
-        indices = [dd['indices'] for dd in dim_data_per_rank]
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
+        indices = [dd['indices'] for dd in axis_dim_dicts]
         return cls(size, grid_size, indices=indices)
 
     def __init__(self, size, grid_size, indices=None):
@@ -383,16 +383,14 @@ class UnstructuredMap(MapBase):
 # ---------------------------------------------------------------------------
 
 class Distribution(object):
+
     """ Governs the mapping between global indices and process ranks for
     multi-dimensional objects.
-
     """
 
     @classmethod
     def from_dim_data_per_rank(cls, context, dim_data_per_rank):
-        """ Creates a Distribution from a sequence of `dim_data` dictionary
-        tuples from each LocalArray.
-        """
+        """ Create a Distribution from a sequence of `dim_data` tuples. """
 
         self = cls.__new__(cls)
         dd0 = dim_data_per_rank[0]
@@ -408,13 +406,19 @@ class Distribution(object):
                   dim_data_per_rank]
         self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
 
-        dim_data_per_dim = [_compactify_dicts(dict_tuple)
-                            for dict_tuple in zip(*dim_data_per_rank)]
+        # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
+        # with duplicates removed.  It is a list of `axis_dim_dicts`.
+        # Each `axis_dim_dicts` is a list of dimension dictionaries, one per
+        # process on a single axis of the process grid.
+        axis_dim_dicts_per_axis = [_dedup_dim_dicts(axis_dim_dicts)
+                                   for axis_dim_dicts in
+                                   zip(*dim_data_per_rank)]
 
-        if len(dim_data_per_dim) != self.ndim:
+        if len(axis_dim_dicts_per_axis) != self.ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [map_from_dim_data_per_rank(ddpd) for ddpd in dim_data_per_dim]
+        self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
+                     axis_dim_dicts in axis_dim_dicts_per_axis]
 
         return self
 
@@ -445,9 +449,98 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
-    def __init__(self, context, glb_dim_data):
+    def __init__(self, context, global_dim_data):
+        """Make a Distribution from a global_dim_data structure.
+
+        Parameters
+        ----------
+        global_dim_data : tuple of dict
+            A global dimension dictionary per dimension.  See following `Note`
+            section.
+
+        Returns
+        -------
+        result : Distribution
+            An empty DistArray of the specified size, dimensionality, and
+            distribution.
+
+        Note
+        ----
+
+        The `global_dim_data` tuple is a simple, straightforward data structure
+        that allows full control over all aspects of a DistArray's distribution
+        information.  It does not contain any of the array's *data*, only the
+        *metadata* needed to specify how the array is to be distributed.  Each
+        dimension of the array is represented by corresponding dictionary in
+        the tuple, one per dimension.  All dictionaries have a `dist_type` key
+        that specifies whether the array is block, cyclic, or unstructured.
+        The other keys in the dictionary are dependent on the `dist_type` key.
+
+        **Block**
+
+        * ``dist_type`` is ``'b'``.
+
+        * ``bounds`` is a sequence of integers, at least two elements.
+
+          The ``bounds`` sequence always starts with 0 and ends with the global
+          ``size`` of the array.  The other elements indicate the local array
+          global index boundaries, such that successive pairs of elements from
+          ``bounds`` indicates the ``start`` and ``stop`` indices of the
+          corresponding local array.
+
+        * ``comm_padding`` integer, greater than or equal to zero.
+        * ``boundary_padding`` integer, greater than or equal to zero.
+
+        These integer values indicate the communication or boundary padding,
+        respectively, for the local arrays.  Currently only a single value for
+        both ``boundary_padding`` and ``comm_padding`` is allowed for the
+        entire dimension.
+
+        **Cyclic**
+
+        * ``dist_type`` is ``'c'``
+
+        * ``proc_grid_size`` integer, greater than or equal to one.
+
+        The size of the process grid in this dimension.  Equivalent to the
+        number of local arrays in this dimension and determines the number of
+        array sections.
+
+        * ``size`` integer, greater than or equal to zero.
+
+        The global size of the array in this dimension.
+
+        * ``block_size`` integer, optional.  Greater than or equal to one.
+
+        If not present, equivalent to being present with value of one.
+
+        **Unstructured**
+
+        * ``dist_type`` is ``'u'``
+
+        * ``indices`` sequence of one-dimensional numpy integer arrays or
+          buffers.
+
+          The ``len(indices)`` is the number of local unstructured arrays in
+          this dimension.
+
+          To compute the global size of the array in this dimension, compute
+          ``sum(len(ii) for ii in indices)``.
+
+        **Not-distributed**
+
+        The ``'n'`` distribution type is a convenience to specify that an array
+        is not distributed along this dimension.
+
+        * ``dist_type`` is ``'n'``
+
+        * ``size`` integer, greater than or equal to zero.
+
+        The global size of the array in this dimension.
+
+        """
         self.context = context
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in glb_dim_data]
+        self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)
         self.dist = tuple(m.dist for m in self.maps)

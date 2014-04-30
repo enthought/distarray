@@ -121,9 +121,10 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         bounds = (0, 2, 3, 4, 10)
         glb_dim_data = (
                 {'dist_type': 'b',
-                    'bounds': bounds},
+                 'bounds': bounds},
                 )
-        distarr = self.context.from_global_dim_data(glb_dim_data)
+        distribution = Distribution(self.context, glb_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(global_size):
             distarr[i] = i
 
@@ -140,7 +141,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices': list_of_indices,
                     },
                 )
-        distarr = self.context.from_global_dim_data(glb_dim_data)
+        distribution = Distribution(self.context, glb_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(total_size):
             distarr[i] = i
         localarrays = distarr.get_localarrays()
@@ -164,7 +166,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices' : indices
                 },
             )
-        distarr = self.context.from_global_dim_data(glb_dim_data)
+        distribution = Distribution(self.context, glb_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
@@ -187,7 +190,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'size': cols,
                     'block_size': 2,
                 },)
-        distarr = self.context.from_global_dim_data(global_dim_data)
+        distribution = Distribution(self.context, global_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
@@ -208,7 +212,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 {'dist_type': 'u',
                     'indices' : col_indices},
                 )
-        distarr = self.context.from_global_dim_data(glb_dim_data)
+        distribution = Distribution(self.context, glb_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(rows):
             for j in range(cols):
                 distarr[i, j] = i*cols + j
@@ -294,7 +299,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'bounds': (0, 2, 6, 7, 9),
                 }
             )
-        distarr = self.context.from_global_dim_data(global_dim_data)
+        distribution = Distribution(self.context, global_dim_data)
+        distarr = DistArray(distribution, dtype=int)
         for i in range(global_shape[0]):
             for j in range(global_shape[1]):
                 distarr[i, j] = i + j
