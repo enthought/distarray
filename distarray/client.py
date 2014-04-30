@@ -57,7 +57,7 @@ def process_return_value(subcontext, result_key, targets):
         return typestring == "<class 'distarray.local.localarray.LocalArray'>"
 
     if all(is_LocalArray(r) for r in result_type_str):
-        result = DistArray.from_localarrays(result_key, subcontext)
+        result = DistArray.from_localarrays(result_key, context=subcontext)
     elif all(is_NoneType(r) for r in result_type_str):
         result = None
     else:

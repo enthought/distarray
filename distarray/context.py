@@ -345,7 +345,7 @@ class Context(object):
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
@@ -414,7 +414,7 @@ class Context(object):
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
         """
@@ -455,7 +455,7 @@ class Context(object):
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def fromndarray(self, arr, dist=None, grid_shape=None):
         """Convert an ndarray to a distarray."""
@@ -477,4 +477,4 @@ class Context(object):
         new_key = self._generate_key()
         subs = (new_key, func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
-        return DistArray.from_localarrays(new_key, self)
+        return DistArray.from_localarrays(new_key, context=self)

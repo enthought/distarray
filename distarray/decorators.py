@@ -142,7 +142,7 @@ class DecoratorBase(object):
                                   "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
-            result = DistArray.from_localarrays(result_key, context)
+            result = DistArray.from_localarrays(result_key, context=context)
         elif all(is_NoneType(r) for r in result_type_str):
             result = None
         else:
