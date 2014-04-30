@@ -192,3 +192,12 @@ def distribute_indices(dd):
     except KeyError:
         msg = "dist_type %r not supported."
         raise TypeError(msg % dist_type)
+
+
+def positivify(index, size):
+    if 0 <= index < size:
+        return index
+    elif -size <= index < 0:
+        return size + index
+    else:
+        raise IndexError("Index %s out of bounds" % index)
