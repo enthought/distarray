@@ -422,16 +422,19 @@ class Distribution(object):
         return self
 
     @classmethod
-    def from_shape(cls, context, shape, dist, grid_shape=None):
+    def from_shape(cls, context, shape, dist=None, grid_shape=None):
 
         self = cls.__new__(cls)
         self.context = context
         self.shape = shape
         self.ndim = len(shape)
+
+        if dist is None:
+            dist = {0: 'b'}
         self.dist = normalize_dist(dist, self.ndim)
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
-            self.grid_shape = make_grid_shape(self.shape, dist,
+            self.grid_shape = make_grid_shape(self.shape, self.dist,
                                               len(context.targets))
         else:  # Otherwise normalize the one passed in.
             self.grid_shape = normalize_grid_shape(grid_shape, self.ndim)
