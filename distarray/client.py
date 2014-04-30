@@ -89,7 +89,7 @@ class DistArray(object):
 
     __array_priority__ = 20.0
 
-    def __init__(self, distribution, dtype):
+    def __init__(self, distribution, dtype=float):
         """Creates an empty DistArray according to the `distribution` given."""
         # FIXME: code duplication with context.py.
         ctx = distribution.context
@@ -97,12 +97,12 @@ class DistArray(object):
         comm_name = ctx._comm_key
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
-        names = ctx._key_and_push(distribution.shape, distribution.dist,
-                                  distribution.grid_shape, dtype)
-        shape_name, dist_name, grid_shape_name, dtype_name = names
+        ddpr = distribution.get_dim_data_per_rank()
+        ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = distarray.local.empty('
-               'distarray.local.maps.Distribution.from_shape({shape_name}, '
-               '{dist_name}, {grid_shape_name}, {comm_name}), {dtype_name})')
+               'distarray.local.maps.Distribution('
+               '{ddpr_name}[{comm_name}.Get_rank()], '
+               '{comm_name}), {dtype_name})')
         ctx._execute(cmd.format(**locals()))
         self.distribution = distribution
         self.key = da_key
