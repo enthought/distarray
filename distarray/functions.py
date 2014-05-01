@@ -58,12 +58,15 @@ def binary_proxy(name):
         if is_a_dap and is_b_dap:
             a_key = a.key
             b_key = b.key
+            distribution = a.distribution
         elif is_a_dap and numpy.isscalar(b):
             a_key = a.key
             b_key = context._key_and_push(b)[0]
+            distribution = a.distribution
         elif is_b_dap and numpy.isscalar(a):
             a_key = context._key_and_push(a)[0]
             b_key = b.key
+            distribution = b.distribution
         else:
             raise TypeError('only DistArray or scalars are accepted')
         new_key = context._generate_key()
@@ -76,7 +79,7 @@ def binary_proxy(name):
             exec_str %= (new_key, name, a_key, b_key)
 
         context._execute(exec_str)
-        return DistArray.from_localarrays(new_key, context=context)
+        return DistArray.from_localarrays(new_key, distribution=distribution)
     return proxy_func
 
 
