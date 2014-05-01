@@ -131,6 +131,7 @@ class DistArray(object):
             raise RuntimeError(errmsg)
         elif (distribution is not None):
             da.distribution = distribution
+            context = distribution.context
         elif (context is not None):
             da.distribution = _make_distribution_from_dim_data_per_rank(key,
                                                                         context)
