@@ -32,44 +32,6 @@ __all__ = ['DistArray']
 # Code
 # ---------------------------------------------------------------------------
 
-def process_return_value(subcontext, result_key, targets):
-    """Figure out what to return on the Client.
-
-    Parameters
-    ----------
-    key : string
-        Key corresponding to wrapped function's return value.
-
-    Returns
-    -------
-    A DistArray (if locally all values are DistArray), a None (if
-    locally all values are None), or else, pull the result back to the
-    client and return it.  If all but one of the pulled values is None,
-    return that non-None value only.
-    """
-    type_key = subcontext._generate_key()
-    type_statement = "{} = str(type({}))".format(type_key, result_key)
-    subcontext._execute(type_statement, targets=targets)
-    result_type_str = subcontext._pull(type_key, targets=targets)
-
-    def is_NoneType(typestring):
-        return (typestring == "<type 'NoneType'>" or
-                typestring == "<class 'NoneType'>")
-
-    def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.local.localarray.LocalArray'>"
-
-    if all(is_LocalArray(r) for r in result_type_str):
-        result = DistArray.from_localarrays(result_key, context=subcontext)
-    elif all(is_NoneType(r) for r in result_type_str):
-        result = None
-    else:
-        result = subcontext._pull(result_key, targets=targets)
-        if has_exactly_one(result):
-            result = next(x for x in result if x is not None)
-
-    return result
-
 _DIM_DATA_PER_RANK = """
 {ddpr_name} = {local_name}.dim_data
 """
