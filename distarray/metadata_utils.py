@@ -204,3 +204,12 @@ def normalize_dim_dict(dd):
     if dd['dist_type'] == 'n':
         dd['proc_grid_size'] = 1
         dd['proc_grid_rank'] = 0
+
+
+def positivify(index, size):
+    if 0 <= index < size:
+        return index
+    elif -size <= index < 0:
+        return size + index
+    else:
+        raise IndexError("Index %s out of bounds" % index)
