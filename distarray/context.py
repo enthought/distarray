@@ -475,10 +475,11 @@ class Context(object):
     fromarray = fromndarray
 
     def fromfunction(self, function, shape, **kwargs):
+        dtype = kwargs.get('dtype', None)
         keys = self._key_and_push(function, shape, kwargs)
         new_key = self._generate_key()
         subs = (new_key,) + keys
         cmd = ('%s = distarray.local.fromfunction(%s,'
                'distarray.local.maps.Distribution.from_shape(%s),**%s)')
         self._execute(cmd % subs)
-        return DistArray.from_localarrays(new_key, context=self)
+        return DistArray.from_localarrays(new_key, context=self, dtype=dtype)
