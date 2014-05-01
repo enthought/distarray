@@ -495,5 +495,4 @@ class Context(object):
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
                '**{kwargs_name})')
         self._execute(cmd.format(**locals()))
-        return DistArray.from_localarrays(da_name, distribution=distribution,
-                                          dtype=dtype)
+        return DistArray.from_localarrays(da_name, distribution=distribution)
