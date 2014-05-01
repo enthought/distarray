@@ -8,13 +8,15 @@ from __future__ import print_function
 
 from distarray.ipython_utils import IPythonClient
 
-def cleanup(view, module_name, context_name):
+def cleanup(view, module_name, prefix):
     """ Delete Context object with the given name from the given module"""
-    def _cleanup(module_name, context_name):
+    def _cleanup(module_name, prefix):
         ns = __import__(module_name)
-        delattr(ns, context_name)
+        for name in vars(ns).copy():
+            if name.startswith(prefix):
+                delattr(ns, name)
 
-    view.apply_async(_cleanup, module_name, context_name)
+    view.apply_sync(_cleanup, module_name, prefix)
 
 
 def cleanup_all(module_name, prefix):
