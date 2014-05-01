@@ -344,7 +344,7 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def test_fromfunction(self):
         fn = lambda i, j: i + j
-        shape = (3, 3)
+        shape = (7, 9)
         expected = numpy.fromfunction(fn, shape, dtype=int)
         result = self.context.fromfunction(fn, shape, dtype=int)
         assert_array_equal(expected, result.tondarray())
