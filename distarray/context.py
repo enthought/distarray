@@ -476,10 +476,20 @@ class Context(object):
 
     def fromfunction(self, function, shape, **kwargs):
         dtype = kwargs.get('dtype', None)
-        keys = self._key_and_push(function, shape, kwargs)
-        new_key = self._generate_key()
-        subs = (new_key,) + keys
-        cmd = ('%s = distarray.local.fromfunction(%s,'
-               'distarray.local.maps.Distribution.from_shape(%s),**%s)')
-        self._execute(cmd % subs)
-        return DistArray.from_localarrays(new_key, context=self, dtype=dtype)
+        dist = kwargs.get('dist', None)
+        grid_shape = kwargs.get('grid_shape', None)
+        distribution = Distribution.from_shape(context=self,
+                                               shape=shape, dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        function_name, ddpr_name, kwargs_name = \
+            self._key_and_push(function, ddpr, kwargs)
+        da_name = self._generate_key()
+        comm_name = self._comm_key
+        cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
+               'distarray.local.maps.Distribution('
+               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
+               '**{kwargs_name})')
+        self._execute(cmd.format(**locals()))
+        return DistArray.from_localarrays(da_name, distribution=distribution,
+                                          dtype=dtype)
