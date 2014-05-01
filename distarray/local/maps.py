@@ -29,7 +29,7 @@ from distarray.externals.six.moves import range, zip
 from distarray.local import construct
 from distarray.metadata_utils import (validate_grid_shape, make_grid_shape,
                                       normalize_grid_shape, normalize_dist,
-                                      distribute_indices)
+                                      distribute_indices, positivify)
 
 
 class Distribution(object):
@@ -136,6 +136,7 @@ class Distribution(object):
 
     def local_from_global(self, *global_ind):
         """ Given `global_ind` indices, translate into local indices."""
+        global_ind = tuple(map(positivify, global_ind, self.global_shape))
         return tuple(self._maps[dim].local_from_global(global_ind[dim])
                      for dim in range(self.ndim))
 

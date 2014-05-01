@@ -33,6 +33,7 @@ from distarray.externals.six.moves import range, reduce
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
+                                      positivify,
                                       validate_grid_shape,
                                       _start_stop_block,
                                       normalize_dim_dict)
@@ -569,6 +570,7 @@ class Distribution(object):
         If the `idxs` tuple is out of bounds, raises `IndexError`.
 
         """
+        idxs = map(positivify, idxs, self.shape) # positivify and check
         dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]

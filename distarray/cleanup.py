@@ -8,30 +8,15 @@ from __future__ import print_function
 
 from distarray.ipython_utils import IPythonClient
 
-
-def engine_cleanup(module_name, prefix):
-    """ Remove variables with ``prefix`` prefix from the namespace of the
-    module with ``module_name``. 
-    """
-    mod = __import__(module_name)
-    ns = mod.__dict__
-    keys = tuple(ns.keys())
-    deleted = 0
-    for k in keys:
-        if k.startswith(prefix):
-            del ns[k]
-            deleted += 1
-    count = 0
-    for k in ns:
-        if k.startswith(prefix):
-            count += 1
-    return (deleted, count)
-
-
 def cleanup(view, module_name, prefix):
-    """ Delete keys with prefix from client's engines. """
-    remaining = view.apply_async(engine_cleanup, module_name, prefix).get_dict()
-    return remaining
+    """ Delete Context object with the given name from the given module"""
+    def _cleanup(module_name, prefix):
+        ns = __import__(module_name)
+        for name in vars(ns).copy():
+            if name.startswith(prefix):
+                delattr(ns, name)
+
+    view.apply_sync(_cleanup, module_name, prefix)
 
 
 def cleanup_all(module_name, prefix):

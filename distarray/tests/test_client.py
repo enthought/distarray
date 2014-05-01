@@ -41,6 +41,10 @@ class TestDistArray(unittest.TestCase):
         for val in range(size):
             self.assertEqual(dap[val], val)
 
+        for i in range(1, size + 1):
+            dap[-i] = i
+            self.assertEqual(dap[-i], i)
+
     def test_set_and_getitem_nd_block_dist(self):
         size = 5
         dap = self.dac.empty((size, size), dist={0: 'b', 1: 'b'})
@@ -49,11 +53,13 @@ class TestDistArray(unittest.TestCase):
             for col in range(size):
                 val = size*row + col
                 dap[row, col] = val
-
-        for row in range(size):
-            for col in range(size):
-                val = size*row + col
                 self.assertEqual(dap[row, col], val)
+
+        for row in range(1 ,size + 1):
+            for col in range(1, size + 1):
+                dap[-row, -col] = row + col
+                self.assertEqual(dap[-row, -col], row + col)
+
 
     def test_set_and_getitem_cyclic_dist(self):
         size = 10
@@ -61,19 +67,25 @@ class TestDistArray(unittest.TestCase):
 
         for val in range(size):
             dap[val] = val
-
-        for val in range(size):
             self.assertEqual(dap[val], val)
+
+        for i in range(1, size + 1):
+            dap[-i] = i
+            self.assertEqual(dap[-i], i)
 
     def test_get_index_error(self):
         dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
             dap[11]
+        with self.assertRaises(IndexError):
+            dap[-11]
 
     def test_set_index_error(self):
         dap = self.dac.empty((10,), dist={0: 'c'})
         with self.assertRaises(IndexError):
             dap[11] = 55
+        with self.assertRaises(IndexError):
+            dap[-11] = 55
 
     def test_iteration(self):
         size = 10
