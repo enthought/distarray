@@ -45,7 +45,8 @@ def unary_proxy(name):
             exec_str %= (new_key, name, a.key)
 
         context._execute(exec_str)
-        return DistArray.from_localarrays(new_key, context=context)
+        return DistArray.from_localarrays(new_key,
+                                          distribution=a.distribution)
     return proxy_func
 
 
