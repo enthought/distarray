@@ -475,6 +475,10 @@ class Context(object):
     fromarray = fromndarray
 
     def fromfunction(self, function, shape, **kwargs):
+        """Create a DistArray from a function over global indices.
+
+        See np.fromfunction for details.
+        """
         dtype = kwargs.get('dtype', None)
         dist = kwargs.get('dist', None)
         grid_shape = kwargs.get('grid_shape', None)
