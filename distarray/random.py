@@ -75,10 +75,8 @@ class Random(object):
                                                dist=dist,
                                                grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
-
         ddpr_name = self.context._key_and_push(ddpr)[0]
         comm_name = self.context._comm_key
-
         self.context._execute(
             '{da_key} = distarray.local.random.rand('
             'distribution=distarray.local.maps.Distribution('
