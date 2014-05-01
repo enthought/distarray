@@ -414,7 +414,9 @@ class Context(object):
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, context=self)
+        distribution = Distribution.from_dim_data_per_rank(self,
+                                                           dim_data_per_rank)
+        return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
         """
@@ -455,7 +457,10 @@ class Context(object):
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, context=self)
+        distribution = Distribution.from_dim_data_per_rank(self,
+                                                           dim_data_per_rank)
+
+        return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def fromndarray(self, arr, dist=None, grid_shape=None):
         """Convert an ndarray to a distarray."""
