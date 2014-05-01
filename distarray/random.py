@@ -9,6 +9,7 @@
 
 
 from distarray.client import DistArray
+from distarray.client_map import Distribution
 
 
 class Random(object):
@@ -68,17 +69,20 @@ class Random(object):
         if dist is None:
             dist = {0: 'b'}
         da_key = self.context._generate_key()
-        size_key, dist_key, grid_shape_key = \
-            self.context._key_and_push(size, dist, grid_shape)
-        comm_key = self.context._comm_key
+
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=size,
+                                               dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        ddpr_name = self.context._key_and_push(ddpr)[0]
+        comm_name = self.context._comm_key
         self.context._execute(
             '{da_key} = distarray.local.random.rand('
-            'distribution=distarray.local.maps.Distribution.from_shape('
-            'shape={size_key}, dist={dist_key},'
-            'grid_shape={grid_shape_key}, comm={comm_key}'
-            '))'.format(**locals())
-        )
-        return DistArray.from_localarrays(da_key, self.context)
+            'distribution=distarray.local.maps.Distribution('
+            'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
+            'comm={comm_name}))'.format(**locals()))
+        return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def normal(self, loc=0.0, scale=1.0, size=None, dist=None,
                grid_shape=None):
@@ -140,18 +144,22 @@ class Random(object):
         if dist is None:
             dist = {0: 'b'}
         da_key = self.context._generate_key()
-        loc_key, scale_key, size_key, dist_key, grid_shape_key = \
-            self.context._key_and_push(loc, scale, size, dist, grid_shape)
-        comm_key = self.context._comm_key
+
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=size,
+                                               dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        loc_name, scale_name, ddpr_name = \
+            self.context._key_and_push(loc, scale, ddpr)
+        comm_name = self.context._comm_key
         self.context._execute(
             '{da_key} = distarray.local.random.normal('
-            'loc={loc_key}, scale={scale_key},'
-            'distribution=distarray.local.maps.Distribution.from_shape('
-            'shape={size_key}, dist={dist_key},'
-            'grid_shape={grid_shape_key}, comm={comm_key}'
-            '))'.format(**locals())
-        )
-        return DistArray.from_localarrays(da_key, self.context)
+            'loc={loc_name}, scale={scale_name},'
+            'distribution=distarray.local.maps.Distribution('
+            'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
+            'comm={comm_name}))'.format(**locals()))
+        return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def randint(self, low, high=None, size=None, dist=None, grid_shape=None):
         """
@@ -190,18 +198,22 @@ class Random(object):
         if dist is None:
             dist = {0: 'b'}
         da_key = self.context._generate_key()
-        low_key, high_key, size_key, dist_key, grid_shape_key = \
-            self.context._key_and_push(low, high, size, dist, grid_shape)
-        comm_key = self.context._comm_key
+
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=size,
+                                               dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        low_name, high_name, ddpr_name = \
+            self.context._key_and_push(low, high, ddpr)
+        comm_name = self.context._comm_key
         self.context._execute(
             '{da_key} = distarray.local.random.randint('
-            'low={low_key}, high={high_key},'
-            'distribution=distarray.local.maps.Distribution.from_shape('
-            'shape={size_key}, dist={dist_key},'
-            'grid_shape={grid_shape_key}, comm={comm_key}'
-            '))'.format(**locals())
-        )
-        return DistArray.from_localarrays(da_key, self.context)
+            'low={low_name}, high={high_name},'
+            'distribution=distarray.local.maps.Distribution('
+            'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
+            'comm={comm_name}))'.format(**locals()))
+        return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def randn(self, size=None, dist=None, grid_shape=None):
         """
@@ -229,14 +241,17 @@ class Random(object):
         if dist is None:
             dist = {0: 'b'}
         da_key = self.context._generate_key()
-        size_key, dist_key, grid_shape_key = \
-            self.context._key_and_push(size, dist, grid_shape)
-        comm_key = self.context._comm_key
+
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=size,
+                                               dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        ddpr_name = self.context._key_and_push(ddpr)[0]
+        comm_name = self.context._comm_key
         self.context._execute(
             '{da_key} = distarray.local.random.randn('
-            'distribution=distarray.local.maps.Distribution.from_shape('
-            'shape={size_key}, dist={dist_key},'
-            'grid_shape={grid_shape_key}, comm={comm_key}'
-            '))'.format(**locals())
-        )
-        return DistArray.from_localarrays(da_key, self.context)
+            'distribution=distarray.local.maps.Distribution('
+            'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
+            'comm={comm_name}))'.format(**locals()))
+        return DistArray.from_localarrays(da_key, distribution=distribution)

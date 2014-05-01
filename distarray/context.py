@@ -200,14 +200,21 @@ class Context(object):
         return self.view.pull(k, targets=self.targets[0], block=True)
 
     def _create_local(self, local_call, shape, dist, grid_shape, dtype):
-        """ Creates a local array, according to the method named in `local_call`."""
-        shape_name, dist_name, grid_shape_name, dtype_name = \
-                self._key_and_push(shape, dist, grid_shape, dtype)
+        """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
-        comm_key = self._comm_key
-        cmd = '{da_key} = {local_call}(distarray.local.maps.Distribution.from_shape({shape_name}, {dist_name}, {grid_shape_name}, {comm_key}), {dtype_name})'
+        comm_name = self._comm_key
+        distribution = Distribution.from_shape(context=self,
+                                               shape=shape,
+                                               dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
+        cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
+               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}), '
+               'dtype={dtype_name})')
         self._execute(cmd.format(**locals()))
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, distribution=distribution,
+                                          dtype=dtype)
 
     def zeros(self, shape, dtype=float, dist=None, grid_shape=None):
         if dist is None:
@@ -340,7 +347,7 @@ class Context(object):
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
@@ -409,7 +416,7 @@ class Context(object):
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
         """
@@ -450,7 +457,7 @@ class Context(object):
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
 
-        return DistArray.from_localarrays(da_key, self)
+        return DistArray.from_localarrays(da_key, context=self)
 
     def fromndarray(self, arr, dist=None, grid_shape=None):
         """Convert an ndarray to a distarray."""
@@ -472,4 +479,4 @@ class Context(object):
         new_key = self._generate_key()
         subs = (new_key, func_key) + keys
         self._execute('%s = distarray.local.fromfunction(%s,%s,**%s)' % subs)
-        return DistArray.from_localarrays(new_key, self)
+        return DistArray.from_localarrays(new_key, context=self)

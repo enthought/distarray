@@ -69,6 +69,8 @@ def make_grid_shape(shape, dist, comm_size):
         if not possible to distribute `comm_size` processes over number of
         dimensions.
     """
+    if not isinstance(dist, Sequence):
+        raise TypeError("`dist` argument should be a Sequence.")
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)
 
