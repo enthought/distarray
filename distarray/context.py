@@ -477,7 +477,11 @@ class Context(object):
     def fromfunction(self, function, shape, **kwargs):
         """Create a DistArray from a function over global indices.
 
-        See np.fromfunction for details.
+        Unlike numpy's `fromfunction`, the result of distarray's
+        `fromfunction` is restricted to the same Distribution as the
+        index array generated from `shape`.
+
+        See numpy.fromfunction for more details.
         """
         dtype = kwargs.get('dtype', None)
         dist = kwargs.get('dist', None)
