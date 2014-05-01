@@ -354,6 +354,13 @@ class TestDistArrayCreation(unittest.TestCase):
                                grid_shape=(1, 1, 4))
         self.assertEqual(a.grid_shape, (1, 1, 4))
 
+    def test_fromfunction(self):
+        fn = lambda i, j: i + j
+        shape = (7, 9)
+        expected = numpy.fromfunction(fn, shape, dtype=int)
+        result = self.context.fromfunction(fn, shape, dtype=int)
+        assert_array_equal(expected, result.tondarray())
+
 
 class TestReduceMethods(unittest.TestCase):
     """Test reduction methods"""
