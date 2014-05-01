@@ -34,7 +34,8 @@ from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
                                       validate_grid_shape,
-                                      _start_stop_block)
+                                      _start_stop_block,
+                                      normalize_dim_dict)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -394,6 +395,9 @@ class Distribution(object):
         self = cls.__new__(cls)
         dd0 = dim_data_per_rank[0]
         self.context = context
+        for dim_data in dim_data_per_rank:
+            for dim_dict in dim_data:
+                normalize_dim_dict(dim_dict)
         self.shape = tuple(dd['size'] for dd in dd0)
         self.ndim = len(dd0)
         self.dist = tuple(dd['dist_type'] for dd in dd0)

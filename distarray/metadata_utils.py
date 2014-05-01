@@ -194,3 +194,13 @@ def distribute_indices(dd):
     except KeyError:
         msg = "dist_type %r not supported."
         raise TypeError(msg % dist_type)
+
+
+def normalize_dim_dict(dd):
+    """Fill out some degenerate dim_dicts."""
+
+    # TODO: Fill out empty dim_dict alias here?
+
+    if dd['dist_type'] == 'n':
+        dd['proc_grid_size'] = 1
+        dd['proc_grid_rank'] = 0
