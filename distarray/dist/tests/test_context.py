@@ -126,5 +126,81 @@ class TestPrimeCluster(unittest.TestCase):
         self.assertEqual(c.grid_shape, (1, 1, 3))
 
 
+class TestApply(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context()
+
+    def test_apply_no_args(self):
+
+        def foo():
+            return 42
+
+        name = self.context.apply(foo)
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 42)
+
+    def test_apply_pos_args(self):
+
+        def foo(a, b, c):
+            return a + b + c
+
+        # push all arguments
+        name = self.context.apply(foo, (1, 2, 3))
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 6)
+
+        # some local, some pushed
+        local_thing = self.context._key_and_push(2)[0]
+        name = self.context.apply(foo, (1, local_thing, 3))
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 6)
+
+        # all pushed
+        local_args = self.context._key_and_push(1, 2, 3)
+        name = self.context.apply(foo, local_args)
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 6)
+
+    def test_apply_kwargs(self):
+
+        def foo(a, b, c=None, d=None):
+            c = -1 if c is None else c
+            d = -2 if d is None else d
+            return a + b + c + d
+
+        # empty kwargs
+        name = self.context.apply(foo, (1, 2))
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 0)
+
+        # some empty
+        name = self.context.apply(foo, (1, 2), {'d': 3})
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 5)
+
+        # all kwargs
+        name = self.context.apply(foo, (1, 2), {'c': 2, 'd': 3})
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 8)
+
+        # now with local values
+        local_a = self.context._key_and_push(1)[0]
+        local_c = self.context._key_and_push(3)[0]
+
+        name = self.context.apply(foo, (local_a, 2), {'c': local_c, 'd': 3})
+        val = self.context._pull(name, targets=[0])[0]
+
+        self.assertEqual(val, 9)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
