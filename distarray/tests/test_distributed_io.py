@@ -251,17 +251,23 @@ class TestHdf5FileLoad(unittest.TestCase):
         self.dac.close()
 
     def test_load_bn(self):
-        da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           bn_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 
     def test_load_nc(self):
-        da = self.dac.load_hdf5(self.output_path, nc_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nc_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 
     def test_load_nu(self):
-        da = self.dac.load_hdf5(self.output_path, nu_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nu_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 

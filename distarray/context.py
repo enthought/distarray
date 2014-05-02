@@ -413,7 +413,7 @@ class Context(object):
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
+    def load_hdf5(self, filename, distribution, key='buffer'):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -421,9 +421,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        distribution: Distribution object
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
@@ -440,21 +438,14 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
-            raise TypeError(errmsg)
-
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
+        ddpr = distribution.get_dim_data_per_rank()
+        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
                 (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
 
         self._execute(
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
-
-        distribution = Distribution.from_dim_data_per_rank(self,
-                                                           dim_data_per_rank)
-
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def fromndarray(self, arr, dist=None, grid_shape=None):
