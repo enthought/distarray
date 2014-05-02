@@ -149,6 +149,10 @@ class MapBase(object):
         """
         raise IndexError()
 
+    def is_compatible(self, map):
+        return ((self.dist == map.dist) and
+                (vars(self) == vars(map)))
+
 
 # ---------------------------------------------------------------------------
 # 1-D Map classes
@@ -273,6 +277,7 @@ class BlockMap(MapBase):
                 'padding': padding,
                 })
         return tuple(out)
+
 
 
 class BlockCyclicMap(MapBase):
@@ -594,3 +599,8 @@ class Distribution(object):
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]
         rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)
         return [dd for (_, dd) in rank_and_dd]
+
+    def is_compatible(self, o):
+        return ((self.context, self.targets, self.shape, self.ndim, self.dist, self.grid_shape) ==
+                (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
+                all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))
