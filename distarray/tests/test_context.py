@@ -18,6 +18,7 @@ from random import shuffle
 import numpy
 
 from distarray import Context
+from distarray.client_map import Distribution
 from distarray.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
@@ -108,19 +109,27 @@ class TestPrimeCluster(unittest.TestCase):
         cls.context.close()
 
     def test_1D(self):
-        a = self.context.empty((3,))
+        d = Distribution.from_shape(self.context, (3,))
+        a = self.context.empty(d)
         self.assertEqual(a.grid_shape, (3,))
 
     def test_2D(self):
-        a = self.context.empty((3, 3))
-        b = self.context.empty((3, 3), dist=('n', 'b'))
+        da = Distribution.from_shape(self.context, (3, 3))
+        a = self.context.empty(da)
+        db = Distribution.from_shape(self.context, (3, 3), dist=('n', 'b'))
+        b = self.context.empty(db)
         self.assertEqual(a.grid_shape, (3, 1))
         self.assertEqual(b.grid_shape, (1, 3))
 
     def test_3D(self):
-        a = self.context.empty((3, 3, 3))
-        b = self.context.empty((3, 3, 3), dist=('n', 'b', 'n'))
-        c = self.context.empty((3, 3, 3), dist=('n', 'n', 'b'))
+        da = Distribution.from_shape(self.context, (3, 3, 3))
+        a = self.context.empty(da)
+        db = Distribution.from_shape(self.context, (3, 3, 3),
+                                     dist=('n', 'b', 'n'))
+        b = self.context.empty(db)
+        dc = Distribution.from_shape(self.context, (3, 3, 3),
+                                     dist=('n', 'n', 'b'))
+        c = self.context.empty(dc)
         self.assertEqual(a.grid_shape, (3, 1, 1))
         self.assertEqual(b.grid_shape, (1, 3, 1))
         self.assertEqual(c.grid_shape, (1, 1, 3))

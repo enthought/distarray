@@ -18,6 +18,7 @@ import numpy
 from numpy.testing import assert_array_equal
 
 from distarray.context import Context
+from distarray.client_map import Distribution
 from distarray.decorators import DecoratorBase, local, vectorize
 from distarray.error import ContextError
 
@@ -27,7 +28,8 @@ class TestDecoratorBase(TestCase):
     def test_determine_context(self):
         context = Context()
         context2 = Context()  # for cross Context checking
-        da = context.ones((2, 2))
+        distribution = Distribution.from_shape(context, (2, 2))
+        da = context.ones(distribution)
 
         def dummy_func(*args, **kwargs):
             fn = lambda x: x
@@ -45,7 +47,8 @@ class TestDecoratorBase(TestCase):
     def test_key_and_push_args(self):
         context = Context()
 
-        da = context.ones((2, 2))
+        distribution = Distribution.from_shape(context, (2, 2))
+        da = context.ones(distribution)
         db = da*2
 
         def dummy_func(*args, **kwargs):
@@ -141,7 +144,8 @@ class TestLocalDecorator(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
-        cls.da = cls.context.empty((5, 5))
+        distribution = Distribution.from_shape(cls.context, (5, 5))
+        cls.da = cls.context.empty(distribution)
         cls.da.fill(2 * numpy.pi)
 
     @classmethod
@@ -152,7 +156,8 @@ class TestLocalDecorator(TestCase):
         """Test the @local decorator"""
         context = Context()
 
-        da = context.empty((4, 4))
+        distribution = Distribution.from_shape(context, (4, 4))
+        da = context.empty(distribution)
         a = numpy.empty((4, 4))
 
         def fill_a(a):
@@ -175,8 +180,10 @@ class TestLocalDecorator(TestCase):
     def test_different_contexts(self):
         ctx1 = Context(targets=range(4))
         ctx2 = Context(targets=range(3))
-        da1 = ctx1.ones((10,))
-        da2 = ctx2.ones((10,))
+        distribution1 = Distribution.from_shape(ctx1, (10,))
+        distribution2 = Distribution.from_shape(ctx2, (10,))
+        da1 = ctx1.ones(distribution1)
+        da2 = ctx2.ones(distribution2)
         db1 = self.local_sin(da1)
         db2 = self.local_sin(da2)
         ndarr1 = db1.toarray()
@@ -209,13 +216,15 @@ class TestLocalDecorator(TestCase):
         self.assert_allclose(df, 2 * numpy.pi + 11 + 12 + 13)
 
     def test_local_add_distarrayproxies(self):
-        dg = self.context.empty((5, 5))
+        distribution = Distribution.from_shape(self.context, (5, 5))
+        dg = self.context.empty(distribution)
         dg.fill(33)
         dh = self.local_add_distarrayproxies(self.da, dg)
         self.assert_allclose(dh, 33 + 2 * numpy.pi)
 
     def test_local_add_mixed(self):
-        di = self.context.empty((5, 5))
+        distribution = Distribution.from_shape(self.context, (5, 5))
+        di = self.context.empty(distribution)
         di.fill(33)
         dj = self.local_add_mixed(self.da, 11, di, 12)
         self.assert_allclose(dj, 2 * numpy.pi + 11 + 33 + 12)
@@ -233,9 +242,10 @@ class TestLocalDecorator(TestCase):
         self.assert_allclose(dl, 2 * numpy.pi + 11 + 12)
 
     def test_local_add_supermix(self):
-        dm = self.context.empty((5, 5))
+        distribution = Distribution.from_shape(self.context, (5, 5))
+        dm = self.context.empty(distribution)
         dm.fill(22)
-        dn = self.context.empty((5, 5))
+        dn = self.context.empty(distribution)
         dn.fill(44)
         do = self.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66

@@ -29,7 +29,8 @@ class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
         dac = Context()
-        da = dac.empty((100,), dist={0: 'b'})
+        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
+        da = dac.empty(distribution)
 
         output_paths = [temp_filepath() for target in dac.targets]
         try:
@@ -44,7 +45,8 @@ class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_prefix(self):
         dac = Context()
-        da = dac.empty((100,), dist={0: 'b'})
+        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
+        da = dac.empty(distribution)
 
         output_path = temp_filepath()
         try:
@@ -189,7 +191,9 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def test_save_block(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        distribution = Distribution.from_shape(self.dac, (datalen,),
+                                               dist={0: 'b'})
+        da = self.dac.empty(distribution)
         for i in range(datalen):
             da[i] = i
 
@@ -204,7 +208,8 @@ class TestHdf5FileSave(unittest.TestCase):
         source = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        da = self.dac.empty(shape, dist=dist)
+        distribution = Distribution.from_shape(self.dac, shape, dist=dist)
+        da = self.dac.empty(distribution)
 
         for i in range(shape[0]):
             for j in range(shape[1]):
@@ -218,7 +223,9 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def test_save_two_datasets(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        distribution = Distribution.from_shape(self.dac, (datalen,),
+                                               dist={0: 'b'})
+        da = self.dac.empty(distribution)
 
         for i in range(datalen):
             da[i] = i
