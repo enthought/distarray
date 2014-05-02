@@ -3,9 +3,10 @@
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
+
 """
-`Context` objects contain the information required for distarrays to
-communicate with localarrays.
+`Context` objects contain the information required for `DistArray`s to
+communicate with `LocalArray`s.
 """
 
 
@@ -26,6 +27,7 @@ DISTARRAY_BASE_NAME = '__distarray__'
 
 
 class Context(object):
+
     """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
@@ -35,7 +37,6 @@ class Context(object):
     Typically there is just one context object that uses all processes,
     although it is possible to have more than one context with a different
     selection of engines.
-
     """
 
     _CLEANUP = None
