@@ -214,17 +214,50 @@ class Context(object):
                                           dtype=dtype)
 
     def empty(self, distribution, dtype=float):
-        """Create an empty Distarray."""
+        """Create an empty Distarray.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, with uninitialized values.
+        """
         return self._create_local(local_call='distarray.local.empty',
                                   distribution=distribution, dtype=dtype)
 
     def zeros(self, distribution, dtype=float):
-        """Create a Distarray filled with zeros."""
+        """Create a Distarray filled with zeros.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with zeros.
+        """
         return self._create_local(local_call='distarray.local.zeros',
                                   distribution=distribution, dtype=dtype)
 
     def ones(self, distribution, dtype=float):
-        """Create a Distarray filled with ones."""
+        """Create a Distarray filled with ones.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with ones.
+        """
         return self._create_local(local_call='distarray.local.ones',
                                   distribution=distribution, dtype=dtype,)
 
@@ -439,7 +472,20 @@ class Context(object):
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def fromndarray(self, arr, distribution=None):
-        """Create a DistArray from an ndarray."""
+        """Create a DistArray from an ndarray.
+
+        Parameters
+        ----------
+        distribution : Distribution object, optional
+            If a Distribution object is not provided, one is created with
+            `Distribution.from_shape(arr.shape)`.
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, using the values and dtype
+            from `arr`.
+        """
         if distribution is None:
             distribution = Distribution.from_shape(self, arr.shape)
         out = self.empty(distribution, dtype=arr.dtype)
