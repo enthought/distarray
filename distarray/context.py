@@ -435,12 +435,11 @@ class Context(object):
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def fromndarray(self, arr, dist=None, grid_shape=None):
+    def fromndarray(self, arr, distribution=None):
         """Convert an ndarray to a distarray."""
-        if dist is None:
-            dist = {0: 'b'}
-        out = self.empty(arr.shape, dist=dist, grid_shape=grid_shape,
-                         dtype=arr.dtype)
+        if distribution is None:
+            distribution = Distribution.from_shape(self, arr.shape)
+        out = self.empty(distribution, dtype=arr.dtype)
         for index, value in numpy.ndenumerate(arr):
             out[index] = value
         return out
