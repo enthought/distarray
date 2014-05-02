@@ -217,21 +217,21 @@ class Context(object):
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
-    def zeros(self, shape, dtype=float, dist=None, grid_shape=None):
+    def zeros(self, shape, dist=None, grid_shape=None, dtype=float):
         if dist is None:
             dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.zeros',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype)
 
-    def ones(self, shape, dtype=float, dist=None, grid_shape=None):
+    def ones(self, shape, dist=None, grid_shape=None, dtype=float):
         if dist is None:
             dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.ones',
                                   shape=shape, dist=dist,
                                   grid_shape=grid_shape, dtype=dtype,)
 
-    def empty(self, shape, dtype=float, dist=None, grid_shape=None):
+    def empty(self, shape, dist=None, grid_shape=None, dtype=float):
         if dist is None:
             dist = {0: 'b'}
         return self._create_local(local_call='distarray.local.empty',
@@ -469,8 +469,8 @@ class Context(object):
         """Convert an ndarray to a distarray."""
         if dist is None:
             dist = {0: 'b'}
-        out = self.empty(arr.shape, dtype=arr.dtype, dist=dist,
-                         grid_shape=grid_shape)
+        out = self.empty(arr.shape, dist=dist, grid_shape=grid_shape,
+                         dtype=arr.dtype)
         for index, value in numpy.ndenumerate(arr):
             out[index] = value
         return out
