@@ -4,9 +4,9 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
-from distarray.ipython_utils import IPythonClient
+from distarray.dist.ipython_utils import IPythonClient
 
 def cleanup(view, module_name, prefix):
     """ Delete Context object with the given name from the given module"""
@@ -46,7 +46,7 @@ def get_local_keys(view, prefix):
     for target, keys in keys_from_target.items():
         for key in keys:
             targets_from_key.setdefault(key, []).append(target)
-    
+
     return targets_from_key
 
 def clear(view):
