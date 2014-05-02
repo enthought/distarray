@@ -10,7 +10,6 @@ communicate with localarrays.
 
 from __future__ import absolute_import
 
-import uuid
 import collections
 import atexit
 
@@ -22,7 +21,7 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray import DISTARRAY_BASE_NAME
+from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 
 class Context(object):
