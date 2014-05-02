@@ -31,6 +31,7 @@ from numpy.random import permutation, seed
 
 import distarray
 from distarray import plotting
+from distarray.client_map import Distribution
 
 
 def print_array_documentation(context,
@@ -302,11 +303,13 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Create array, either from dist or dimdata.
     if dist is not None:
-        array = context.empty(shape, dist=dist, grid_shape=grid_shape)
+        distribution = Distribution.from_shape(context, shape, dist=dist,
+                                               grid_shape=grid_shape)
     elif dimdata is not None:
-        array = context.from_global_dim_data(dimdata)
+        distribution = Distribution(context, dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
+    array = context.empty(distribution)
 
     # Fill the array. This is slow but not a real problem here.
     value = 0.0

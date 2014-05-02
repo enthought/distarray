@@ -12,10 +12,12 @@ from matplotlib import pyplot
 
 import distarray
 from distarray import plotting
+from distarray.client_map import Distribution
 
 
 c = distarray.Context()
-a = c.zeros((64, 64), dtype='int32', dist=('n', 'b'))
+d = Distribution.from_shape(c, (64, 64), dist=('n', 'b'))
+a = c.zeros(d, dtype='int32')
 process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
 plotting.plot_array_distribution(a, process_coords, cell_label=False,
                                  legend=True)
