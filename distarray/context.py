@@ -200,14 +200,10 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k, targets=self.targets[0], block=True)
 
-    def _create_local(self, local_call, shape, dist, grid_shape, dtype):
+    def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
         comm_name = self._comm_key
-        distribution = Distribution.from_shape(context=self,
-                                               shape=shape,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
@@ -217,26 +213,17 @@ class Context(object):
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
-    def zeros(self, shape, dist=None, grid_shape=None, dtype=float):
-        if dist is None:
-            dist = {0: 'b'}
-        return self._create_local(local_call='distarray.local.zeros',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype)
-
-    def ones(self, shape, dist=None, grid_shape=None, dtype=float):
-        if dist is None:
-            dist = {0: 'b'}
-        return self._create_local(local_call='distarray.local.ones',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype,)
-
-    def empty(self, shape, dist=None, grid_shape=None, dtype=float):
-        if dist is None:
-            dist = {0: 'b'}
+    def empty(self, distribution, dtype=float):
         return self._create_local(local_call='distarray.local.empty',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype)
+                                  distribution=distribution, dtype=dtype)
+
+    def zeros(self, distribution, dtype=float):
+        return self._create_local(local_call='distarray.local.zeros',
+                                  distribution=distribution, dtype=dtype)
+
+    def ones(self, distribution, dtype=float):
+        return self._create_local(local_call='distarray.local.ones',
+                                  distribution=distribution, dtype=dtype,)
 
     def save_dnpy(self, name, da):
         """
