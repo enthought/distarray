@@ -387,7 +387,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_npy(self, filename, dim_data_per_rank):
+    def load_npy(self, filename, distribution):
         """
         Load a DistArray from a dataset in a ``.npy`` file.
 
@@ -395,9 +395,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        distribution: Distribution object
 
         Returns
         -------
@@ -405,20 +403,14 @@ class Context(object):
             A DistArray encapsulating the file loaded.
 
         """
-        if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
-            raise TypeError(errmsg)
-
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
+        ddpr = distribution.get_dim_data_per_rank()
+        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
                 (self._comm_key,) + (self._comm_key,))
 
         self._execute(
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
-
-        distribution = Distribution.from_dim_data_per_rank(self,
-                                                           dim_data_per_rank)
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
