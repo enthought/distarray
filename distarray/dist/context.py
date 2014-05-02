@@ -8,6 +8,7 @@
 communicate with localarrays.
 """
 
+from __future__ import absolute_import
 
 import uuid
 import collections
@@ -15,14 +16,13 @@ import atexit
 
 import numpy
 
-from distarray import cleanup
+from distarray.dist import cleanup
 from distarray.externals import six
-from distarray.client import DistArray
-from distarray.client_map import Distribution
-from distarray.ipython_utils import IPythonClient
+from distarray.dist.distarray import DistArray
+from distarray.dist.maps import Distribution
 
-
-DISTARRAY_BASE_NAME = '__distarray__'
+from distarray.dist.ipython_utils import IPythonClient
+from distarray import DISTARRAY_BASE_NAME
 
 
 class Context(object):
@@ -70,7 +70,7 @@ class Context(object):
         #with self.view.sync_imports():
         #    import distarray
         self.view.execute("import distarray.local; "
-                          "import distarray.mpiutils; "
+                          "import distarray.local.mpiutils; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
@@ -91,13 +91,13 @@ class Context(object):
 
     def _make_intracomm(self):
         def get_rank():
-            from distarray.mpiutils import COMM_PRIVATE
+            from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
 
         # self.view's engines must encompass all ranks in the MPI communicator,
         # i.e., everything in rank_map.values().
         def get_size():
-            from distarray.mpiutils import COMM_PRIVATE
+            from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_size()
 
         # get a mapping of IPython engine ID to MPI rank
@@ -112,7 +112,7 @@ class Context(object):
         # MPI_Comm_create must be called on all engines, not just those
         # involved in the new communicator.
         comm_key = self._generate_key()
-        cmd = "%s = distarray.mpiutils.create_comm_with_list(%s)"
+        cmd = "%s = distarray.local.mpiutils.create_comm_with_list(%s)"
         cmd %= (comm_key, ranks)
         self.view.execute(cmd, block=True)
         return comm_key

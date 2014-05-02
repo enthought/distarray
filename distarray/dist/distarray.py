@@ -12,13 +12,15 @@ The Distarray data structure.`DistArray` objects are proxies for collections of
 # Imports
 # ---------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
 import operator
 from itertools import product
 
 import numpy as np
 
 import distarray
-from distarray.client_map import Distribution
+from distarray.dist.maps import Distribution
 from distarray.externals.six import next
 from distarray.utils import has_exactly_one, _raise_nie
 
@@ -351,113 +353,113 @@ class DistArray(object):
         return func(other, self, *args, **kwargs)
 
     def __add__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.add, '__radd__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.add, '__radd__', *args, **kwargs)
 
     def __sub__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.subtract, '__rsub__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.subtract, '__rsub__', *args, **kwargs)
 
     def __mul__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.multiply, '__rmul__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.multiply, '__rmul__', *args, **kwargs)
 
     def __div__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.divide, '__rdiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.divide, '__rdiv__', *args, **kwargs)
 
     def __truediv__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.true_divide, '__rtruediv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.true_divide, '__rtruediv__', *args, **kwargs)
 
     def __floordiv__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.floor_divide, '__rfloordiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.floor_divide, '__rfloordiv__', *args, **kwargs)
 
     def __mod__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.mod, '__rdiv__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.mod, '__rdiv__', *args, **kwargs)
 
     def __pow__(self, other, modulo=None, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.power, '__rpower__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.power, '__rpower__', *args, **kwargs)
 
     def __lshift__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.left_shift, '__rlshift__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.left_shift, '__rlshift__', *args, **kwargs)
 
     def __rshift__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.right_shift, '__rrshift__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.right_shift, '__rrshift__', *args, **kwargs)
 
     def __and__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.bitwise_and, '__rand__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.bitwise_and, '__rand__', *args, **kwargs)
 
     def __or__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.bitwise_or, '__ror__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.bitwise_or, '__ror__', *args, **kwargs)
 
     def __xor__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.bitwise_xor, '__rxor__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.bitwise_xor, '__rxor__', *args, **kwargs)
 
     # Binary - right versions
 
     def __radd__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.add, '__add__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.add, '__add__', *args, **kwargs)
 
     def __rsub__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.subtract, '__sub__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.subtract, '__sub__', *args, **kwargs)
 
     def __rmul__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.multiply, '__mul__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.multiply, '__mul__', *args, **kwargs)
 
     def __rdiv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.divide, '__div__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.divide, '__div__', *args, **kwargs)
 
     def __rtruediv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.true_divide, '__truediv__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.true_divide, '__truediv__', *args, **kwargs)
 
     def __rfloordiv__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.floor_divide, '__floordiv__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.floor_divide, '__floordiv__', *args, **kwargs)
 
     def __rmod__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.mod, '__mod__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.mod, '__mod__', *args, **kwargs)
 
     def __rpow__(self, other, modulo=None, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.power, '__pow__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.power, '__pow__', *args, **kwargs)
 
     def __rlshift__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.left_shift, '__lshift__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.left_shift, '__lshift__', *args, **kwargs)
 
     def __rrshift__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.right_shift, '__rshift__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.right_shift, '__rshift__', *args, **kwargs)
 
     def __rand__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.bitwise_and, '__and__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.bitwise_and, '__and__', *args, **kwargs)
 
     def __ror__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.bitwise_or, '__or__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.bitwise_or, '__or__', *args, **kwargs)
 
     def __rxor__(self, other, *args, **kwargs):
-        return self._rbinary_op_from_ufunc(other, distarray.bitwise_xor, '__xor__', *args, **kwargs)
+        return self._rbinary_op_from_ufunc(other, distarray.dist.bitwise_xor, '__xor__', *args, **kwargs)
 
     def __neg__(self, *args, **kwargs):
-        return distarray.negative(self, *args, **kwargs)
+        return distarray.dist.negative(self, *args, **kwargs)
 
     def __pos__(self, *args, **kwargs):
         return self
 
     def __abs__(self, *args, **kwargs):
-        return distarray.abs(self, *args, **kwargs)
+        return distarray.dist.abs(self, *args, **kwargs)
 
     def __invert__(self, *args, **kwargs):
-        return distarray.invert(self, *args, **kwargs)
+        return distarray.dist.invert(self, *args, **kwargs)
 
     # Boolean comparisons
 
     def __lt__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.less, '__lt__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.less, '__lt__', *args, **kwargs)
 
     def __le__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.less_equal, '__le__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.less_equal, '__le__', *args, **kwargs)
 
     def __eq__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.equal, '__eq__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.equal, '__eq__', *args, **kwargs)
 
     def __ne__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.not_equal, '__ne__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.not_equal, '__ne__', *args, **kwargs)
 
     def __gt__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.greater, '__gt__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.greater, '__gt__', *args, **kwargs)
 
     def __ge__(self, other, *args, **kwargs):
-        return self._binary_op_from_ufunc(other, distarray.greater_equal, '__ge__', *args, **kwargs)
+        return self._binary_op_from_ufunc(other, distarray.dist.greater_equal, '__ge__', *args, **kwargs)

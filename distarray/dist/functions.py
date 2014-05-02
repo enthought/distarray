@@ -8,10 +8,12 @@
 Distributed unfuncs for distributed arrays.
 """
 
+from __future__ import absolute_import
+
 import numpy
 
 from distarray.error import ContextError
-from distarray.client import DistArray
+from distarray.dist.distarray import DistArray
 
 
 __all__ = []  # unary_names and binary_names added to __all__ below.
