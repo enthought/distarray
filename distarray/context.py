@@ -214,14 +214,17 @@ class Context(object):
                                           dtype=dtype)
 
     def empty(self, distribution, dtype=float):
+        """Create an empty Distarray."""
         return self._create_local(local_call='distarray.local.empty',
                                   distribution=distribution, dtype=dtype)
 
     def zeros(self, distribution, dtype=float):
+        """Create a Distarray filled with zeros."""
         return self._create_local(local_call='distarray.local.zeros',
                                   distribution=distribution, dtype=dtype)
 
     def ones(self, distribution, dtype=float):
+        """Create a Distarray filled with ones."""
         return self._create_local(local_call='distarray.local.ones',
                                   distribution=distribution, dtype=dtype,)
 
@@ -436,7 +439,7 @@ class Context(object):
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def fromndarray(self, arr, distribution=None):
-        """Convert an ndarray to a distarray."""
+        """Create a DistArray from an ndarray."""
         if distribution is None:
             distribution = Distribution.from_shape(self, arr.shape)
         out = self.empty(distribution, dtype=arr.dtype)
