@@ -9,6 +9,7 @@
 import unittest
 
 from distarray.context import Context
+from distarray.client_map import Distribution
 from distarray.random import Random
 
 
@@ -29,36 +30,45 @@ class TestRandom(unittest.TestCase):
 
     def test_rand(self):
         shape = (3, 4)
-        a = self.random.rand(shape)
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=shape)
+        a = self.random.rand(distribution)
         self.assertEqual(a.shape, shape)
 
     def test_normal(self):
-        size = (3, 4)  # aka shape
-        a = self.random.normal(size=size)
-        self.assertEqual(a.shape, size)
+        shape = (3, 4)  # aka shape
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=shape)
+        a = self.random.normal(distribution)
+        self.assertEqual(a.shape, shape)
 
     def test_randint(self):
         low = 1
-        size = (3, 4)  # aka shape
-        a = self.random.randint(low, size=size)
-        self.assertEqual(a.shape, size)
+        shape = (3, 4)  # aka shape
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=shape)
+        a = self.random.randint(distribution, low=low)
+        self.assertEqual(a.shape, shape)
 
     def test_randn(self):
         shape = (3, 4)
-        a = self.random.randn(shape)
+        distribution = Distribution.from_shape(context=self.context,
+                                               shape=shape)
+        a = self.random.randn(distribution)
         self.assertEqual(a.shape, shape)
 
     def test_seed_same(self):
         """ Test that the same seed generates the same sequence. """
         shape = (8, 6)
+        distribution = Distribution.from_shape(self.context, shape)
         seed = 0xfeedbeef
         # Seed and get some random numbers.
         self.random.seed(seed)
-        a = self.random.rand(shape)
+        a = self.random.rand(distribution)
         aa = a.toarray()
         # Seed again and get more random numbers.
         self.random.seed(seed)
-        b = self.random.rand(shape)
+        b = self.random.rand(distribution)
         bb = b.toarray()
         # For an explicit seed, these should match exactly.
         self.assertTrue((aa == bb).all())
@@ -68,11 +78,12 @@ class TestRandom(unittest.TestCase):
         shape = (8, 6)
         # Seed and get some random numbers.
         self.random.seed(None)
-        a = self.random.rand(shape)
+        d = Distribution.from_shape(self.context, shape)
+        a = self.random.rand(d)
         aa = a.toarray()
         # Seed again and get more random numbers.
         self.random.seed(None)
-        b = self.random.rand(shape)
+        b = self.random.rand(d)
         bb = b.toarray()
         # For seed=None, these should *not* match.
         self.assertFalse((aa == bb).all())
@@ -86,7 +97,10 @@ class TestRandom(unittest.TestCase):
             """
             num_engines = len(context.targets)
             shape = (num_engines, num_cols)
-            darr = self.random.rand(size=shape, dist={0: 'b', 1: 'n'})
+            distribution = Distribution.from_shape(self.context,
+                                                   shape=shape,
+                                                   dist={0: 'b', 1: 'n'})
+            darr = self.random.rand(distribution)
             return darr
 
         # Seed generators.
