@@ -201,6 +201,15 @@ class TestApply(unittest.TestCase):
 
         self.assertEqual(val, 9)
 
+    def test_apply_return_val(self):
+
+        def foo(a, b, c=None):
+            c = 3 if c is None else c
+            return a + b + c
+
+        val = self.context.apply(foo, (1, 2), {'c': 5}, return_name=False)
+        self.assertEqual(val, [8]*len(self.context.targets))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
