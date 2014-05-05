@@ -5,8 +5,8 @@
 # ---------------------------------------------------------------------------
 
 """
-`Context` objects contain the information required for `DistArray`s to
-communicate with `LocalArray`s.
+`Context` objects contain the information required for `DistArray`\s to
+communicate with `LocalArray`\s.
 """
 
 from __future__ import absolute_import
