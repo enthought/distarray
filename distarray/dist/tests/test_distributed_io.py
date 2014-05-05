@@ -19,8 +19,8 @@ from numpy.testing import assert_equal, assert_allclose
 
 from distarray.externals.six.moves import range
 
-from distarray.client import DistArray
-from distarray.context import Context
+from distarray.dist.distarray import DistArray
+from distarray.dist.context import Context
 from distarray.testing import import_or_skip, temp_filepath
 
 

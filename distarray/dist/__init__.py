@@ -4,5 +4,8 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-__version__ = "0.3.0-dev"
-DISTARRAY_BASE_NAME = '__distarray__'
+from __future__ import absolute_import
+
+from distarray.dist.distarray import DistArray
+from distarray.dist.context import Context
+from distarray.dist.functions import *

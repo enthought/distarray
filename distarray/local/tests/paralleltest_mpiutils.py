@@ -11,7 +11,8 @@ from numpy.testing import assert_array_equal
 from distarray.local.localarray import zeros
 from distarray.local.maps import Distribution
 from distarray.error import InvalidCommSizeError, InvalidRankError
-from distarray.mpiutils import MPI, create_comm_of_size, create_comm_with_list
+from distarray.local.mpiutils import (MPI, create_comm_of_size,
+                                      create_comm_with_list)
 
 
 class TestCreateCommAlternate(unittest.TestCase):

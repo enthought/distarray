@@ -19,7 +19,7 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.mpiutils import MPI
+from distarray.local.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError

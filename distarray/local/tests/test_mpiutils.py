@@ -7,7 +7,7 @@
 import unittest
 import numpy
 
-from distarray.mpiutils import mpi_type_for_ndarray
+from distarray.local.mpiutils import mpi_type_for_ndarray
 
 
 class TestMpiTypes(unittest.TestCase):
