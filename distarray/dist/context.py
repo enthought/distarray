@@ -494,7 +494,7 @@ class Context(object):
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None,
-              return_name=True):
+              result_name=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -507,14 +507,19 @@ class Context(object):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
+        result_name : str
+            The name given the result on the engines. If given this is returned
+            to act as a proxy object.
 
         Returns
         -------
-        name : str
-            name of the result on the engines
+        if result_name is not None : str
+            Name of the result on the engines.
+        else: list
+            A list of the results on all the engines.
         """
 
-        def func_wrapper(func, result_name, return_name, *args, **kwargs):
+        def func_wrapper(func, result_name, *args, **kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -536,29 +541,26 @@ class Context(object):
                 if (isinstance(val, str) and val.startswith(prefix)):
                     kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
 
-            setattr(main, result_name, func(*args, **kwargs))
-
-            if return_name:
+            if result_name:
+                setattr(main, result_name, func(*args, **kwargs))
                 return result_name
             else:
-                return getattr(main, result_name)
-
-        # create a name for the result
-        result_name = uid()
+                return func(*args, **kwargs)
 
         # default arguments
         if args is None:
-            args = (func, result_name, return_name)
+            args = (func, result_name)
         else:
-            args = tuple([func, result_name, return_name] + list(args))
+            args = tuple([func, result_name] + list(args))
 
         kwargs = {} if kwargs is None else kwargs
 
         targets = self.targets if targets is None else targets
 
-        result = self.view._really_apply(func_wrapper, args=args, kwargs=kwargs,
-                                            targets=targets, block=True)
-        if return_name:
+        result = self.view._really_apply(func_wrapper, args=args,
+                                         kwargs=kwargs, targets=targets,
+                                         block=True)
+        if result_name is not None:
             # result is a list of the same name 4 times, so just return 1.
             return result[0]
         else:
