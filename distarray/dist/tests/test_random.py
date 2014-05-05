@@ -8,9 +8,9 @@
 
 import unittest
 
-from distarray.context import Context
-from distarray.client_map import Distribution
-from distarray.random import Random
+from distarray.dist.context import Context
+from distarray.dist.maps import Distribution
+from distarray.dist.random import Random
 
 
 class TestRandom(unittest.TestCase):

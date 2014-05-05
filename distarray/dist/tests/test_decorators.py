@@ -17,9 +17,9 @@ from unittest import TestCase
 import numpy
 from numpy.testing import assert_array_equal
 
-from distarray.context import Context
-from distarray.client_map import Distribution
-from distarray.decorators import DecoratorBase, local, vectorize
+from distarray.dist.context import Context
+from distarray.dist.maps import Distribution
+from distarray.dist.decorators import DecoratorBase, local, vectorize
 from distarray.error import ContextError
 
 

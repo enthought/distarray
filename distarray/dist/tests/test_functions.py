@@ -16,8 +16,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_array_equal
 
-import distarray
-from distarray import Context
+import distarray.dist.functions as functions
+from distarray.dist.context import Context
 
 
 def add_checkers(cls, ops, checker_name):
@@ -63,7 +63,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(distarray, op_name)
+        op = getattr(functions, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             # ignore inf, NaN warnings etc.
@@ -78,7 +78,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
         Check the two- and three-arg ufunc versions as well as the
         method version attached to a LocalArray.
         """
-        op = getattr(distarray, op_name)
+        op = getattr(functions, op_name)
         ufunc = getattr(np, op_name)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)

@@ -17,9 +17,9 @@ from random import shuffle
 
 import numpy
 
-from distarray import Context
-from distarray.client_map import Distribution
-from distarray.ipython_utils import IPythonClient
+from distarray.dist.context import Context
+from distarray.dist.maps import Distribution
+from distarray.dist.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
 

@@ -9,8 +9,8 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-from distarray import Context
-from distarray import client_map
+from distarray.dist.context import Context
+from distarray.dist import maps as client_map
 
 
 class TestClientMap(unittest.TestCase):
@@ -56,6 +56,3 @@ class TestClientMap(unittest.TestCase):
                 rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
                 actual = cm.owning_ranks((r,c))
                 self.assertSequenceEqual(actual, [rank])
-
-
-
