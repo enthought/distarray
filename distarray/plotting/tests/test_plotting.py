@@ -12,8 +12,7 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
 import unittest
-import matplotlib
-matplotlib.use('Agg')  # make TravisCI happy
+from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.plotting import plotting
@@ -36,6 +35,7 @@ class TestContext(unittest.TestCase):
     def test_plot_array_distribution(self):
         process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
         plotting.plot_array_distribution(self.arr, process_coords)
+        pyplot.savefig('test_plot_array_distribution')
 
 
 if __name__ == '__main__':
