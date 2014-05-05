@@ -10,6 +10,7 @@ import numpy
 import distarray
 from distarray.externals.six.moves import input
 from distarray import Context
+from distarray.client_map import Distribution
 from distarray.decorators import local
 from pprint import pprint
 
@@ -42,8 +43,8 @@ def global_sum(da):
     global_sum = da.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    distribution = distarray.local.maps.Distribution.from_shape((1,))
-    new_distarray = distarray.local.LocalArray(distribution, buf=new_arr)
+    distribution = Distribution.from_shape((1,))
+    new_distarray = LocalArray(distribution, buf=new_arr)
     return new_distarray
 
 
@@ -53,8 +54,10 @@ if __name__ == '__main__':
 
     print()
     input("Basic creation:")
-    dap_b = context.empty((arr_len,), dist={0: 'b'})
-    dap_c = context.empty((arr_len,), dist={0: 'c'})
+    dist_b = Distribution.from_shape(context, (arr_len,), dist={0: 'b'})
+    dap_b = context.empty(dist_b)
+    dist_c = Distribution.from_shape(context, (arr_len,), dist={0: 'c'})
+    dap_c = context.empty(dist_c)
     print("dap_b is a ", type(dap_b))
     print("dap_c is a ", type(dap_c))
 

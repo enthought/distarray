@@ -17,15 +17,15 @@ from timeit import default_timer as clock
 from IPython.parallel import Client
 from matplotlib import pyplot
 
-from distarray import Context
+from distarray import Context, Distribution
 from distarray.decorators import local, vectorize
 
 
 # Make an empty distributed array
 def make_empty_da(resolution, dist, context):
     """Create the arr we will build the fractal with."""
-    out = context.empty((resolution[0], resolution[1]),
-                        dist=dist, dtype=complex)
+    distribution = Distribution.from_shape(context, (resolution[0], resolution[1]), dist=dist)
+    out = context.empty(distribution, dtype=complex)
     return out
 
 
