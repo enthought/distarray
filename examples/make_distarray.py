@@ -8,8 +8,10 @@
 Create a distarray.
 """
 
-import distarray
+from distarray.context import Context
+from distarray.client_map import Distribution
 
 
-c = distarray.Context()
-a = c.zeros((10, 10, 10), dtype='int32', dist=('b', 'n', 'c'))
+c = Context()
+d = Distribution.from_shape(c, (10, 10, 10), dist=('b', 'n', 'c'))
+a = c.zeros(d, dtype='int32')
