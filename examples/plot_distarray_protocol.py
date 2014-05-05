@@ -48,7 +48,7 @@ def print_array_documentation(context,
 
     Parameters
     ----------
-    context : distarray.Context
+    context : distarray.dist.Context
         The context that will be used to query the array properties.
     array : DistArray
         The array to describe.
@@ -556,7 +556,7 @@ def create_distribution_plot_and_documentation_all(context):
 
 
 def main():
-    context = distarray.Context()
+    context = distarray.dist.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
     engine_counts = [3, 4, 8]
@@ -565,7 +565,7 @@ def main():
         raise ValueError('Need at least %d engines for all the examples, '
                          'but only have %d.' % (need_targets, num_targets))
     for engine_count in engine_counts:
-        context_n = distarray.Context(targets=range(engine_count))
+        context_n = distarray.dist.Context(targets=range(engine_count))
         create_distribution_plot_and_documentation_all(context_n)
 
 
