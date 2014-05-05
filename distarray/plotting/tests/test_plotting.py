@@ -12,6 +12,8 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
 import unittest
+import matplotlib
+matplotlib.use('Agg')  # make TravisCI happy
 
 from distarray.dist import Context, Distribution
 from distarray.plotting import plotting
