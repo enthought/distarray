@@ -23,6 +23,7 @@ install:
     - python setup.py install
     - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
 before_script:
+    - sh -e /etc/init.d/xvfb start
     - (cd $TRAVIS_BUILD_DIR && dacluster start)
     - lsof | grep python | wc -l
 script:
