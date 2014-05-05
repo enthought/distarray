@@ -119,9 +119,9 @@ class DistArray(object):
 
         Either a `context` or a `distribution` must also be provided.  If
         `context` is provided, a ``dim_data_per_rank`` will be pulled from
-        the existing ``LocalArray``s and a ``Distribution`` will be created
+        the existing ``LocalArray``\s and a ``Distribution`` will be created
         from it.   If `distribution` is provided, it should accurately
-        reflect the  distribution of the existing ``LocalArray``s.
+        reflect the  distribution of the existing ``LocalArray``\s.
 
         If `dtype` is not provided, it will be fetched from the engines.
         """

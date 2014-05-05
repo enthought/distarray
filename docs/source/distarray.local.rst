@@ -49,6 +49,15 @@ local Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`mpiutils` Module
+----------------------
+
+.. automodule:: distarray.local.mpiutils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 :mod:`random` Module
 --------------------
 
