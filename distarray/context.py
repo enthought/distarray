@@ -163,7 +163,8 @@ class Context(object):
 
     def delete_key(self, key):
         """ Delete the specific key from all the engines. """
-        cmd = 'del %s' % key
+        cmd = ('try: del %s\n'
+               'except NameError: pass') % key
         self._execute(cmd)
 
     def cleanup(self):
