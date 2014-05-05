@@ -10,11 +10,11 @@ Create a distarray, then plot its array distribution.
 
 from matplotlib import pyplot
 
-import distarray
 from distarray import plotting
+from distarray.dist import Context
 
 
-c = distarray.Context()
+c = Context()
 a = c.zeros((64, 64), dtype='int32', dist=('n', 'b'))
 process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
 plotting.plot_array_distribution(a, process_coords, cell_label=False,
