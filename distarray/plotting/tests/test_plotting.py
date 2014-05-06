@@ -32,6 +32,7 @@ class TestContext(unittest.TestCase):
         cls.context.close()
 
     def test_plot_array_distribution(self):
+        # Only tests that this runs, not that it's correct
         process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
         plotting.plot_array_distribution(self.arr, process_coords)
 
