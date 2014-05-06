@@ -18,7 +18,7 @@ from time import sleep
 from subprocess import Popen, PIPE
 
 from distarray.externals import six
-from distarray.cleanup import clear_all
+from distarray.dist.cleanup import clear_all
 
 
 if six.PY2:

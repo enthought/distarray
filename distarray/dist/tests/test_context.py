@@ -17,8 +17,9 @@ from random import shuffle
 
 import numpy
 
-from distarray import Context
-from distarray.ipython_utils import IPythonClient
+from distarray.dist.context import Context
+from distarray.dist.maps import Distribution
+from distarray.dist.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
 
@@ -112,22 +113,111 @@ class TestPrimeCluster(unittest.TestCase):
         cls.context.close()
 
     def test_1D(self):
-        a = self.context.empty((3,))
+        d = Distribution.from_shape(self.context, (3,))
+        a = self.context.empty(d)
         self.assertEqual(a.grid_shape, (3,))
 
     def test_2D(self):
-        a = self.context.empty((3, 3))
-        b = self.context.empty((3, 3), dist=('n', 'b'))
+        da = Distribution.from_shape(self.context, (3, 3))
+        a = self.context.empty(da)
+        db = Distribution.from_shape(self.context, (3, 3), dist=('n', 'b'))
+        b = self.context.empty(db)
         self.assertEqual(a.grid_shape, (3, 1))
         self.assertEqual(b.grid_shape, (1, 3))
 
     def test_3D(self):
-        a = self.context.empty((3, 3, 3))
-        b = self.context.empty((3, 3, 3), dist=('n', 'b', 'n'))
-        c = self.context.empty((3, 3, 3), dist=('n', 'n', 'b'))
+        da = Distribution.from_shape(self.context, (3, 3, 3))
+        a = self.context.empty(da)
+        db = Distribution.from_shape(self.context, (3, 3, 3),
+                                     dist=('n', 'b', 'n'))
+        b = self.context.empty(db)
+        dc = Distribution.from_shape(self.context, (3, 3, 3),
+                                     dist=('n', 'n', 'b'))
+        c = self.context.empty(dc)
         self.assertEqual(a.grid_shape, (3, 1, 1))
         self.assertEqual(b.grid_shape, (1, 3, 1))
         self.assertEqual(c.grid_shape, (1, 1, 3))
+
+
+class TestApply(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context()
+
+    def test_apply_no_args(self):
+
+        def foo():
+            return 42
+
+        val = self.context.apply(foo)
+
+        self.assertEqual(val, [42]*4)
+
+    def test_apply_pos_args(self):
+
+        def foo(a, b, c):
+            return a + b + c
+
+        # push all arguments
+        val = self.context.apply(foo, (1, 2, 3))
+        self.assertEqual(val, [6]*4)
+
+        # some local, some pushed
+        local_thing = self.context._key_and_push(2)[0]
+        val = self.context.apply(foo, (1, local_thing, 3))
+
+        self.assertEqual(val, [6]*4)
+
+        # all pushed
+        local_args = self.context._key_and_push(1, 2, 3)
+        val = self.context.apply(foo, local_args)
+
+        self.assertEqual(val, [6]*4)
+
+    def test_apply_kwargs(self):
+
+        def foo(a, b, c=None, d=None):
+            c = -1 if c is None else c
+            d = -2 if d is None else d
+            return a + b + c + d
+
+        # empty kwargs
+        val = self.context.apply(foo, (1, 2))
+
+        self.assertEqual(val, [0]*4)
+
+        # some empty
+        val = self.context.apply(foo, (1, 2), {'d': 3})
+
+        self.assertEqual(val, [5]*4)
+
+        # all kwargs
+        val = self.context.apply(foo, (1, 2), {'c': 2, 'd': 3})
+
+        self.assertEqual(val, [8]*4)
+
+        # now with local values
+        local_a = self.context._key_and_push(1)[0]
+        local_c = self.context._key_and_push(3)[0]
+
+        val = self.context.apply(foo, (local_a, 2), {'c': local_c, 'd': 3})
+
+        self.assertEqual(val, [9]*4)
+
+    def test_apply_return_val(self):
+
+        def foo(a, b, c=None):
+            c = 3 if c is None else c
+            return a + b + c
+
+        name = self.context.apply(foo, (1, 2), {'c': 5}, result_name='test')
+
+        self.assertEqual(name, 'test')
+
+        val = self.context._pull(name)
+
+        self.assertEqual(val, [8]*len(self.context.targets))
 
 
 if __name__ == '__main__':

@@ -21,6 +21,7 @@ distribution types, including `BlockMap`, `CyclicMap`, `NoDistMap`, and
 `UnstructuredMap`.
 
 """
+from __future__ import absolute_import
 
 import operator
 from itertools import product

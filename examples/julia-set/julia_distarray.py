@@ -15,6 +15,7 @@ import sys
 from matplotlib import pyplot
 
 from distarray import Context
+from distarray.client_map import Distribution
 from distarray.decorators import local, vectorize
 
 context = Context()
@@ -25,8 +26,11 @@ with context.view.sync_imports():
 # Make an empty distributed array
 def make_empty_da(resolution, dist):
     """Create the arr we will build the fractal with."""
-    out = context.empty((resolution[0], resolution[1]),
-                        dist=dist, dtype=complex)
+
+    distribution = Distribution.from_shape(context,
+                                           (resolution[0], resolution[1]),
+                                           dist=dist)
+    out = context.empty(distribution, dtype=complex)
     return out
 
 
@@ -37,8 +41,8 @@ def draw_coord(arr, re_ax, im_ax, resolution):
     """Draw the complex coordinate plane"""
     re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
     im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
-    for i in arr.maps[0].global_iter:
-        for j in arr.maps[1].global_iter:
+    for i in arr.distribution[0].global_iter:
+        for j in arr.distribution[1].global_iter:
             arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
                                              im_ax[0] + im_step*j)
     return arr

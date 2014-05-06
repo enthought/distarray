@@ -7,9 +7,10 @@
 
 """Emulate numpy.random"""
 
+from __future__ import absolute_import
 
-from distarray.client import DistArray
-from distarray.client_map import Distribution
+from distarray.dist.distarray import DistArray
+from distarray.dist.maps import Distribution
 
 
 class Random(object):
@@ -40,11 +41,8 @@ class Random(object):
             self.context._comm_key)
         self.context._execute(cmd)
 
-    def rand(self, size=None, dist=None, grid_shape=None):
-        """
-        rand(size=(d0, d1, ..., dn))
-
-        Random values in a given shape.
+    def rand(self, distribution):
+        """Random values over a given distribution.
 
         Create a distarray of the given shape and propagate it with
         random samples from a uniform distribution
@@ -52,28 +50,15 @@ class Random(object):
 
         Parameters
         ----------
-        size : tuple of ints
-            The dimensions of the returned array, should all be positive.
-            If no argument is given a single Python float is returned.
-        dist : dist dictionary
-            Dictionary describing how to distribute the array along each axis.
-        grid_shape : tuple
-            Tuple describing the processor grid topology.
+        distribution : Distribution object
 
         Returns
         -------
-        out : distarray, shape ``(d0, d1, ..., dn)``
+        out : DistArray
             Random values.
 
         """
-        if dist is None:
-            dist = {0: 'b'}
         da_key = self.context._generate_key()
-
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=size,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
         comm_name = self.context._comm_key
@@ -84,12 +69,8 @@ class Random(object):
             'comm={comm_name}))'.format(**locals()))
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def normal(self, loc=0.0, scale=1.0, size=None, dist=None,
-               grid_shape=None):
-        """
-        normal(loc=0.0, scale=1.0, size=None, dist={0: 'b'}, grid_shape=None)
-
-        Draw random samples from a normal (Gaussian) distribution.
+    def normal(self, distribution, loc=0.0, scale=1.0):
+        """Draw random samples from a normal (Gaussian) distribution.
 
         The probability density function of the normal distribution, first
         derived by De Moivre and 200 years later by both Gauss and Laplace
@@ -107,13 +88,7 @@ class Random(object):
             Mean ("centre") of the distribution.
         scale : float
             Standard deviation (spread or "width") of the distribution.
-        size : tuple of ints
-            Output shape.  If the given shape is, e.g., ``(m, n, k)``, then
-            ``m * n * k`` samples are drawn.
-        dist : dist dictionary
-            Dictionary describing how to distribute the array along each axis.
-        grid_shape : tuple
-            Tuple describing the processor grid topology.
+        distribution : Distribution object
 
         Notes
         -----
@@ -141,14 +116,7 @@ class Random(object):
                pp. 51, 51, 125.
 
         """
-        if dist is None:
-            dist = {0: 'b'}
         da_key = self.context._generate_key()
-
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=size,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         loc_name, scale_name, ddpr_name = \
             self.context._key_and_push(loc, scale, ddpr)
@@ -161,11 +129,8 @@ class Random(object):
             'comm={comm_name}))'.format(**locals()))
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def randint(self, low, high=None, size=None, dist=None, grid_shape=None):
-        """
-        randint(low, high=None, size=None)
-
-        Return random integers from `low` (inclusive) to `high` (exclusive).
+    def randint(self, distribution, low, high=None):
+        """Return random integers from `low` (inclusive) to `high` (exclusive).
 
         Return random integers from the "discrete uniform" distribution in the
         "half-open" interval [`low`, `high`). If `high` is None (the default),
@@ -173,6 +138,7 @@ class Random(object):
 
         Parameters
         ----------
+        distribution : Distribution object
         low : int
             Lowest (signed) integer to be drawn from the distribution (unless
             ``high=None``, in which case this parameter is the *highest* such
@@ -180,29 +146,14 @@ class Random(object):
         high : int, optional
             if provided, one above the largest (signed) integer to be drawn
             from the distribution (see above for behavior if ``high=None``).
-        size : int or tuple of ints, optional
-            Output shape. Default is None, in which case a single int is
-            returned.
-        dist : dist dictionary
-            Dictionary describing how to distribute the array along each axis.
-        grid_shape : tuple
-            Tuple describing the processor grid topology.
 
         Returns
         -------
-        out : distarray of ints
-            `size`-shaped distarray of random integers from the appropriate
-            distribution, or a single such random int if `size` not provided.
+        out : DistArray of ints
+            DistArray of random integers from the appropriate distribution.
 
         """
-        if dist is None:
-            dist = {0: 'b'}
         da_key = self.context._generate_key()
-
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=size,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         low_name, high_name, ddpr_name = \
             self.context._key_and_push(low, high, ddpr)
@@ -215,37 +166,20 @@ class Random(object):
             'comm={comm_name}))'.format(**locals()))
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def randn(self, size=None, dist=None, grid_shape=None):
-        """
-        randn(size=(d0, d1, ..., dn))
-
-        Return samples from the "standard normal" distribution.
+    def randn(self, distribution):
+        """Return samples from the "standard normal" distribution.
 
         Parameters
         ----------
-        size : tuple of ints
-            The dimensions of the returned array, should be all positive.
-            If no argument is given a single Python float is returned.
-        dist : dist dictionary
-            Dictionary describing how to distribute the array along each axis.
-        grid_shape : tuple
-            Tuple describing the processor grid topology.
+        distribution : Distribution object
 
         Returns
         -------
-        out : distarray
-            A ``(d0, d1, ..., dn)``-shaped distarray of floating-point samples
-            from the standard normal distribution.
-
+        out : DistArray
+            A DistArray of floating-point samples from the standard normal
+            distribution.
         """
-        if dist is None:
-            dist = {0: 'b'}
         da_key = self.context._generate_key()
-
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=size,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
         comm_name = self.context._comm_key

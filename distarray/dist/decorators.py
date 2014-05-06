@@ -8,10 +8,12 @@
 Decorators for defining functions that use `DistArrays`.
 """
 
+from __future__ import absolute_import
+
 import functools
 
-from distarray.client import DistArray
-from distarray.context import Context
+from distarray.dist.distarray import DistArray
+from distarray.dist.context import Context
 from distarray.error import ContextError
 from distarray.utils import has_exactly_one
 
@@ -195,9 +197,7 @@ class vectorize(DecoratorBase):
         for arg in args:
             if isinstance(arg, DistArray):
                 # Create the output distarray.
-                out = context.empty(arg.shape, dtype=arg.dtype,
-                                         dist=arg.dist,
-                                         grid_shape=arg.grid_shape)
+                out = context.empty(arg.distribution, dtype=arg.dtype)
                 # parse args
                 args_str, kwargs_str = self.key_and_push_args(
                     args, kwargs, context=context,

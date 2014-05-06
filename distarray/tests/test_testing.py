@@ -45,3 +45,7 @@ class TestRaiseTypeError(unittest.TestCase):
                           dim_doodle=dim_data)
         with self.assertRaises(TypeError):
             testing.validate_distbuffer(distbuffer)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

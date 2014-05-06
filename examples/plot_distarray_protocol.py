@@ -31,6 +31,7 @@ from numpy.random import permutation, seed
 
 import distarray
 from distarray import plotting
+from distarray.dist import Distribution
 
 
 def print_array_documentation(context,
@@ -48,7 +49,7 @@ def print_array_documentation(context,
 
     Parameters
     ----------
-    context : distarray.Context
+    context : distarray.dist.Context
         The context that will be used to query the array properties.
     array : DistArray
         The array to describe.
@@ -302,11 +303,13 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Create array, either from dist or dimdata.
     if dist is not None:
-        array = context.empty(shape, dist=dist, grid_shape=grid_shape)
+        distribution = Distribution.from_shape(context, shape, dist=dist,
+                                               grid_shape=grid_shape)
     elif dimdata is not None:
-        array = context.from_global_dim_data(dimdata)
+        distribution = Distribution(context, dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
+    array = context.empty(distribution)
 
     # Fill the array. This is slow but not a real problem here.
     value = 0.0
@@ -556,7 +559,7 @@ def create_distribution_plot_and_documentation_all(context):
 
 
 def main():
-    context = distarray.Context()
+    context = distarray.dist.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
     engine_counts = [3, 4, 8]
@@ -565,7 +568,7 @@ def main():
         raise ValueError('Need at least %d engines for all the examples, '
                          'but only have %d.' % (need_targets, num_targets))
     for engine_count in engine_counts:
-        context_n = distarray.Context(targets=range(engine_count))
+        context_n = distarray.dist.Context(targets=range(engine_count))
         create_distribution_plot_and_documentation_all(context_n)
 
 

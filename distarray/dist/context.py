@@ -3,29 +3,30 @@
 #  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
+
 """
-`Context` objects contain the information required for distarrays to
-communicate with localarrays.
+`Context` objects contain the information required for `DistArray`\s to
+communicate with `LocalArray`\s.
 """
 
+from __future__ import absolute_import
 
-import uuid
 import collections
 import atexit
 
 import numpy
 
-from distarray import cleanup
+from distarray.dist import cleanup
 from distarray.externals import six
-from distarray.client import DistArray
-from distarray.client_map import Distribution
-from distarray.ipython_utils import IPythonClient
+from distarray.dist.distarray import DistArray
+from distarray.dist.maps import Distribution
 
-
-DISTARRAY_BASE_NAME = '__distarray__'
+from distarray.dist.ipython_utils import IPythonClient
+from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 
 class Context(object):
+
     """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
@@ -35,7 +36,6 @@ class Context(object):
     Typically there is just one context object that uses all processes,
     although it is possible to have more than one context with a different
     selection of engines.
-
     """
 
     _CLEANUP = None
@@ -70,8 +70,10 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local; "
-                          "import distarray.mpiutils; "
+        self.view.execute("from functools import reduce; "
+                          "import distarray.local; "
+                          "import distarray.local.mpiutils; "
+                          "import distarray.utils; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
@@ -84,7 +86,7 @@ class Context(object):
         Create a dict on the engines which will hold everything from
         this context.
         """
-        context_key = DISTARRAY_BASE_NAME + self.uid()
+        context_key = uid()
         cmd = ("import types, sys;"
                "%s = types.ModuleType('%s');")
         cmd %= (context_key, context_key)
@@ -110,13 +112,13 @@ class Context(object):
 
     def _make_intracomm(self):
         def get_rank():
-            from distarray.mpiutils import COMM_PRIVATE
+            from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
 
         # self.view's engines must encompass all ranks in the MPI communicator,
         # i.e., everything in rank_map.values().
         def get_size():
-            from distarray.mpiutils import COMM_PRIVATE
+            from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_size()
 
         # get a mapping of IPython engine ID to MPI rank
@@ -192,7 +194,7 @@ class Context(object):
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, 'key_' + self.uid())
+        key = "%s.%s" % (self.context_key, 'key_' + uid())
         return key
 
     def _key_and_push(self, *values):
@@ -202,7 +204,8 @@ class Context(object):
 
     def delete_key(self, key):
         """ Delete the specific key from all the engines. """
-        cmd = 'del %s' % key
+        cmd = ('try: del %s\n'
+               'except NameError: pass') % key
         self._execute(cmd)
 
     def cleanup(self):
@@ -238,14 +241,10 @@ class Context(object):
     def _pull0(self, k):
         return self.view.pull(k, targets=self.targets[0], block=True)
 
-    def _create_local(self, local_call, shape, dist, grid_shape, dtype):
+    def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
         comm_name = self._comm_key
-        distribution = Distribution.from_shape(context=self,
-                                               shape=shape,
-                                               dist=dist,
-                                               grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
@@ -255,26 +254,53 @@ class Context(object):
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
-    def zeros(self, shape, dtype=float, dist=None, grid_shape=None):
-        if dist is None:
-            dist = {0: 'b'}
-        return self._create_local(local_call='distarray.local.zeros',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype)
+    def empty(self, distribution, dtype=float):
+        """Create an empty Distarray.
 
-    def ones(self, shape, dtype=float, dist=None, grid_shape=None):
-        if dist is None:
-            dist = {0: 'b'}
-        return self._create_local(local_call='distarray.local.ones',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype,)
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
 
-    def empty(self, shape, dtype=float, dist=None, grid_shape=None):
-        if dist is None:
-            dist = {0: 'b'}
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, with uninitialized values.
+        """
         return self._create_local(local_call='distarray.local.empty',
-                                  shape=shape, dist=dist,
-                                  grid_shape=grid_shape, dtype=dtype)
+                                  distribution=distribution, dtype=dtype)
+
+    def zeros(self, distribution, dtype=float):
+        """Create a Distarray filled with zeros.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with zeros.
+        """
+        return self._create_local(local_call='distarray.local.zeros',
+                                  distribution=distribution, dtype=dtype)
+
+    def ones(self, distribution, dtype=float):
+        """Create a Distarray filled with ones.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with ones.
+        """
+        return self._create_local(local_call='distarray.local.ones',
+                                  distribution=distribution, dtype=dtype,)
 
     def save_dnpy(self, name, da):
         """
@@ -425,7 +451,7 @@ class Context(object):
             'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
         )
 
-    def load_npy(self, filename, dim_data_per_rank):
+    def load_npy(self, filename, distribution):
         """
         Load a DistArray from a dataset in a ``.npy`` file.
 
@@ -433,9 +459,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        distribution: Distribution object
 
         Returns
         -------
@@ -443,23 +467,17 @@ class Context(object):
             A DistArray encapsulating the file loaded.
 
         """
-        if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
-            raise TypeError(errmsg)
-
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
+        ddpr = distribution.get_dim_data_per_rank()
+        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
                 (self._comm_key,) + (self._comm_key,))
 
         self._execute(
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
         )
-
-        distribution = Distribution.from_dim_data_per_rank(self,
-                                                           dim_data_per_rank)
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def load_hdf5(self, filename, dim_data_per_rank, key='buffer'):
+    def load_hdf5(self, filename, distribution, key='buffer'):
         """
         Load a DistArray from a dataset in an ``.hdf5`` file.
 
@@ -467,9 +485,7 @@ class Context(object):
         ----------
         filename : str
             Filename to load.
-        dim_data_per_rank : sequence of tuples of dict
-            A "dim_data" data structure for every rank.  Described here:
-            https://github.com/enthought/distributed-array-protocol
+        distribution: Distribution object
         key : str, optional
             The identifier for the group to load the DistArray from (the
             default is 'buffer').
@@ -486,29 +502,34 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        if len(self.targets) != len(dim_data_per_rank):
-            errmsg = "`dim_data_per_rank` must contain a dim_data for every rank."
-            raise TypeError(errmsg)
-
         da_key = self._generate_key()
-        subs = ((da_key,) + self._key_and_push(filename, dim_data_per_rank) +
+        ddpr = distribution.get_dim_data_per_rank()
+        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
                 (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
 
         self._execute(
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
         )
-
-        distribution = Distribution.from_dim_data_per_rank(self,
-                                                           dim_data_per_rank)
-
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
-    def fromndarray(self, arr, dist=None, grid_shape=None):
-        """Convert an ndarray to a distarray."""
-        if dist is None:
-            dist = {0: 'b'}
-        out = self.empty(arr.shape, dtype=arr.dtype, dist=dist,
-                         grid_shape=grid_shape)
+    def fromndarray(self, arr, distribution=None):
+        """Create a DistArray from an ndarray.
+
+        Parameters
+        ----------
+        distribution : Distribution object, optional
+            If a Distribution object is not provided, one is created with
+            `Distribution.from_shape(arr.shape)`.
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, using the values and dtype
+            from `arr`.
+        """
+        if distribution is None:
+            distribution = Distribution.from_shape(self, arr.shape)
+        out = self.empty(distribution, dtype=arr.dtype)
         for index, value in numpy.ndenumerate(arr):
             out[index] = value
         return out
@@ -541,3 +562,72 @@ class Context(object):
                '**{kwargs_name})')
         self._execute(cmd.format(**locals()))
         return DistArray.from_localarrays(da_name, distribution=distribution)
+
+    def apply(self, func, args=None, kwargs=None, targets=None,
+              result_name=None):
+        """
+        Analogous to IPython.parallel.view.apply_sync
+
+        Parameters
+        ----------
+        func : function
+        args : tuple
+            positional arguments to func
+        kwargs : dict
+            key word arguments to func
+        targets : sequence of integers
+            engines func is to be run on.
+        result_name : str
+            The name given the result on the engines. If given this is returned
+            to act as a proxy object.
+
+        Returns
+        -------
+        if result_name is not None : str
+            Name of the result on the engines.
+        else: list
+            A list of the results on all the engines.
+        """
+
+        def func_wrapper(func, result_name, args, kwargs):
+            """
+            Function which calls the applied function after grabbing all the
+            arguments on the engines that are passed in as names of the form
+            `__distarray__<some uuid>`.
+            """
+            main = __import__('__main__')
+            prefix = main.distarray.utils.DISTARRAY_BASE_NAME
+
+            # convert args
+            args = list(args)
+            for i, a in enumerate(args):
+                if (isinstance(a, str) and a.startswith(prefix)):
+                    args[i] = main.reduce(getattr, [main] + a.split('.'))
+            args = tuple(args)
+
+            # convert kwargs
+            for k in kwargs.keys():
+                val = kwargs[k]
+                if (isinstance(val, str) and val.startswith(prefix)):
+                    kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
+
+            if result_name:
+                setattr(main, result_name, func(*args, **kwargs))
+                return result_name
+            else:
+                return func(*args, **kwargs)
+
+        # default arguments
+        args = () if args is None else args
+        kwargs = {} if kwargs is None else kwargs
+        wrapped_args = (func, result_name, args, kwargs)
+
+        targets = self.targets if targets is None else targets
+
+        result = self.view._really_apply(func_wrapper, args=wrapped_args,
+                                          targets=targets, block=True)
+        if result_name is not None:
+            # result is a list of the same name 4 times, so just return 1.
+            return result[0]
+        else:
+            return result
