@@ -8,9 +8,14 @@ Utilities.
 """
 
 from math import sqrt
+import uuid
+
 from distarray.externals.six import next
 
+DISTARRAY_BASE_NAME = '__distarray__'
 
+def uid():
+    return DISTARRAY_BASE_NAME + uuid.uuid4().hex[:16]
 
 def multi_for(iterables):
     if not iterables:

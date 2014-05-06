@@ -11,7 +11,6 @@ communicate with `LocalArray`\s.
 
 from __future__ import absolute_import
 
-import uuid
 import collections
 import atexit
 
@@ -23,7 +22,7 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray import DISTARRAY_BASE_NAME
+from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 
 class Context(object):
@@ -70,8 +69,10 @@ class Context(object):
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
         #    import distarray
-        self.view.execute("import distarray.local; "
+        self.view.execute("from functools import reduce; "
+                          "import distarray.local; "
                           "import distarray.local.mpiutils; "
+                          "import distarray.utils; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
@@ -83,7 +84,7 @@ class Context(object):
         Create a dict on the engines which will hold everything from
         this context.
         """
-        context_key = DISTARRAY_BASE_NAME + self.uid()
+        context_key = uid()
         cmd = ("import types, sys;"
                "%s = types.ModuleType('%s');")
         cmd %= (context_key, context_key)
@@ -140,21 +141,9 @@ class Context(object):
         # the intracomm.
         self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
 
-    # Key management routines:
-    @staticmethod
-    def _key_prefix():
-        """ Get the base name for all keys. """
-        return DISTARRAY_BASE_NAME
-
-    @staticmethod
-    def uid():
-        """Generate a unique valid python name."""
-        # Full length seems excessively verbose so use 16 characters.
-        return Context._key_prefix() + uuid.uuid4().hex[:16]
-
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, 'key_' + self.uid())
+        key = "%s.%s" % (self.context_key, 'key_' + uid())
         return key
 
     def _key_and_push(self, *values):
@@ -522,3 +511,72 @@ class Context(object):
                '**{kwargs_name})')
         self._execute(cmd.format(**locals()))
         return DistArray.from_localarrays(da_name, distribution=distribution)
+
+    def apply(self, func, args=None, kwargs=None, targets=None,
+              result_name=None):
+        """
+        Analogous to IPython.parallel.view.apply_sync
+
+        Parameters
+        ----------
+        func : function
+        args : tuple
+            positional arguments to func
+        kwargs : dict
+            key word arguments to func
+        targets : sequence of integers
+            engines func is to be run on.
+        result_name : str
+            The name given the result on the engines. If given this is returned
+            to act as a proxy object.
+
+        Returns
+        -------
+        if result_name is not None : str
+            Name of the result on the engines.
+        else: list
+            A list of the results on all the engines.
+        """
+
+        def func_wrapper(func, result_name, args, kwargs):
+            """
+            Function which calls the applied function after grabbing all the
+            arguments on the engines that are passed in as names of the form
+            `__distarray__<some uuid>`.
+            """
+            main = __import__('__main__')
+            prefix = main.distarray.utils.DISTARRAY_BASE_NAME
+
+            # convert args
+            args = list(args)
+            for i, a in enumerate(args):
+                if (isinstance(a, str) and a.startswith(prefix)):
+                    args[i] = main.reduce(getattr, [main] + a.split('.'))
+            args = tuple(args)
+
+            # convert kwargs
+            for k in kwargs.keys():
+                val = kwargs[k]
+                if (isinstance(val, str) and val.startswith(prefix)):
+                    kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
+
+            if result_name:
+                setattr(main, result_name, func(*args, **kwargs))
+                return result_name
+            else:
+                return func(*args, **kwargs)
+
+        # default arguments
+        args = () if args is None else args
+        kwargs = {} if kwargs is None else kwargs
+        wrapped_args = (func, result_name, args, kwargs)
+
+        targets = self.targets if targets is None else targets
+
+        result = self.view._really_apply(func_wrapper, args=wrapped_args,
+                                          targets=targets, block=True)
+        if result_name is not None:
+            # result is a list of the same name 4 times, so just return 1.
+            return result[0]
+        else:
+            return result
