@@ -135,12 +135,12 @@ class Context(object):
         # create_comm_with_list() issues a collective MPI operation.
         def _make_new_comm(rank_list, full_comm_name):
             main = __import__('__main__')
-            import distarray.mpiutils
-            new_comm = distarray.mpiutils.create_comm_with_list(rank_list)
+            import distarray.local.mpiutils
+            new_comm = distarray.local.mpiutils.create_comm_with_list(rank_list)
             ns = getattr(main, full_comm_name.split('.')[0])
             comm_name = full_comm_name.split('.')[1]
             setattr(ns, comm_name, new_comm)
-            if new_comm != distarray.mpiutils.MPI.COMM_NULL:
+            if new_comm != distarray.local.mpiutils.MPI.COMM_NULL:
                 return new_comm.Get_rank()
             else:
                 return None
