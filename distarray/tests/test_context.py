@@ -77,8 +77,12 @@ class TestContextCreation(unittest.TestCase):
         """Are contexts' targets reordered in a consistent way?"""
         client = IPythonClient()
         orig_targets = client.ids
-        ctx1 = Context(client, targets=shuffle(orig_targets[:]))
-        ctx2 = Context(client, targets=shuffle(orig_targets[:]))
+        targets1 = orig_targets[:]
+        targets2 = orig_targets[:]
+        shuffle(targets1)
+        shuffle(targets2)
+        ctx1 = Context(client, targets=targets1)
+        ctx2 = Context(client, targets=targets2)
         self.assertEqual(ctx1.targets, ctx2.targets)
         ctx1.close()
         ctx2.close()

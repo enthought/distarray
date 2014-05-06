@@ -65,6 +65,7 @@ class Context(object):
                     raise ValueError("Engine with id %r not registered" % target)
                 else:
                     self.targets.append(target)
+        self.targets = sorted(self.targets)
 
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
@@ -75,7 +76,8 @@ class Context(object):
 
         self.context_key = self._setup_context_key()
         self._comm_key = self._make_intracomm()
-        self._set_engine_rank_mapping()
+        self._comm_from_targets = {tuple(self.targets): self._comm_key}
+        # self._set_engine_rank_mapping()
 
     def _setup_context_key(self):
         """
@@ -89,6 +91,23 @@ class Context(object):
         self._execute(cmd, targets=range(len(self.view)))
         return context_key
 
+    def _make_subcomm(self, targets):
+
+        try:
+            return self._comm_from_targets[tuple(targets)]
+        except KeyError:
+            pass
+
+        comm_key = self._generate_key()
+        rank_key = self._generate_key()
+        cmd = ("%s = distarray.mpiutils.create_comm_with_list(%s); "
+               "%s = %s.Get_rank()")
+        cmd %= (comm_key, targets, rank_key, comm_key)
+        self.view.execute(cmd, block=True)
+
+        self.comm_from_targets[tuple(targets)] = comm_key
+        return comm_key
+
     def _make_intracomm(self):
         def get_rank():
             from distarray.mpiutils import COMM_PRIVATE
@@ -101,20 +120,37 @@ class Context(object):
             return COMM_PRIVATE.Get_size()
 
         # get a mapping of IPython engine ID to MPI rank
-        rank_map = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_map[engine] for engine in self.targets ]
+        rank_from_target = self.view.apply_async(get_rank).get_dict()
+        ranks = [ rank_from_target[target] for target in self.targets ]
 
         comm_size = self.view.apply_async(get_size).get()[0]
-        if set(rank_map.values()) != set(range(comm_size)):
+        if set(rank_from_target.values()) != set(range(comm_size)):
             raise ValueError('Engines in view must encompass all MPI ranks.')
 
-        # create a new communicator with the subset of engines note that
-        # MPI_Comm_create must be called on all engines, not just those
-        # involved in the new communicator.
+        # create a new communicator with the subset of ranks. Note that
+        # create_comm_with_list() must be called on all engines, not just those
+        # involved in the new communicator.  This is because
+        # create_comm_with_list() issues a collective MPI operation.
+        def _make_new_comm(rank_list, full_comm_name):
+            main = __import__('__main__')
+            import distarray.mpiutils
+            new_comm = distarray.mpiutils.create_comm_with_list(rank_list)
+            ns = getattr(main, full_comm_name.split('.')[0])
+            comm_name = full_comm_name.split('.')[1]
+            setattr(ns, comm_name, new_comm)
+            if new_comm != distarray.mpiutils.MPI.COMM_NULL:
+                return new_comm.Get_rank()
+            else:
+                return None
+
         comm_key = self._generate_key()
-        cmd = "%s = distarray.mpiutils.create_comm_with_list(%s)"
-        cmd %= (comm_key, ranks)
-        self.view.execute(cmd, block=True)
+        rank_from_target = self.view.apply_async(_make_new_comm, ranks, comm_key).get()
+        rft = [r for r in rank_from_target if r is not None]
+
+        # This really should be an assert -- if this isn't true, then
+        # something's seriously borked.
+        assert rft == sorted(range(len(rft))), `rft`
+
         return comm_key
 
     def _set_engine_rank_mapping(self):
@@ -138,6 +174,9 @@ class Context(object):
         # reorder self.targets so that the targets are in MPI rank order for
         # the intracomm.
         self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
+
+        assert self.targets == sorted(self.targets)
+
 
     # Key management routines:
     @staticmethod
