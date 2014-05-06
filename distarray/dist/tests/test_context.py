@@ -215,6 +215,19 @@ class TestApply(unittest.TestCase):
 
         self.assertEqual(val, [8]*len(self.context.targets))
 
+    def test_apply_proxy(self):
+
+        def foo():
+            return 10
+        proxy_name = self.context._generate_key()
+        self.context.apply(foo, result_name=proxy_name)
+
+        def bar(obj):
+            return obj
+        vv = self.context.apply(bar, (proxy_name,))
+
+        self.assertEqual(vv, [10]*4)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
