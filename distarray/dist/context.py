@@ -519,7 +519,7 @@ class Context(object):
             A list of the results on all the engines.
         """
 
-        def func_wrapper(func, result_name, *args, **kwargs):
+        def func_wrapper(func, result_name, args, kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -548,18 +548,14 @@ class Context(object):
                 return func(*args, **kwargs)
 
         # default arguments
-        if args is None:
-            args = (func, result_name)
-        else:
-            args = tuple([func, result_name] + list(args))
-
+        args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
+        wrapped_args = (func, result_name, args, kwargs)
 
         targets = self.targets if targets is None else targets
 
-        result = self.view._really_apply(func_wrapper, args=args,
-                                         kwargs=kwargs, targets=targets,
-                                         block=True)
+        result = self.view._really_apply(func_wrapper, args=wrapped_args,
+                                          targets=targets, block=True)
         if result_name is not None:
             # result is a list of the same name 4 times, so just return 1.
             return result[0]
