@@ -73,15 +73,14 @@ def calc_julia(dview, fn, c, z_max, n_max, re_ax, im_ax):
 if __name__ == '__main__':
     import sys
 
+    import numpy
     from IPython.parallel import Client
     from matplotlib import pyplot
 
     client = Client()
     dview = client[:]
     dview.block = True
-
-    with dview.sync_imports():
-        import numpy
+    dview.execute("import numpy")
 
     fn = lambda z, c: z*z + c
     c = numpy.complex(float(sys.argv[1]), float(sys.argv[2]))

@@ -12,7 +12,7 @@ from matplotlib import pyplot, colors, cm
 from numpy import arange, concatenate, empty, linspace, resize
 
 from distarray.externals.six.moves import range
-from distarray.decorators import local
+from distarray.dist.decorators import local
 
 
 @local

@@ -10,12 +10,13 @@ Create a distarray, then plot its array distribution.
 
 from matplotlib import pyplot
 
-import distarray
 from distarray import plotting
+from distarray.dist import Context, Distribution
 
 
-c = distarray.Context()
-a = c.zeros((64, 64), dtype='int32', dist=('c', 'c'))
+c = Context()
+d = Distribution.from_shape(c, (64, 64), dist=('c', 'c'))
+a = c.zeros(d, dtype='int32')
 process_coords = [(0, 0), (0, 1), (1, 0), (1, 1)]
 plotting.plot_array_distribution(a, process_coords, cell_label=False,
                                  legend=True)

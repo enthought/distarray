@@ -19,16 +19,18 @@ from numpy.testing import assert_equal, assert_allclose
 
 from distarray.externals.six.moves import range
 
+from distarray.testing import import_or_skip, temp_filepath
 from distarray.dist.distarray import DistArray
 from distarray.dist.context import Context
-from distarray.testing import import_or_skip, temp_filepath
+from distarray.dist.maps import Distribution
 
 
 class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
         dac = Context()
-        da = dac.empty((100,), dist={0: 'b'})
+        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
+        da = dac.empty(distribution)
 
         output_paths = [temp_filepath() for target in dac.targets]
         try:
@@ -43,7 +45,8 @@ class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_prefix(self):
         dac = Context()
-        da = dac.empty((100,), dist={0: 'b'})
+        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
+        da = dac.empty(distribution)
 
         output_path = temp_filepath()
         try:
@@ -150,22 +153,25 @@ class TestNpyFileLoad(unittest.TestCase):
         self.dac.close()
 
     def test_load_bn(self):
-        dim_data_per_rank = bn_test_data
-        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           bn_test_data)
+        da = self.dac.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nc(self):
-        dim_data_per_rank = nc_test_data
-        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nc_test_data)
+        da = self.dac.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nu(self):
-        dim_data_per_rank = nu_test_data
-        da = self.dac.load_npy(self.output_path, dim_data_per_rank)
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nu_test_data)
+        da = self.dac.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
@@ -185,7 +191,9 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def test_save_block(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        distribution = Distribution.from_shape(self.dac, (datalen,),
+                                               dist={0: 'b'})
+        da = self.dac.empty(distribution)
         for i in range(datalen):
             da[i] = i
 
@@ -200,7 +208,8 @@ class TestHdf5FileSave(unittest.TestCase):
         source = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        da = self.dac.empty(shape, dist=dist)
+        distribution = Distribution.from_shape(self.dac, shape, dist=dist)
+        da = self.dac.empty(distribution)
 
         for i in range(shape[0]):
             for j in range(shape[1]):
@@ -214,7 +223,9 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def test_save_two_datasets(self):
         datalen = 33
-        da = self.dac.empty((datalen,), dist={0: 'b'})
+        distribution = Distribution.from_shape(self.dac, (datalen,),
+                                               dist={0: 'b'})
+        da = self.dac.empty(distribution)
 
         for i in range(datalen):
             da[i] = i
@@ -247,17 +258,23 @@ class TestHdf5FileLoad(unittest.TestCase):
         self.dac.close()
 
     def test_load_bn(self):
-        da = self.dac.load_hdf5(self.output_path, bn_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           bn_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 
     def test_load_nc(self):
-        da = self.dac.load_hdf5(self.output_path, nc_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nc_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 
     def test_load_nu(self):
-        da = self.dac.load_hdf5(self.output_path, nu_test_data, key="test")
+        distribution = Distribution.from_dim_data_per_rank(self.dac,
+                                                           nu_test_data)
+        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
         for i, v in np.ndenumerate(self.expected):
             self.assertEqual(v, da[i])
 
