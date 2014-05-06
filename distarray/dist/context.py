@@ -79,7 +79,6 @@ class Context(object):
         self.context_key = self._setup_context_key()
         self._comm_key = self._make_intracomm()
         self._comm_from_targets = {tuple(self.targets): self._comm_key}
-        # self._set_engine_rank_mapping()
 
     def _setup_context_key(self):
         """
@@ -154,30 +153,6 @@ class Context(object):
         assert rft == sorted(range(len(rft))), `rft`
 
         return comm_key
-
-    def _set_engine_rank_mapping(self):
-        # The MPI intracomm referred to by self._comm_key may have a different
-        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  We
-        # reorder self.targets so self.targets[i] is the IPython engine ID that
-        # corresponds to MPI intracomm rank i.
-        rank = self._generate_key()
-        self.view.execute(
-                '%s = %s.Get_rank()' % (rank, self._comm_key),
-                block=True, targets=self.targets)
-
-        # mapping target -> rank, rank -> target.
-        rank_from_target = self.view.pull(rank, targets=self.targets).get_dict()
-        target_from_rank = {v: k for (k, v) in rank_from_target.items()}
-
-        # ensure consistency
-        assert set(self.targets) == set(rank_from_target)
-        assert set(range(len(self.targets))) == set(target_from_rank)
-
-        # reorder self.targets so that the targets are in MPI rank order for
-        # the intracomm.
-        self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
-
-        assert self.targets == sorted(self.targets)
 
 
     # Key management routines:
