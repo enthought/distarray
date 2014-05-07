@@ -218,14 +218,13 @@ class TestApply(unittest.TestCase):
 
         def foo():
             return 10
-        proxy_name = self.context._generate_key()
-        self.context.apply(foo, result_name=proxy_name)
+        name = self.context.apply(foo, return_name=True)
 
         def bar(obj):
-            return obj
-        vv = self.context.apply(bar, (proxy_name,))
+            return obj + 10
+        val = self.context.apply(bar, (name,))
 
-        self.assertEqual(vv, [10]*4)
+        self.assertEqual(val, [20] * self.num_targets)
 
 
 if __name__ == '__main__':
