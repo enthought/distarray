@@ -207,9 +207,18 @@ def normalize_dim_dict(dd):
 
 
 def positivify(index, size):
-    if 0 <= index < size:
-        return index
-    elif -size <= index < 0:
-        return size + index
+    if isinstance(index, int):
+        if 0 <= index < size:
+            return index
+        elif -size <= index < 0:
+            return size + index
+        else:
+            raise IndexError("Index %r out of bounds" % index)
+    elif isinstance(index, slice):
+        if index.step is not None:
+            raise NotImplemented("Not yet implemented for slices with a step.")
+        start = positivify(index.start, size)
+        stop = positivify(index.stop, size)
+        return slice(start, stop)
     else:
-        raise IndexError("Index %s out of bounds" % index)
+        raise TypeError("`index` must be an int or slice.")

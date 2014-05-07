@@ -25,6 +25,17 @@ class TestPositivify(unittest.TestCase):
         result = metadata_utils.positivify(-2, 10)
         self.assertEqual(result, 8)
 
+    def test_positive_slice(self):
+        s = slice(5, 7)
+        result = metadata_utils.positivify(s, 10)
+        self.assertEqual(result, s)
+
+    def test_negative_slice_end(self):
+        s = slice(5, -2)
+        result = metadata_utils.positivify(s, 10)
+        expected = slice(5, 8)
+        self.assertEqual(result, expected)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
