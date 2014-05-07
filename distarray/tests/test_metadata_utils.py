@@ -15,5 +15,16 @@ class TestMakeGridShape(unittest.TestCase):
         self.assertEqual(grid_shape, (3, 4))
 
 
+class TestPositivify(unittest.TestCase):
+
+    def test_positive_index(self):
+        result = metadata_utils.positivify(5, 10)
+        self.assertEqual(result, 5)
+
+    def test_negative_index(self):
+        result = metadata_utils.positivify(-2, 10)
+        self.assertEqual(result, 8)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
