@@ -207,6 +207,7 @@ def normalize_dim_dict(dd):
 
 
 def positivify(index, size):
+    """Given a negative index, return its positive equivalent."""
     if isinstance(index, int):
         if 0 <= index < size:
             return index
