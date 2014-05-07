@@ -208,7 +208,9 @@ def normalize_dim_dict(dd):
 
 def positivify(index, size):
     """Given a negative index, return its positive equivalent."""
-    if isinstance(index, int):
+    if index is None:
+        return index
+    elif isinstance(index, int):
         if 0 <= index < size:
             return index
         elif -size <= index < 0:
@@ -216,10 +218,10 @@ def positivify(index, size):
         else:
             raise IndexError("Index %r out of bounds" % index)
     elif isinstance(index, slice):
-        if index.step is not None:
-            raise NotImplemented("Not yet implemented for slices with a step.")
+        if (index.step is not None) and (index.step < 0):
+            raise NotImplemented("Negative steps not implemented.")
         start = positivify(index.start, size)
         stop = positivify(index.stop, size)
-        return slice(start, stop)
+        return slice(start, stop, index.step)
     else:
         raise TypeError("`index` must be an int or slice.")

@@ -30,10 +30,34 @@ class TestPositivify(unittest.TestCase):
         result = metadata_utils.positivify(s, 10)
         self.assertEqual(result, s)
 
-    def test_negative_slice_end(self):
+    def test_negative_slice_stop(self):
         s = slice(5, -2)
         result = metadata_utils.positivify(s, 10)
         expected = slice(5, 8)
+        self.assertEqual(result, expected)
+
+    def test_no_slice_start(self):
+        s = slice(5)
+        result = metadata_utils.positivify(s, 10)
+        expected = s
+        self.assertEqual(result, expected)
+
+    def test_no_slice_stop(self):
+        s = slice(5, None)
+        result = metadata_utils.positivify(s, 10)
+        expected = s
+        self.assertEqual(result, expected)
+
+    def test_positive_slice_with_step(self):
+        s = slice(5, 7, 2)
+        result = metadata_utils.positivify(s, 10)
+        expected = s
+        self.assertEqual(result, expected)
+
+    def test_negative_slice_with_step(self):
+        s = slice(-7, -1, 2)
+        result = metadata_utils.positivify(s, 10)
+        expected = slice(3, 9, 2)
         self.assertEqual(result, expected)
 
 
