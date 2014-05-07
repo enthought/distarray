@@ -202,13 +202,13 @@ class TestApply(unittest.TestCase):
 
         self.assertEqual(val, [9] * self.num_targets)
 
-    def test_apply_return_name(self):
+    def test_apply_return_proxy(self):
 
         def foo(a, b, c=None):
             c = 3 if c is None else c
             return a + b + c
 
-        name = self.context.apply(foo, (1, 2), {'c': 5}, return_name=True)
+        name = self.context.apply(foo, (1, 2), {'c': 5}, return_proxy=True)
 
         val = self.context._pull(name)
 
@@ -218,7 +218,7 @@ class TestApply(unittest.TestCase):
 
         def foo():
             return 10
-        name = self.context.apply(foo, return_name=True)
+        name = self.context.apply(foo, return_proxy=True)
 
         def bar(obj):
             return obj + 10
