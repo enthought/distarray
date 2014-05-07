@@ -169,7 +169,7 @@ class Context(object):
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, 'key_' + uid())
+        key = "%s.%s" % (self.context_key, uid())
         return key
 
     def _key_and_push(self, *values):
@@ -539,7 +539,7 @@ class Context(object):
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None,
-              result_name=None):
+              return_proxy=False):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -552,16 +552,16 @@ class Context(object):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
-        result_name : str
-            The name given the result on the engines. If given this is returned
-            to act as a proxy object.
+        return_proxy : bool
+            if False (default) return result.
+            if True, return the name (as a str) of the result on the engines.
 
         Returns
         -------
-        if result_name is not None : str
-            Name of the result on the engines.
-        else: list
-            A list of the results on all the engines.
+        if return_proxy:
+            return a list of the results on the each engine.
+        else:
+            the name of the result on all the engines.
         """
 
         def func_wrapper(func, result_name, args, kwargs):
@@ -586,13 +586,14 @@ class Context(object):
                 if (isinstance(val, str) and val.startswith(prefix)):
                     kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
 
-            if result_name:
+            if result_name is not None:
                 setattr(main, result_name, func(*args, **kwargs))
                 return result_name
             else:
                 return func(*args, **kwargs)
 
         # default arguments
+        result_name = None if not return_proxy else uid()
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         wrapped_args = (func, result_name, args, kwargs)
@@ -600,8 +601,8 @@ class Context(object):
         targets = self.targets if targets is None else targets
 
         result = self.view._really_apply(func_wrapper, args=wrapped_args,
-                                          targets=targets, block=True)
-        if result_name is not None:
+                                         targets=targets, block=True)
+        if return_proxy:
             # result is a list of the same name 4 times, so just return 1.
             return result[0]
         else:

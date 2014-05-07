@@ -144,6 +144,7 @@ class TestApply(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
+        cls.num_targets = len(cls.context.targets)
 
     def test_apply_no_args(self):
 
@@ -152,7 +153,7 @@ class TestApply(unittest.TestCase):
 
         val = self.context.apply(foo)
 
-        self.assertEqual(val, [42]*4)
+        self.assertEqual(val, [42] * self.num_targets)
 
     def test_apply_pos_args(self):
 
@@ -161,19 +162,19 @@ class TestApply(unittest.TestCase):
 
         # push all arguments
         val = self.context.apply(foo, (1, 2, 3))
-        self.assertEqual(val, [6]*4)
+        self.assertEqual(val, [6] * self.num_targets)
 
         # some local, some pushed
         local_thing = self.context._key_and_push(2)[0]
         val = self.context.apply(foo, (1, local_thing, 3))
 
-        self.assertEqual(val, [6]*4)
+        self.assertEqual(val, [6] * self.num_targets)
 
         # all pushed
         local_args = self.context._key_and_push(1, 2, 3)
         val = self.context.apply(foo, local_args)
 
-        self.assertEqual(val, [6]*4)
+        self.assertEqual(val, [6] * self.num_targets)
 
     def test_apply_kwargs(self):
 
@@ -185,17 +186,17 @@ class TestApply(unittest.TestCase):
         # empty kwargs
         val = self.context.apply(foo, (1, 2))
 
-        self.assertEqual(val, [0]*4)
+        self.assertEqual(val, [0] * self.num_targets)
 
         # some empty
         val = self.context.apply(foo, (1, 2), {'d': 3})
 
-        self.assertEqual(val, [5]*4)
+        self.assertEqual(val, [5] * self.num_targets)
 
         # all kwargs
         val = self.context.apply(foo, (1, 2), {'c': 2, 'd': 3})
 
-        self.assertEqual(val, [8]*4)
+        self.assertEqual(val, [8] * self.num_targets)
 
         # now with local values
         local_a = self.context._key_and_push(1)[0]
@@ -203,21 +204,31 @@ class TestApply(unittest.TestCase):
 
         val = self.context.apply(foo, (local_a, 2), {'c': local_c, 'd': 3})
 
-        self.assertEqual(val, [9]*4)
+        self.assertEqual(val, [9] * self.num_targets)
 
-    def test_apply_return_val(self):
+    def test_apply_return_proxy(self):
 
         def foo(a, b, c=None):
             c = 3 if c is None else c
             return a + b + c
 
-        name = self.context.apply(foo, (1, 2), {'c': 5}, result_name='test')
-
-        self.assertEqual(name, 'test')
+        name = self.context.apply(foo, (1, 2), {'c': 5}, return_proxy=True)
 
         val = self.context._pull(name)
 
         self.assertEqual(val, [8]*len(self.context.targets))
+
+    def test_apply_proxy(self):
+
+        def foo():
+            return 10
+        name = self.context.apply(foo, return_proxy=True)
+
+        def bar(obj):
+            return obj + 10
+        val = self.context.apply(bar, (name,))
+
+        self.assertEqual(val, [20] * self.num_targets)
 
 
 if __name__ == '__main__':
