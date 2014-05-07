@@ -513,7 +513,7 @@ class Context(object):
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None,
-              return_name=False):
+              return_proxy=False):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -526,13 +526,13 @@ class Context(object):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
-        return_name : bool
+        return_proxy : bool
             if False (default) return result.
-            if True, return the name of the result on the engines.
+            if True, return the name (as a str) of the result on the engines.
 
         Returns
         -------
-        if return_name:
+        if return_proxy:
             return a list of the results on the each engine.
         else:
             the name of the result on all the engines.
@@ -567,7 +567,7 @@ class Context(object):
                 return func(*args, **kwargs)
 
         # default arguments
-        result_name = None if not return_name else uid()
+        result_name = None if not return_proxy else uid()
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         wrapped_args = (func, result_name, args, kwargs)
@@ -576,7 +576,7 @@ class Context(object):
 
         result = self.view._really_apply(func_wrapper, args=wrapped_args,
                                          targets=targets, block=True)
-        if return_name:
+        if return_proxy:
             # result is a list of the same name 4 times, so just return 1.
             return result[0]
         else:
