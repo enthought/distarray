@@ -58,6 +58,8 @@ def binary_proxy(name):
         is_a_dap = isinstance(a, DistArray)
         is_b_dap = isinstance(b, DistArray)
         if is_a_dap and is_b_dap:
+            if not a.distribution.is_compatible(b.distribution):
+                raise ValueError("distributions not compatible.")
             a_key = a.key
             b_key = b.key
             distribution = a.distribution
