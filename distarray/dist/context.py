@@ -55,7 +55,7 @@ class Context(object):
 
         self.view = self.client[:]
 
-        all_targets = self.view.targets
+        all_targets = sorted(self.view.targets)
         if targets is None:
             self.targets = all_targets
         else:
@@ -77,8 +77,9 @@ class Context(object):
                           "import numpy")
 
         self.context_key = self._setup_context_key()
-        self._comm_key = self._make_intracomm()
-        self._comm_from_targets = {tuple(self.targets): self._comm_key}
+        self._base_comm = self._make_base_comm()
+        self._comm_from_targets = {tuple(sorted(self.view.targets)) : self._base_comm}
+        self.comm = self._make_subcomm(self.targets)
 
     def _setup_context_key(self):
         """
@@ -92,24 +93,33 @@ class Context(object):
         self._execute(cmd, targets=range(len(self.view)))
         return context_key
 
-    def _make_subcomm(self, targets):
+    def _make_subcomm(self, new_targets):
+
+        if new_targets != sorted(new_targets):
+            raise ValueError("targets must be in sorted order.")
 
         try:
-            return self._comm_from_targets[tuple(targets)]
+            return self._comm_from_targets[tuple(new_targets)]
         except KeyError:
             pass
 
-        comm_key = self._generate_key()
-        rank_key = self._generate_key()
-        cmd = ("%s = distarray.mpiutils.create_comm_with_list(%s); "
-               "%s = %s.Get_rank()")
-        cmd %= (comm_key, targets, rank_key, comm_key)
-        self.view.execute(cmd, block=True)
+        def _make_new_comm(rank_list, base_comm):
+            import distarray.local.mpiutils
+            return distarray.local.mpiutils.create_comm_with_list(rank_list, base_comm)
 
-        self.comm_from_targets[tuple(targets)] = comm_key
-        return comm_key
+        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm), 
+                              targets=self.view.targets, return_proxy=True)
 
-    def _make_intracomm(self):
+        self._comm_from_targets[tuple(new_targets)] = new_comm
+        return new_comm
+
+    def _make_base_comm(self):
+        """
+        Returns a proxy for an MPI communicator that encompasses all targets in
+        self.view.targets (not self.targets, which can be a subset).
+
+        """
+
         def get_rank():
             from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
@@ -122,7 +132,7 @@ class Context(object):
 
         # get a mapping of IPython engine ID to MPI rank
         rank_from_target = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_from_target[target] for target in self.targets ]
+        ranks = [ rank_from_target[target] for target in self.view.targets ]
 
         comm_size = self.view.apply_async(get_size).get()[0]
         if set(rank_from_target.values()) != set(range(comm_size)):
@@ -132,27 +142,12 @@ class Context(object):
         # create_comm_with_list() must be called on all engines, not just those
         # involved in the new communicator.  This is because
         # create_comm_with_list() issues a collective MPI operation.
-        def _make_new_comm(rank_list, full_comm_name):
-            main = __import__('__main__')
+        def _make_new_comm(rank_list):
             import distarray.local.mpiutils
             new_comm = distarray.local.mpiutils.create_comm_with_list(rank_list)
-            ns = getattr(main, full_comm_name.split('.')[0])
-            comm_name = full_comm_name.split('.')[1]
-            setattr(ns, comm_name, new_comm)
-            if new_comm != distarray.local.mpiutils.MPI.COMM_NULL:
-                return new_comm.Get_rank()
-            else:
-                return None
+            return new_comm
 
-        comm_key = self._generate_key()
-        rank_from_target = self.view.apply_async(_make_new_comm, ranks, comm_key).get()
-        rft = [r for r in rank_from_target if r is not None]
-
-        # This really should be an assert -- if this isn't true, then
-        # something's seriously borked.
-        assert rft == sorted(range(len(rft))), `rft`
-
-        return comm_key
+        return self.apply(_make_new_comm, args=(ranks,), targets=self.view.targets, return_proxy=True)
 
 
     # Key management routines:
@@ -191,7 +186,8 @@ class Context(object):
         self.cleanup()
         if self.owns_client:
             self.client.close()
-        self._comm_key = None
+        self._base_comm = None
+        self.comm = None
 
     # End of key management routines.
 
@@ -219,7 +215,7 @@ class Context(object):
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
-        comm_name = self._comm_key
+        comm_name = self.comm
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
@@ -369,8 +365,8 @@ class Context(object):
         da_key = self._generate_key()
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
-                    self._comm_key)
+            subs = (da_key,) + self._key_and_push(name) + (self.comm,
+                    self.comm)
             self._execute(
                 '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
             )
@@ -378,8 +374,8 @@ class Context(object):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
-                    self._comm_key)
+            subs = (da_key,) + self._key_and_push(name) + (self.comm,
+                    self.comm)
             self._execute(
                 '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
             )
@@ -445,7 +441,7 @@ class Context(object):
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self._comm_key,) + (self._comm_key,))
+                (self.comm,) + (self.comm,))
 
         self._execute(
             '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
@@ -480,7 +476,7 @@ class Context(object):
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
+                (self.comm,) + self._key_and_push(key) + (self.comm,))
 
         self._execute(
             '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
@@ -530,7 +526,7 @@ class Context(object):
         function_name, ddpr_name, kwargs_name = \
             self._key_and_push(function, ddpr, kwargs)
         da_name = self._generate_key()
-        comm_name = self._comm_key
+        comm_name = self.comm
         cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
                'distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
