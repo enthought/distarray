@@ -172,11 +172,12 @@ class Context(object):
         self._push(dict(zip(keys, values)))
         return tuple(keys)
 
-    def delete_key(self, key):
+    def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
         cmd = ('try: del %s\n'
                'except NameError: pass') % key
-        self._execute(cmd)
+        targets = targets or self.targets
+        self._execute(cmd, targets=targets)
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
@@ -215,13 +216,13 @@ class Context(object):
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
-        comm_name = self.comm
+        comm_name = distribution.comm
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}), '
                'dtype={dtype_name})')
-        self._execute(cmd.format(**locals()))
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
@@ -441,10 +442,11 @@ class Context(object):
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self.comm,) + (self.comm,))
+                (distribution.comm,) + (distribution.comm,))
 
         self._execute(
-            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
+            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs,
+            targets=distribution.targets
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
@@ -476,10 +478,11 @@ class Context(object):
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self.comm,) + self._key_and_push(key) + (self.comm,))
+                (distribution.comm,) + self._key_and_push(key) + (distribution.comm,))
 
         self._execute(
-            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
+            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs,
+            targets=distribution.targets
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
@@ -526,12 +529,12 @@ class Context(object):
         function_name, ddpr_name, kwargs_name = \
             self._key_and_push(function, ddpr, kwargs)
         da_name = self._generate_key()
-        comm_name = self.comm
+        comm_name = distribution.comm
         cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
                'distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
                '**{kwargs_name})')
-        self._execute(cmd.format(**locals()))
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None,

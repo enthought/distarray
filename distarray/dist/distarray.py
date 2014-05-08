@@ -146,11 +146,11 @@ class DistArray(object):
         return da
 
     def __del__(self):
-        self.context.delete_key(self.key)
+        self.context.delete_key(self.key, self.distribution.targets)
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
-            (self.shape, self.context.targets)
+            (self.shape, self.distribution.targets)
         return s
 
     def __getitem__(self, index):
@@ -332,8 +332,8 @@ class DistArray(object):
 
     def get_localshapes(self):
         key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key))
-        result = self.context._pull(key)
+        self.context._execute('%s = %s.local_shape' % (key, self.key), targets=self.distribution.targets)
+        result = self.context._pull(key, targets=self.distribution.targets)
         return result
 
     # Binary operators

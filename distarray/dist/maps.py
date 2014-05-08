@@ -402,7 +402,8 @@ class Distribution(object):
         self = cls.__new__(cls)
         dd0 = dim_data_per_rank[0]
         self.context = context
-        self.targets = targets or context.targets
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         for dim_data in dim_data_per_rank:
             for dim_dict in dim_data:
                 normalize_dim_dict(dim_dict)
@@ -438,7 +439,8 @@ class Distribution(object):
 
         self = cls.__new__(cls)
         self.context = context
-        self.targets = targets or context.targets
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         self.shape = shape
         self.ndim = len(shape)
 
@@ -555,7 +557,8 @@ class Distribution(object):
 
         """
         self.context = context
-        self.targets = targets or context.targets
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)

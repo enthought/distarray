@@ -377,6 +377,25 @@ class TestDistArrayCreation(unittest.TestCase):
         result = self.context.fromfunction(fn, shape, dtype=int)
         assert_array_equal(expected, result.tondarray())
 
+class TestDistArrayCreationSubSet(unittest.TestCase):
+
+    def setUp(self):
+        self.context = Context()
+
+    def tearDown(self):
+        self.context.close()
+
+    def test_create_target_subset(self):
+        shape = (100, 100)
+        subtargets = self.context.targets[::2]
+        distribution = Distribution.from_shape(self.context, shape=shape, targets=subtargets)
+        darr = self.context.ones(distribution)
+        lss = darr.get_localshapes()
+        self.assertEqual(len(lss), len(subtargets))
+
+        ddpr = distribution.get_dim_data_per_rank()
+        self.assertEqual(len(ddpr), len(subtargets))
+
 
 class TestReduceMethods(unittest.TestCase):
     """Test reduction methods"""
