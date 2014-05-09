@@ -329,7 +329,7 @@ class TestDistArrayCreation(unittest.TestCase):
         self.context.close()
 
     def test___init__(self):
-        shape = (100, 100)
+        shape = (5, 5)
         distribution = Distribution.from_shape(self.context, shape, ('b', 'c'))
         da = DistArray(distribution, dtype=int)
         da.fill(42)
