@@ -32,7 +32,7 @@ class DecoratorBase(object):
 
     def push_fn(self, context, fn_key, fn):
         """Push function to the engines."""
-        context._push({fn_key: fn})
+        context._push({fn_key: fn}, targets=context.targets)
 
     def determine_context(self, args, kwargs):
         """ Determine a context from a functions arguments."""
@@ -103,7 +103,7 @@ class DecoratorBase(object):
                 kwargs[kw] = new_key
 
         # push the keys to the engines
-        context._push(push_keys)
+        context._push(push_keys, targets=context.targets)
 
         # build arg string
         arg_str = '(' + ', '.join(arg_keys) + ',)'
@@ -132,8 +132,8 @@ class DecoratorBase(object):
         """
         type_key = context._generate_key()
         type_statement = "{} = str(type({}))".format(type_key, result_key)
-        context._execute(type_statement)
-        result_type_str = context._pull(type_key)
+        context._execute(type_statement, targets=context.targets)
+        result_type_str = context._pull(type_key, targets=context.targets)
 
         def is_NoneType(typestring):
             return (typestring == "<type 'NoneType'>" or
@@ -148,7 +148,7 @@ class DecoratorBase(object):
         elif all(is_NoneType(r) for r in result_type_str):
             result = None
         else:
-            result = context._pull(result_key)
+            result = context._pull(result_key, targets=context.targets)
             if has_exactly_one(result):
                 result = next(x for x in result if x is not None)
 
@@ -170,7 +170,7 @@ class local(DecoratorBase):
 
         exec_str = "%s = %s(*%s, **%s)"
         exec_str %= (result_key, self.fn_key, args, kwargs)
-        context._execute(exec_str)
+        context._execute(exec_str, targets=context.targets)
 
         return self.process_return_value(context, result_key)
 
@@ -191,7 +191,7 @@ class vectorize(DecoratorBase):
         self.push_fn(context, self.fn_key, self.fn)
         # vectorize the function
         exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
-        context._execute(exec_str)
+        context._execute(exec_str, targets=context.targets)
 
         # Find the first distarray, they should all be the same up to the data.
         for arg in args:
@@ -208,5 +208,5 @@ class vectorize(DecoratorBase):
                             "%s(*%s, **%s)")
                 exec_str %= (out.key, out.key, self.fn_key, args_str,
                              kwargs_str)
-                context._execute(exec_str)
+                context._execute(exec_str, targets=context.targets)
                 return out

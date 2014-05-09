@@ -167,9 +167,10 @@ class Context(object):
         key = "%s.%s" % (self.context_key, uid())
         return key
 
-    def _key_and_push(self, *values):
+    def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
-        self._push(dict(zip(keys, values)))
+        targets = kwargs.get('targets', self.targets)
+        self._push(dict(zip(keys, values)), targets=targets)
         return tuple(keys)
 
     def delete_key(self, key, targets=None):
@@ -192,16 +193,13 @@ class Context(object):
 
     # End of key management routines.
 
-    def _execute(self, lines, targets=None):
-        targets = targets or self.targets
+    def _execute(self, lines, targets):
         return self.view.execute(lines, targets=targets, block=True)
 
-    def _push(self, d, targets=None):
-        targets = targets or self.targets
+    def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def _pull(self, k, targets=None):
-        targets = targets or self.targets
+    def _pull(self, k, targets):
         return self.view.pull(k, targets=targets, block=True)
 
     def _execute0(self, lines):
@@ -311,7 +309,8 @@ class Context(object):
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs,
+                targets=da.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
@@ -319,7 +318,8 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs,
+                targets=da.targets
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -369,7 +369,8 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self.comm,
                     self.comm)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs,
+                targets=self.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
@@ -378,7 +379,8 @@ class Context(object):
             subs = (da_key,) + self._key_and_push(name) + (self.comm,
                     self.comm)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
+                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs,
+                targets=self.targets
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -420,7 +422,8 @@ class Context(object):
         subs = (self._key_and_push(filename) + (da.key,) +
                 self._key_and_push(key, mode))
         self._execute(
-            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
+            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs,
+            targets=da.targets
         )
 
     def load_npy(self, filename, distribution):
