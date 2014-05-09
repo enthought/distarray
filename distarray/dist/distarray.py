@@ -121,12 +121,9 @@ class DistArray(object):
         # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
-        def getit(index, self_key):
-            main_module = __import__('__main__')
-            # LOL the next line is bad.
-            arr = reduce(getattr, [main_module] + self_key.split('.'))
-            res =  arr.checked_getitem(index)
-            return res
+        # func that runs locally
+        def getit(arr, index):
+            return arr.checked_getitem(index)
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -137,9 +134,9 @@ class DistArray(object):
 
             # Using a private IPython function is probably a bad think to do.
             # but its the only apply function that lets us specify `targets`.
-            args = (index, self.key)
-            result = self.context.view._really_apply(getit, args=args,
-                                        targets=targets, block=True)
+            args = (self.key, index)
+            result = self.context.apply(getit, args=args,
+                                        targets=targets)
             result = [i for i in result if i is not None]
             if len(result) != 1:
                 raise IndexError("Getting more than one result (%s) is not "
@@ -158,11 +155,8 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
-        def setit(index, self_key, value):
-            main_module = __import__('__main__')
-            arr = reduce(getattr, [main_module] + self_key.split('.'))
-            res = arr.checked_setitem(index, value)
-            return res
+        def setit(arr, index, value):
+            return arr.checked_setitem(index, value)
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -170,9 +164,9 @@ class DistArray(object):
 
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
-            args = (index, self.key, value)
-            result = self.context.view._really_apply(setit, args=args,
-                                                     targets=targets, block=True)
+            args = (self.key, index, value)
+            result = self.context.apply(setit, args=args,
+                                        targets=targets)
             result = [i for i in result if i is not None]
             if len(result) > 1:
                 raise IndexError("Setting more than one result (%s) is not "
