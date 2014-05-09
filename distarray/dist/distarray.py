@@ -258,6 +258,9 @@ class DistArray(object):
 
     toarray = tondarray
 
+    def make_reduced(axis):
+        pass
+
     def get_dist_matrix(self):
         key = self.context._generate_key()
         self.context._execute0(

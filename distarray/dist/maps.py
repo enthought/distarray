@@ -416,7 +416,10 @@ class Distribution(object):
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
                   dim_data_per_rank]
-        self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
+
+        self.rank_from_coords = np.empty(self.grid_shape, dtype=np.int32)
+        for (r, c) in enumerate(coords):
+            self.rank_from_coords[c] = r
 
         # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
         # with duplicates removed.  It is a list of `axis_dim_dicts`.
@@ -608,3 +611,21 @@ class Distribution(object):
         return ((self.context, self.targets, self.shape, self.ndim, self.dist, self.grid_shape) ==
                 (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
                 all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))
+
+    def reduce(self, axis):
+        """
+        Returns a new Distribution reduced along `axis`, i.e., the new
+        distribution has one fewer dimension than `self`.
+
+        """
+        reduced_ranks = self.rank_from_coords.min(axis=axis)
+        reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
+        reduced_shape = self.shape[:axis] + self.shape[axis+1:]
+        reduced_dist = self.dist[:axis] + self.dist[axis+1:]
+        reduced_grid_shape = self.grid_shape[:axis] + self.grid_shape[axis+1:]
+
+        return Distribution.from_shape(context=self.context,
+                                       shape=reduced_shape,
+                                       dist=reduced_dist,
+                                       grid_shape=reduced_grid_shape,
+                                       targets=reduced_targets)

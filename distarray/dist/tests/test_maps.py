@@ -79,3 +79,24 @@ class TestClientMap(unittest.TestCase):
 
         self.assertFalse(cm1.is_compatible(cm2))
         self.assertFalse(cm2.is_compatible(cm1))
+
+    def test_reduce(self):
+        nr, nc, nd = 10**5, 10**6, 10**4
+
+        dist = client_map.Distribution.from_shape(
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+
+        new_dist0 = dist.reduce(axis=0)
+        self.assertEquals(new_dist0.dist, ('c', 'n'))
+        self.assertEquals(new_dist0.shape, (nc, nd))
+        self.assertEquals(new_dist0.grid_shape, dist.grid_shape[1:])
+
+        new_dist1 = dist.reduce(axis=1)
+        self.assertEquals(new_dist1.dist, ('b', 'n'))
+        self.assertEquals(new_dist1.shape, (nr, nd))
+        self.assertEquals(new_dist1.grid_shape, dist.grid_shape[:1]+dist.grid_shape[2:])
+
+        new_dist2 = dist.reduce(axis=2)
+        self.assertEquals(new_dist2.dist, ('b', 'c'))
+        self.assertEquals(new_dist2.shape, (nr, nc))
+        self.assertEquals(new_dist2.grid_shape, dist.grid_shape[:-1])
