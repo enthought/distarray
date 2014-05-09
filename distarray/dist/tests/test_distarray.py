@@ -209,11 +209,12 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 distarr[i, j] = i*cols + j
         las = distarr.get_localarrays()
         local_shapes = [la.local_shape for la in las]
-        self.assertSequenceEqual(local_shapes, [(3,5), (3,4), (2,5), (2,4)])
+        self.assertSequenceEqual(local_shapes,
+                                 [(3, 5), (3, 4), (2, 5), (2, 4)])
 
     def test_from_global_dim_data_uu(self):
-        rows = 6
-        cols = 20
+        rows = 3
+        cols = 10
         row_ixs = numpy.random.permutation(range(rows))
         col_ixs = numpy.random.permutation(range(cols))
         row_indices = [row_ixs[:rows//2], row_ixs[rows//2:]]
