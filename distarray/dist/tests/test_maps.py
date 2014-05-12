@@ -84,19 +84,22 @@ class TestClientMap(unittest.TestCase):
         nr, nc, nd = 10**5, 10**6, 10**4
 
         dist = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'), grid_shape=(2, 2, 1))
 
         new_dist0 = dist.reduce(axis=0)
         self.assertEquals(new_dist0.dist, ('c', 'n'))
         self.assertEquals(new_dist0.shape, (nc, nd))
         self.assertEquals(new_dist0.grid_shape, dist.grid_shape[1:])
+        self.assertLess(set(new_dist0.targets), set(dist.targets))
 
         new_dist1 = dist.reduce(axis=1)
         self.assertEquals(new_dist1.dist, ('b', 'n'))
         self.assertEquals(new_dist1.shape, (nr, nd))
         self.assertEquals(new_dist1.grid_shape, dist.grid_shape[:1]+dist.grid_shape[2:])
+        self.assertLess(set(new_dist1.targets), set(dist.targets))
 
         new_dist2 = dist.reduce(axis=2)
         self.assertEquals(new_dist2.dist, ('b', 'c'))
         self.assertEquals(new_dist2.shape, (nr, nc))
         self.assertEquals(new_dist2.grid_shape, dist.grid_shape[:-1])
+        self.assertEquals(set(new_dist2.targets), set(dist.targets))
