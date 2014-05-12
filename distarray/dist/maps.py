@@ -618,11 +618,11 @@ class Distribution(object):
         distribution has one fewer dimension than `self`.
 
         """
-        reduced_ranks = self.rank_from_coords.min(axis=axis)
-        reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
         reduced_shape = self.shape[:axis] + self.shape[axis+1:]
         reduced_dist = self.dist[:axis] + self.dist[axis+1:]
         reduced_grid_shape = self.grid_shape[:axis] + self.grid_shape[axis+1:]
+        reduced_ranks = self.rank_from_coords.min(axis=axis)
+        reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
 
         return Distribution.from_shape(context=self.context,
                                        shape=reduced_shape,
