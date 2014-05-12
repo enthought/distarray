@@ -137,8 +137,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(global_size):
-            distarr[i] = i
+        distarr.toarray()
 
     def test_from_global_dim_data_1d(self):
         total_size = 40
@@ -180,9 +179,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
 
     def test_from_global_dim_data_bc(self):
         """ Test creation of a block-cyclic array. """
@@ -204,17 +201,15 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 },)
         distribution = Distribution(self.context, global_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
         las = distarr.get_localarrays()
         local_shapes = [la.local_shape for la in las]
         self.assertSequenceEqual(local_shapes,
                                  [(3, 5), (3, 4), (2, 5), (2, 4)])
 
     def test_from_global_dim_data_uu(self):
-        rows = 3
-        cols = 10
+        rows = 6
+        cols = 20
         row_ixs = numpy.random.permutation(range(rows))
         col_ixs = numpy.random.permutation(range(cols))
         row_indices = [row_ixs[:rows//2], row_ixs[rows//2:]]
@@ -227,9 +222,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
 
     def test_global_dim_data_local_dim_data_equivalence(self):
         rows, cols = 5, 9
@@ -301,7 +294,6 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_irregular_block_assignment(self):
-        global_shape = (5, 9)
         global_dim_data = (
                 {
                     'dist_type': 'b',
@@ -314,9 +306,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             )
         distribution = Distribution(self.context, global_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(global_shape[0]):
-            for j in range(global_shape[1]):
-                distarr[i, j] = i + j
+        distarr.toarray()
 
 
 class TestDistArrayCreation(unittest.TestCase):
