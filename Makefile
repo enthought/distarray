@@ -92,7 +92,7 @@ clean:
 	-${PYTHON} setup.py clean --all
 	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '__pycache__' \) -exec ${RM} -r '{}' +
 	-${RM} -r ${PARALLEL_OUT_DIR} build coverage_report
-	-pushd docs && make clean && popd
+	-${MAKE} clean -C docs
 .PHONY: clean
 
 cleanall: clean
