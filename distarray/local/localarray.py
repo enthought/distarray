@@ -123,16 +123,6 @@ class LocalArray(object):
         self.base = None  # mimic numpy.ndarray.base
         self.ctypes = None  # mimic numpy.ndarray.ctypes
 
-    def __del__(self):
-        # If the __init__ method fails, we may not have a valid comm
-        # attribute and this needs to be protected against.
-        if hasattr(self, 'comm'):
-            if self.comm is not None:
-                try:
-                    self.comm.Free()
-                except:
-                    pass
-
     @property
     def dim_data(self):
         return self.distribution.dim_data
