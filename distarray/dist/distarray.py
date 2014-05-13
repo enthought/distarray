@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import operator
 from itertools import product
+from collections import Sequence
 
 import numpy as np
 
@@ -258,9 +259,6 @@ class DistArray(object):
 
     toarray = tondarray
 
-    def make_reduced(axis):
-        pass
-
     def get_dist_matrix(self):
         key = self.context._generate_key()
         self.context._execute0(
@@ -274,6 +272,52 @@ class DistArray(object):
         self.context._push({value_key:value}, targets=self.targets)
         self.context._execute('%s.fill(%s)' % (self.key, value_key),
                               targets=self.targets)
+
+    def new_sum(self, axis=None, dtype=None, out=None):
+
+        if out is not None:
+            _raise_nie()
+        if axis is None:
+            pass
+
+        if not isinstance(axis, Sequence):
+            axis = (axis,)
+        else:
+            axis = tuple(axis)
+
+        dtype = dtype or self.dtype 
+
+        out_dist = self.distribution.reduce(axis=axis)
+        out_comm = out_dist.comm
+        ddpr = out_dist.get_dim_data_per_rank()
+
+        def _local_sum(larr, out_comm, ddpr, dtype, axes):
+            from distarray.local.mpiutils import MPI
+            import distarray.local
+
+            if out_comm == MPI.COMM_NULL:
+                dist = None
+                out = None
+                out_ndarray = None
+            else:
+                dist = distarray.local.maps.Distribution(ddpr[out_comm.Get_rank()], out_comm)
+                out = distarray.local.empty(dist, dtype)
+                out_ndarray = out.ndarray
+
+            remaining_dims = [False] * larr.ndim
+            for axis in axes:
+                remaining_dims[axis] = True
+            reduce_comm = larr.comm.Sub(remaining_dims)
+            local_reduce = larr.ndarray.sum(axis=axes)
+            reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
+
+            return out
+
+        out_key = self.context.apply(_local_sum, 
+                                     (self.key, out_comm, ddpr, dtype, axis),
+                                     targets=self.targets, return_proxy=True)
+
+        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
 
     #TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):

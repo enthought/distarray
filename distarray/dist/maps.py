@@ -618,6 +618,11 @@ class Distribution(object):
         distribution has one fewer dimension than `self`.
 
         """
+        if len(axis) != 1:
+            raise NotImplementedError()
+
+        axis = axis[0]
+
         reduced_shape = self.shape[:axis] + self.shape[axis+1:]
         reduced_dist = self.dist[:axis] + self.dist[axis+1:]
         reduced_grid_shape = self.grid_shape[:axis] + self.grid_shape[axis+1:]

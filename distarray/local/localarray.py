@@ -154,6 +154,10 @@ class LocalArray(object):
         return self.distribution.global_size
 
     @property
+    def comm(self):
+        return self.distribution.comm
+
+    @property
     def comm_size(self):
         return self.distribution.comm_size
 
