@@ -132,8 +132,6 @@ class DistArray(object):
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
 
-            # Using a private IPython function is probably a bad think to do.
-            # but its the only apply function that lets us specify `targets`.
             args = (self.key, index)
             result = self.context.apply(getit, args=args,
                                         targets=targets)
