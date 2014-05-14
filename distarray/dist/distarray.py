@@ -233,11 +233,11 @@ class DistArray(object):
         return result
 
     def fill(self, value):
-        value_key = self.context._generate_key()
-        self.context._push({value_key:value})
-        self.context._execute('%s.fill(%s)' % (self.key, value_key))
+        def inner_fill(arr, value):
+            arr.fill(value)
+        self.context.apply(inner_fill, args=(self.key, value))
 
-    #TODO FIXME: implement axis and out kwargs.
+    # TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
         if axis or out is not None:
             _raise_nie()
