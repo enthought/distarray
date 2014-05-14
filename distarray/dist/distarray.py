@@ -22,8 +22,7 @@ import numpy as np
 
 import distarray
 from distarray.dist.maps import Distribution
-from distarray.externals.six import next
-from distarray.utils import has_exactly_one, _raise_nie
+from distarray.utils import _raise_nie
 
 __all__ = ['DistArray']
 
@@ -31,23 +30,6 @@ __all__ = ['DistArray']
 # ---------------------------------------------------------------------------
 # Code
 # ---------------------------------------------------------------------------
-
-_DIM_DATA_PER_RANK = """
-{ddpr_name} = {local_name}.dim_data
-"""
-
-def _make_distribution_from_dim_data_per_rank(local_name, context):
-    dim_data_name = context._generate_key()
-    context._execute(_DIM_DATA_PER_RANK.format(local_name=local_name,
-                                               ddpr_name=dim_data_name))
-    dim_data_per_rank = context._pull(dim_data_name)
-    return Distribution.from_dim_data_per_rank(context, dim_data_per_rank)
-
-def _get_attribute(context, key, name):
-    local_key = context._generate_key()
-    context._execute0('%s = %s.%s' % (local_key, key, name))
-    result = context._pull0(local_key)
-    return result
 
 
 class DistArray(object):
@@ -88,24 +70,48 @@ class DistArray(object):
 
         If `dtype` is not provided, it will be fetched from the engines.
         """
+
+        def get_dim_datas_and_dtype(arr):
+            return (arr.dim_data, arr.dtype)
+
         da = cls.__new__(cls)
         da.key = key
 
         if (context is None) == (distribution is None):
             errmsg = "Must provide `context` or `distribution` but not both."
             raise RuntimeError(errmsg)
-        elif (distribution is not None):
-            da.distribution = distribution
-            context = distribution.context
-        elif (context is not None):
-            da.distribution = _make_distribution_from_dim_data_per_rank(key,
-                                                                        context)
 
-        if dtype is None:
-            da._dtype = _get_attribute(context, key, 'dtype')
-        else:
+        # has context, get dist and dtype
+        elif (distribution is None) and (dtype is None):
+            res = context.apply(get_dim_datas_and_dtype, args=(key,))
+            dim_datas = [i[0] for i in res]
+            dtypes = [i[1] for i in res]
+            da._dtype = dtypes[0]
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas)
+
+        # has context and dtype, get dist
+        elif (distribution is None) and (dtype is not None):
+            da._dtype = dtype
+            dim_datas = context.apply(getattr, args=(key, 'dim_data'))
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas)
+
+        # has distribution, get dtype
+        elif (distribution is not None) and (dtype is None):
+            da.distribution = distribution
+            da._dtype = distribution.context.apply(getattr,
+                                                   args=(key, 'dtype'),
+                                                   targets=[0])[0]
+        # has distribution and dtype
+        elif (distribution is not None) and (dtype is not None):
+            da.distribution = distribution
             da._dtype = dtype
 
+        # sanity check that I didn't miss any cases above, because this is a
+        # confusing function
+        else:
+            assert(False)
         return da
 
     def __del__(self):
