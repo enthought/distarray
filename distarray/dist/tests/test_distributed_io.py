@@ -151,20 +151,39 @@ nu_test_data = [
 
 class TestNpyFileLoad(unittest.TestCase):
 
-    def setUp(self):
-        self.dac = Context(targets=[0, 1])
+    """Try loading a .npy file on the engines.
 
-        # make a test file
-        self.output_path = temp_filepath('.npy')
-        self.expected = np.arange(20).reshape(2, 10)
-        np.save(self.output_path, self.expected)
+    This test assumes that all engines have access to the same file system.
+    """
 
-    def tearDown(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.dac = Context(targets=[0, 1])
+        cls.expected = np.arange(20).reshape(2, 10)
+
+        def save_test_file(data):
+            import numpy
+            from distarray.testing import temp_filepath
+            output_path = temp_filepath('.npy')
+            numpy.save(output_path, data)
+            return output_path
+
+        cls.output_path = cls.dac.apply(save_test_file, (cls.expected,),
+                                        return_proxy=False,
+                                        targets=cls.dac.targets[0])
+
+    @classmethod
+    def tearDownClass(cls):
         # delete the test file
-        if os.path.exists(self.output_path):
-            os.remove(self.output_path)
+        def remove_test_file(output_path):
+            import os
+            if os.path.exists(output_path):
+                os.remove(output_path)
+        cls.dac.apply(remove_test_file, (cls.output_path,),
+                      targets=cls.dac.targets[0])
+
         # clean up the context keys
-        self.dac.close()
+        cls.dac.close()
 
     def test_load_bn(self):
         distribution = Distribution.from_dim_data_per_rank(self.dac,
