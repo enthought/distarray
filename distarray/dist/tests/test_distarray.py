@@ -432,5 +432,35 @@ class TestReduceMethods(unittest.TestCase):
         self.assertEqual(da_std, np_std)
 
 
+class TestFromLocalArrays(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context()
+        cls.distribution = Distribution.from_shape((4, 4))
+        cls.distarray = cls.context.ones(cls.distribution, dtype=int)
+        cls.expected = numpy.ones((4, 4), dtype=int)
+
+    def with_context(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        context=self.context)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_context_and_dtype(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        context=self.context, dtype=int)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_distribution(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        distribution=self.distribution)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_distribution_and_dtype(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        distribution=self.distribution,
+                                        dtype=int)
+        assert_array_equal(da.toarray(), self.expected)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
