@@ -27,38 +27,52 @@ from distarray.dist.maps import Distribution
 
 class TestDnpyFileIO(unittest.TestCase):
 
-    def test_save_load_with_filenames(self):
-        dac = Context()
-        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
-        da = dac.empty(distribution)
+    @classmethod
+    def setUpClass(cls):
+        cls.dac = Context()
+        cls.distribution = Distribution.from_shape(cls.dac, (100,),
+                                                   dist={0: 'b'})
+        cls.da = cls.dac.empty(cls.distribution)
 
-        output_paths = [temp_filepath() for target in dac.targets]
+        def engine_temp_path():
+            from distarray.testing import temp_filepath
+            return temp_filepath()
+
+        cls.output_paths = cls.dac.apply(engine_temp_path, return_proxy=False)
+
+    def test_save_load_with_filenames(self):
+
+        def cleanup_file(filepath):
+            import os
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
         try:
-            dac.save_dnpy(output_paths, da)
-            db = dac.load_dnpy(output_paths)
+            self.dac.save_dnpy(self.output_paths, self.da)
+            db = self.dac.load_dnpy(self.output_paths)
             self.assertTrue(isinstance(db, DistArray))
-            self.assertEqual(da, db)
+            self.assertEqual(self.da, db)
         finally:
-            for filepath in output_paths:
-                if os.path.exists(filepath):
-                    os.remove(filepath)
+            for filepath, target in zip(self.output_paths, self.dac.targets):
+                self.dac.apply(cleanup_file, (filepath,), targets=(target,))
 
     def test_save_load_with_prefix(self):
-        dac = Context()
-        distribution = Distribution.from_shape(dac, (100,), dist={0: 'b'})
-        da = dac.empty(distribution)
 
-        output_path = temp_filepath()
+        def cleanup_file(filepath):
+            import os
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+        output_path = self.output_paths[0]
         try:
-            dac.save_dnpy(output_path, da)
-            db = dac.load_dnpy(output_path)
+            self.dac.save_dnpy(output_path, self.da)
+            db = self.dac.load_dnpy(output_path)
             self.assertTrue(isinstance(db, DistArray))
-            self.assertEqual(da, db)
+            self.assertEqual(self.da, db)
         finally:
-            for rank in dac.targets:
+            for rank in self.dac.targets:
                 filepath = output_path + "_" + str(rank) + ".dnpy"
-                if os.path.exists(filepath):
-                    os.remove(filepath)
+                self.dac.apply(cleanup_file, (filepath,), targets=(rank,))
 
 
 bn_test_data = [
