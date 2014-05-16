@@ -7,8 +7,10 @@
 """
 Tests for distributed IO.
 
-Many of these tests require a 4-engine cluster to be running locally, and will
-write out temporary files.
+Many of these tests require a 4-engine cluster running and will write out (and
+afterwards remove) temporary files.  These tests assume that all engines have
+access to the same filesystem but do not assume the client has access to that
+same filesystem.
 """
 
 import unittest
