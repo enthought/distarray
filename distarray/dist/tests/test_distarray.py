@@ -462,5 +462,11 @@ class TestFromLocalArrays(unittest.TestCase):
                                         dtype=int)
         assert_array_equal(da.toarray(), self.expected)
 
+    def with_distribution_and_context(self):
+        with self.assertRaise(RuntimeError):
+            DistArray.from_localarrays(self.distarray.key,
+                                       context=self.context,
+                                       distribution=self.distribution)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
