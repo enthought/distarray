@@ -205,27 +205,43 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def setUp(self):
         self.h5py = import_or_skip('h5py')
-        self.output_path = temp_filepath('.hdf5')
         self.dac = Context()
 
+        def engine_temp_path():
+            from distarray.testing import temp_filepath
+            return temp_filepath('.hdf5')
+
+        self.output_path = self.dac.apply(engine_temp_path,
+                                          targets=self.dac.targets[0],
+                                          return_proxy=False)
+
     def tearDown(self):
+        self.dac.apply(cleanup_file, (self.output_path,),
+                       targets=self.dac.targets[0])
         self.dac.close()
-        if os.path.exists(self.output_path):
-            os.remove(self.output_path)
 
     def test_save_block(self):
         datalen = 33
-        distribution = Distribution.from_shape(self.dac, (datalen,),
-                                               dist={0: 'b'})
-        da = self.dac.empty(distribution)
-        for i in range(datalen):
-            da[i] = i
-
+        expected = np.arange(datalen)
+        da = self.dac.fromarray(expected)
         self.dac.save_hdf5(self.output_path, da, mode='w')
-        with self.h5py.File(self.output_path, 'r') as fp:
-            self.assertTrue("buffer" in fp)
-            expected = np.arange(datalen)
-            assert_equal(expected, fp["buffer"])
+
+        def check_file(output_path, expected):
+            import h5py
+            import numpy
+
+            with h5py.File(output_path, 'r') as fp:
+                if "buffer" not in fp:
+                    return False
+                if not numpy.array_equal(expected, fp["buffer"]):
+                    return False
+
+            return True
+
+        file_check = self.dac.apply(check_file, (self.output_path, expected),
+                                    targets=self.dac.targets[0],
+                                    return_proxy=False)
+        self.assertTrue(file_check)
 
     def test_save_3d(self):
         shape = (4, 5, 3)
