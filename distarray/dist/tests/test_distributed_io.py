@@ -201,6 +201,19 @@ class TestNpyFileLoad(unittest.TestCase):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
 
+def check_hdf5_file(output_path, expected):
+    import h5py
+    import numpy
+
+    with h5py.File(output_path, 'r') as fp:
+        if "buffer" not in fp:
+            return False
+        if not numpy.array_equal(expected, fp["buffer"]):
+            return False
+
+    return True
+
+
 class TestHdf5FileSave(unittest.TestCase):
 
     def setUp(self):
@@ -226,40 +239,26 @@ class TestHdf5FileSave(unittest.TestCase):
         da = self.dac.fromarray(expected)
         self.dac.save_hdf5(self.output_path, da, mode='w')
 
-        def check_file(output_path, expected):
-            import h5py
-            import numpy
-
-            with h5py.File(output_path, 'r') as fp:
-                if "buffer" not in fp:
-                    return False
-                if not numpy.array_equal(expected, fp["buffer"]):
-                    return False
-
-            return True
-
-        file_check = self.dac.apply(check_file, (self.output_path, expected),
+        file_check = self.dac.apply(check_hdf5_file,
+                                    (self.output_path, expected),
                                     targets=self.dac.targets[0],
                                     return_proxy=False)
         self.assertTrue(file_check)
 
     def test_save_3d(self):
         shape = (4, 5, 3)
-        source = np.random.random(shape)
+        expected = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
         distribution = Distribution.from_shape(self.dac, shape, dist=dist)
-        da = self.dac.empty(distribution)
-
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                for k in range(shape[2]):
-                    da[i, j, k] = source[i, j, k]
+        da = self.dac.fromarray(expected, distribution=distribution)
 
         self.dac.save_hdf5(self.output_path, da, mode='w')
-        with self.h5py.File(self.output_path, 'r') as fp:
-            self.assertTrue("buffer" in fp)
-            assert_allclose(source, fp["buffer"])
+        file_check = self.dac.apply(check_hdf5_file,
+                                    (self.output_path, expected),
+                                    targets=self.dac.targets[0],
+                                    return_proxy=False)
+        self.assertTrue(file_check)
 
     def test_save_two_datasets(self):
         datalen = 33
