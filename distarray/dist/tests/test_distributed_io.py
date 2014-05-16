@@ -30,6 +30,10 @@ def cleanup_file(filepath):
     if os.path.exists(filepath):
         os.remove(filepath)
 
+def engine_temp_path(extension=''):
+    from distarray.testing import temp_filepath
+    return temp_filepath(extension)
+
 
 class TestDnpyFileIO(unittest.TestCase):
 
@@ -39,11 +43,6 @@ class TestDnpyFileIO(unittest.TestCase):
         cls.distribution = Distribution.from_shape(cls.dac, (100,),
                                                    dist={0: 'b'})
         cls.da = cls.dac.empty(cls.distribution)
-
-        def engine_temp_path():
-            from distarray.testing import temp_filepath
-            return temp_filepath()
-
         cls.output_paths = cls.dac.apply(engine_temp_path, return_proxy=False)
 
     def test_save_load_with_filenames(self):
@@ -219,12 +218,8 @@ class TestHdf5FileSave(unittest.TestCase):
     def setUp(self):
         self.h5py = import_or_skip('h5py')
         self.dac = Context()
-
-        def engine_temp_path():
-            from distarray.testing import temp_filepath
-            return temp_filepath('.hdf5')
-
         self.output_path = self.dac.apply(engine_temp_path,
+                                          ('.hdf5',),
                                           targets=self.dac.targets[0],
                                           return_proxy=False)
 
