@@ -284,26 +284,28 @@ class TestHdf5FileSave(unittest.TestCase):
 
 class TestHdf5FileLoad(unittest.TestCase):
 
-    def setUp(self):
-        self.h5py = import_or_skip('h5py')
-        self.dac = Context(targets=[0, 1])
-        self.output_path = self.dac.apply(engine_temp_path, ('.hdf5',),
-                                          targets=self.dac.targets[0],
-                                          return_proxy=False)
-        self.expected = np.arange(20).reshape(2, 10)
+    @classmethod
+    def setUpClass(cls):
+        cls.h5py = import_or_skip('h5py')
+        cls.dac = Context(targets=[0, 1])
+        cls.output_path = cls.dac.apply(engine_temp_path, ('.hdf5',),
+                                        targets=cls.dac.targets[0],
+                                        return_proxy=False)
+        cls.expected = np.arange(20).reshape(2, 10)
 
         def make_test_file(output_path, arr):
             import h5py
             with h5py.File(output_path, 'w') as fp:
                 fp["test"] = arr
 
-        self.dac.apply(make_test_file, (self.output_path, self.expected),
-                       targets=self.dac.targets[0])
+        cls.dac.apply(make_test_file, (cls.output_path, cls.expected),
+                      targets=cls.dac.targets[0])
 
-    def tearDown(self):
-        self.dac.apply(cleanup_file, (self.output_path,),
-                       targets=self.dac.targets[0])
-        self.dac.close()
+    @classmethod
+    def tearDownClass(cls):
+        cls.dac.apply(cleanup_file, (cls.output_path,),
+                      targets=cls.dac.targets[0])
+        cls.dac.close()
 
     def test_load_bn(self):
         distribution = Distribution.from_dim_data_per_rank(self.dac,
