@@ -25,6 +25,12 @@ from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 
 
+def cleanup_file(filepath):
+    import os
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+
 class TestDnpyFileIO(unittest.TestCase):
 
     @classmethod
@@ -42,11 +48,6 @@ class TestDnpyFileIO(unittest.TestCase):
 
     def test_save_load_with_filenames(self):
 
-        def cleanup_file(filepath):
-            import os
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
         try:
             self.dac.save_dnpy(self.output_paths, self.da)
             db = self.dac.load_dnpy(self.output_paths)
@@ -57,11 +58,6 @@ class TestDnpyFileIO(unittest.TestCase):
                 self.dac.apply(cleanup_file, (filepath,), targets=(target,))
 
     def test_save_load_with_prefix(self):
-
-        def cleanup_file(filepath):
-            import os
-            if os.path.exists(filepath):
-                os.remove(filepath)
 
         output_path = self.output_paths[0]
         try:
@@ -174,12 +170,7 @@ class TestNpyFileLoad(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # delete the test file
-        def remove_test_file(output_path):
-            import os
-            if os.path.exists(output_path):
-                os.remove(output_path)
-        cls.dac.apply(remove_test_file, (cls.output_path,),
+        cls.dac.apply(cleanup_file, (cls.output_path,),
                       targets=cls.dac.targets[0])
 
         # clean up the context keys
