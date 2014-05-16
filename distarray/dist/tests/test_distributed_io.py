@@ -12,14 +12,13 @@ write out temporary files.
 """
 
 import unittest
-import os
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_array_equal
 
 from distarray.externals.six.moves import range
 
-from distarray.testing import import_or_skip, temp_filepath
+from distarray.testing import import_or_skip
 from distarray.dist.distarray import DistArray
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
@@ -29,6 +28,7 @@ def cleanup_file(filepath):
     import os
     if os.path.exists(filepath):
         os.remove(filepath)
+
 
 def engine_temp_path(extension=''):
     from distarray.testing import temp_filepath
@@ -287,7 +287,7 @@ class TestHdf5FileLoad(unittest.TestCase):
     def setUp(self):
         self.h5py = import_or_skip('h5py')
         self.dac = Context(targets=[0, 1])
-        self.output_path = self.dac.apply(temp_filepath, ('.hdf5',),
+        self.output_path = self.dac.apply(engine_temp_path, ('.hdf5',),
                                           targets=self.dac.targets[0],
                                           return_proxy=False)
         self.expected = np.arange(20).reshape(2, 10)
@@ -309,22 +309,19 @@ class TestHdf5FileLoad(unittest.TestCase):
         distribution = Distribution.from_dim_data_per_rank(self.dac,
                                                            bn_test_data)
         da = self.dac.load_hdf5(self.output_path, distribution, key="test")
-        for i, v in np.ndenumerate(self.expected):
-            self.assertEqual(v, da[i])
+        assert_array_equal(self.expected, da)
 
     def test_load_nc(self):
         distribution = Distribution.from_dim_data_per_rank(self.dac,
                                                            nc_test_data)
         da = self.dac.load_hdf5(self.output_path, distribution, key="test")
-        for i, v in np.ndenumerate(self.expected):
-            self.assertEqual(v, da[i])
+        assert_array_equal(self.expected, da)
 
     def test_load_nu(self):
         distribution = Distribution.from_dim_data_per_rank(self.dac,
                                                            nu_test_data)
         da = self.dac.load_hdf5(self.output_path, distribution, key="test")
-        for i, v in np.ndenumerate(self.expected):
-            self.assertEqual(v, da[i])
+        assert_array_equal(self.expected, da)
 
 
 if __name__ == '__main__':
