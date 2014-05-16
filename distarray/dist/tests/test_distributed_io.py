@@ -201,14 +201,14 @@ class TestNpyFileLoad(unittest.TestCase):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
 
-def check_hdf5_file(output_path, expected):
+def check_hdf5_file(output_path, expected, dataset="buffer"):
     import h5py
     import numpy
 
     with h5py.File(output_path, 'r') as fp:
-        if "buffer" not in fp:
+        if dataset not in fp:
             return False
-        if not numpy.array_equal(expected, fp["buffer"]):
+        if not numpy.array_equal(expected, fp[dataset]):
             return False
 
     return True
@@ -262,23 +262,29 @@ class TestHdf5FileSave(unittest.TestCase):
 
     def test_save_two_datasets(self):
         datalen = 33
-        distribution = Distribution.from_shape(self.dac, (datalen,),
-                                               dist={0: 'b'})
-        da = self.dac.empty(distribution)
+        foo = np.arange(datalen)
+        bar = np.random.random(datalen)
+        da_foo = self.dac.fromarray(foo)
+        da_bar = self.dac.fromarray(bar)
 
-        for i in range(datalen):
-            da[i] = i
+        # save 'foo' to a file
+        self.dac.save_hdf5(self.output_path, da_foo, key='foo', mode='w')
 
-        # make a file, and write to dataset 'foo'
-        with self.h5py.File(self.output_path, 'w') as fp:
-            fp['foo'] = np.arange(10)
+        # save 'bar' to a different dataset in the same file
+        self.dac.save_hdf5(self.output_path, da_bar, key='bar', mode='a')
 
-        # try saving to a different dataset
-        self.dac.save_hdf5(self.output_path, da, key='bar', mode='a')
-
-        with self.h5py.File(self.output_path, 'r') as fp:
-            self.assertTrue("foo" in fp)
-            self.assertTrue("bar" in fp)
+        foo_checks = self.dac.apply(check_hdf5_file,
+                                    (self.output_path, foo),
+                                    {'dataset': 'foo'},
+                                    targets=self.dac.targets[0],
+                                    return_proxy=False)
+        self.assertTrue(foo_checks)
+        bar_checks = self.dac.apply(check_hdf5_file,
+                                    (self.output_path, bar),
+                                    {'dataset': 'bar'},
+                                    targets=self.dac.targets[0],
+                                    return_proxy=False)
+        self.assertTrue(bar_checks)
 
 
 class TestHdf5FileLoad(unittest.TestCase):
