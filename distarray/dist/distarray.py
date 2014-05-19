@@ -142,7 +142,7 @@ class DistArray(object):
             targets = self.distribution.owning_targets(index)
 
             args = (self.key, index)
-            if self.distribution.PRECISE_INDEXING:
+            if self.distribution.has_precise_index:
                 result = self.context.apply(raw_getitem, args=args,
                                             targets=targets)
             else:
@@ -179,7 +179,7 @@ class DistArray(object):
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
             args = (self.key, index, value)
-            if self.distribution.PRECISE_INDEXING:
+            if self.distribution.has_precise_index:
                 self.context.apply(raw_setitem, args=args, targets=targets)
             else:
                 result = self.context.apply(checked_setitem, args=args,

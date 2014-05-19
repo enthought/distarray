@@ -594,7 +594,7 @@ class Distribution(object):
         return [dd for (_, dd) in rank_and_dd]
 
     @property
-    def PRECISE_INDEXING(self):
+    def has_precise_index(self):
         """
         Does the client-side Distribution know precisely who owns all indices?
 
