@@ -128,7 +128,7 @@ class DistArray(object):
         # This would dramatically improve tondarray's performance.
 
         # func that runs locally
-        def getit(arr, index):
+        def checked_getitem(arr, index):
             return arr.checked_getitem(index)
 
         if isinstance(index, int) or isinstance(index, slice):
@@ -139,7 +139,7 @@ class DistArray(object):
             targets = self.distribution.owning_targets(index)
 
             args = (self.key, index)
-            result = self.context.apply(getit, args=args,
+            result = self.context.apply(checked_getitem, args=args,
                                         targets=targets)
             result = [i for i in result if i is not None]
             if len(result) != 1:
