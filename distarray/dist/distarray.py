@@ -168,8 +168,11 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
-        def setit(arr, index, value):
+        def checked_setitem(arr, index, value):
             return arr.checked_setitem(index, value)
+
+        def raw_setitem(arr, index, value):
+            arr.global_index[index] = value
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -178,14 +181,17 @@ class DistArray(object):
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
             args = (self.key, index, value)
-            result = self.context.apply(setit, args=args,
-                                        targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) > 1:
-                raise IndexError("Setting more than one result (%s) is not "
-                                 " supported yet." % (result,))
-            elif result == []:
-                raise IndexError("Index %s is out of bounds" % (index,))
+            if self.distribution.PRECISE_INDEXING:
+                self.context.apply(raw_setitem, args=args, targets=targets)
+            else:
+                result = self.context.apply(checked_setitem, args=args,
+                                            targets=targets)
+                result = [i for i in result if i is not None]
+                if len(result) > 1:
+                    raise IndexError("Setting more than one result (%s) is "
+                                     "not supported yet." % (result,))
+                elif result == []:
+                    raise IndexError("Index %s is out of bounds" % (index,))
         else:
             raise TypeError("Invalid index type.")
 
