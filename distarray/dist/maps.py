@@ -425,6 +425,15 @@ class Distribution(object):
         self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
                      axis_dim_dicts in axis_dim_dicts_per_axis]
 
+        # Set an instance attribute indicating whether the client-side
+        # Distribution knows precisely who owns all indices.  This can be
+        # used to determine whether one needs to use the `checked` version
+        # of `__getitem__` or `__setitem__` on LocalArrays.
+        if any(isinstance(m, UnstructuredMap) for m in self.maps):
+            self.PRECISE_INDEXING = False
+        else:
+            self.PRECISE_INDEXING = True
+
         return self
 
     @classmethod
