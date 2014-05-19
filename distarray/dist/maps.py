@@ -595,9 +595,11 @@ class Distribution(object):
 
     @property
     def PRECISE_INDEXING(self):
-        # Indicates whether the client-side Distribution knows precisely
-        # who owns all indices.  This can be used to determine whether
-        # one needs to use the `checked` version of `__getitem__` or
-        # `__setitem__` on LocalArrays.
+        """
+        Does the client-side Distribution know precisely who owns all indices?
+
+        This can be used to determine whether one needs to use the `checked`
+        version of `__getitem__` or `__setitem__` on LocalArrays.
+        """
         return not any(isinstance(m, UnstructuredMap) for m in self.maps)
 
