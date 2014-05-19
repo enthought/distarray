@@ -143,7 +143,6 @@ class DistArray(object):
 
             args = (self.key, index)
             if self.distribution.PRECISE_INDEXING:
-                assert len(targets) == 1
                 result = self.context.apply(raw_getitem, args=args,
                                             targets=targets)
             else:
@@ -151,7 +150,6 @@ class DistArray(object):
                                             targets=targets)
             result = [i for i in result if i is not None]
             if len(result) != 1:
-                print(result)
                 raise IndexError("Getting more than one result (%s) is not "
                                  "supported yet." % (result,))
             elif result is None:
