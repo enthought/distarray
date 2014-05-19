@@ -209,12 +209,7 @@ class TestHdf5FileSave(unittest.TestCase):
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
         distribution = Distribution.from_shape(self.dac, shape, dist=dist)
-        da = self.dac.empty(distribution)
-
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                for k in range(shape[2]):
-                    da[i, j, k] = source[i, j, k]
+        da = self.dac.fromarray(source, distribution)
 
         self.dac.save_hdf5(self.output_path, da, mode='w')
         with self.h5py.File(self.output_path, 'r') as fp:

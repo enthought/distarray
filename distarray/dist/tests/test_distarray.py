@@ -137,8 +137,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(global_size):
-            distarr[i] = i
+        distarr.toarray()
 
     def test_from_global_dim_data_1d(self):
         total_size = 40
@@ -180,9 +179,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
 
     def test_from_global_dim_data_bc(self):
         """ Test creation of a block-cyclic array. """
@@ -204,12 +201,11 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 },)
         distribution = Distribution(self.context, global_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
         las = distarr.get_localarrays()
         local_shapes = [la.local_shape for la in las]
-        self.assertSequenceEqual(local_shapes, [(3,5), (3,4), (2,5), (2,4)])
+        self.assertSequenceEqual(local_shapes,
+                                 [(3, 5), (3, 4), (2, 5), (2, 4)])
 
     def test_from_global_dim_data_uu(self):
         rows = 6
@@ -226,9 +222,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 )
         distribution = Distribution(self.context, glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(rows):
-            for j in range(cols):
-                distarr[i, j] = i*cols + j
+        distarr.toarray()
 
     def test_global_dim_data_local_dim_data_equivalence(self):
         rows, cols = 5, 9
@@ -300,7 +294,6 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_irregular_block_assignment(self):
-        global_shape = (5, 9)
         global_dim_data = (
                 {
                     'dist_type': 'b',
@@ -313,9 +306,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             )
         distribution = Distribution(self.context, global_dim_data)
         distarr = DistArray(distribution, dtype=int)
-        for i in range(global_shape[0]):
-            for j in range(global_shape[1]):
-                distarr[i, j] = i + j
+        distarr.toarray()
 
 
 class TestDistArrayCreation(unittest.TestCase):
@@ -329,7 +320,7 @@ class TestDistArrayCreation(unittest.TestCase):
         self.context.close()
 
     def test___init__(self):
-        shape = (100, 100)
+        shape = (5, 5)
         distribution = Distribution.from_shape(self.context, shape, ('b', 'c'))
         da = DistArray(distribution, dtype=int)
         da.fill(42)
@@ -450,6 +441,42 @@ class TestReduceMethods(unittest.TestCase):
         da_std = self.darr.std(dtype=int)
         self.assertEqual(da_std, np_std)
 
+
+class TestFromLocalArrays(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context()
+        cls.distribution = Distribution.from_shape((4, 4))
+        cls.distarray = cls.context.ones(cls.distribution, dtype=int)
+        cls.expected = numpy.ones((4, 4), dtype=int)
+
+    def with_context(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        context=self.context)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_context_and_dtype(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        context=self.context, dtype=int)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_distribution(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        distribution=self.distribution)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_distribution_and_dtype(self):
+        da = DistArray.from_localarrays(self.distarray.key,
+                                        distribution=self.distribution,
+                                        dtype=int)
+        assert_array_equal(da.toarray(), self.expected)
+
+    def with_distribution_and_context(self):
+        with self.assertRaise(RuntimeError):
+            DistArray.from_localarrays(self.distarray.key,
+                                       context=self.context,
+                                       distribution=self.distribution)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
