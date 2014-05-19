@@ -131,6 +131,9 @@ class DistArray(object):
         def checked_getitem(arr, index):
             return arr.checked_getitem(index)
 
+        def raw_getitem(arr, index):
+            return arr.global_index[index]
+
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
             return self.__getitem__(tuple_index)
@@ -139,10 +142,16 @@ class DistArray(object):
             targets = self.distribution.owning_targets(index)
 
             args = (self.key, index)
-            result = self.context.apply(checked_getitem, args=args,
-                                        targets=targets)
+            if self.distribution.PRECISE_INDEXING:
+                assert len(targets) == 1
+                result = self.context.apply(raw_getitem, args=args,
+                                            targets=targets)
+            else:
+                result = self.context.apply(checked_getitem, args=args,
+                                            targets=targets)
             result = [i for i in result if i is not None]
             if len(result) != 1:
+                print(result)
                 raise IndexError("Getting more than one result (%s) is not "
                                  "supported yet." % (result,))
             elif result is None:
