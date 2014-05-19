@@ -129,7 +129,7 @@ class DistArray(object):
 
         # func that runs locally
         def checked_getitem(arr, index):
-            return arr.checked_getitem(index)
+            return arr.global_index.checked_getitem(index)
 
         def raw_getitem(arr, index):
             return arr.global_index[index]
@@ -167,7 +167,7 @@ class DistArray(object):
         # improve the fromndarray method's performance.
 
         def checked_setitem(arr, index, value):
-            return arr.checked_setitem(index, value)
+            return arr.global_index.checked_setitem(index, value)
 
         def raw_setitem(arr, index, value):
             arr.global_index[index] = value
