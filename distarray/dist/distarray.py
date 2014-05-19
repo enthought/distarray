@@ -144,7 +144,7 @@ class DistArray(object):
             result = [i for i in result if i is not None]
             if len(result) != 1:
                 raise IndexError("Getting more than one result (%s) is not "
-                                 " supported yet." % (result,))
+                                 "supported yet." % (result,))
             elif result is None:
                 raise IndexError("Index %r is out of bounds" % (index,))
             else:
