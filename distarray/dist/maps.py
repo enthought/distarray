@@ -150,6 +150,10 @@ class MapBase(object):
         """
         raise IndexError()
 
+    def is_compatible(self, map):
+        return ((self.dist == map.dist) and
+                (vars(self) == vars(map)))
+
 
 # ---------------------------------------------------------------------------
 # 1-D Map classes
@@ -391,12 +395,14 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data_per_rank(cls, context, dim_data_per_rank):
+    def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
         """ Create a Distribution from a sequence of `dim_data` tuples. """
 
         self = cls.__new__(cls)
         dd0 = dim_data_per_rank[0]
         self.context = context
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         for dim_data in dim_data_per_rank:
             for dim_dict in dim_data:
                 normalize_dim_dict(dim_dict)
@@ -405,7 +411,7 @@ class Distribution(object):
         self.dist = tuple(dd['dist_type'] for dd in dd0)
         self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
 
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
                   dim_data_per_rank]
@@ -428,10 +434,12 @@ class Distribution(object):
         return self
 
     @classmethod
-    def from_shape(cls, context, shape, dist=None, grid_shape=None):
+    def from_shape(cls, context, shape, dist=None, grid_shape=None, targets=None):
 
         self = cls.__new__(cls)
         self.context = context
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         self.shape = shape
         self.ndim = len(shape)
 
@@ -441,11 +449,11 @@ class Distribution(object):
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
             self.grid_shape = make_grid_shape(self.shape, self.dist,
-                                              len(context.targets))
+                                              len(self.targets))
         else:  # Otherwise normalize the one passed in.
             self.grid_shape = normalize_grid_shape(grid_shape, self.ndim)
         # In either case, validate.
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
@@ -457,7 +465,7 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
-    def __init__(self, context, global_dim_data):
+    def __init__(self, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
@@ -548,6 +556,8 @@ class Distribution(object):
 
         """
         self.context = context
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
         self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)
@@ -558,6 +568,16 @@ class Distribution(object):
 
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+
+    @property
+    def has_precise_index(self):
+        """
+        Does the client-side Distribution know precisely who owns all indices?
+
+        This can be used to determine whether one needs to use the `checked`
+        version of `__getitem__` or `__setitem__` on LocalArrays.
+        """
+        return not any(isinstance(m, UnstructuredMap) for m in self.maps)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
@@ -584,7 +604,7 @@ class Distribution(object):
         Convenience method meant for IPython parallel usage.
 
         """
-        return [self.context.targets[r] for r in self.owning_ranks(idxs)]
+        return [self.targets[r] for r in self.owning_ranks(idxs)]
 
     def get_dim_data_per_rank(self):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
@@ -593,13 +613,7 @@ class Distribution(object):
         rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)
         return [dd for (_, dd) in rank_and_dd]
 
-    @property
-    def has_precise_index(self):
-        """
-        Does the client-side Distribution know precisely who owns all indices?
-
-        This can be used to determine whether one needs to use the `checked`
-        version of `__getitem__` or `__setitem__` on LocalArrays.
-        """
-        return not any(isinstance(m, UnstructuredMap) for m in self.maps)
-
+    def is_compatible(self, o):
+        return ((self.context, self.targets, self.shape, self.ndim, self.dist, self.grid_shape) ==
+                (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
+                all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))

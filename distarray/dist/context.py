@@ -55,7 +55,7 @@ class Context(object):
 
         self.view = self.client[:]
 
-        all_targets = self.view.targets
+        all_targets = sorted(self.view.targets)
         if targets is None:
             self.targets = all_targets
         else:
@@ -65,6 +65,7 @@ class Context(object):
                     raise ValueError("Engine with id %r not registered" % target)
                 else:
                     self.targets.append(target)
+        self.targets = sorted(self.targets)
 
         # FIXME: IPython bug #4296: This doesn't work under Python 3
         #with self.view.sync_imports():
@@ -76,8 +77,9 @@ class Context(object):
                           "import numpy")
 
         self.context_key = self._setup_context_key()
-        self._comm_key = self._make_intracomm()
-        self._set_engine_rank_mapping()
+        self._base_comm = self._make_base_comm()
+        self._comm_from_targets = {tuple(sorted(self.view.targets)) : self._base_comm}
+        self.comm = self._make_subcomm(self.targets)
 
     def _setup_context_key(self):
         """
@@ -91,7 +93,32 @@ class Context(object):
         self._execute(cmd, targets=range(len(self.view)))
         return context_key
 
-    def _make_intracomm(self):
+    def _make_subcomm(self, new_targets):
+
+        if new_targets != sorted(new_targets):
+            raise ValueError("targets must be in sorted order.")
+
+        try:
+            return self._comm_from_targets[tuple(new_targets)]
+        except KeyError:
+            pass
+
+        def _make_new_comm(rank_list, base_comm):
+            import distarray.local.mpiutils
+            return distarray.local.mpiutils.create_comm_with_list(rank_list, base_comm)
+
+        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm), 
+                              targets=self.view.targets, return_proxy=True)
+
+        self._comm_from_targets[tuple(new_targets)] = new_comm
+        return new_comm
+
+    def _make_base_comm(self):
+        """
+        Returns a proxy for an MPI communicator that encompasses all targets in
+        self.view.targets (not self.targets, which can be a subset).
+        """
+
         def get_rank():
             from distarray.local.mpiutils import COMM_PRIVATE
             return COMM_PRIVATE.Get_rank()
@@ -103,59 +130,48 @@ class Context(object):
             return COMM_PRIVATE.Get_size()
 
         # get a mapping of IPython engine ID to MPI rank
-        rank_map = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_map[engine] for engine in self.targets ]
+        rank_from_target = self.view.apply_async(get_rank).get_dict()
+        ranks = [ rank_from_target[target] for target in self.view.targets ]
 
         comm_size = self.view.apply_async(get_size).get()[0]
-        if set(rank_map.values()) != set(range(comm_size)):
+        if set(rank_from_target.values()) != set(range(comm_size)):
             raise ValueError('Engines in view must encompass all MPI ranks.')
 
-        # create a new communicator with the subset of engines note that
-        # MPI_Comm_create must be called on all engines, not just those
-        # involved in the new communicator.
-        comm_key = self._generate_key()
-        cmd = "%s = distarray.local.mpiutils.create_comm_with_list(%s)"
-        cmd %= (comm_key, ranks)
-        self.view.execute(cmd, block=True)
-        return comm_key
+        # create a new communicator with the subset of ranks. Note that
+        # create_comm_with_list() must be called on all engines, not just those
+        # involved in the new communicator.  This is because
+        # create_comm_with_list() issues a collective MPI operation.
+        def _make_new_comm(rank_list):
+            import distarray.local.mpiutils
+            new_comm = distarray.local.mpiutils.create_comm_with_list(rank_list)
+            return new_comm
 
-    def _set_engine_rank_mapping(self):
-        # The MPI intracomm referred to by self._comm_key may have a different
-        # mapping between IPython engines and MPI ranks than COMM_PRIVATE.  We
-        # reorder self.targets so self.targets[i] is the IPython engine ID that
-        # corresponds to MPI intracomm rank i.
-        rank = self._generate_key()
-        self.view.execute(
-                '%s = %s.Get_rank()' % (rank, self._comm_key),
-                block=True, targets=self.targets)
+        return self.apply(_make_new_comm, args=(ranks,), targets=self.view.targets, return_proxy=True)
 
-        # mapping target -> rank, rank -> target.
-        rank_from_target = self.view.pull(rank, targets=self.targets).get_dict()
-        target_from_rank = {v: k for (k, v) in rank_from_target.items()}
 
-        # ensure consistency
-        assert set(self.targets) == set(rank_from_target)
-        assert set(range(len(self.targets))) == set(target_from_rank)
-
-        # reorder self.targets so that the targets are in MPI rank order for
-        # the intracomm.
-        self.targets = [target_from_rank[i] for i in range(len(target_from_rank))]
+    # Key management routines:
+    @staticmethod
+    def _key_prefix():
+        """ Get the base name for all keys. """
+        return DISTARRAY_BASE_NAME
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
         key = "%s.%s" % (self.context_key, uid())
         return key
 
-    def _key_and_push(self, *values):
+    def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
-        self._push(dict(zip(keys, values)))
+        targets = kwargs.get('targets', self.targets)
+        self._push(dict(zip(keys, values)), targets=targets)
         return tuple(keys)
 
-    def delete_key(self, key):
+    def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
         cmd = ('try: del %s\n'
                'except NameError: pass') % key
-        self._execute(cmd)
+        targets = targets or self.targets
+        self._execute(cmd, targets=targets)
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
@@ -165,20 +181,18 @@ class Context(object):
         self.cleanup()
         if self.owns_client:
             self.client.close()
-        self._comm_key = None
+        self._base_comm = None
+        self.comm = None
 
     # End of key management routines.
 
-    def _execute(self, lines, targets=None):
-        targets = targets or self.targets
+    def _execute(self, lines, targets):
         return self.view.execute(lines, targets=targets, block=True)
 
-    def _push(self, d, targets=None):
-        targets = targets or self.targets
+    def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def _pull(self, k, targets=None):
-        targets = targets or self.targets
+    def _pull(self, k, targets):
         return self.view.pull(k, targets=targets, block=True)
 
     def _execute0(self, lines):
@@ -193,13 +207,13 @@ class Context(object):
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
-        comm_name = self._comm_key
+        comm_name = distribution.comm
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}), '
                'dtype={dtype_name})')
-        self._execute(cmd.format(**locals()))
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
@@ -283,12 +297,12 @@ class Context(object):
         See Also
         --------
         load_dnpy : Loading files saved with save_dnpy.
-
         """
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs,
+                targets=da.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
@@ -296,7 +310,8 @@ class Context(object):
                 raise TypeError(errmsg)
             subs = self._key_and_push(name) + (da.key, da.key)
             self._execute(
-                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs,
+                targets=da.targets
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -338,24 +353,25 @@ class Context(object):
         See Also
         --------
         save_dnpy : Saving files to load with with load_dnpy.
-
         """
         da_key = self._generate_key()
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
-                    self._comm_key)
+            subs = (da_key,) + self._key_and_push(name) + (self.comm,
+                    self.comm)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs
+                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs,
+                targets=self.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + self._key_and_push(name) + (self._comm_key,
-                    self._comm_key)
+            subs = (da_key,) + self._key_and_push(name) + (self.comm,
+                    self.comm)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs
+                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs,
+                targets=self.targets
             )
         else:
             errmsg = "`name` must be a string or a list."
@@ -384,7 +400,6 @@ class Context(object):
                 Create file, fail if exists
             ``'a'``
                 Read/write if exists, create otherwise (default)
-
         """
         try:
             # this is just an early check,
@@ -397,7 +412,8 @@ class Context(object):
         subs = (self._key_and_push(filename) + (da.key,) +
                 self._key_and_push(key, mode))
         self._execute(
-            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs
+            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs,
+            targets=da.targets
         )
 
     def load_npy(self, filename, distribution):
@@ -414,15 +430,15 @@ class Context(object):
         -------
         result : DistArray
             A DistArray encapsulating the file loaded.
-
         """
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self._comm_key,) + (self._comm_key,))
+                (distribution.comm,) + (distribution.comm,))
 
         self._execute(
-            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs
+            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs,
+            targets=distribution.targets
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
@@ -443,7 +459,6 @@ class Context(object):
         -------
         result : DistArray
             A DistArray encapsulating the file loaded.
-
         """
         try:
             import h5py
@@ -454,10 +469,11 @@ class Context(object):
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (self._comm_key,) + self._key_and_push(key) + (self._comm_key,))
+                (distribution.comm,) + self._key_and_push(key) + (distribution.comm,))
 
         self._execute(
-            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs
+            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs,
+            targets=distribution.targets
         )
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
@@ -504,12 +520,12 @@ class Context(object):
         function_name, ddpr_name, kwargs_name = \
             self._key_and_push(function, ddpr, kwargs)
         da_name = self._generate_key()
-        comm_name = self._comm_key
+        comm_name = distribution.comm
         cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
                'distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
                '**{kwargs_name})')
-        self._execute(cmd.format(**locals()))
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None,
