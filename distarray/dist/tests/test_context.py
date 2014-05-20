@@ -78,8 +78,12 @@ class TestContextCreation(unittest.TestCase):
         """Are contexts' targets reordered in a consistent way?"""
         client = IPythonClient()
         orig_targets = client.ids
-        ctx1 = Context(client, targets=shuffle(orig_targets[:]))
-        ctx2 = Context(client, targets=shuffle(orig_targets[:]))
+        targets1 = orig_targets[:]
+        targets2 = orig_targets[:]
+        shuffle(targets1)
+        shuffle(targets2)
+        ctx1 = Context(client, targets=targets1)
+        ctx2 = Context(client, targets=targets2)
         self.assertEqual(ctx1.targets, ctx2.targets)
         ctx1.close()
         ctx2.close()
@@ -91,7 +95,7 @@ class TestContextCreation(unittest.TestCase):
         dac = Context(client)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
-        dac._push({key: value})
+        dac._push({key: value}, targets=dac.targets)
         # Delete the key.
         dac.delete_key(key)
         dac.close()
@@ -210,7 +214,7 @@ class TestApply(unittest.TestCase):
 
         name = self.context.apply(foo, (1, 2), {'c': 5}, return_proxy=True)
 
-        val = self.context._pull(name)
+        val = self.context._pull(name, targets=self.context.targets)
 
         self.assertEqual(val, [8]*len(self.context.targets))
 

@@ -30,12 +30,16 @@ def create_comm_of_size(size=4):
         return newcomm
 
 
-def create_comm_with_list(nodes):
+def create_comm_with_list(nodes, base_comm=None):
     """
-    Create a subcommunicator of COMM_PRIVATE with a list of ranks.
+    Create a subcommunicator of base_comm with a list of ranks.
+
+    If base_comm is not specified, defaults to COMM_PRIVATE.
+
     """
-    group = COMM_PRIVATE.Get_group()
-    comm_size = COMM_PRIVATE.Get_size()
+    base_comm = base_comm or COMM_PRIVATE
+    group = base_comm.Get_group()
+    comm_size = base_comm.Get_size()
     size = len(nodes)
     if size > comm_size:
         raise InvalidCommSizeError("requested size (%i) is bigger than the comm size (%i)" % (size, comm_size))
@@ -43,7 +47,7 @@ def create_comm_with_list(nodes):
         if not i in range(comm_size):
             raise InvalidRankError("rank is not valid: %r" % i)
     subgroup = group.Incl(nodes)
-    newcomm = COMM_PRIVATE.Create(subgroup)
+    newcomm = base_comm.Create(subgroup)
     return newcomm
 
 

@@ -46,7 +46,7 @@ def unary_proxy(name):
             exec_str = '%s = distarray.local.%s(%s)'
             exec_str %= (new_key, name, a.key)
 
-        context._execute(exec_str)
+        context._execute(exec_str, targets=a.targets)
         return DistArray.from_localarrays(new_key,
                                           distribution=a.distribution)
     return proxy_func
@@ -58,6 +58,8 @@ def binary_proxy(name):
         is_a_dap = isinstance(a, DistArray)
         is_b_dap = isinstance(b, DistArray)
         if is_a_dap and is_b_dap:
+            if not a.distribution.is_compatible(b.distribution):
+                raise ValueError("distributions not compatible.")
             a_key = a.key
             b_key = b.key
             distribution = a.distribution
@@ -80,7 +82,7 @@ def binary_proxy(name):
             exec_str = '%s = distarray.local.%s(%s,%s)'
             exec_str %= (new_key, name, a_key, b_key)
 
-        context._execute(exec_str)
+        context._execute(exec_str, targets=distribution.targets)
         return DistArray.from_localarrays(new_key, distribution=distribution)
     return proxy_func
 
