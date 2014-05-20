@@ -231,3 +231,19 @@ def positivify(index, size):
         return slice(start, stop, index.step)
     else:
         raise TypeError("`index` must be an int or slice.")
+
+
+def tuple_intersection(t1, t2):
+    """Compute intersection of two (start, stop) tuples.
+
+    Parameters
+    ----------
+    t1, t2 : 2-tuples
+
+    Returns
+    -------
+    2-tuple or None
+    """
+    stop = min(t1[1], t2[1])
+    start = max(t1[0], t2[0])
+    return (start, stop) if stop - start > 0 else None
