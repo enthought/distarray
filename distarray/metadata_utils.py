@@ -7,6 +7,7 @@
 import operator
 from itertools import product
 from functools import reduce
+from numbers import Integral
 from collections import Sequence, Mapping
 
 import numpy
@@ -14,6 +15,11 @@ import numpy
 from distarray import utils
 from distarray.externals.six import next
 from distarray.externals.six.moves import map
+
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(numpy.signedinteger)
+Integral.register(numpy.unsignedinteger)
 
 
 class InvalidGridShapeError(Exception):
@@ -210,7 +216,7 @@ def positivify(index, size):
     """Given a negative index, return its positive equivalent."""
     if index is None:
         return index
-    elif isinstance(index, int):
+    elif isinstance(index, Integral):
         if 0 <= index < size:
             return index
         elif -size <= index < 0:
