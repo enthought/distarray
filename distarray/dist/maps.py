@@ -280,7 +280,6 @@ class BlockMap(MapBase):
         return tuple(out)
 
 
-
 class BlockCyclicMap(MapBase):
 
     dist = 'c'
