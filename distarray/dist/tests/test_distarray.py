@@ -47,6 +47,12 @@ class TestDistArray(unittest.TestCase):
             dap[-i] = i
             self.assertEqual(dap[-i], i)
 
+    def test_getitem_slice_block_dist(self):
+        size = 10
+        expected = numpy.random.randint(10, size=size)
+        arr = self.dac.fromarray(expected)
+        assert_array_equal(arr[:], expected)
+
     def test_set_and_getitem_nd_block_dist(self):
         size = 5
         distribution = Distribution.from_shape(self.dac, (size, size),
