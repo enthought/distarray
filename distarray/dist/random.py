@@ -17,7 +17,8 @@ class Random(object):
 
     def __init__(self, context):
         self.context = context
-        self.context._execute('import distarray.local.random')
+        self.context._execute('import distarray.local.random',
+                              targets=self.context.targets)
 
     def seed(self, seed=None):
         """
@@ -36,10 +37,10 @@ class Random(object):
             will compute a different sequence of random numbers.
         """
         cmd = 'numpy.random.seed(seed=%r)' % (seed)
-        self.context._execute(cmd)
+        self.context._execute(cmd, targets=self.context.targets)
         cmd = 'distarray.local.random.label_state(%s)' % (
-            self.context._comm_key)
-        self.context._execute(cmd)
+            self.context.comm)
+        self.context._execute(cmd, targets=self.context.targets)
 
     def rand(self, distribution):
         """Random values over a given distribution.
@@ -61,12 +62,13 @@ class Random(object):
         da_key = self.context._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
-        comm_name = self.context._comm_key
+        comm_name = self.context.comm
         self.context._execute(
             '{da_key} = distarray.local.random.rand('
             'distribution=distarray.local.maps.Distribution('
             'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
-            'comm={comm_name}))'.format(**locals()))
+            'comm={comm_name}))'.format(**locals()),
+            targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def normal(self, distribution, loc=0.0, scale=1.0):
@@ -120,13 +122,14 @@ class Random(object):
         ddpr = distribution.get_dim_data_per_rank()
         loc_name, scale_name, ddpr_name = \
             self.context._key_and_push(loc, scale, ddpr)
-        comm_name = self.context._comm_key
+        comm_name = self.context.comm
         self.context._execute(
             '{da_key} = distarray.local.random.normal('
             'loc={loc_name}, scale={scale_name},'
             'distribution=distarray.local.maps.Distribution('
             'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
-            'comm={comm_name}))'.format(**locals()))
+            'comm={comm_name}))'.format(**locals()),
+            targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def randint(self, distribution, low, high=None):
@@ -157,13 +160,14 @@ class Random(object):
         ddpr = distribution.get_dim_data_per_rank()
         low_name, high_name, ddpr_name = \
             self.context._key_and_push(low, high, ddpr)
-        comm_name = self.context._comm_key
+        comm_name = self.context.comm
         self.context._execute(
             '{da_key} = distarray.local.random.randint('
             'low={low_name}, high={high_name},'
             'distribution=distarray.local.maps.Distribution('
             'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
-            'comm={comm_name}))'.format(**locals()))
+            'comm={comm_name}))'.format(**locals()),
+            targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution)
 
     def randn(self, distribution):
@@ -182,10 +186,11 @@ class Random(object):
         da_key = self.context._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
-        comm_name = self.context._comm_key
+        comm_name = self.context.comm
         self.context._execute(
             '{da_key} = distarray.local.random.randn('
             'distribution=distarray.local.maps.Distribution('
             'dim_data={ddpr_name}[{comm_name}.Get_rank()], '
-            'comm={comm_name}))'.format(**locals()))
+            'comm={comm_name}))'.format(**locals()),
+            targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution)

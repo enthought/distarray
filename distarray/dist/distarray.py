@@ -41,7 +41,7 @@ class DistArray(object):
         # FIXME: code duplication with context.py.
         ctx = distribution.context
         # FIXME: this is bad...
-        comm_name = ctx._comm_key
+        comm_name = ctx.comm
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
@@ -50,13 +50,13 @@ class DistArray(object):
                'distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], '
                '{comm_name}), {dtype_name})')
-        ctx._execute(cmd.format(**locals()))
+        ctx._execute(cmd.format(**locals()), targets=distribution.targets)
         self.distribution = distribution
         self.key = da_key
         self._dtype = dtype
 
     @classmethod
-    def from_localarrays(cls, key, context=None, distribution=None,
+    def from_localarrays(cls, key, context=None, targets=None, distribution=None,
                          dtype=None):
         """The caller has already created the LocalArray objects.  `key` is
         their name on the engines.  This classmethod creates a DistArray that
@@ -88,14 +88,16 @@ class DistArray(object):
             dtypes = [i[1] for i in res]
             da._dtype = dtypes[0]
             da.distribution = Distribution.from_dim_data_per_rank(context,
-                                                                  dim_datas)
+                                                                  dim_datas,
+                                                                  targets)
 
         # has context and dtype, get dist
         elif (distribution is None) and (dtype is not None):
             da._dtype = dtype
             dim_datas = context.apply(getattr, args=(key, 'dim_data'))
             da.distribution = Distribution.from_dim_data_per_rank(context,
-                                                                  dim_datas)
+                                                                  dim_datas,
+                                                                  targets)
 
         # has distribution, get dtype
         elif (distribution is not None) and (dtype is None):
@@ -115,11 +117,11 @@ class DistArray(object):
         return da
 
     def __del__(self):
-        self.context.delete_key(self.key)
+        self.context.delete_key(self.key, self.targets)
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
-            (self.shape, self.context.targets)
+            (self.shape, self.targets)
         return s
 
     def __getitem__(self, index):
@@ -216,12 +218,16 @@ class DistArray(object):
     def itemsize(self):
         return self._dtype.itemsize
 
+    @property
+    def targets(self):
+        return self.distribution.targets
+
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
         local_name = self.context._generate_key()
-        self.context._execute('%s = %s.copy()' % (local_name, self.key))
-        local_arrays = self.context._pull(local_name)
+        self.context._execute('%s = %s.copy()' % (local_name, self.key), targets=self.targets)
+        local_arrays = self.context._pull(local_name, targets=self.targets)
         for local_array in local_arrays:
             maps = (list(ax_map.global_iter) for ax_map in
                     local_array.distribution)
@@ -234,14 +240,15 @@ class DistArray(object):
     def get_dist_matrix(self):
         key = self.context._generate_key()
         self.context._execute0(
-            '%s = %s.get_dist_matrix()' % (key, self.key))
-        result = self.context._pull0(key)
+            '%s = %s.get_dist_matrix()' % (key, self.key),
+            targets=self.targets)
+        result = self.context._pull(key, targets=self.targets[0])
         return result
 
     def fill(self, value):
         def inner_fill(arr, value):
             arr.fill(value)
-        self.context.apply(inner_fill, args=(self.key, value))
+        self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
     # TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
@@ -250,8 +257,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.sum(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.sum(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def mean(self, axis=None, dtype=float, out=None):
@@ -260,8 +268,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def var(self, axis=None, dtype=None, out=None):
@@ -270,8 +279,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.var(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.var(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def std(self, axis=None, dtype=None, out=None):
@@ -280,8 +290,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.std(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.std(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def get_ndarrays(self):
@@ -294,8 +305,9 @@ class DistArray(object):
 
         """
         key = self.context._generate_key()
-        self.context._execute('%s = %s.get_localarray()' % (key, self.key))
-        result = self.context._pull(key)
+        self.context._execute('%s = %s.get_localarray()' % (key, self.key),
+                              targets=self.targets)
+        result = self.context._pull(key, targets=self.targets)
         return result
 
     def get_localarrays(self):
@@ -307,13 +319,14 @@ class DistArray(object):
             one localarray per process
 
         """
-        result = self.context._pull(self.key)
+        result = self.context._pull(self.key, targets=self.targets)
         return result
 
     def get_localshapes(self):
         key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key))
-        result = self.context._pull(key)
+        self.context._execute('%s = %s.local_shape' % (key, self.key),
+                              targets=self.targets)
+        result = self.context._pull(key, targets=self.targets)
         return result
 
     # Binary operators
