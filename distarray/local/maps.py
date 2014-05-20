@@ -22,6 +22,7 @@ from __future__ import division
 
 import operator
 from functools import reduce
+from numbers import Integral
 
 import numpy as np
 from distarray.externals.six.moves import range, zip
@@ -30,6 +31,11 @@ from distarray.local import construct
 from distarray.metadata_utils import (validate_grid_shape, make_grid_shape,
                                       normalize_grid_shape, normalize_dist,
                                       distribute_indices, positivify)
+
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
 
 
 class Distribution(object):
@@ -202,14 +208,32 @@ class BlockMap(MapBase):
         self.grid_rank = grid_rank
 
     def local_from_global(self, gidx):
-        if gidx < self.start or gidx >= self.stop:
-            raise IndexError("Global index %s out of bounds" % gidx)
-        return gidx - self.start
+        if isinstance(gidx, Integral):
+            if gidx < self.start or gidx >= self.stop:
+                raise IndexError("Global index %s out of bounds" % gidx)
+            return gidx - self.start
+        elif isinstance(gidx, slice):
+            start = gidx.start if gidx.start is not None else 0
+            stop = gidx.stop if gidx.stop is not None else self.global_size
+            new_start = start - self.start
+            new_stop = stop - self.start
+            return slice(new_start, new_stop)
+        else:
+            raise TypeError("Index must be Integral or slice.")
 
     def global_from_local(self, lidx):
-        if lidx >= self.local_size:
-            raise IndexError("Local index %s out of bounds" % lidx)
-        return lidx + self.start
+        if isinstance(lidx, Integral):
+            if lidx >= self.local_size:
+                raise IndexError("Local index %s out of bounds" % lidx)
+            return lidx + self.start
+        elif isinstance(lidx, slice):
+            start = lidx.start if lidx.start is not None else 0
+            stop = lidx.stop if lidx.stop is not None else self.global_size
+            new_start = start + self.start
+            new_stop = stop + self.start
+            return slice(new_start, new_stop)
+        else:
+            raise TypeError("Index must be Integral or slice.")
 
     @property
     def dim_dict(self):
@@ -250,16 +274,21 @@ class CyclicMap(MapBase):
         self.local_size = (global_size - 1 - grid_rank) // grid_size + 1
         self.global_size = global_size
 
-
     def local_from_global(self, gidx):
-        if (gidx - self.start) % self.grid_size:
-            raise IndexError("Global index %s out of bounds" % gidx)
-        return (gidx - self.start) // self.grid_size
+        if isinstance(gidx, Integral):
+            if (gidx - self.start) % self.grid_size:
+                raise IndexError("Global index %s out of bounds" % gidx)
+            return (gidx - self.start) // self.grid_size
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     def global_from_local(self, lidx):
-        if lidx >= self.local_size:
-            raise IndexError("Local index %s out of bounds" % lidx)
-        return (lidx * self.grid_size) + self.start
+        if isinstance(lidx, Integral):
+            if lidx >= self.local_size:
+                raise IndexError("Local index %s out of bounds" % lidx)
+            return (lidx * self.grid_size) + self.start
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     @property
     def dim_dict(self):
@@ -301,19 +330,24 @@ class BlockCyclicMap(MapBase):
         self.local_size = local_nblocks * block_size + local_partial
         self.global_size = global_size
 
-
     def local_from_global(self, gidx):
-        global_block, offset = divmod(gidx, self.block_size)
-        if (global_block - self.start_block) % self.grid_size:
-            raise IndexError("Global index %s out of bounds" % gidx)
-        return self.block_size * ((global_block - self.start_block) // self.grid_size) + offset
+        if isinstance(gidx, Integral):
+            global_block, offset = divmod(gidx, self.block_size)
+            if (global_block - self.start_block) % self.grid_size:
+                raise IndexError("Global index %s out of bounds" % gidx)
+            return self.block_size * ((global_block - self.start_block) // self.grid_size) + offset
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     def global_from_local(self, lidx):
-        if lidx >= self.local_size:
-            raise IndexError("Local index %s out of bounds" % lidx)
-        local_block, offset = divmod(lidx, self.block_size)
-        global_block = (local_block * self.grid_size) + self.start_block
-        return global_block * self.block_size + offset
+        if isinstance(lidx, Integral):
+            if lidx >= self.local_size:
+                raise IndexError("Local index %s out of bounds" % lidx)
+            local_block, offset = divmod(lidx, self.block_size)
+            global_block = (local_block * self.grid_size) + self.start_block
+            return global_block * self.block_size + offset
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     @property
     def dim_dict(self):
@@ -354,14 +388,20 @@ class UnstructuredMap(MapBase):
         self._local_index = dict(zip(self.indices, local_indices))
 
     def local_from_global(self, gidx):
-        try:
-            lidx = self._local_index[gidx]
-        except KeyError:
-            raise IndexError("Global index %s out of bounds" % gidx)
-        return lidx
+        if isinstance(gidx, Integral):
+            try:
+                lidx = self._local_index[gidx]
+            except KeyError:
+                raise IndexError("Global index %s out of bounds" % gidx)
+            return lidx
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     def global_from_local(self, lidx):
-        return self.indices[lidx]
+        if isinstance(lidx, Integral):
+            return self.indices[lidx]
+        else:
+            raise NotImplementedError("Index must be Integral.")
 
     @property
     def dim_dict(self):
