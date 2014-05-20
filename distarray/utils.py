@@ -171,3 +171,30 @@ def all_equal(iterable):
 
     return all(element == first for element in iterator)
 
+
+class count_round_trips(object):
+    """
+    Context manager for counting the number of roundtrips between a IPython
+    client and controller.
+
+    Usage:
+        >>> with count_round_trips(client) as r:
+        ...     send_42_messages()
+
+        >>> r.count
+        42
+    """
+
+    def __init__(self, client):
+        self.client = client
+        self.orig_count = len(self.client.history)
+        self.count = 0
+
+    def update_count(self):
+        self.count = len(self.client.history) - self.orig_count
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.update_count()
