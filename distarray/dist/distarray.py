@@ -144,13 +144,12 @@ class DistArray(object):
             result = self.context.apply(getit, args=args,
                                         targets=targets)
             result = [i for i in result if i is not None]
-            if len(result) != 1:
-                raise IndexError("Getting more than one result (%s) is not "
-                                 " supported yet." % (result,))
+            if len(result) == 1:
+                return result[0]
             elif result is None:
                 raise IndexError("Index %r is out of bounds" % (index,))
             else:
-                return result[0]
+                return result
         else:
             raise TypeError("Invalid index type.")
 
