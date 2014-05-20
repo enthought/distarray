@@ -26,6 +26,7 @@ from __future__ import absolute_import
 import operator
 from itertools import product
 from abc import ABCMeta, abstractmethod
+from numbers import Integral
 
 import numpy as np
 
@@ -37,7 +38,13 @@ from distarray.metadata_utils import (normalize_dist,
                                       positivify,
                                       validate_grid_shape,
                                       _start_stop_block,
-                                      normalize_dim_dict)
+                                      normalize_dim_dict,
+                                      tuple_intersection)
+
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -192,7 +199,12 @@ class NoDistMap(MapBase):
         self.size = size
 
     def owners(self, idx):
-        return [0] if 0 <= idx < self.size else []
+        if isinstance(idx, Integral):
+            return [0] if 0 <= idx < self.size else []
+        elif isinstance(idx, slice):
+            return [0]  # slicing doesn't complain about out-of-bounds indices
+        else:
+            raise TypeError("Index must be Integral or slice.")
 
     def get_dimdicts(self):
         return ({
@@ -253,10 +265,23 @@ class BlockMap(MapBase):
 
     def owners(self, idx):
         coords = []
-        for (coord, (lower, upper)) in enumerate(self.bounds):
-            if lower <= idx < upper:
-                coords.append(coord)
-        return coords
+        if isinstance(idx, Integral):
+            for (coord, (lower, upper)) in enumerate(self.bounds):
+                if lower <= idx < upper:
+                    coords.append(coord)
+            return coords
+        elif isinstance(idx, slice):
+            if idx.step not in {None, 1}:
+                msg = "Slicing only implemented for step=1"
+                raise NotImplementedError(msg)
+            for (coord, (lower, upper)) in enumerate(self.bounds):
+                slice_tuple = (idx.start if idx.start is not None else 0,
+                               idx.stop if idx.stop is not None else self.size)
+                if tuple_intersection((lower, upper), slice_tuple):
+                    coords.append(coord)
+            return coords if coords != [] else [0]
+        else:
+            raise TypeError("Index must be Integral or slice.")
 
     def get_dimdicts(self):
         grid_ranks = range(len(self.bounds))
@@ -315,8 +340,12 @@ class BlockCyclicMap(MapBase):
         self.block_size = block_size
 
     def owners(self, idx):
-        idx_block = idx // self.block_size
-        return [idx_block % self.grid_size]
+        if isinstance(idx, Integral):
+            idx_block = idx // self.block_size
+            return [idx_block % self.grid_size]
+        else:
+            msg = "Index for BlockCyclicMap must be an Integral."
+            raise NotImplementedError(msg)
 
     def get_dimdicts(self):
         return tuple(({'dist_type': 'c',
@@ -370,7 +399,11 @@ class UnstructuredMap(MapBase):
         # TODO: FIXME: for now, the unstructured map just returns all
         # processes.  Can be optimized if we know the upper and lower bounds
         # for each local array's global indices.
-        return self._owners
+        if isinstance(idx, Integral):
+            return self._owners
+        else:
+            msg = "Index for BlockCyclicMap must be an Integral."
+            raise NotImplementedError(msg)
 
     def get_dimdicts(self):
         if self.indices is None:
