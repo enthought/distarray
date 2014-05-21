@@ -129,10 +129,11 @@ class DistArray(object):
         # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
-        # func that runs locally
+        # to be run locally
         def checked_getitem(arr, index):
             return arr.global_index.checked_getitem(index)
 
+        # to be run locally
         def raw_getitem(arr, index):
             return arr.global_index[index]
 
@@ -168,9 +169,11 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
+        # to be run locally
         def checked_setitem(arr, index, value):
             return arr.global_index.checked_setitem(index, value)
 
+        # to be run locally
         def raw_setitem(arr, index, value):
             arr.global_index[index] = value
 
