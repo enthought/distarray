@@ -11,10 +11,15 @@ Many of these tests require a 4-engine cluster to be running locally.  The
 engines should be launched with MPI, using the MPIEngineSetLauncher.
 """
 
+# Note: This test is here instead of in distarray/plotting/tests so that it can
+# be conditionally skipped.  Having it in inside plotting/ would cause a
+# failure upon running the test due to the `import *` in the plotting
+# directory's `__init__.py`.
+
 import unittest
 
 from distarray.dist import Context, Distribution
-from distarray.plotting import plotting
+from distarray.testing import import_or_skip
 
 
 class TestContext(unittest.TestCase):
@@ -22,6 +27,9 @@ class TestContext(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # raise a skipTest if plotting import fails
+        # (because matplotlib isn't installed, probably)
+        cls.plt = import_or_skip("distarray.plotting")
         cls.context = Context()
         cls.da = Distribution.from_shape(cls.context, (64, 64))
         cls.arr = cls.context.ones(cls.da)
@@ -34,7 +42,7 @@ class TestContext(unittest.TestCase):
     def test_plot_array_distribution(self):
         # Only tests that this runs, not that it's correct
         process_coords = [(0, 0), (1, 0), (2, 0), (3, 0)]
-        plotting.plot_array_distribution(self.arr, process_coords)
+        self.plt.plot_array_distribution(self.arr, process_coords)
 
 
 if __name__ == '__main__':
