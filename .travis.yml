@@ -10,7 +10,7 @@ before_install:
     - pip install numpy
     - pip install pyzmq --install-option="--zmq=bundled"
     - pip install ipython
-      #- pip install matplotlib  # takes too long to build
+    - pip install matplotlib  # for plotting.py
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
     - pip install cython
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git --install-option="--mpi"
@@ -23,6 +23,8 @@ install:
     - python setup.py install
     - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
 before_script:
+    - "export DISPLAY=:99.0"  # for plotting.py
+    - "sh -e /etc/init.d/xvfb start"  # for plotting.py
     - (cd $TRAVIS_BUILD_DIR && dacluster start)
     - lsof | grep python | wc -l
 script:

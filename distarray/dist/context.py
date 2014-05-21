@@ -117,7 +117,6 @@ class Context(object):
         """
         Returns a proxy for an MPI communicator that encompasses all targets in
         self.view.targets (not self.targets, which can be a subset).
-
         """
 
         def get_rank():
@@ -155,12 +154,6 @@ class Context(object):
     def _key_prefix():
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
-
-    @staticmethod
-    def uid():
-        """Generate a unique valid python name."""
-        # Full length seems excessively verbose so use 16 characters.
-        return Context._key_prefix() + uuid.uuid4().hex[:16]
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
@@ -304,7 +297,6 @@ class Context(object):
         See Also
         --------
         load_dnpy : Loading files saved with save_dnpy.
-
         """
         if isinstance(name, six.string_types):
             subs = self._key_and_push(name) + (da.key, da.key)
@@ -361,7 +353,6 @@ class Context(object):
         See Also
         --------
         save_dnpy : Saving files to load with with load_dnpy.
-
         """
         da_key = self._generate_key()
 
@@ -409,7 +400,6 @@ class Context(object):
                 Create file, fail if exists
             ``'a'``
                 Read/write if exists, create otherwise (default)
-
         """
         try:
             # this is just an early check,
@@ -440,7 +430,6 @@ class Context(object):
         -------
         result : DistArray
             A DistArray encapsulating the file loaded.
-
         """
         da_key = self._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
@@ -470,7 +459,6 @@ class Context(object):
         -------
         result : DistArray
             A DistArray encapsulating the file loaded.
-
         """
         try:
             import h5py

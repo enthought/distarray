@@ -430,19 +430,6 @@ class LocalArray(object):
     def __len__(self):
         return self.global_shape[0]
 
-    def checked_getitem(self, global_inds):
-        try:
-            return self.global_index[global_inds]
-        except IndexError:
-            return None
-
-    def checked_setitem(self, global_inds, value):
-        try:
-            self.global_index[global_inds] = value
-            return True
-        except IndexError:
-            return None
-
     def __getitem__(self, index):
         """Get a local item."""
         return self.ndarray[index]

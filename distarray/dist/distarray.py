@@ -23,8 +23,7 @@ import numpy as np
 
 import distarray
 from distarray.dist.maps import Distribution
-from distarray.externals.six import next
-from distarray.utils import has_exactly_one, _raise_nie
+from distarray.utils import _raise_nie
 
 __all__ = ['DistArray']
 
@@ -32,25 +31,6 @@ __all__ = ['DistArray']
 # ---------------------------------------------------------------------------
 # Code
 # ---------------------------------------------------------------------------
-
-_DIM_DATA_PER_RANK = """
-{ddpr_name} = {local_name}.dim_data
-"""
-
-def _make_distribution_from_dim_data_per_rank(local_name, context, targets):
-    dim_data_name = context._generate_key()
-    targets = targets or context.targets
-    context._execute(_DIM_DATA_PER_RANK.format(local_name=local_name,
-                                               ddpr_name=dim_data_name),
-                     targets=targets)
-    dim_data_per_rank = context._pull(dim_data_name, targets=targets)
-    return Distribution.from_dim_data_per_rank(context, dim_data_per_rank)
-
-def _get_attribute(context, targets, key, name):
-    local_key = context._generate_key()
-    context._execute('%s = %s.%s' % (local_key, key, name), targets=targets[0])
-    result = context._pull(local_key, targets=targets[0])
-    return result
 
 
 class DistArray(object):
@@ -91,25 +71,50 @@ class DistArray(object):
 
         If `dtype` is not provided, it will be fetched from the engines.
         """
+
+        def get_dim_datas_and_dtype(arr):
+            return (arr.dim_data, arr.dtype)
+
         da = cls.__new__(cls)
         da.key = key
 
         if (context is None) == (distribution is None):
             errmsg = "Must provide `context` or `distribution` but not both."
             raise RuntimeError(errmsg)
-        elif (distribution is not None):
-            da.distribution = distribution
-            context = distribution.context
-        elif (context is not None):
-            da.distribution = _make_distribution_from_dim_data_per_rank(key,
-                                                                        context,
-                                                                        targets)
 
-        if dtype is None:
-            da._dtype = _get_attribute(context, da.targets, key, 'dtype')
-        else:
+        # has context, get dist and dtype
+        elif (distribution is None) and (dtype is None):
+            res = context.apply(get_dim_datas_and_dtype, args=(key,))
+            dim_datas = [i[0] for i in res]
+            dtypes = [i[1] for i in res]
+            da._dtype = dtypes[0]
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas,
+                                                                  targets)
+
+        # has context and dtype, get dist
+        elif (distribution is None) and (dtype is not None):
+            da._dtype = dtype
+            dim_datas = context.apply(getattr, args=(key, 'dim_data'))
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas,
+                                                                  targets)
+
+        # has distribution, get dtype
+        elif (distribution is not None) and (dtype is None):
+            da.distribution = distribution
+            da._dtype = distribution.context.apply(getattr,
+                                                   args=(key, 'dtype'),
+                                                   targets=[0])[0]
+        # has distribution and dtype
+        elif (distribution is not None) and (dtype is not None):
+            da.distribution = distribution
             da._dtype = dtype
 
+        # sanity check that I didn't miss any cases above, because this is a
+        # confusing function
+        else:
+            assert(False)
         return da
 
     def __del__(self):
@@ -125,9 +130,13 @@ class DistArray(object):
         # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
-        # func that runs locally
-        def getit(arr, index):
-            return arr.checked_getitem(index)
+        # to be run locally
+        def checked_getitem(arr, index):
+            return arr.global_index.checked_getitem(index)
+
+        # to be run locally
+        def raw_getitem(arr, index):
+            return arr.global_index[index]
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -137,12 +146,16 @@ class DistArray(object):
             targets = self.distribution.owning_targets(index)
 
             args = (self.key, index)
-            result = self.context.apply(getit, args=args,
-                                        targets=targets)
+            if self.distribution.has_precise_index:
+                result = self.context.apply(raw_getitem, args=args,
+                                            targets=targets)
+            else:
+                result = self.context.apply(checked_getitem, args=args,
+                                            targets=targets)
             result = [i for i in result if i is not None]
             if len(result) != 1:
                 raise IndexError("Getting more than one result (%s) is not "
-                                 " supported yet." % (result,))
+                                 "supported yet." % (result,))
             elif result is None:
                 raise IndexError("Index %r is out of bounds" % (index,))
             else:
@@ -157,8 +170,13 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
-        def setit(arr, index, value):
-            return arr.checked_setitem(index, value)
+        # to be run locally
+        def checked_setitem(arr, index, value):
+            return arr.global_index.checked_setitem(index, value)
+
+        # to be run locally
+        def raw_setitem(arr, index, value):
+            arr.global_index[index] = value
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -167,14 +185,17 @@ class DistArray(object):
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
             args = (self.key, index, value)
-            result = self.context.apply(setit, args=args,
-                                        targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) > 1:
-                raise IndexError("Setting more than one result (%s) is not "
-                                 " supported yet." % (result,))
-            elif result == []:
-                raise IndexError("Index %s is out of bounds" % (index,))
+            if self.distribution.has_precise_index:
+                self.context.apply(raw_setitem, args=args, targets=targets)
+            else:
+                result = self.context.apply(checked_setitem, args=args,
+                                            targets=targets)
+                result = [i for i in result if i is not None]
+                if len(result) > 1:
+                    raise IndexError("Setting more than one result (%s) is "
+                                     "not supported yet." % (result,))
+                elif result == []:
+                    raise IndexError("Index %s is out of bounds" % (index,))
         else:
             raise TypeError("Invalid index type.")
 
@@ -242,10 +263,9 @@ class DistArray(object):
         return result
 
     def fill(self, value):
-        value_key = self.context._generate_key()
-        self.context._push({value_key:value}, targets=self.targets)
-        self.context._execute('%s.fill(%s)' % (self.key, value_key),
-                              targets=self.targets)
+        def inner_fill(arr, value):
+            arr.fill(value)
+        self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
     def _reduce(self, local_reduce, axis=None, dtype=None, out=None):
 

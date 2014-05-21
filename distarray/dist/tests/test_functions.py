@@ -14,7 +14,7 @@ import unittest
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_allclose
 
 import distarray.dist.functions as functions
 from distarray.dist.context import Context
@@ -70,7 +70,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             expected = ufunc(self.a, self.b, casting='unsafe')
             result = op(self.da, self.db, casting='unsafe')
-        assert_array_equal(result.toarray(), expected)
+        assert_allclose(result.toarray(), expected)
 
     def check_unary_op(self, op_name):
         """Check unary operation for success.
@@ -84,7 +84,7 @@ class TestDistArrayUfuncs(unittest.TestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             expected = ufunc(self.a, casting='unsafe')
             result = op(self.da, casting='unsafe')
-        assert_array_equal(result.toarray(), expected)
+        assert_allclose(result.toarray(), expected)
 
 
 class TestSpecialMethods(unittest.TestCase):
@@ -111,7 +111,7 @@ class TestSpecialMethods(unittest.TestCase):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             result = distop(self.db)
             expected = numpyop(self.b)
-        assert_array_equal(result.toarray(), expected)
+        assert_allclose(result.toarray(), expected)
 
 
 unary_ops = ('absolute', 'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan',
