@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import operator
 from itertools import product
 from functools import reduce
+from collections import Sequence
 
 import numpy as np
 
@@ -143,21 +144,40 @@ class DistArray(object):
 
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
+            return_proxy = True if any(isinstance(idx, slice)
+                                       for idx in index) else False
 
             args = (self.key, index)
             if self.distribution.has_precise_index:
                 result = self.context.apply(raw_getitem, args=args,
-                                            targets=targets)
+                                            targets=targets,
+                                            return_proxy=return_proxy)
             else:
                 result = self.context.apply(checked_getitem, args=args,
-                                            targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) == 1:
-                return result[0]
-            elif result is None:
-                raise IndexError("Index %r is out of bounds" % (index,))
+                                            targets=targets,
+                                            return_proxy=return_proxy)
+
+            # process return value
+            if return_proxy:
+                # proxy returned as result of slice
+                # slicing shouldn't alter the dtype
+                return DistArray.from_localarrays(key=result,
+                                                  context=self.context,
+                                                  targets=targets,
+                                                  dtype=self.dtype)
+
+            elif isinstance(result, Sequence):
+                somethings = [i for i in result if i is not None]
+                if len(somethings) == 0:
+                    # using checked_getitem and all return None
+                    raise IndexError("Index %r is is not present." % (index,))
+                if len(somethings) == 1:
+                    return somethings[0]
+                else:
+                    return result
             else:
-                return result
+                assert False  # impossible is nothing
+
         else:
             raise TypeError("Invalid index type.")
 

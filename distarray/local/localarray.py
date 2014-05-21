@@ -31,12 +31,18 @@ Integral.register(np.unsignedinteger)
 
 
 def _sanitize_indices(indices):
-    if isinstance(indices, Integral) or isinstance(indices, slice):
-        return (indices,)
+    """Tuple-ize and classify `indices`."""
+    if isinstance(indices, Integral):
+        return ('value', (indices,))
+    elif isinstance(indices, slice):
+        return ('view', (indices,))
+    elif all(isinstance(i, Integral) for i in indices):
+        return ('value', indices)
     elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
-        return indices
+        return ('view', indices)
     else:
-        raise TypeError("Index must be a sequence of ints and slices")
+        raise TypeError("Index must be an int, a slice, or a sequence of "
+                        "ints and slices")
 
 
 class GlobalIndex(object):
@@ -65,15 +71,23 @@ class GlobalIndex(object):
         return self.distribution.global_from_local(*local_ind)
 
     def __getitem__(self, global_inds):
-        global_inds = _sanitize_indices(global_inds)
+        return_type, global_inds = _sanitize_indices(global_inds)
         try:
             local_inds = self.global_to_local(*global_inds)
-            return self.ndarray[local_inds]
         except KeyError as err:
             raise IndexError(err)
 
+        ndarray_view = self.ndarray[local_inds]
+
+        if return_type == 'value':
+            return ndarray_view
+        elif return_type == 'view':
+            return fromndarray_like(ndarray_view, self)
+        else:
+            assert False  # impossible is nothing
+
     def __setitem__(self, global_inds, value):
-        global_inds = _sanitize_indices(global_inds)
+        _, global_inds = _sanitize_indices(global_inds)
         try:
             local_inds = self.global_to_local(*global_inds)
             self.ndarray[local_inds] = value
@@ -436,7 +450,14 @@ class LocalArray(object):
 
     def __getitem__(self, index):
         """Get a local item."""
-        return self.ndarray[index]
+        return_type, index = _sanitize_indices(index)
+        if return_type == 'value':
+            return self.ndarray[index]
+        elif return_type == 'view':
+            view = self.ndarray[index]
+            return fromndarray_like(view, self)
+        else:
+            assert False  # impossible is nothing
 
     def __setitem__(self, index, value):
         """Set a local item."""
