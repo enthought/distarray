@@ -119,7 +119,7 @@ nc_test_data = [
 
 nu_test_data = [
         # Note: unstructured indices must be in increasing order
-        #       (restiction of h5py / HDF5)
+        #       (restriction of h5py / HDF5)
 
         (
          {'size': 2,

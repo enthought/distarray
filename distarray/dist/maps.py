@@ -602,6 +602,16 @@ class Distribution(object):
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
 
+    @property
+    def has_precise_index(self):
+        """
+        Does the client-side Distribution know precisely who owns all indices?
+
+        This can be used to determine whether one needs to use the `checked`
+        version of `__getitem__` or `__setitem__` on LocalArrays.
+        """
+        return not any(isinstance(m, UnstructuredMap) for m in self.maps)
+
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
         `idxs` tuple.

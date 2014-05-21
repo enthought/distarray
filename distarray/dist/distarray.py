@@ -129,9 +129,13 @@ class DistArray(object):
         # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
-        # func that runs locally
-        def getit(arr, index):
-            return arr.checked_getitem(index)
+        # to be run locally
+        def checked_getitem(arr, index):
+            return arr.global_index.checked_getitem(index)
+
+        # to be run locally
+        def raw_getitem(arr, index):
+            return arr.global_index[index]
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -141,8 +145,12 @@ class DistArray(object):
             targets = self.distribution.owning_targets(index)
 
             args = (self.key, index)
-            result = self.context.apply(getit, args=args,
-                                        targets=targets)
+            if self.distribution.has_precise_index:
+                result = self.context.apply(raw_getitem, args=args,
+                                            targets=targets)
+            else:
+                result = self.context.apply(checked_getitem, args=args,
+                                            targets=targets)
             result = [i for i in result if i is not None]
             if len(result) == 1:
                 return result[0]
@@ -160,8 +168,13 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
-        def setit(arr, index, value):
-            return arr.checked_setitem(index, value)
+        # to be run locally
+        def checked_setitem(arr, index, value):
+            return arr.global_index.checked_setitem(index, value)
+
+        # to be run locally
+        def raw_setitem(arr, index, value):
+            arr.global_index[index] = value
 
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
@@ -170,14 +183,17 @@ class DistArray(object):
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
             args = (self.key, index, value)
-            result = self.context.apply(setit, args=args,
-                                        targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) > 1:
-                raise IndexError("Setting more than one result (%s) is not "
-                                 " supported yet." % (result,))
-            elif result == []:
-                raise IndexError("Index %s is out of bounds" % (index,))
+            if self.distribution.has_precise_index:
+                self.context.apply(raw_setitem, args=args, targets=targets)
+            else:
+                result = self.context.apply(checked_setitem, args=args,
+                                            targets=targets)
+                result = [i for i in result if i is not None]
+                if len(result) > 1:
+                    raise IndexError("Setting more than one result (%s) is "
+                                     "not supported yet." % (result,))
+                elif result == []:
+                    raise IndexError("Index %s is out of bounds" % (index,))
         else:
             raise TypeError("Invalid index type.")
 
