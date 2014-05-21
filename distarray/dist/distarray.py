@@ -16,13 +16,13 @@ from __future__ import absolute_import
 
 import operator
 from itertools import product
+from functools import reduce
 
 import numpy as np
 
 import distarray
 from distarray.dist.maps import Distribution
-from distarray.externals.six import next
-from distarray.utils import has_exactly_one, _raise_nie
+from distarray.utils import _raise_nie
 
 __all__ = ['DistArray']
 
@@ -30,61 +30,6 @@ __all__ = ['DistArray']
 # ---------------------------------------------------------------------------
 # Code
 # ---------------------------------------------------------------------------
-
-def process_return_value(subcontext, result_key, targets):
-    """Figure out what to return on the Client.
-
-    Parameters
-    ----------
-    key : string
-        Key corresponding to wrapped function's return value.
-
-    Returns
-    -------
-    A DistArray (if locally all values are DistArray), a None (if
-    locally all values are None), or else, pull the result back to the
-    client and return it.  If all but one of the pulled values is None,
-    return that non-None value only.
-    """
-    type_key = subcontext._generate_key()
-    type_statement = "{} = str(type({}))".format(type_key, result_key)
-    subcontext._execute(type_statement, targets=targets)
-    result_type_str = subcontext._pull(type_key, targets=targets)
-
-    def is_NoneType(typestring):
-        return (typestring == "<type 'NoneType'>" or
-                typestring == "<class 'NoneType'>")
-
-    def is_LocalArray(typestring):
-        return typestring == "<class 'distarray.local.localarray.LocalArray'>"
-
-    if all(is_LocalArray(r) for r in result_type_str):
-        result = DistArray.from_localarrays(result_key, context=subcontext)
-    elif all(is_NoneType(r) for r in result_type_str):
-        result = None
-    else:
-        result = subcontext._pull(result_key, targets=targets)
-        if has_exactly_one(result):
-            result = next(x for x in result if x is not None)
-
-    return result
-
-_DIM_DATA_PER_RANK = """
-{ddpr_name} = {local_name}.dim_data
-"""
-
-def _make_distribution_from_dim_data_per_rank(local_name, context):
-    dim_data_name = context._generate_key()
-    context._execute(_DIM_DATA_PER_RANK.format(local_name=local_name,
-                                               ddpr_name=dim_data_name))
-    dim_data_per_rank = context._pull(dim_data_name)
-    return Distribution.from_dim_data_per_rank(context, dim_data_per_rank)
-
-def _get_attribute(context, key, name):
-    local_key = context._generate_key()
-    context._execute0('%s = %s.%s' % (local_key, key, name))
-    result = context._pull0(local_key)
-    return result
 
 
 class DistArray(object):
@@ -96,7 +41,7 @@ class DistArray(object):
         # FIXME: code duplication with context.py.
         ctx = distribution.context
         # FIXME: this is bad...
-        comm_name = ctx._comm_key
+        comm_name = ctx.comm
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
@@ -105,13 +50,13 @@ class DistArray(object):
                'distarray.local.maps.Distribution('
                '{ddpr_name}[{comm_name}.Get_rank()], '
                '{comm_name}), {dtype_name})')
-        ctx._execute(cmd.format(**locals()))
+        ctx._execute(cmd.format(**locals()), targets=distribution.targets)
         self.distribution = distribution
         self.key = da_key
         self._dtype = dtype
 
     @classmethod
-    def from_localarrays(cls, key, context=None, distribution=None,
+    def from_localarrays(cls, key, context=None, targets=None, distribution=None,
                          dtype=None):
         """The caller has already created the LocalArray objects.  `key` is
         their name on the engines.  This classmethod creates a DistArray that
@@ -125,32 +70,58 @@ class DistArray(object):
 
         If `dtype` is not provided, it will be fetched from the engines.
         """
+
+        def get_dim_datas_and_dtype(arr):
+            return (arr.dim_data, arr.dtype)
+
         da = cls.__new__(cls)
         da.key = key
 
         if (context is None) == (distribution is None):
             errmsg = "Must provide `context` or `distribution` but not both."
             raise RuntimeError(errmsg)
-        elif (distribution is not None):
-            da.distribution = distribution
-            context = distribution.context
-        elif (context is not None):
-            da.distribution = _make_distribution_from_dim_data_per_rank(key,
-                                                                        context)
 
-        if dtype is None:
-            da._dtype = _get_attribute(context, key, 'dtype')
-        else:
+        # has context, get dist and dtype
+        elif (distribution is None) and (dtype is None):
+            res = context.apply(get_dim_datas_and_dtype, args=(key,))
+            dim_datas = [i[0] for i in res]
+            dtypes = [i[1] for i in res]
+            da._dtype = dtypes[0]
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas,
+                                                                  targets)
+
+        # has context and dtype, get dist
+        elif (distribution is None) and (dtype is not None):
+            da._dtype = dtype
+            dim_datas = context.apply(getattr, args=(key, 'dim_data'))
+            da.distribution = Distribution.from_dim_data_per_rank(context,
+                                                                  dim_datas,
+                                                                  targets)
+
+        # has distribution, get dtype
+        elif (distribution is not None) and (dtype is None):
+            da.distribution = distribution
+            da._dtype = distribution.context.apply(getattr,
+                                                   args=(key, 'dtype'),
+                                                   targets=[0])[0]
+        # has distribution and dtype
+        elif (distribution is not None) and (dtype is not None):
+            da.distribution = distribution
             da._dtype = dtype
 
+        # sanity check that I didn't miss any cases above, because this is a
+        # confusing function
+        else:
+            assert(False)
         return da
 
     def __del__(self):
-        self.context.delete_key(self.key)
+        self.context.delete_key(self.key, self.targets)
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
-            (self.shape, self.context.targets)
+            (self.shape, self.targets)
         return s
 
     def __getitem__(self, index):
@@ -158,21 +129,28 @@ class DistArray(object):
         # especially for special cases like `index == slice(None)`.
         # This would dramatically improve tondarray's performance.
 
+        # func that runs locally
+        def getit(arr, index):
+            return arr.checked_getitem(index)
+
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
             return self.__getitem__(tuple_index)
 
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
-            result_key = self.context._generate_key()
-            fmt = '%s = %s.checked_getitem(%s)'
-            statement = fmt % (result_key, self.key, index)
-            self.context._execute(statement, targets=targets)
-            result = process_return_value(self.context, result_key, targets=targets)
-            if result is None:
+
+            args = (self.key, index)
+            result = self.context.apply(getit, args=args,
+                                        targets=targets)
+            result = [i for i in result if i is not None]
+            if len(result) != 1:
+                raise IndexError("Getting more than one result (%s) is not "
+                                 " supported yet." % (result,))
+            elif result is None:
                 raise IndexError("Index %r is out of bounds" % (index,))
             else:
-                return result
+                return result[0]
         else:
             raise TypeError("Invalid index type.")
 
@@ -183,20 +161,24 @@ class DistArray(object):
         # `value` and assign to local arrays. This would dramatically
         # improve the fromndarray method's performance.
 
+        def setit(arr, index, value):
+            return arr.checked_setitem(index, value)
+
         if isinstance(index, int) or isinstance(index, slice):
             tuple_index = (index,)
             return self.__setitem__(tuple_index, value)
 
         elif isinstance(index, tuple):
             targets = self.distribution.owning_targets(index)
-            result_key = self.context._generate_key()
-            fmt = '%s = %s.checked_setitem(%s, %s)'
-            statement = fmt % (result_key, self.key, index, value)
-            self.context._execute(statement, targets=targets)
-            result = process_return_value(self.context, result_key, targets=targets)
-            if result is None:
-                raise IndexError("Index %r is out of bounds" % (index,))
-
+            args = (self.key, index, value)
+            result = self.context.apply(setit, args=args,
+                                        targets=targets)
+            result = [i for i in result if i is not None]
+            if len(result) > 1:
+                raise IndexError("Setting more than one result (%s) is not "
+                                 " supported yet." % (result,))
+            elif result == []:
+                raise IndexError("Index %s is out of bounds" % (index,))
         else:
             raise TypeError("Invalid index type.")
 
@@ -236,12 +218,16 @@ class DistArray(object):
     def itemsize(self):
         return self._dtype.itemsize
 
+    @property
+    def targets(self):
+        return self.distribution.targets
+
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
         local_name = self.context._generate_key()
-        self.context._execute('%s = %s.copy()' % (local_name, self.key))
-        local_arrays = self.context._pull(local_name)
+        self.context._execute('%s = %s.copy()' % (local_name, self.key), targets=self.targets)
+        local_arrays = self.context._pull(local_name, targets=self.targets)
         for local_array in local_arrays:
             maps = (list(ax_map.global_iter) for ax_map in
                     local_array.distribution)
@@ -254,24 +240,26 @@ class DistArray(object):
     def get_dist_matrix(self):
         key = self.context._generate_key()
         self.context._execute0(
-            '%s = %s.get_dist_matrix()' % (key, self.key))
-        result = self.context._pull0(key)
+            '%s = %s.get_dist_matrix()' % (key, self.key),
+            targets=self.targets)
+        result = self.context._pull(key, targets=self.targets[0])
         return result
 
     def fill(self, value):
-        value_key = self.context._generate_key()
-        self.context._push({value_key:value})
-        self.context._execute('%s.fill(%s)' % (self.key, value_key))
+        def inner_fill(arr, value):
+            arr.fill(value)
+        self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
-    #TODO FIXME: implement axis and out kwargs.
+    # TODO FIXME: implement axis and out kwargs.
     def sum(self, axis=None, dtype=None, out=None):
         if axis or out is not None:
             _raise_nie()
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.sum(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.sum(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def mean(self, axis=None, dtype=float, out=None):
@@ -280,8 +268,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def var(self, axis=None, dtype=None, out=None):
@@ -290,8 +279,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.var(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.var(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def std(self, axis=None, dtype=None, out=None):
@@ -300,8 +290,9 @@ class DistArray(object):
         keys = self.context._key_and_push(axis, dtype)
         result_key = self.context._generate_key()
         subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.std(%s,%s)' % subs)
-        result = self.context._pull0(result_key)
+        self.context._execute('%s = %s.std(%s,%s)' % subs,
+                              targets=self.targets)
+        result = self.context._pull(result_key, targets=self.targets[0])
         return result
 
     def get_ndarrays(self):
@@ -314,8 +305,9 @@ class DistArray(object):
 
         """
         key = self.context._generate_key()
-        self.context._execute('%s = %s.get_localarray()' % (key, self.key))
-        result = self.context._pull(key)
+        self.context._execute('%s = %s.get_localarray()' % (key, self.key),
+                              targets=self.targets)
+        result = self.context._pull(key, targets=self.targets)
         return result
 
     def get_localarrays(self):
@@ -327,13 +319,14 @@ class DistArray(object):
             one localarray per process
 
         """
-        result = self.context._pull(self.key)
+        result = self.context._pull(self.key, targets=self.targets)
         return result
 
     def get_localshapes(self):
         key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key))
-        result = self.context._pull(key)
+        self.context._execute('%s = %s.local_shape' % (key, self.key),
+                              targets=self.targets)
+        result = self.context._pull(key, targets=self.targets)
         return result
 
     # Binary operators

@@ -56,3 +56,26 @@ class TestClientMap(unittest.TestCase):
                 rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
                 actual = cm.owning_ranks((r,c))
                 self.assertSequenceEqual(actual, [rank])
+
+
+    def test_is_compatible(self):
+        nr, nc, nd = 10**5, 10**6, 10**4
+
+        cm0 = client_map.Distribution.from_shape(
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+        self.assertTrue(cm0.is_compatible(cm0))
+
+        cm1 = client_map.Distribution.from_shape(
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+        self.assertTrue(cm1.is_compatible(cm1))
+
+        self.assertTrue(cm0.is_compatible(cm1))
+        self.assertTrue(cm1.is_compatible(cm0))
+        
+        nr -= 1; nc -= 1; nd -= 1
+
+        cm2 = client_map.Distribution.from_shape(
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+
+        self.assertFalse(cm1.is_compatible(cm2))
+        self.assertFalse(cm2.is_compatible(cm1))
