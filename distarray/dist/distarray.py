@@ -247,12 +247,10 @@ class DistArray(object):
         self.context._execute('%s.fill(%s)' % (self.key, value_key),
                               targets=self.targets)
 
-    def new_sum(self, axis=None, dtype=None, out=None):
+    def _reduce(self, local_reduce, axis=None, dtype=None, out=None):
 
-        if out is not None:
+        if out is not None or axis is None:
             _raise_nie()
-        if axis is None:
-            pass
 
         if not isinstance(axis, Sequence):
             axis = (axis,)
@@ -264,6 +262,14 @@ class DistArray(object):
         out_dist = self.distribution.reduce(axis=axis)
         out_comm = out_dist.comm
         ddpr = out_dist.get_dim_data_per_rank()
+
+        out_key = self.context.apply(local_reduce, 
+                                     (self.key, out_comm, ddpr, dtype, axis),
+                                     targets=self.targets, return_proxy=True)
+
+        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
+
+    def sum(self, axis=None, dtype=None, out=None):
 
         def _local_sum(larr, out_comm, ddpr, dtype, axes):
             from distarray.local.mpiutils import MPI
@@ -287,34 +293,34 @@ class DistArray(object):
 
             return out
 
-        out_key = self.context.apply(_local_sum, 
-                                     (self.key, out_comm, ddpr, dtype, axis),
-                                     targets=self.targets, return_proxy=True)
-
-        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
-
-    #TODO FIXME: implement axis and out kwargs.
-    def sum(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.sum(%s,%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+        return self._reduce(_local_sum, axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+
+        def _local_mean(larr, out_comm, ddpr, dtype, axes):
+            from distarray.local.mpiutils import MPI
+            import distarray.local
+
+            if out_comm == MPI.COMM_NULL:
+                out = out_ndarray = None
+            else:
+                dist = distarray.local.maps.Distribution(ddpr[out_comm.Get_rank()], out_comm)
+                out = distarray.local.empty(dist, dtype)
+                out_ndarray = out.ndarray
+
+            remaining_dims = [False] * larr.ndim
+            for axis in axes:
+                remaining_dims[axis] = True
+            reduce_comm = larr.comm.Sub(remaining_dims)
+            local_reduce = larr.ndarray.sum(axis=axes, dtype=dtype)
+            reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
+
+            if out_comm != MPI.COMM_NULL:
+                out_ndarray /= (larr.global_size / float(out.global_size))
+
+            return out
+
+        return self._reduce(_local_mean, axis, dtype, out)
 
     def var(self, axis=None, dtype=None, out=None):
         if axis or out is not None:

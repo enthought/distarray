@@ -410,25 +410,30 @@ class TestReduceMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.context.close()
 
-    def test_sum(self):
-        np_sum = self.arr.sum()
-        da_sum = self.darr.sum()
-        self.assertEqual(da_sum, np_sum)
+    def test_sum_along_axis0(self):
+        np_sum = self.arr.sum(axis=0)
+        da_sum = self.darr.sum(axis=0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_along_axis1(self):
+        np_sum = self.arr.sum(axis=1)
+        da_sum = self.darr.sum(axis=1)
+        assert_allclose(da_sum.tondarray(), np_sum)
 
     def test_sum_dtype(self):
-        np_sum = self.arr.sum(dtype=int)
-        da_sum = self.darr.sum(dtype=int)
-        self.assertEqual(da_sum, np_sum)
+        da_sum = self.darr.sum(axis=0, dtype=int)
+        np_sum = self.arr.sum(axis=0, dtype=int)
+        assert_allclose(da_sum.tondarray(), np_sum)
 
-    def test_mean(self):
-        np_mean = self.arr.mean()
-        da_mean = self.darr.mean()
-        self.assertEqual(da_mean, np_mean)
+    def test_mean_along_axis_1(self):
+        da_mean = self.darr.mean(axis=0)
+        np_mean = self.arr.mean(axis=0)
+        assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_mean_dtype(self):
-        np_mean = self.arr.mean(dtype=int)
-        da_mean = self.darr.mean(dtype=int)
-        self.assertEqual(da_mean, np_mean)
+        da_mean = self.darr.mean(axis=0, dtype=int)
+        np_mean = self.arr.mean(axis=0, dtype=int)
+        assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_var(self):
         np_var = self.arr.var()
