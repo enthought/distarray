@@ -8,14 +8,18 @@ Utilities.
 """
 
 from math import sqrt
+import random
 import uuid
 
 from distarray.externals.six import next
 
 DISTARRAY_BASE_NAME = '__distarray__'
 
+
 def uid():
-    return DISTARRAY_BASE_NAME + uuid.uuid4().hex[:16]
+    suffix = uuid.UUID(int=random.getrandbits(8*16)).hex[:16]
+    return DISTARRAY_BASE_NAME + suffix
+
 
 def multi_for(iterables):
     if not iterables:
