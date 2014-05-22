@@ -42,11 +42,6 @@ from distarray.metadata_utils import (normalize_dist,
                                       tuple_intersection)
 
 
-# Register numpy integer types with numbers.Integral ABC.
-Integral.register(np.signedinteger)
-Integral.register(np.unsignedinteger)
-
-
 def _dedup_dim_dicts(dim_dicts):
     """ Internal helper function to take a list of dimension dictionaries
     and remove the dupes.  What remains should be one dictionary per rank

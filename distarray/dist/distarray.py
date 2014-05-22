@@ -18,26 +18,20 @@ import operator
 from itertools import product
 from functools import reduce
 from collections import Sequence
-from numbers import Integral
 
 import numpy as np
 
 import distarray
+from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
 
 __all__ = ['DistArray']
 
 
-# Register numpy integer types with numbers.Integral ABC.
-Integral.register(np.signedinteger)
-Integral.register(np.unsignedinteger)
-
-
 # ---------------------------------------------------------------------------
 # Code
 # ---------------------------------------------------------------------------
-
 
 class DistArray(object):
 
@@ -133,10 +127,30 @@ class DistArray(object):
             (self.shape, self.targets)
         return s
 
+    def _process_return_value(self, result, return_proxy, index, targets):
+
+        if return_proxy:
+            # proxy returned as result of slice
+            # slicing shouldn't alter the dtype
+            return DistArray.from_localarrays(key=result,
+                                              context=self.context,
+                                              targets=targets,
+                                              dtype=self.dtype)
+
+        elif isinstance(result, Sequence):
+            somethings = [i for i in result if i is not None]
+            if len(somethings) == 0:
+                # using checked_getitem and all return None
+                raise IndexError("Index %r is is not present." % (index,))
+            if len(somethings) == 1:
+                return somethings[0]
+            else:
+                return result
+        else:
+            assert False  # impossible is nothing
+
+
     def __getitem__(self, index):
-        #TODO: FIXME: major performance improvements possible here,
-        # especially for special cases like `index == slice(None)`.
-        # This would dramatically improve tondarray's performance.
 
         # to be run locally
         def checked_getitem(arr, index):
@@ -146,48 +160,24 @@ class DistArray(object):
         def raw_getitem(arr, index):
             return arr.global_index[index]
 
-        if isinstance(index, Integral) or isinstance(index, slice):
-            tuple_index = (index,)
-            return self.__getitem__(tuple_index)
+        return_type, index = sanitize_indices(index)
+        return_proxy = (return_type == 'view')
 
-        elif isinstance(index, tuple):
-            targets = self.distribution.owning_targets(index)
-            return_proxy = True if any(isinstance(idx, slice)
-                                       for idx in index) else False
+        targets = self.distribution.owning_targets(index)
 
-            args = (self.key, index)
-            if self.distribution.has_precise_index:
-                result = self.context.apply(raw_getitem, args=args,
-                                            targets=targets,
-                                            return_proxy=return_proxy)
-            else:
-                result = self.context.apply(checked_getitem, args=args,
-                                            targets=targets,
-                                            return_proxy=return_proxy)
-
-            # process return value
-            if return_proxy:
-                # proxy returned as result of slice
-                # slicing shouldn't alter the dtype
-                return DistArray.from_localarrays(key=result,
-                                                  context=self.context,
-                                                  targets=targets,
-                                                  dtype=self.dtype)
-
-            elif isinstance(result, Sequence):
-                somethings = [i for i in result if i is not None]
-                if len(somethings) == 0:
-                    # using checked_getitem and all return None
-                    raise IndexError("Index %r is is not present." % (index,))
-                if len(somethings) == 1:
-                    return somethings[0]
-                else:
-                    return result
-            else:
-                assert False  # impossible is nothing
-
+        args = (self.key, index)
+        if self.distribution.has_precise_index:
+            result = self.context.apply(raw_getitem, args=args,
+                                        targets=targets,
+                                        return_proxy=return_proxy)
         else:
-            raise TypeError("Invalid index type.")
+            result = self.context.apply(checked_getitem, args=args,
+                                        targets=targets,
+                                        return_proxy=return_proxy)
+
+        return self._process_return_value(result, return_proxy, index,
+                                          targets)
+
 
     def __setitem__(self, index, value):
         #TODO: FIXME: major performance improvements possible here.

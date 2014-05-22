@@ -270,3 +270,18 @@ def tuple_intersection(t1, t2):
     stop = min(t1[1], t2[1])
     start = max(t1[0], t2[0])
     return (start, stop) if stop - start > 0 else None
+
+
+def sanitize_indices(indices):
+    """Tuple-ize and classify `indices`."""
+    if isinstance(indices, Integral):
+        return ('value', (indices,))
+    elif isinstance(indices, slice):
+        return ('view', (indices,))
+    elif all(isinstance(i, Integral) for i in indices):
+        return ('value', indices)
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
+        return ('view', indices)
+    else:
+        raise TypeError("Index must be an Integral, a slice, or a sequence "
+                        "of Integrals and slices")
