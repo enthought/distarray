@@ -82,6 +82,20 @@ class Context(object):
         self._comm_from_targets = {tuple(sorted(self.view.targets)) : self._base_comm}
         self.comm = self._make_subcomm(self.targets)
 
+        cmd = """
+def proxyize(obj, context_name='__main__'):
+    main = __import__('__main__')
+    if context_name != '__main__':
+        module = getattr(main, context_name)
+    else:
+        module = main
+    name = distarray.utils.uid()
+    setattr(module, name, obj)
+    return name
+"""
+
+        self.view.execute(cmd)
+
     def _setup_context_key(self):
         """
         Create a dict on the engines which will hold everything from
