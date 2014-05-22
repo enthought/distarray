@@ -212,25 +212,48 @@ def normalize_dim_dict(dd):
         dd['proc_grid_rank'] = 0
 
 
-def positivify(index, size):
-    """Given a negative index, return its positive equivalent."""
-    if index is None:
+def _positivify(index, size):
+    """Return a positive index offset from a Sequence's start."""
+    if index is None or index >= 0:
         return index
-    elif isinstance(index, Integral):
-        if 0 <= index < size:
-            return index
-        elif -size <= index < 0:
-            return size + index
-        else:
-            raise IndexError("Index %r out of bounds" % index)
+    elif index < 0:
+        return size + index
+
+def _check_bounds(index, size):
+    """Check if an index is in bounds.
+
+    Assumes a positive index as returned by _positivify.
+    """
+    if index >= size:
+        raise IndexError("Index %r out of bounds" % index)
+
+
+def positivify(index, size):
+    """Check an index is within bounds and return a positive version.
+
+    Parameters
+    ----------
+    index : Integral or slice
+    size : Integral
+
+    Raises
+    ------
+    IndexError
+        for out-of-bounds indices
+    NotImplementedError
+        for negative steps
+    """
+    if isinstance(index, Integral):
+        index = _positivify(index, size)
+        _check_bounds(index, size)
+        return index
     elif isinstance(index, slice):
-        if (index.step is not None) and (index.step < 0):
-            raise NotImplemented("Negative steps not implemented.")
-        start = positivify(index.start, size)
-        stop = positivify(index.stop, size)
+        start = _positivify(index.start, size)
+        stop = _positivify(index.stop, size)
+        # slice indexing doesn't check bounds
         return slice(start, stop, index.step)
     else:
-        raise TypeError("`index` must be an int or slice.")
+        raise TypeError("`index` must be of type Integral or slice.")
 
 
 def tuple_intersection(t1, t2):

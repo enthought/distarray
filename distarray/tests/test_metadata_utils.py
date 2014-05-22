@@ -60,6 +60,11 @@ class TestPositivify(unittest.TestCase):
         expected = slice(3, 9, 2)
         self.assertEqual(result, expected)
 
+    def test_out_of_bounds_slice(self):
+        s = slice(50, 90)
+        result = metadata_utils.positivify(s, 10)
+        self.assertEqual(result, s)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
