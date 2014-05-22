@@ -192,6 +192,7 @@ class NoDistMap(MapBase):
             msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
+        self.bounds = [(0, self.size)]
 
     def owners(self, idx):
         if isinstance(idx, Integral):
@@ -493,6 +494,46 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
+    @classmethod
+    def from_slice(cls, distribution, index_tuple):
+        """Make a Distribution from another Distribution and a slice."""
+        self = cls.__new__(cls)
+        if not all(dist_type in {'n', 'b'} for dist_type in distribution.dist):
+            msg = "Slicing only implemented for 'n' and 'b' dist_types."
+            raise NotImplementedError(msg)
+
+        new_targets = distribution.owning_targets(index_tuple)
+        global_dim_data = []
+        # iterate over the dimensions
+        for map_, idx in zip(distribution.maps, index_tuple):
+            new_bounds = [0]
+
+            if isinstance(idx, Integral):
+                # make an equivalent slice object
+                idx = slice(idx, idx+1)
+
+            if isinstance(idx, slice):
+                start = idx.start if idx.start is not None else 0
+                stop = idx.stop if idx.stop is not None else map_.bounds[-1]
+                # iterate over the processes in this dimension
+                for proc_bounds in map_.bounds:
+                    intersection = tuple_intersection(proc_bounds,
+                                                      (start, stop))
+                    if intersection:
+                        size = intersection[1] - intersection[0]
+                        new_bounds.append(size + new_bounds[-1])
+            else:
+                msg = "Index must be a sequence of Integrals and slices."
+                raise TypeError(msg)
+
+            global_dim_data.append({'dist_type': 'b',
+                                    'bounds': new_bounds})
+
+        return self.__class__(context=distribution.context,
+                              global_dim_data=global_dim_data,
+                              targets=new_targets)
+
+
     def __init__(self, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
@@ -592,7 +633,7 @@ class Distribution(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
 
         nelts = reduce(operator.mul, self.grid_shape)
         self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
