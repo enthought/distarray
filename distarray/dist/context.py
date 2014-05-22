@@ -77,11 +77,8 @@ class Context(object):
                           "import distarray.utils; "
                           "import numpy")
 
-        self.context_key = self._setup_context_key()
-        self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)) : self._base_comm}
-        self.comm = self._make_subcomm(self.targets)
-
+        # setup proxyize which is used by context.apply in the rest of the
+        # setup.
         cmd = """
 def proxyize(obj, context_name='__main__'):
     main = __import__('__main__')
@@ -95,6 +92,11 @@ def proxyize(obj, context_name='__main__'):
 """
 
         self.view.execute(cmd)
+
+        self.context_key = self._setup_context_key()
+        self._base_comm = self._make_base_comm()
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
+        self.comm = self._make_subcomm(self.targets)
 
     def _setup_context_key(self):
         """
@@ -119,11 +121,12 @@ def proxyize(obj, context_name='__main__'):
             pass
 
         def _make_new_comm(rank_list, base_comm):
-            import distarray.local.mpiutils
-            return distarray.local.mpiutils.create_comm_with_list(rank_list, base_comm)
+            import distarray.local.mpiutils as mpiutils
+            res = mpiutils.create_comm_with_list(rank_list, base_comm)
+            return proxyize(res)  # noqa
 
         new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm),
-                              targets=self.view.targets, return_proxy=True)
+                              targets=self.view.targets)[0]
 
         self._comm_from_targets[tuple(new_targets)] = new_comm
         return new_comm
@@ -157,12 +160,12 @@ def proxyize(obj, context_name='__main__'):
         # involved in the new communicator.  This is because
         # create_comm_with_list() issues a collective MPI operation.
         def _make_new_comm(rank_list):
-            import distarray.local.mpiutils
-            new_comm = distarray.local.mpiutils.create_comm_with_list(rank_list)
-            return new_comm
+            import distarray.local.mpiutils as mpiutils
+            new_comm = mpiutils.create_comm_with_list(rank_list)
+            return proxyize(new_comm)  # noqa
 
-        return self.apply(_make_new_comm, args=(ranks,), targets=self.view.targets, return_proxy=True)
-
+        return self.apply(_make_new_comm, args=(ranks,),
+                          targets=self.view.targets)[0]
 
     # Key management routines:
     @staticmethod
@@ -543,8 +546,7 @@ def proxyize(obj, context_name='__main__'):
         self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
-    def apply(self, func, args=None, kwargs=None, targets=None,
-              return_proxy=False):
+    def apply(self, func, args=None, kwargs=None, targets=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -557,20 +559,13 @@ def proxyize(obj, context_name='__main__'):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
-        return_proxy : bool
-            if False (default) return result.
-            if True, return the name (as a str) of the result on the engines.
 
         Returns
         -------
-        if return_proxy:
             return a list of the results on the each engine.
-        else:
-            the name of the result on all the engines.
         """
 
-        def func_wrapper(func, result_name, random_state, context_key, args,
-                         kwargs):
+        def func_wrapper(func, random_state, context_key, args, kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -616,17 +611,12 @@ def proxyize(obj, context_name='__main__'):
                 if (isinstance(val, str) and val.startswith(prefix)):
                     kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
 
-            if result_name is not None:
-                setattr(main, result_name, func(*args, **kwargs))
-                return result_name
-            else:
-                return func(*args, **kwargs)
+            return func(*args, **kwargs)
 
         # default arguments
-        result_name = None if not return_proxy else uid()
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        wrapped_args = (func, result_name, random.getstate(), self.context_key,
+        wrapped_args = (func, random.getstate(), self.context_key,
                         args, kwargs)
         # increment the random state so we don't get the same state pushed to
         # the engines if we do `context.apply twice in a row.
@@ -634,10 +624,5 @@ def proxyize(obj, context_name='__main__'):
 
         targets = self.targets if targets is None else targets
 
-        result = self.view._really_apply(func_wrapper, args=wrapped_args,
-                                         targets=targets, block=True)
-        if return_proxy:
-            # result is a list of the same name 4 times, so just return 1.
-            return result[0]
-        else:
-            return result
+        return self.view._really_apply(func_wrapper, args=wrapped_args,
+                                       targets=targets, block=True)

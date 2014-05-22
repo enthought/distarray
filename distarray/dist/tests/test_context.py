@@ -222,8 +222,8 @@ class TestApply(unittest.TestCase):
     def test_apply_proxy(self):
 
         def foo():
-            return 10
-        name = self.context.apply(foo, return_proxy=True)
+            return proxyize(10)  # noqa
+        name = self.context.apply(foo)[0]
 
         def bar(obj):
             return obj + 10
