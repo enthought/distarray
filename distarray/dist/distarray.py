@@ -18,6 +18,7 @@ import operator
 from itertools import product
 from functools import reduce
 from collections import Sequence
+from numbers import Integral
 
 import numpy as np
 
@@ -26,6 +27,11 @@ from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
 
 __all__ = ['DistArray']
+
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +144,7 @@ class DistArray(object):
         def raw_getitem(arr, index):
             return arr.global_index[index]
 
-        if isinstance(index, int) or isinstance(index, slice):
+        if isinstance(index, Integral) or isinstance(index, slice):
             tuple_index = (index,)
             return self.__getitem__(tuple_index)
 
