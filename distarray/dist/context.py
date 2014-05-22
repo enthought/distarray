@@ -13,6 +13,7 @@ from __future__ import absolute_import
 
 import collections
 import atexit
+import random
 
 import numpy
 
@@ -107,7 +108,7 @@ class Context(object):
             import distarray.local.mpiutils
             return distarray.local.mpiutils.create_comm_with_list(rank_list, base_comm)
 
-        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm), 
+        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm),
                               targets=self.view.targets, return_proxy=True)
 
         self._comm_from_targets[tuple(new_targets)] = new_comm
@@ -554,16 +555,40 @@ class Context(object):
             the name of the result on all the engines.
         """
 
-        def func_wrapper(func, result_name, args, kwargs):
+        def func_wrapper(func, result_name, random_state, context_key, args,
+                         kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
             `__distarray__<some uuid>`.
             """
             from importlib import import_module
+            import random
+            import types
+
+            # set the random state
+            random.setstate(random_state)
+
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
 
+            # Modify func to change the namespace it executes in.
+            # but builtins don't have __code__, __globals__, etc.
+            if not isinstance(func, types.BuiltinFunctionType):
+                # get func's building  blocks first
+                func_code = func.__code__
+                func_globals = func.__globals__  # noqa we don't need these.
+                func_name = func.__name__
+                func_defaults = func.__defaults__
+                func_closure = func.__closure__
+
+                # build the func's new execution environment
+                new_func_globals = dict({'context_key': context_key},
+                                        **main.__dict__)
+                # create the new func
+                func = types.FunctionType(func_code, new_func_globals,
+                                          func_name, func_defaults,
+                                          func_closure)
             # convert args
             args = list(args)
             for i, a in enumerate(args):
@@ -587,7 +612,11 @@ class Context(object):
         result_name = None if not return_proxy else uid()
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        wrapped_args = (func, result_name, args, kwargs)
+        wrapped_args = (func, result_name, random.getstate(), self.context_key,
+                        args, kwargs)
+        # increment the random state so we don't get the same state pushed to
+        # the engines if we do `context.apply twice in a row.
+        uid()
 
         targets = self.targets if targets is None else targets
 
