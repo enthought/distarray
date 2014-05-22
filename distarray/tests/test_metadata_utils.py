@@ -25,6 +25,14 @@ class TestPositivify(unittest.TestCase):
         result = metadata_utils.positivify(-2, 10)
         self.assertEqual(result, 8)
 
+    def test_out_of_bounds_positive(self):
+        with self.assertRaises(IndexError):
+            metadata_utils.positivify(11, 10)
+
+    def test_out_of_bounds_negative(self):
+        with self.assertRaises(IndexError):
+            metadata_utils.positivify(-51, 10)
+
     def test_positive_slice(self):
         s = slice(5, 7)
         result = metadata_utils.positivify(s, 10)

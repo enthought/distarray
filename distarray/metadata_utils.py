@@ -224,12 +224,12 @@ def _check_bounds(index, size):
 
     Assumes a positive index as returned by _positivify.
     """
-    if index >= size:
+    if not 0 <= index < size:
         raise IndexError("Index %r out of bounds" % index)
 
 
 def positivify(index, size):
-    """Check an index is within bounds and return a positive version.
+    """Check that an index is within bounds and return a positive version.
 
     Parameters
     ----------
