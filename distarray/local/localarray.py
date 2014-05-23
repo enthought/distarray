@@ -51,7 +51,9 @@ class GlobalIndex(object):
         return self.distribution.global_from_local(*local_ind)
 
     def get_item(self, global_inds, new_distribution=None):
-        return_type, global_inds = sanitize_indices(global_inds)
+        return_type, global_inds = sanitize_indices(global_inds,
+                                                    ndim=self.distribution.ndim,
+                                                    shape=self.distribution.global_shape)
         try:
             local_inds = self.global_to_local(*global_inds)
         except KeyError as err:
