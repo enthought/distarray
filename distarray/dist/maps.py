@@ -494,18 +494,16 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
-    @classmethod
-    def from_slice(cls, distribution, index_tuple):
-        """Make a Distribution from another Distribution and a slice."""
-        self = cls.__new__(cls)
-        if not all(dist_type in {'n', 'b'} for dist_type in distribution.dist):
+    def slice(self, index_tuple):
+        """Make a new Distribution from a slice."""
+        if not all(dist_type in {'n', 'b'} for dist_type in self.dist):
             msg = "Slicing only implemented for 'n' and 'b' dist_types."
             raise NotImplementedError(msg)
 
-        new_targets = distribution.owning_targets(index_tuple)
+        new_targets = self.owning_targets(index_tuple)
         global_dim_data = []
         # iterate over the dimensions
-        for map_, idx in zip(distribution.maps, index_tuple):
+        for map_, idx in zip(self.maps, index_tuple):
             new_bounds = [0]
 
             if isinstance(idx, Integral):
@@ -529,7 +527,7 @@ class Distribution(object):
             global_dim_data.append({'dist_type': 'b',
                                     'bounds': new_bounds})
 
-        return self.__class__(context=distribution.context,
+        return self.__class__(context=self.context,
                               global_dim_data=global_dim_data,
                               targets=new_targets)
 

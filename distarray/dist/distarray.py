@@ -173,8 +173,7 @@ class DistArray(object):
 
         args = [self.key, index]
         if return_proxy:  # returning a new DistArray view
-            new_distribution = Distribution.from_slice(self.distribution,
-                                                       index)
+            new_distribution = self.distribution.slice(index)
             ddpr = new_distribution.get_dim_data_per_rank()
             args.extend([ddpr, new_distribution.comm])
 
