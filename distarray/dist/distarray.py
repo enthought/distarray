@@ -157,15 +157,27 @@ class DistArray(object):
             return arr.global_index.checked_getitem(index)
 
         # to be run locally
-        def raw_getitem(arr, index):
-            return arr.global_index[index]
+        def raw_getitem(arr, index, ddpr=None, comm=None):
+            if ddpr is not None and comm is not None:
+                from distarray.local.maps import Distribution
+                local_distribution = Distribution(ddpr[comm.Get_rank()],
+                                                  comm=comm)
+                return arr.global_index.get_item(index, local_distribution)
+            else:
+                return arr.global_index[index]
 
         return_type, index = sanitize_indices(index)
         return_proxy = (return_type == 'view')
 
         targets = self.distribution.owning_targets(index)
 
-        args = (self.key, index)
+        args = [self.key, index]
+        if return_proxy:  # returning a new DistArray view
+            new_distribution = Distribution.from_slice(self.distribution,
+                                                       index)
+            ddpr = new_distribution.get_dim_data_per_rank()
+            args.extend([ddpr, new_distribution.comm])
+
         if self.distribution.has_precise_index:
             result = self.context.apply(raw_getitem, args=args,
                                         targets=targets,
@@ -175,8 +187,7 @@ class DistArray(object):
                                         targets=targets,
                                         return_proxy=return_proxy)
 
-        return self._process_return_value(result, return_proxy, index,
-                                          targets)
+        return self._process_return_value(result, return_proxy, index, targets)
 
 
     def __setitem__(self, index, value):

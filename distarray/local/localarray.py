@@ -50,6 +50,24 @@ class GlobalIndex(object):
     def local_to_global(self, *local_ind):
         return self.distribution.global_from_local(*local_ind)
 
+    def get_item(self, global_inds, new_distribution=None):
+        return_type, global_inds = sanitize_indices(global_inds)
+        try:
+            local_inds = self.global_to_local(*global_inds)
+        except KeyError as err:
+            raise IndexError(err)
+
+        ndarray_view = self.ndarray[local_inds]
+
+        if return_type == 'value':
+            return ndarray_view
+        elif return_type == 'view':
+            return LocalArray(distribution=new_distribution,
+                              dtype=self.ndarray.dtype,
+                              buf=ndarray_view)
+        else:
+            assert False  # impossible is nothing
+
     def __getitem__(self, global_inds):
         return_type, global_inds = sanitize_indices(global_inds)
         try:
@@ -62,7 +80,8 @@ class GlobalIndex(object):
         if return_type == 'value':
             return ndarray_view
         elif return_type == 'view':
-            return fromndarray_like(ndarray_view, self)
+            msg = "__getitem__ does not support slices.  See `get_item`."
+            raise TypeError(msg)
         else:
             assert False  # impossible is nothing
 
@@ -434,8 +453,8 @@ class LocalArray(object):
         if return_type == 'value':
             return self.ndarray[index]
         elif return_type == 'view':
-            view = self.ndarray[index]
-            return fromndarray_like(view, self)
+            msg = "__getitem__ does not support slices.  See `global_index.get_item`."
+            raise TypeError(msg)
         else:
             assert False  # impossible is nothing
 

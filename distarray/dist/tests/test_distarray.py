@@ -47,12 +47,6 @@ class TestDistArray(unittest.TestCase):
             dap[-i] = i
             self.assertEqual(dap[-i], i)
 
-    def test_getitem_slice_block_dist(self):
-        size = 10
-        expected = numpy.random.randint(10, size=size)
-        arr = self.dac.fromarray(expected)
-        assert_array_equal(arr[:], expected)
-
     def test_set_and_getitem_nd_block_dist(self):
         size = 5
         distribution = Distribution.from_shape(self.dac, (size, size),
@@ -124,6 +118,33 @@ class TestDistArray(unittest.TestCase):
         dap = self.dac.zeros(distribution)
         ndarr = numpy.zeros((3, 3))
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
+
+
+class TestSlicing(unittest.TestCase):
+
+    def setUp(self):
+        self.dac = Context()
+
+    def tearDown(self):
+        self.dac.close()
+
+    def test_getitem_full_slice_block_dist(self):
+        size = 10
+        expected = numpy.random.randint(11, size=size)
+        arr = self.dac.fromarray(expected)
+        assert_array_equal(arr[:], expected)
+
+    def test_getitem_partial_slice_block_dist(self):
+        size = 10
+        expected = numpy.random.randint(10, size=size)
+        arr = self.dac.fromarray(expected)
+        assert_array_equal(arr[0:2], expected[0:2])
+
+    def test_getitem_slice_block_dist_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.dac.fromarray(expected)
+        assert_array_equal(arr[2:6, 3:10], expected[2:6, 3:10])
 
 
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
