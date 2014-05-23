@@ -14,7 +14,7 @@ import numpy
 
 from distarray import utils
 from distarray.externals.six import next
-from distarray.externals.six.moves import map
+from distarray.externals.six.moves import map, zip
 
 
 # Register numpy integer types with numbers.Integral ABC.
@@ -228,6 +228,22 @@ def _check_bounds(index, size):
         raise IndexError("Index %r out of bounds" % index)
 
 
+def tuple_intersection(t1, t2):
+    """Compute intersection of two (start, stop) tuples.
+
+    Parameters
+    ----------
+    t1, t2 : 2-tuples
+
+    Returns
+    -------
+    2-tuple or None
+    """
+    stop = min(t1[1], t2[1])
+    start = max(t1[0], t2[0])
+    return (start, stop) if stop - start > 0 else None
+
+
 def positivify(index, size):
     """Check that an index is within bounds and return a positive version.
 
@@ -256,29 +272,14 @@ def positivify(index, size):
         raise TypeError("`index` must be of type Integral or slice.")
 
 
-def tuple_intersection(t1, t2):
-    """Compute intersection of two (start, stop) tuples.
-
-    Parameters
-    ----------
-    t1, t2 : 2-tuples
-
-    Returns
-    -------
-    2-tuple or None
-    """
-    stop = min(t1[1], t2[1])
-    start = max(t1[0], t2[0])
-    return (start, stop) if stop - start > 0 else None
-
-
-def sanitize_indices(indices, ndim=None):
+def sanitize_indices(indices, ndim=None, shape=None):
     """Classify and sanitize `indices`.
 
     * Wrap Integral or slice indices into tuples
     * Classify as 'value' or 'view'
     * If the length of the tuple-ized `indices` is < ndim (and it's
       provided),  add slice(None)'s to indices until `indices` is ndim long
+    * If `shape` is provided, call `positivify` on the indices
 
     Raises
     ------
@@ -313,4 +314,7 @@ def sanitize_indices(indices, ndim=None):
             rtype = 'view'
             sanitized = sanitized + (slice(None),) * diff
 
+    if shape is not None:
+        sanitized = tuple(positivify(i, size) for (i, size) in zip(sanitized,
+                                                                   shape))
     return (rtype, sanitized)

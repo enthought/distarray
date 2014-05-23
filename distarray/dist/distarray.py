@@ -22,7 +22,7 @@ from collections import Sequence
 import numpy as np
 
 import distarray
-from distarray.metadata_utils import sanitize_indices, positivify
+from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
 
@@ -166,9 +166,8 @@ class DistArray(object):
             else:
                 return arr.global_index[index]
 
-        return_type, index = sanitize_indices(index, ndim=self.ndim)
-        index = tuple(positivify(i, m.size)
-                      for (i, m) in zip(index, self.distribution.maps))
+        return_type, index = sanitize_indices(index, ndim=self.ndim,
+                                              shape=self.shape)
         return_proxy = (return_type == 'view')
 
         targets = self.distribution.owning_targets(index)
@@ -206,26 +205,21 @@ class DistArray(object):
         def raw_setitem(arr, index, value):
             arr.global_index[index] = value
 
-        if isinstance(index, int) or isinstance(index, slice):
-            tuple_index = (index,)
-            return self.__setitem__(tuple_index, value)
+        _, index = sanitize_indices(index, ndim=self.ndim, shape=self.shape)
 
-        elif isinstance(index, tuple):
-            targets = self.distribution.owning_targets(index)
-            args = (self.key, index, value)
-            if self.distribution.has_precise_index:
-                self.context.apply(raw_setitem, args=args, targets=targets)
-            else:
-                result = self.context.apply(checked_setitem, args=args,
-                                            targets=targets)
-                result = [i for i in result if i is not None]
-                if len(result) > 1:
-                    raise IndexError("Setting more than one result (%s) is "
-                                     "not supported yet." % (result,))
-                elif result == []:
-                    raise IndexError("Index %s is out of bounds" % (index,))
+        targets = self.distribution.owning_targets(index)
+        args = (self.key, index, value)
+        if self.distribution.has_precise_index:
+            self.context.apply(raw_setitem, args=args, targets=targets)
         else:
-            raise TypeError("Invalid index type.")
+            result = self.context.apply(checked_setitem, args=args,
+                                        targets=targets)
+            result = [i for i in result if i is not None]
+            if len(result) > 1:
+                raise IndexError("Setting more than one result (%s) is "
+                                 "not supported yet." % (result,))
+            elif result == []:
+                raise IndexError("Index %s is out of bounds" % (index,))
 
     @property
     def context(self):
