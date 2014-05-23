@@ -59,14 +59,14 @@ class GlobalIndex(object):
         except KeyError as err:
             raise IndexError(err)
 
-        ndarray_view = self.ndarray[local_inds]
+        value_or_view = self.ndarray[local_inds]
 
         if return_type == 'value':
-            return ndarray_view
+            return value_or_view
         elif return_type == 'view':
             return LocalArray(distribution=new_distribution,
                               dtype=self.ndarray.dtype,
-                              buf=ndarray_view)
+                              buf=value_or_view)
         else:
             assert False  # impossible is nothing
 
