@@ -87,5 +87,7 @@ class TestCountRoundTrips(unittest.TestCase):
             view.execute('42')
 
         self.assertEqual(r.count, len(view))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
