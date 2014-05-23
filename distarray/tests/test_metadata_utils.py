@@ -74,5 +74,51 @@ class TestPositivify(unittest.TestCase):
         self.assertEqual(result, s)
 
 
+class TestSanitizeIndices(unittest.TestCase):
+
+    def test_value_index(self):
+        tag, sanitized = metadata_utils.sanitize_indices(10)
+        self.assertSequenceEqual(sanitized, (10,))
+        self.assertEqual(tag, 'value')
+
+    def test_slice_index(self):
+        tag, sanitized = metadata_utils.sanitize_indices(slice(10, 20))
+        self.assertSequenceEqual(sanitized, (slice(10, 20),))
+        self.assertEqual(tag, 'view')
+
+    def test_tuple_of_values(self):
+        tag, sanitized = metadata_utils.sanitize_indices((5, 10))
+        self.assertSequenceEqual(sanitized, (5, 10))
+        self.assertEqual(tag, 'value')
+
+    def test_tuple_of_slices(self):
+        slices = slice(10, 20), slice(20, 30), slice(40, 50)
+        tag, sanitized = metadata_utils.sanitize_indices(slices)
+        self.assertSequenceEqual(sanitized, slices)
+        self.assertEqual(tag, 'view')
+
+    def test_tuple_of_mixed(self):
+        slices = slice(10, 20), 25, slice(40, 50)
+        tag, sanitized = metadata_utils.sanitize_indices(slices)
+        self.assertSequenceEqual(sanitized, slices)
+        self.assertEqual(tag, 'view')
+
+    def test_incomplete_indexing_values(self):
+        slices = 10, 20, 25, 40, 50
+        tag, sanitized = metadata_utils.sanitize_indices(slices, ndim=10)
+        self.assertSequenceEqual(sanitized, slices + (slice(None),) * 5)
+        self.assertEqual(tag, 'view')
+
+    def test_incomplete_indexing_mixed(self):
+        slices = slice(10, 20), 25, slice(40, 50)
+        tag, sanitized = metadata_utils.sanitize_indices(slices, ndim=10)
+        self.assertSequenceEqual(sanitized, slices + (slice(None),) * 7)
+        self.assertEqual(tag, 'view')
+
+    def test_too_many_indices(self):
+        with self.assertRaises(IndexError):
+            metadata_utils.sanitize_indices((2, 3, 4), ndim=2)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

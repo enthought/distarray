@@ -272,16 +272,28 @@ def tuple_intersection(t1, t2):
     return (start, stop) if stop - start > 0 else None
 
 
-def sanitize_indices(indices):
+def sanitize_indices(indices, ndim=None):
     """Tuple-ize and classify `indices`."""
     if isinstance(indices, Integral):
-        return ('value', (indices,))
+        rtype, sanitized = 'value', (indices,)
     elif isinstance(indices, slice):
-        return ('view', (indices,))
+        rtype, sanitized = 'view', (indices,)
     elif all(isinstance(i, Integral) for i in indices):
-        return ('value', indices)
+        rtype, sanitized = 'value', indices
     elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
-        return ('view', indices)
+        rtype, sanitized = 'view', indices
     else:
-        raise TypeError("Index must be an Integral, a slice, or a sequence "
-                        "of Integrals and slices")
+        msg = ("Index must be an Integral, a slice, or a sequence of "
+               "Integrals and slices.")
+        raise TypeError(msg)
+
+    if ndim is not None:
+        diff = ndim - len(sanitized)
+        if diff < 0:
+            raise IndexError("Too many indices.")
+        if diff > 0:
+            # allow incomplete indexing
+            rtype = 'view'
+            sanitized = sanitized + (slice(None),) * diff
+
+    return (rtype, sanitized)
