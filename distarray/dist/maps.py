@@ -494,44 +494,6 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
-    def slice(self, index_tuple):
-        """Make a new Distribution from a slice."""
-        if not all(dist_type in {'n', 'b'} for dist_type in self.dist):
-            msg = "Slicing only implemented for 'n' and 'b' dist_types."
-            raise NotImplementedError(msg)
-
-        new_targets = self.owning_targets(index_tuple)
-        global_dim_data = []
-        # iterate over the dimensions
-        for map_, idx in zip(self.maps, index_tuple):
-            new_bounds = [0]
-
-            if isinstance(idx, Integral):
-                # make an equivalent slice object
-                idx = slice(idx, idx+1)
-
-            if isinstance(idx, slice):
-                start = idx.start if idx.start is not None else 0
-                # iterate over the processes in this dimension
-                for proc_bounds in map_.bounds:
-                    stop = idx.stop if idx.stop is not None else proc_bounds[-1]
-                    intersection = tuple_intersection(proc_bounds,
-                                                      (start, stop))
-                    if intersection:
-                        size = intersection[1] - intersection[0]
-                        new_bounds.append(size + new_bounds[-1])
-            else:
-                msg = "Index must be a sequence of Integrals and slices."
-                raise TypeError(msg)
-
-            global_dim_data.append({'dist_type': 'b',
-                                    'bounds': new_bounds})
-
-        return self.__class__(context=self.context,
-                              global_dim_data=global_dim_data,
-                              targets=new_targets)
-
-
     def __init__(self, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
@@ -645,6 +607,44 @@ class Distribution(object):
         version of `__getitem__` or `__setitem__` on LocalArrays.
         """
         return not any(isinstance(m, UnstructuredMap) for m in self.maps)
+
+    def slice(self, index_tuple):
+        """Make a new Distribution from a slice."""
+        if not all(dist_type in {'n', 'b'} for dist_type in self.dist):
+            msg = "Slicing only implemented for 'n' and 'b' dist_types."
+            raise NotImplementedError(msg)
+
+        new_targets = self.owning_targets(index_tuple)
+        global_dim_data = []
+        # iterate over the dimensions
+        for map_, idx in zip(self.maps, index_tuple):
+            new_bounds = [0]
+
+            if isinstance(idx, Integral):
+                # make an equivalent slice object
+                idx = slice(idx, idx+1)
+
+            if isinstance(idx, slice):
+                start = idx.start if idx.start is not None else 0
+                # iterate over the processes in this dimension
+                for proc_bounds in map_.bounds:
+                    stop = idx.stop if idx.stop is not None else proc_bounds[-1]
+                    intersection = tuple_intersection(proc_bounds,
+                                                      (start, stop))
+                    if intersection:
+                        size = intersection[1] - intersection[0]
+                        new_bounds.append(size + new_bounds[-1])
+            else:
+                msg = "Index must be a sequence of Integrals and slices."
+                raise TypeError(msg)
+
+            global_dim_data.append({'dist_type': 'b',
+                                    'bounds': new_bounds})
+
+        return self.__class__(context=self.context,
+                              global_dim_data=global_dim_data,
+                              targets=new_targets)
+
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
