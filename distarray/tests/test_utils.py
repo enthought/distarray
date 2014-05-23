@@ -31,24 +31,6 @@ class TestMultPartitions(unittest.TestCase):
         self.assertEqual(utils.mult_partitions(6, 3), [(1, 1, 6), (1, 2, 3)])
 
 
-class TestSanitizeIndices(unittest.TestCase):
-
-    def test_point(self):
-        itype, inds = utils.sanitize_indices(1)
-        self.assertEqual(itype, 'point')
-        self.assertEqual(inds, (1,))
-
-    def test_slice(self):
-        itype, inds = utils.sanitize_indices(slice(1,10))
-        self.assertEqual(itype, 'view')
-        self.assertEqual(inds, (slice(1,10),))
-
-    def test_mixed(self):
-        provided = (5, 3, slice(7, 10, 2), 99, slice(1,10))
-        itype, inds = utils.sanitize_indices(provided)
-        self.assertEqual(itype, 'view')
-        self.assertEqual(inds, provided)
-
 
 class TestSliceIntersection(unittest.TestCase):
 

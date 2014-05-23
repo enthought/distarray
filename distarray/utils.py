@@ -94,37 +94,6 @@ def _raise_nie():
     raise NotImplementedError(msg)
 
 
-def sanitize_indices(indices):
-    """Check and possibly sanitize indices.
-
-    Parameters
-    ----------
-    indices : int, slice, or sequence of ints and slices
-        If an int or slice is passed in, it is converted to a
-        1-tuple.
-
-    Returns
-    -------
-    2-tuple
-        ('point', indices) if all `indices` are ints, or
-        ('view', indices) if some `indices` are slices.
-
-    Raises
-    ------
-    TypeError
-        If `indices` is not all ints or slices.
-    """
-
-    if isinstance(indices, int) or isinstance(indices, slice):
-        return sanitize_indices((indices,))
-    elif all(isinstance(i, int) for i in indices):
-        return 'point', indices
-    elif all(isinstance(i, int) or isinstance(i, slice) for i in indices):
-        return 'view', indices
-    else:
-        raise TypeError("Index must be a sequence of ints and slices")
-
-
 def slice_intersection(s1, s2):
     """Compute a slice that represents the intersection of two slices.
 
