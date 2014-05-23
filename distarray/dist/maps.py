@@ -514,9 +514,9 @@ class Distribution(object):
 
             if isinstance(idx, slice):
                 start = idx.start if idx.start is not None else 0
-                stop = idx.stop if idx.stop is not None else map_.bounds[-1]
                 # iterate over the processes in this dimension
                 for proc_bounds in map_.bounds:
+                    stop = idx.stop if idx.stop is not None else proc_bounds[-1]
                     intersection = tuple_intersection(proc_bounds,
                                                       (start, stop))
                     if intersection:
