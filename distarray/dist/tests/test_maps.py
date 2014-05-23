@@ -104,12 +104,13 @@ class TestSlice(unittest.TestCase):
 
         self.assertEqual(len(d0.maps), len(d1.maps))
         self.assertSequenceEqual(d1.targets, d0.targets)
+        self.assertSequenceEqual(d1.maps[0].bounds, d0.maps[0].bounds)
 
     def test_from_full_slice_2d(self):
         d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15, 20))
 
         s = (slice(None), slice(None))
-        d1 =d0.slice(s)
+        d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps), len(d1.maps))
         for m0, m1 in zip(d0.maps, d1.maps):
