@@ -22,7 +22,7 @@ from collections import Sequence
 import numpy as np
 
 import distarray
-from distarray.metadata_utils import sanitize_indices
+from distarray.metadata_utils import sanitize_indices, positivify
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
 
@@ -166,7 +166,9 @@ class DistArray(object):
             else:
                 return arr.global_index[index]
 
-        return_type, index = sanitize_indices(index)
+        return_type, index = sanitize_indices(index, ndim=self.ndim)
+        index = tuple(positivify(i, m.size)
+                      for (i, m) in zip(index, self.distribution.maps))
         return_proxy = (return_type == 'view')
 
         targets = self.distribution.owning_targets(index)
