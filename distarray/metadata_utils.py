@@ -273,7 +273,24 @@ def tuple_intersection(t1, t2):
 
 
 def sanitize_indices(indices, ndim=None):
-    """Tuple-ize and classify `indices`."""
+    """Classify and sanitize `indices`.
+
+    * Wrap Integral or slice indices into tuples
+    * Classify as 'value' or 'view'
+    * If the length of the tuple-ized `indices` is < ndim (and it's
+      provided),  add slice(None)'s to indices until `indices` is ndim long
+
+    Raises
+    ------
+    TypeError
+        If `indices` is other than Integral, slice or a Sequence of these
+    IndexError
+        If len(indices) > ndim
+
+    Returns
+    -------
+    2-tuple of (str, ndim-tuple of slices and Integral values)
+    """
     if isinstance(indices, Integral):
         rtype, sanitized = 'value', (indices,)
     elif isinstance(indices, slice):
