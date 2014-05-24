@@ -72,6 +72,7 @@ class Context(object):
         #with self.view.sync_imports():
         #    import distarray
         self.view.execute("from functools import reduce; "
+                          "from importlib import import_module; "
                           "import distarray.local; "
                           "import distarray.local.mpiutils; "
                           "import distarray.utils; "
@@ -81,7 +82,7 @@ class Context(object):
         # setup.
         cmd = """
 def proxyize(obj, context_name='__main__'):
-    main = __import__('__main__')
+    main = import_module('__main__')
     if context_name != '__main__':
         module = getattr(main, context_name)
     else:
