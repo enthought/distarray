@@ -41,7 +41,8 @@ def unary_proxy(name):
 
         def func_call(func_name, arr_name, args, kwargs):
             from functools import reduce
-            main = __import__('__main__')
+            from importlib import import_module
+            main = import_module('__main__')
             dotted_name = 'distarray.local.%s' % (func_name,)
             func = reduce(getattr, [main] + dotted_name.split('.'))
             if 'casting' in kwargs:
@@ -84,7 +85,8 @@ def binary_proxy(name):
 
         def func_call(func_name, a, b, args, kwargs):
             from functools import reduce
-            main = __import__('__main__')
+            from importlib import import_module
+            main = import_module('__main__')
             dotted_name = 'distarray.local.%s' % (func_name,)
             func = reduce(getattr, [main] + dotted_name.split('.'))
             if 'casting' in kwargs:
