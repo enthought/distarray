@@ -359,8 +359,8 @@ class TestSlicing(MpiTestCase):
                     "size": 16}
 
             new_distribution = Distribution([dd00, dd01], comm=self.comm)
-            rvals = a.global_index.get_item((slice(5, None), slice(None)),
-                                            new_distribution=new_distribution)
+            rvals = a.global_index.get_slice((slice(5, None), slice(None)),
+                                             new_distribution=new_distribution)
             assert_array_equal(rvals, np.ones((3, 16)))
 
         elif self.comm.Get_rank() == 1:
@@ -373,8 +373,8 @@ class TestSlicing(MpiTestCase):
             dd11 = {"dist_type": 'n',
                     "size": 16}
             new_distribution = Distribution([dd10, dd11], comm=self.comm)
-            rvals = a.global_index.get_item((slice(None, 10), slice(None)),
-                                            new_distribution=new_distribution)
+            rvals = a.global_index.get_slice((slice(None, 10), slice(None)),
+                                             new_distribution=new_distribution)
             assert_array_equal(rvals, np.ones((2, 16)))
 
 class TestLocalArrayMethods(MpiTestCase):
