@@ -157,36 +157,36 @@ class DistArray(object):
             return arr.global_index.checked_getitem(index)
 
         # to be run locally
-        def raw_getitem(arr, index, ddpr=None, comm=None):
-            if ddpr is not None and comm is not None:
-                from distarray.local.maps import Distribution
-                local_distribution = Distribution(ddpr[comm.Get_rank()],
-                                                  comm=comm)
-                return arr.global_index.get_item(index, local_distribution)
-            else:
-                return arr.global_index[index]
+        def raw_getitem(arr, index):
+            return arr.global_index[index]
+
+        # to be run locally
+        def get_slice(arr, index, ddpr, comm):
+            from distarray.local.maps import Distribution
+            local_distribution = Distribution(ddpr[comm.Get_rank()],
+                                              comm=comm)
+            return arr.global_index.get_slice(index, local_distribution)
 
         return_type, index = sanitize_indices(index, ndim=self.ndim,
                                               shape=self.shape)
         return_proxy = (return_type == 'view')
-
         targets = self.distribution.owning_targets(index)
 
         args = [self.key, index]
-        if return_proxy:  # returning a new DistArray view
-            new_distribution = self.distribution.slice(index)
-            ddpr = new_distribution.get_dim_data_per_rank()
-            args.extend([ddpr, new_distribution.comm])
-
         if self.distribution.has_precise_index:
-            result = self.context.apply(raw_getitem, args=args,
-                                        targets=targets,
-                                        return_proxy=return_proxy)
-        else:
-            result = self.context.apply(checked_getitem, args=args,
-                                        targets=targets,
-                                        return_proxy=return_proxy)
+            if return_proxy:  # returning a new DistArray view
+                new_distribution = self.distribution.slice(index)
+                ddpr = new_distribution.get_dim_data_per_rank()
+                args.extend([ddpr, new_distribution.comm])
+                local_fn = get_slice
+            else:  # returning a value
+                local_fn = raw_getitem
+        else:  # returning a value from unstructured
+            local_fn = checked_getitem
 
+        result = self.context.apply(local_fn, args=args,
+                                    targets=targets,
+                                    return_proxy=return_proxy)
         return self._process_return_value(result, return_proxy, index, targets)
 
 

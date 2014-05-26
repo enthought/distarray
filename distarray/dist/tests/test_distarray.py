@@ -172,7 +172,6 @@ class TestGetItemSlicing(unittest.TestCase):
         assert_array_equal(arr[-6:-2, -10:-3].toarray(),
                            expected[-6:-2, -10:-3])
 
-    @unittest.skip('')
     def test_incomplete_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)

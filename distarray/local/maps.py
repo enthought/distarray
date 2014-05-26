@@ -215,7 +215,7 @@ class BlockMap(MapBase):
         elif isinstance(gidx, slice):
             start = gidx.start if gidx.start is not None else 0
             stop = gidx.stop if gidx.stop is not None else self.global_size
-            new_start = start - self.start
+            new_start = max(start - self.start, 0)  # prevent negative inds
             new_stop = stop - self.start
             return slice(new_start, new_stop)
         else:
