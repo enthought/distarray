@@ -93,6 +93,7 @@ class TestSlice(unittest.TestCase):
         d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist)
         self.assertSequenceEqual(d1.targets, [0])
         self.assertSequenceEqual(d1.shape, (3,))
 
@@ -103,6 +104,7 @@ class TestSlice(unittest.TestCase):
         d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist)
         self.assertSequenceEqual(d1.targets, d0.targets)
         self.assertSequenceEqual(d1.maps[0].bounds, d0.maps[0].bounds)
 
@@ -113,6 +115,7 @@ class TestSlice(unittest.TestCase):
         d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist)
         for m0, m1 in zip(d0.maps, d1.maps):
             self.assertSequenceEqual(m0.bounds, m1.bounds)
         self.assertSequenceEqual(d1.targets, d0.targets)
@@ -124,6 +127,7 @@ class TestSlice(unittest.TestCase):
         d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps)-1, len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist[:-1])
         for m, expected in zip(d1.maps, ([(0, 1), (1, 4)], [(0, 1)])):
             self.assertSequenceEqual(m.bounds, expected)
 
@@ -134,4 +138,5 @@ class TestSlice(unittest.TestCase):
         d1 = d0.slice(s)
 
         self.assertEqual(len(d0.maps)-1, len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist[:-1])
         self.assertEqual(d1.shape, (15,))
