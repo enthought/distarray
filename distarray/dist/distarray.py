@@ -265,7 +265,8 @@ class DistArray(object):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
         local_name = self.context._generate_key()
-        self.context._execute('%s = %s.copy()' % (local_name, self.key), targets=self.targets)
+        self.context._execute('%s = %s.copy()' % (local_name, self.key),
+                              targets=self.targets)
         local_arrays = self.context._pull(local_name, targets=self.targets)
         for local_array in local_arrays:
             maps = (list(ax_map.global_iter) for ax_map in
