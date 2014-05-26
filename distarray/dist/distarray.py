@@ -16,7 +16,6 @@ from __future__ import absolute_import
 
 import operator
 from itertools import product
-from collections import Sequence
 from functools import reduce
 
 import numpy as np
