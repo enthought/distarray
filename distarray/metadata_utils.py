@@ -275,8 +275,9 @@ def positivify(index, size):
 def sanitize_indices(indices, ndim=None, shape=None):
     """Classify and sanitize `indices`.
 
-    * Wrap Integral or slice indices into tuples
-    * Classify as 'value' or 'view'
+    * Wrap naked Integral, slice, or Ellipsis indices into tuples
+    * Classify result as 'value' or 'view'
+    * Expand `Ellipsis` objects to slices
     * If the length of the tuple-ized `indices` is < ndim (and it's
       provided),  add slice(None)'s to indices until `indices` is ndim long
     * If `shape` is provided, call `positivify` on the indices
@@ -290,20 +291,41 @@ def sanitize_indices(indices, ndim=None, shape=None):
 
     Returns
     -------
-    2-tuple of (str, ndim-tuple of slices and Integral values)
+    2-tuple of (str, n-tuple of slices and Integral values)
     """
     if isinstance(indices, Integral):
         rtype, sanitized = 'value', (indices,)
-    elif isinstance(indices, slice):
+    elif isinstance(indices, slice) or indices is Ellipsis:
         rtype, sanitized = 'view', (indices,)
     elif all(isinstance(i, Integral) for i in indices):
         rtype, sanitized = 'value', indices
-    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
+    elif all(isinstance(i, Integral)
+             or isinstance(i, slice)
+             or i is Ellipsis for i in indices):
         rtype, sanitized = 'view', indices
     else:
         msg = ("Index must be an Integral, a slice, or a sequence of "
                "Integrals and slices.")
         raise TypeError(msg)
+
+    if Ellipsis in sanitized:
+        if ndim is None:
+            raise RuntimeError("Can't call `sanitize_indices` on Ellipsis "
+                               "without providing `ndim`.")
+        # expand first Ellipsis
+        diff = ndim - (len(sanitized) - 1)
+        filler = (slice(None),) * diff
+        epos = sanitized.index(Ellipsis)
+        sanitized = sanitized[:epos] + filler + sanitized[epos+1:]
+
+        # remaining Ellipsis objects are just converted to slices
+        def replace_ellipsis(idx):
+            if idx is Ellipsis:
+                return slice(None)
+            else:
+                return idx
+        sanitized = tuple(replace_ellipsis(i) for i in sanitized)
+
 
     if ndim is not None:
         diff = ndim - len(sanitized)

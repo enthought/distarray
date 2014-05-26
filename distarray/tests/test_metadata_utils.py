@@ -119,6 +119,25 @@ class TestSanitizeIndices(unittest.TestCase):
         with self.assertRaises(IndexError):
             metadata_utils.sanitize_indices((2, 3, 4), ndim=2)
 
+    def test_trailing_ellipsis(self):
+        ndim = 5
+        tag, sanitized = metadata_utils.sanitize_indices((10, Ellipsis),
+                                                         ndim=ndim)
+        self.assertEqual(sanitized, (10,) + (slice(None),) * (ndim-1))
+
+    def test_leading_ellipsis(self):
+        ndim = 5
+        tag, sanitized = metadata_utils.sanitize_indices((Ellipsis, 10),
+                                                         ndim=ndim)
+        self.assertEqual(sanitized, (slice(None),) * (ndim-1) + (10,))
+
+    def test_multiple_ellipsis(self):
+        ndim = 6
+        tag, sanitized = metadata_utils.sanitize_indices((Ellipsis, 10,
+                                                          Ellipsis),
+                                                         ndim=ndim)
+        self.assertEqual(sanitized, (slice(None),) * 4 + (10,  slice(None)))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
