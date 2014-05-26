@@ -287,56 +287,16 @@ class DistArray(object):
     def sum(self, axis=None, dtype=None, out=None):
 
         def _local_sum(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.mpiutils import MPI
-            import distarray.local
-
-            if out_comm == MPI.COMM_NULL:
-                dist = None
-                out = None
-                out_ndarray = None
-            else:
-                dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
-                dist = distarray.local.maps.Distribution(dim_data, out_comm)
-                out = distarray.local.empty(dist, dtype)
-                out_ndarray = out.ndarray
-
-            remaining_dims = [False] * larr.ndim
-            for axis in axes:
-                remaining_dims[axis] = True
-            reduce_comm = larr.comm.Sub(remaining_dims)
-            local_reduce = larr.ndarray.sum(axis=axes)
-            reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
-
-            return out
+            from distarray.local.localarray import local_reduction, sum_reducer
+            return local_reduction(sum_reducer, out_comm, larr, ddpr, dtype, axes)
 
         return self._reduce(_local_sum, axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
 
-        # TODO: FIXME: remove code duplication with _local_sum()!
         def _local_mean(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.mpiutils import MPI
-            import distarray.local
-
-            if out_comm == MPI.COMM_NULL:
-                out = out_ndarray = None
-            else:
-                dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
-                dist = distarray.local.maps.Distribution(dim_data, out_comm)
-                out = distarray.local.empty(dist, dtype)
-                out_ndarray = out.ndarray
-
-            remaining_dims = [False] * larr.ndim
-            for axis in axes:
-                remaining_dims[axis] = True
-            reduce_comm = larr.comm.Sub(remaining_dims)
-            local_reduce = larr.ndarray.sum(axis=axes, dtype=dtype)
-            reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
-
-            if out_comm != MPI.COMM_NULL:
-                out_ndarray /= (larr.global_size / float(out.global_size))
-
-            return out
+            from distarray.local.localarray import local_reduction, mean_reducer
+            return local_reduction(mean_reducer, out_comm, larr, ddpr, dtype, axes)
 
         return self._reduce(_local_mean, axis, dtype, out)
 
