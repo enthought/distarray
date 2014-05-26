@@ -460,8 +460,8 @@ class Distribution(object):
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
         # List of `ClientMap` objects, one per dimension.
         self.maps = [map_from_sizes(*args)
@@ -569,8 +569,8 @@ class Distribution(object):
 
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
     @property
     def has_precise_index(self):
@@ -611,6 +611,8 @@ class Distribution(object):
 
     def get_dim_data_per_rank(self):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
+        if not dds:
+            return []
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]
         rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)

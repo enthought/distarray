@@ -36,7 +36,7 @@ def validate_grid_shape(grid_shape, dist, comm_size):
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
-    if reduce(operator.mul, grid_shape) != comm_size:
+    if reduce(operator.mul, grid_shape, 1) != comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
         raise InvalidGridShapeError(msg % (grid_shape, comm_size))
     return grid_shape

@@ -401,6 +401,20 @@ class TestReduceMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.context.close()
 
+    def test_sum_0d(self):
+        arr = numpy.arange(16)
+        darr = self.context.fromndarray(arr)
+        np_sum = arr.sum(axis=0)
+        da_sum = darr.sum(axis=0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_chained(self):
+        np_sum = self.arr.sum(axis=0).sum(axis=0)
+        da_sum = self.darr.sum(axis=0).sum(axis=0)
+        self.assertEqual(da_sum.ndim, 0)
+        self.assertEqual(np_sum.ndim, 0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
     def test_sum_along_axis0(self):
         np_sum = self.arr.sum(axis=0)
         da_sum = self.darr.sum(axis=0)

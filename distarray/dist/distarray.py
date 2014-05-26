@@ -300,7 +300,8 @@ class DistArray(object):
                 out = None
                 out_ndarray = None
             else:
-                dist = distarray.local.maps.Distribution(ddpr[out_comm.Get_rank()], out_comm)
+                dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
+                dist = distarray.local.maps.Distribution(dim_data, out_comm)
                 out = distarray.local.empty(dist, dtype)
                 out_ndarray = out.ndarray
 

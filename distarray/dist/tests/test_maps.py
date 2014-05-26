@@ -103,3 +103,12 @@ class TestClientMap(unittest.TestCase):
         self.assertEquals(new_dist2.shape, (nr, nc))
         self.assertEquals(new_dist2.grid_shape, dist.grid_shape[:-1])
         self.assertEquals(set(new_dist2.targets), set(dist.targets))
+
+    def test_reduce_0D(self):
+        N = 10**5
+        dist = client_map.Distribution.from_shape(self.ctx, (N,))
+        new_dist = dist.reduce(axis=[0])
+        self.assertEquals(new_dist.dist, ())
+        self.assertEquals(new_dist.shape, ())
+        self.assertEquals(new_dist.grid_shape, ())
+        self.assertEquals(set(new_dist.targets), set(dist.targets[:1]))
