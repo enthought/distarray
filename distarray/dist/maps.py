@@ -25,7 +25,6 @@ from __future__ import absolute_import
 
 import operator
 from itertools import product
-from collections import Sequence
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -38,7 +37,8 @@ from distarray.metadata_utils import (normalize_dist,
                                       positivify,
                                       validate_grid_shape,
                                       _start_stop_block,
-                                      normalize_dim_dict)
+                                      normalize_dim_dict,
+                                      normalize_reduction_axes)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -632,13 +632,8 @@ class Distribution(object):
         """
 
         # the `axis` argument can actually be a sequence of axes, so we rename it.
-        axes = axis
-
-        if axes is None:
-            raise NotImplementedError()
-
-        if not isinstance(axes, Sequence):
-            axes = (axes,)
+        axes = normalize_reduction_axes(axis, self.ndim)
+        del axis
 
         reduced_shape = _remove_elements(axes, self.shape)
         reduced_dist = _remove_elements(axes, self.dist)

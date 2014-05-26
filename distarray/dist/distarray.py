@@ -24,6 +24,7 @@ import numpy as np
 import distarray
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
+from distarray.metadata_utils import normalize_reduction_axes
 
 __all__ = ['DistArray']
 
@@ -269,13 +270,8 @@ class DistArray(object):
 
     def _reduce(self, local_reduce, axis=None, dtype=None, out=None):
 
-        if out is not None or axis is None:
+        if out is not None:
             _raise_nie()
-
-        if not isinstance(axis, Sequence):
-            axis = (axis,)
-        else:
-            axis = tuple(axis)
 
         dtype = dtype or self.dtype 
 
@@ -284,7 +280,7 @@ class DistArray(object):
         ddpr = out_dist.get_dim_data_per_rank()
 
         out_key = self.context.apply(local_reduce, 
-                                     (self.key, out_comm, ddpr, dtype, axis),
+                                     (self.key, out_comm, ddpr, dtype, normalize_reduction_axes(axis, self.ndim)),
                                      targets=self.targets, return_proxy=True)
 
         return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)

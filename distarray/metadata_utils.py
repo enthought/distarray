@@ -213,3 +213,13 @@ def positivify(index, size):
         return size + index
     else:
         raise IndexError("Index %s out of bounds" % index)
+
+def normalize_reduction_axes(axes, ndim):
+    if axes is None:
+        axes = tuple(range(ndim))
+    elif not isinstance(axes, Sequence):
+        axes = (axes,)
+    else:
+        axes = tuple(axes)
+    return axes
+

@@ -401,6 +401,11 @@ class TestReduceMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.context.close()
 
+    def test_sum_axis_none(self):
+        np_sum = self.arr.sum(axis=None)
+        da_sum = self.darr.sum(axis=None)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
     def test_sum_multiaxis(self):
         np_sum = self.arr.sum(axis=(0, 1))
         da_sum = self.darr.sum(axis=(0, 1))
@@ -434,6 +439,11 @@ class TestReduceMethods(unittest.TestCase):
         da_sum = self.darr.sum(axis=0, dtype=int)
         np_sum = self.arr.sum(axis=0, dtype=int)
         assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_mean_axis_none(self):
+        np_mean = self.arr.mean(axis=None)
+        da_mean = self.darr.mean(axis=None)
+        assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_mean_multiaxis(self):
         np_mean = self.arr.mean(axis=(0, 1))
