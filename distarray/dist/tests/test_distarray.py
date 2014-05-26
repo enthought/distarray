@@ -164,7 +164,6 @@ class TestGetItemSlicing(unittest.TestCase):
         arr = self.dac.fromarray(expected)
         assert_array_equal(arr[2:6, 3:10].toarray(), expected[2:6, 3:10])
 
-    @unittest.skip('')
     def test_partial_negative_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
