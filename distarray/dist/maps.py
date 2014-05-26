@@ -25,6 +25,7 @@ from __future__ import absolute_import
 
 import operator
 from itertools import product
+from collections import Sequence
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -629,15 +630,25 @@ class Distribution(object):
         distribution has one fewer dimension than `self`.
 
         """
-        if len(axis) != 1:
+
+        # the `axis` argument can actually be a sequence of axes, so we rename it.
+        axes = axis
+
+        if axes is None:
             raise NotImplementedError()
 
-        axis = axis[0]
+        if not isinstance(axes, Sequence):
+            axes = (axes,)
 
-        reduced_shape = self.shape[:axis] + self.shape[axis+1:]
-        reduced_dist = self.dist[:axis] + self.dist[axis+1:]
-        reduced_grid_shape = self.grid_shape[:axis] + self.grid_shape[axis+1:]
-        reduced_ranks = self.rank_from_coords.min(axis=axis)
+        reduced_shape = _remove_elements(axes, self.shape)
+        reduced_dist = _remove_elements(axes, self.dist)
+        reduced_grid_shape = _remove_elements(axes, self.grid_shape)
+
+        # This block is required because np.min() works one axis at a time.
+        reduced_ranks = self.rank_from_coords.copy()
+        for axis in axes:
+            reduced_ranks = np.min(reduced_ranks, axis=axis, keepdims=True)
+
         reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
 
         return Distribution.from_shape(context=self.context,
@@ -645,3 +656,11 @@ class Distribution(object):
                                        dist=reduced_dist,
                                        grid_shape=reduced_grid_shape,
                                        targets=reduced_targets)
+
+
+# ----------------------------------------------------------------------------
+# Internal utility functions.
+# ----------------------------------------------------------------------------
+
+def _remove_elements(to_remove, seq):
+    return [x for (idx, x) in enumerate(seq) if idx not in to_remove]
