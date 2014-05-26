@@ -7,11 +7,12 @@
 import unittest
 
 import numpy as np
+from numpy.testing import assert_array_equal
 
 from distarray import utils
 from distarray.testing import (MpiTestCase, assert_localarrays_allclose,
                                assert_localarrays_equal)
-from distarray.local.localarray import LocalArray, ndenumerate
+from distarray.local.localarray import LocalArray, ndenumerate, ones
 from distarray.local.maps import Distribution
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -338,6 +339,43 @@ class TestIndexing(MpiTestCase):
             packed_ind = a.pack_index(global_inds)
             self.assertEqual(global_inds, a.unpack_index(packed_ind))
 
+
+class TestSlicing(MpiTestCase):
+
+    comm_size = 2
+
+    def test_slicing(self):
+        distribution = Distribution.from_shape((16, 16), dist=('b', 'n'),
+                                               comm=self.comm)
+        a = ones(distribution)
+        if self.comm.Get_rank() == 0:
+            dd00 = {"dist_type": 'b',
+                    "size": 5,
+                    "start": 0,
+                    "stop": 3,
+                    "proc_grid_size": 2,
+                    "proc_grid_rank": 0}
+            dd01 = {"dist_type": 'n',
+                    "size": 16}
+
+            new_distribution = Distribution([dd00, dd01], comm=self.comm)
+            rvals = a.global_index.get_item((slice(5, None), slice(None)),
+                                            new_distribution=new_distribution)
+            assert_array_equal(rvals, np.ones((3, 16)))
+
+        elif self.comm.Get_rank() == 1:
+            dd10 = {"dist_type": 'b',
+                    "size": 5,
+                    "start": 3,
+                    "stop": 5,
+                    "proc_grid_size": 2,
+                    "proc_grid_rank": 1}
+            dd11 = {"dist_type": 'n',
+                    "size": 16}
+            new_distribution = Distribution([dd10, dd11], comm=self.comm)
+            rvals = a.global_index.get_item((slice(None, 10), slice(None)),
+                                            new_distribution=new_distribution)
+            assert_array_equal(rvals, np.ones((2, 16)))
 
 class TestLocalArrayMethods(MpiTestCase):
 
