@@ -55,7 +55,6 @@ class GlobalIndex(object):
             local_inds = self.global_to_local(*global_inds)
         except KeyError as err:
             raise IndexError(err)
-        print("local: ", local_inds)
         view = self.ndarray[local_inds]
         return LocalArray(distribution=new_distribution,
                           dtype=self.ndarray.dtype,
