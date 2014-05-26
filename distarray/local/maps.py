@@ -96,7 +96,7 @@ class Distribution(object):
 
     @property
     def global_size(self):
-        return reduce(operator.mul, self.global_shape)
+        return reduce(operator.mul, self.global_shape, 1)
 
     @property
     def local_shape(self):

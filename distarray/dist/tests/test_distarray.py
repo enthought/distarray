@@ -440,6 +440,13 @@ class TestReduceMethods(unittest.TestCase):
         np_mean = self.arr.mean(axis=0, dtype=int)
         assert_allclose(da_mean.tondarray(), np_mean)
 
+    def test_mean_chained(self):
+        np_mean = self.arr.mean(axis=0).mean(axis=0)
+        da_mean = self.darr.mean(axis=0).mean(axis=0)
+        self.assertEqual(da_mean.ndim, 0)
+        self.assertEqual(np_mean.ndim, 0)
+        assert_allclose(da_mean.tondarray(), np_mean)
+
     def test_var(self):
         np_var = self.arr.var()
         da_var = self.darr.var()

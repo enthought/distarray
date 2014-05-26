@@ -318,6 +318,7 @@ class DistArray(object):
 
     def mean(self, axis=None, dtype=float, out=None):
 
+        # TODO: FIXME: remove code duplication with _local_sum()!
         def _local_mean(larr, out_comm, ddpr, dtype, axes):
             from distarray.local.mpiutils import MPI
             import distarray.local
@@ -325,7 +326,8 @@ class DistArray(object):
             if out_comm == MPI.COMM_NULL:
                 out = out_ndarray = None
             else:
-                dist = distarray.local.maps.Distribution(ddpr[out_comm.Get_rank()], out_comm)
+                dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
+                dist = distarray.local.maps.Distribution(dim_data, out_comm)
                 out = distarray.local.empty(dist, dtype)
                 out_ndarray = out.ndarray
 
