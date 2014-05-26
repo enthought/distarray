@@ -218,8 +218,8 @@ def normalize_reduction_axes(axes, ndim):
     if axes is None:
         axes = tuple(range(ndim))
     elif not isinstance(axes, Sequence):
-        axes = (axes,)
+        axes = (positivify(axes, ndim),)
     else:
-        axes = tuple(axes)
+        axes = tuple(positivify(a, ndim) for a in axes)
     return axes
 

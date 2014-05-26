@@ -401,6 +401,11 @@ class TestReduceMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.context.close()
 
+    def test_sum_last_axis(self):
+        da_sum = self.darr.sum(axis=-1)
+        da_sum2 = self.darr.sum(axis=(1,))
+        assert_allclose(da_sum.tondarray(), da_sum2.tondarray())
+
     def test_sum_axis_none(self):
         np_sum = self.arr.sum(axis=None)
         da_sum = self.darr.sum(axis=None)
