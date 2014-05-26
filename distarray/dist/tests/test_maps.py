@@ -123,7 +123,7 @@ class TestSlice(unittest.TestCase):
         s = (slice(3, 7), 4)
         d1 = d0.slice(s)
 
-        self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertEqual(len(d0.maps)-1, len(d1.maps))
         for m, expected in zip(d1.maps, ([(0, 1), (1, 4)], [(0, 1)])):
             self.assertSequenceEqual(m.bounds, expected)
 
@@ -133,5 +133,5 @@ class TestSlice(unittest.TestCase):
         s = (slice(None), 4)
         d1 = d0.slice(s)
 
-        self.assertEqual(len(d0.maps), len(d1.maps))
-        self.assertEqual(d1.shape, (15, 1))
+        self.assertEqual(len(d0.maps)-1, len(d1.maps))
+        self.assertEqual(d1.shape, (15,))

@@ -621,8 +621,7 @@ class Distribution(object):
             new_bounds = [0]
 
             if isinstance(idx, Integral):
-                # make an equivalent slice object
-                idx = slice(idx, idx+1)
+                continue  # integral indexing returns reduced dimensionality
 
             if isinstance(idx, slice):
                 start = idx.start if idx.start is not None else 0
