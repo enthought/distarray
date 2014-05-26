@@ -177,7 +177,6 @@ class TestGetItemSlicing(unittest.TestCase):
         arr = self.dac.fromarray(expected)
         assert_array_equal(arr[3:9].toarray(), expected[3:9])
 
-    @unittest.skip('')
     def test_incomplete_index_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
