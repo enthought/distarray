@@ -192,6 +192,7 @@ class NoDistMap(MapBase):
             msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
+        self.grid_size = grid_size
         self.bounds = [(0, self.size)]
 
     def owners(self, idx):
@@ -617,13 +618,13 @@ class Distribution(object):
         new_targets = self.owning_targets(index_tuple)
         global_dim_data = []
         # iterate over the dimensions
-        for map_, idx in zip(self.maps, index_tuple):
+        for dist, map_, idx in zip(self.dist, self.maps, index_tuple):
             new_bounds = [0]
 
             if isinstance(idx, Integral):
                 continue  # integral indexing returns reduced dimensionality
 
-            if isinstance(idx, slice):
+            elif isinstance(idx, slice):
                 start = idx.start if idx.start is not None else 0
                 # iterate over the processes in this dimension
                 for proc_bounds in map_.bounds:
@@ -637,8 +638,12 @@ class Distribution(object):
                 msg = "Index must be a sequence of Integrals and slices."
                 raise TypeError(msg)
 
-            global_dim_data.append({'dist_type': 'b',
-                                    'bounds': new_bounds})
+            if dist == 'n':
+                global_dim_data.append({'dist_type': dist,
+                                        'size': new_bounds[-1]})
+            elif dist == 'b':
+                global_dim_data.append({'dist_type': dist,
+                                        'bounds': new_bounds})
 
         return self.__class__(context=self.context,
                               global_dim_data=global_dim_data,
