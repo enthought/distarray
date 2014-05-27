@@ -210,6 +210,24 @@ class TestGetItemSlicing(unittest.TestCase):
                            expected[0, :, 0, ...])
 
 
+class TestSetItemSlicing(unittest.TestCase):
+
+    def setUp(self):
+        self.dac = Context()
+
+    def tearDown(self):
+        self.dac.close()
+
+    def test_1d_slice(self):
+        source = numpy.random.randint(10, size=20)
+        new_data = numpy.random.randint(10, size=5)
+        slc = slice(12, 12+len(new_data))
+        arr = self.dac.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
     def setUp(self):
