@@ -364,38 +364,6 @@ class LocalArray(object):
             raise IncompatibleArrayError("DistArrays have incompatible shape,"
                                          "dist or grid_shape")
 
-    #TODO FIXME: implement axis and out kwargs.
-    def sum(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        return sum(self, dtype=dtype)
-
-    def mean(self, axis=None, dtype=float, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        elif dtype is not None:
-            dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype),
-                                         self.global_size)))
-        else:
-            return np.divide(self.sum(dtype=dtype), self.global_size)
-
-    def var(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        mu = self.mean()
-        temp = (self - mu) ** 2
-        return temp.mean(dtype=dtype)
-
-    def std(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        elif dtype is not None:
-            dtype = np.dtype(dtype)
-            return dtype.type((math.sqrt(self.var())))
-        else:
-            return math.sqrt(self.var())
-
     #-------------------------------------------------------------------------
     # Basic customization
     #-------------------------------------------------------------------------
@@ -934,11 +902,13 @@ def sum_reducer(reduce_comm, larr, out, axes, dtype):
     reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
     return out
 
+
 def mean_reducer(reduce_comm, larr, out, axes, dtype):
     sum_reducer(reduce_comm, larr, out, axes, dtype)
     if out is not None:
         out.ndarray /= (larr.global_size / float(out.global_size))
     return out
+
 
 def var_reducer(reduce_comm, larr, out, axes, dtype):
     mean = empty_like(out, dtype=float) if out is not None else None
@@ -964,6 +934,7 @@ def var_reducer(reduce_comm, larr, out, axes, dtype):
 
     return out
 
+
 def std_reducer(reduce_comm, larr, out, axes, dtype):
     var_reducer(reduce_comm, larr, out, axes, dtype)
     if out is not None:
@@ -985,13 +956,6 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
         remaining_dims[axis] = True
     reduce_comm = larr.comm.Sub(remaining_dims)
     return reducer(reduce_comm, larr, out, axes, dtype)
-
-
-def sum(a, dtype=None):
-    local_sum = a.ndarray.sum(dtype=dtype)
-    global_sum = a.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
-    return global_sum
-
 
 # ---------------------------------------------------------------------------
 # More data type functions

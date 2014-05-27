@@ -275,11 +275,11 @@ class DistArray(object):
         dtype = dtype or self.dtype 
 
         out_dist = self.distribution.reduce(axis=axis)
-        out_comm = out_dist.comm
         ddpr = out_dist.get_dim_data_per_rank()
 
         out_key = self.context.apply(local_reduce, 
-                                     (self.key, out_comm, ddpr, dtype, normalize_reduction_axes(axis, self.ndim)),
+                                     (self.key, out_dist.comm, 
+                                      ddpr, dtype, normalize_reduction_axes(axis, self.ndim)),
                                      targets=self.targets, return_proxy=True)
 
         return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
