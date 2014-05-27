@@ -23,7 +23,7 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME
+from distarray.utils import uid, DISTARRAY_BASE_NAME, distarray_random_getstate
 
 
 class Context(object):
@@ -582,6 +582,9 @@ def proxyize(obj, context_name='__main__'):
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
 
+            # set the random state on engines.
+            main.distarray.utils.distarray_random_setstate(random_state)  # noqa
+
             # Modify func to change the namespace it executes in.
             # but builtins don't have __code__, __globals__, etc.
             if not isinstance(func, types.BuiltinFunctionType):
@@ -617,8 +620,8 @@ def proxyize(obj, context_name='__main__'):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        wrapped_args = (func, random.getstate(), self.context_key,
-                        args, kwargs)
+        random_state = distarray_random_getstate()
+        wrapped_args = (func, random_state, self.context_key, args, kwargs)
         # increment the random state so we don't get the same state pushed to
         # the engines if we do `context.apply twice in a row.
         uid()
