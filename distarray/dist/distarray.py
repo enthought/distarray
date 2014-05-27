@@ -267,7 +267,7 @@ class DistArray(object):
             arr.fill(value)
         self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
-    def _reduce(self, local_reduce, axis=None, dtype=None, out=None):
+    def _reduce(self, local_reduce_name, axis=None, dtype=None, out=None):
 
         if out is not None:
             _raise_nie()
@@ -277,59 +277,35 @@ class DistArray(object):
         out_dist = self.distribution.reduce(axis=axis)
         ddpr = out_dist.get_dim_data_per_rank()
 
-        out_key = self.context.apply(local_reduce, 
-                                     (self.key, out_dist.comm, 
+        def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
+            import distarray.local.localarray as la
+            local_reducer = getattr(la, local_name)
+            return la.local_reduction(local_reducer, out_comm, larr, ddpr, dtype, axes)
+
+        out_key = self.context.apply(_local_reduce, 
+                                     (local_reduce_name, self.key, out_dist.comm, 
                                       ddpr, dtype, normalize_reduction_axes(axis, self.ndim)),
                                      targets=self.targets, return_proxy=True)
 
         return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
 
     def sum(self, axis=None, dtype=None, out=None):
-
-        def _local_sum(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, sum_reducer
-            return local_reduction(sum_reducer, out_comm, larr, ddpr, dtype, axes)
-
-        return self._reduce(_local_sum, axis, dtype, out)
+        return self._reduce('sum_reducer', axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
-
-        def _local_mean(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, mean_reducer
-            return local_reduction(mean_reducer, out_comm, larr, ddpr, dtype, axes)
-
-        return self._reduce(_local_mean, axis, dtype, out)
+        return self._reduce('mean_reducer', axis, dtype, out)
 
     def var(self, axis=None, dtype=float, out=None):
-        def _local_var(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, var_reducer
-            return local_reduction(var_reducer, out_comm, larr, ddpr, dtype=np.float, axes=axes)
-
-        return self._reduce(_local_var, axis, dtype, out)
+        return self._reduce('var_reducer', axis, dtype, out)
 
     def std(self, axis=None, dtype=float, out=None):
-
-        def _local_std(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, std_reducer
-            return local_reduction(std_reducer, out_comm, larr, ddpr, dtype=np.float, axes=axes)
-
-        return self._reduce(_local_std, axis, dtype, out)
+        return self._reduce('std_reducer', axis, dtype, out)
 
     def min(self, axis=None, dtype=None, out=None):
-
-        def _local_min(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, min_reducer
-            return local_reduction(min_reducer, out_comm, larr, ddpr, dtype, axes)
-
-        return self._reduce(_local_min, axis, dtype, out)
+        return self._reduce('min_reducer', axis, dtype, out)
 
     def max(self, axis=None, dtype=None, out=None):
-
-        def _local_max(larr, out_comm, ddpr, dtype, axes):
-            from distarray.local.localarray import local_reduction, max_reducer
-            return local_reduction(max_reducer, out_comm, larr, ddpr, dtype, axes)
-
-        return self._reduce(_local_max, axis, dtype, out)
+        return self._reduce('max_reducer', axis, dtype, out)
 
     def get_ndarrays(self):
         """Pull the local ndarrays from the engines.
