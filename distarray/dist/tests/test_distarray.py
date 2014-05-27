@@ -502,6 +502,16 @@ class TestReduceMethods(unittest.TestCase):
         da_std = self.darr.std(dtype=int)
         self.assertEqual(da_std, np_std)
 
+    def test_std_axis_0(self):
+        np_std = self.arr.std(axis=0)
+        da_std = self.darr.std(axis=0)
+        assert_allclose(da_std.tondarray(), np_std)
+
+    def test_std_axis_1(self):
+        np_std = self.arr.std(axis=1)
+        da_std = self.darr.std(axis=1)
+        assert_allclose(da_std.tondarray(), np_std)
+
 
 class TestFromLocalArrays(unittest.TestCase):
 

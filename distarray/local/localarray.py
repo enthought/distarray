@@ -964,6 +964,12 @@ def var_reducer(reduce_comm, larr, out, axes, dtype):
 
     return out
 
+def std_reducer(reduce_comm, larr, out, axes, dtype):
+    var_reducer(reduce_comm, larr, out, axes, dtype)
+    if out is not None:
+        np.sqrt(out.ndarray, out=out.ndarray)
+    return out
+
 
 def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
 
