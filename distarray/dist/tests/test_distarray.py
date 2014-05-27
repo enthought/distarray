@@ -212,11 +212,13 @@ class TestGetItemSlicing(unittest.TestCase):
 
 class TestSetItemSlicing(unittest.TestCase):
 
-    def setUp(self):
-        self.dac = Context()
+    @classmethod
+    def setUpClass(cls):
+        cls.dac = Context()
 
-    def tearDown(self):
-        self.dac.close()
+    @classmethod
+    def tearDownClass(cls):
+        cls.dac.close()
 
     def test_small_1d_slice(self):
         source = numpy.random.randint(10, size=20)
