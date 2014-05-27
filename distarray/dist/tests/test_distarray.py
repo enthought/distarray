@@ -303,6 +303,14 @@ class TestSetItemSlicing(unittest.TestCase):
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
 
+    def test_valueerror(self):
+        source = numpy.random.randint(10, size=21)
+        new_data = numpy.random.randint(10, size=10)
+        slc = slice(15, None)
+        arr = self.dac.fromarray(source)
+        with self.assertRaises(ValueError):
+            arr[slc] = new_data
+
 
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 
