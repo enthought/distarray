@@ -190,12 +190,6 @@ class DistArray(object):
         return self._process_return_value(result, return_proxy, index, targets)
 
     def __setitem__(self, index, value):
-        #TODO: FIXME: major performance improvements possible here.
-        # Especially when `index == slice(None)` and value is an
-        # ndarray, since for block and cyclic, we can generate slices of
-        # `value` and assign to local arrays. This would dramatically
-        # improve the fromndarray method's performance.
-
         # to be run locally
         def checked_setitem(arr, index, value):
             return arr.global_index.checked_setitem(index, value)
