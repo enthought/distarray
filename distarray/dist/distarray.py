@@ -189,7 +189,6 @@ class DistArray(object):
                                     return_proxy=return_proxy)
         return self._process_return_value(result, return_proxy, index, targets)
 
-
     def __setitem__(self, index, value):
         #TODO: FIXME: major performance improvements possible here.
         # Especially when `index == slice(None)` and value is an
@@ -205,15 +204,40 @@ class DistArray(object):
         def raw_setitem(arr, index, value):
             arr.global_index[index] = value
 
-        _, index = sanitize_indices(index, ndim=self.ndim, shape=self.shape)
+        # to be run locally
+        def set_slice(arr, index, value, value_slices):
+            local_slice = value_slices[arr.comm_rank]
+            arr.global_index[index] = value[local_slice]
+
+        set_type, index = sanitize_indices(index, ndim=self.ndim,
+                                           shape=self.shape)
 
         targets = self.distribution.owning_targets(index)
-        args = (self.key, index, value)
+        args = [self.key, index, value]
         if self.distribution.has_precise_index:
-            self.context.apply(raw_setitem, args=args, targets=targets)
+            if set_type == 'value':
+                local_fn = raw_setitem
+            elif set_type == 'view':
+                # this could be made more efficient
+                # we only need the bounds computed by distribution.slice
+                new_distribution = self.distribution.slice(index)
+                ddpr = new_distribution.get_dim_data_per_rank()
+                value_slices =  [tuple(slice(dd['start'], dd['stop'])
+                                       for dd in dim_data)
+                                 for dim_data in ddpr]
+                # but we need a data structure indexable by a target's rank
+                # assume contigious range of targets here
+                value_slices_per_target = [None] * len(self.targets)
+                value_slices_per_target[targets[0]:targets[-1]] = value_slices
+                args.append(value_slices_per_target)
+                local_fn = set_slice
+            else:
+                assert False
+            self.context.apply(local_fn, args=args, targets=targets)
+
         else:  # setting unstructured elements
-            result = self.context.apply(checked_setitem, args=args,
-                                        targets=targets)
+            local_fn = checked_setitem
+            result = self.context.apply(local_fn, args=args, targets=targets)
             result = [i for i in result if i is not None]
             if len(result) > 1:
                 raise IndexError("Setting more than one result (%s) is "
