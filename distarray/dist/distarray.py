@@ -222,8 +222,15 @@ class DistArray(object):
                 # we only need the bounds computed by distribution.slice
                 new_distribution = self.distribution.slice(index)
                 ddpr = new_distribution.get_dim_data_per_rank()
-                value_slices =  [tuple(slice(dd['start'], dd['stop'])
-                                       for dd in dim_data)
+                def bounds_slice(dd):
+                    if dd['dist_type'] == 'b':
+                        return slice(dd['start'], dd['stop'])
+                    elif dd['dist_type'] == 'n':
+                        return slice(0, dd['size'])
+                    else:
+                        msg = "Function only works for 'n' and 'b' 'dist_type's"
+                        raise TypeError(msg)
+                value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
                                  for dim_data in ddpr]
                 # but we need a data structure indexable by a target's rank
                 # assume contigious range of targets here
