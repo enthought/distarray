@@ -908,35 +908,26 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
     reduce_comm = larr.comm.Sub(remaining_dims)
     return reducer(reduce_comm, larr, out, axes, dtype)
 
+def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
+    if out is None:
+        out_ndarray = None
+    else:
+        out_ndarray = out.ndarray
+    local_reduce = func(*args, **kwargs)
+    reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
+    return out
 
 def min_reducer(reduce_comm, larr, out, axes, dtype):
-    if out is None:
-        out_ndarray = None
-    else:
-        out_ndarray = out.ndarray
-    local_reduce = larr.ndarray.min(axis=axes)
-    reduce_comm.Reduce(local_reduce, out_ndarray, op=MPI.MIN, root=0)
-    return out
-
+    return _basic_reducer(reduce_comm, MPI.MIN,
+                          larr.ndarray.min, (), {'axis':axes}, out)
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
-    if out is None:
-        out_ndarray = None
-    else:
-        out_ndarray = out.ndarray
-    local_reduce = larr.ndarray.max(axis=axes)
-    reduce_comm.Reduce(local_reduce, out_ndarray, op=MPI.MAX, root=0)
-    return out
-
+    return _basic_reducer(reduce_comm, MPI.MAX,
+                          larr.ndarray.max, (), {'axis':axes}, out)
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
-    if out is None:
-        out_ndarray = None
-    else:
-        out_ndarray = out.ndarray
-    local_reduce = larr.ndarray.sum(axis=axes, dtype=dtype)
-    reduce_comm.Reduce(local_reduce, out_ndarray, root=0)
-    return out
+    return _basic_reducer(reduce_comm, MPI.SUM,
+                          larr.ndarray.sum, (), {'axis':axes, 'dtype':dtype}, out)
 
 
 def mean_reducer(reduce_comm, larr, out, axes, dtype):
