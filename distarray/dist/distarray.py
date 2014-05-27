@@ -211,7 +211,7 @@ class DistArray(object):
         args = (self.key, index, value)
         if self.distribution.has_precise_index:
             self.context.apply(raw_setitem, args=args, targets=targets)
-        else:
+        else:  # setting unstructured elements
             result = self.context.apply(checked_setitem, args=args,
                                         targets=targets)
             result = [i for i in result if i is not None]
