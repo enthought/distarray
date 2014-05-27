@@ -893,6 +893,42 @@ can_cast = np.can_cast
 # Reduction functions
 # ---------------------------------------------------------------------------
 
+def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
+
+    if out_comm == MPI.COMM_NULL:
+        out = None
+    else:
+        dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
+        dist = distarray.local.maps.Distribution(dim_data, out_comm)
+        out = distarray.local.empty(dist, dtype)
+
+    remaining_dims = [False] * larr.ndim
+    for axis in axes:
+        remaining_dims[axis] = True
+    reduce_comm = larr.comm.Sub(remaining_dims)
+    return reducer(reduce_comm, larr, out, axes, dtype)
+
+
+def min_reducer(reduce_comm, larr, out, axes, dtype):
+    if out is None:
+        out_ndarray = None
+    else:
+        out_ndarray = out.ndarray
+    local_reduce = larr.ndarray.min(axis=axes)
+    reduce_comm.Reduce(local_reduce, out_ndarray, op=MPI.MIN, root=0)
+    return out
+
+
+def max_reducer(reduce_comm, larr, out, axes, dtype):
+    if out is None:
+        out_ndarray = None
+    else:
+        out_ndarray = out.ndarray
+    local_reduce = larr.ndarray.max(axis=axes)
+    reduce_comm.Reduce(local_reduce, out_ndarray, op=MPI.MAX, root=0)
+    return out
+
+
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
     if out is None:
         out_ndarray = None
@@ -940,22 +976,6 @@ def std_reducer(reduce_comm, larr, out, axes, dtype):
     if out is not None:
         np.sqrt(out.ndarray, out=out.ndarray)
     return out
-
-
-def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
-
-    if out_comm == MPI.COMM_NULL:
-        out = None
-    else:
-        dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
-        dist = distarray.local.maps.Distribution(dim_data, out_comm)
-        out = distarray.local.empty(dist, dtype)
-
-    remaining_dims = [False] * larr.ndim
-    for axis in axes:
-        remaining_dims[axis] = True
-    reduce_comm = larr.comm.Sub(remaining_dims)
-    return reducer(reduce_comm, larr, out, axes, dtype)
 
 # ---------------------------------------------------------------------------
 # More data type functions

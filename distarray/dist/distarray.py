@@ -315,6 +315,22 @@ class DistArray(object):
 
         return self._reduce(_local_std, axis, dtype, out)
 
+    def min(self, axis=None, dtype=None, out=None):
+
+        def _local_min(larr, out_comm, ddpr, dtype, axes):
+            from distarray.local.localarray import local_reduction, min_reducer
+            return local_reduction(min_reducer, out_comm, larr, ddpr, dtype, axes)
+
+        return self._reduce(_local_min, axis, dtype, out)
+
+    def max(self, axis=None, dtype=None, out=None):
+
+        def _local_max(larr, out_comm, ddpr, dtype, axes):
+            from distarray.local.localarray import local_reduction, max_reducer
+            return local_reduction(max_reducer, out_comm, larr, ddpr, dtype, axes)
+
+        return self._reduce(_local_max, axis, dtype, out)
+
     def get_ndarrays(self):
         """Pull the local ndarrays from the engines.
 
