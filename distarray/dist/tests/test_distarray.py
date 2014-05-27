@@ -236,10 +236,39 @@ class TestSetItemSlicing(unittest.TestCase):
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
 
-    def test_2d_slice(self):
+    def test_2d_slice_0(self):
+        # on process boundaries
         source = numpy.random.randint(10, size=(10, 20))
         new_data = numpy.random.randint(10, size=(5, 10))
         slc = (slice(5, 10), slice(5, 15))
+        arr = self.dac.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_2d_slice_1(self):
+        # off process boundaries
+        source = numpy.random.randint(10, size=(10, 20))
+        new_data = numpy.random.randint(10, size=(5, 10))
+        slc = (slice(3, 8), slice(9, 19))
+        arr = self.dac.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_full_3d_slice(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(3, 4, 5))
+        slc = (slice(None), slice(None), slice(None))
+        arr = self.dac.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_full_3d_slice_ellipsis(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(3, 4, 5))
+        slc = Ellipsis
         arr = self.dac.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
