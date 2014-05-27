@@ -294,6 +294,15 @@ class TestSetItemSlicing(unittest.TestCase):
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
 
+    def test_non_array_data(self):
+        source = numpy.random.randint(10, size=(3, 4))
+        new_data = [42, 42, 42, 42]
+        slc = (2,)
+        arr = self.dac.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
 
 class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
 

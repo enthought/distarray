@@ -207,7 +207,7 @@ class DistArray(object):
                                            shape=self.shape)
 
         targets = self.distribution.owning_targets(index)
-        args = [self.key, index, value]
+        args = [self.key, index, np.asarray(value)]
         if self.distribution.has_precise_index:
             if set_type == 'value':
                 local_fn = raw_setitem
