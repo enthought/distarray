@@ -256,8 +256,6 @@ def positivify(index, size):
     ------
     IndexError
         for out-of-bounds indices
-    NotImplementedError
-        for negative steps
     """
     if isinstance(index, Integral):
         index = _positivify(index, size)
