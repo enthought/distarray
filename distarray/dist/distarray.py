@@ -207,14 +207,18 @@ class DistArray(object):
                                            shape=self.shape)
 
         targets = self.distribution.owning_targets(index)
-        args = [self.key, index, np.asarray(value)]
+        args = [self.key, index, value]
         if self.distribution.has_precise_index:
             if set_type == 'value':
                 local_fn = raw_setitem
             elif set_type == 'view':
+                args[-1] = np.asarray(args[-1])  # convert to array
                 # this could be made more efficient
                 # we only need the bounds computed by distribution.slice
                 new_distribution = self.distribution.slice(index)
+                if args[-1].shape != new_distribution.shape:
+                    msg = "Slice shape does not equal rvalue shape."
+                    raise ValueError(msg)
                 ddpr = new_distribution.get_dim_data_per_rank()
                 def bounds_slice(dd):
                     if dd['dist_type'] == 'b':
