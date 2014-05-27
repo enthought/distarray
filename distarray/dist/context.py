@@ -596,8 +596,8 @@ def proxyize(obj, context_name='__main__'):
                 func_closure = func.__closure__
 
                 # build the func's new execution environment
-                new_func_globals = dict({'context_key': context_key},
-                                        **main.__dict__)
+                main.__dict__.update({'context_key': context_key})
+                new_func_globals = main.__dict__
                 # create the new func
                 func = types.FunctionType(func_code, new_func_globals,
                                           func_name, func_defaults,
