@@ -220,8 +220,8 @@ class TestSetItemSlicing(unittest.TestCase):
 
     def test_1d_slice(self):
         source = numpy.random.randint(10, size=20)
-        new_data = numpy.random.randint(10, size=5)
-        slc = slice(12, 12+len(new_data))
+        new_data = numpy.random.randint(10, size=3)
+        slc = slice(1, 4)
         arr = self.dac.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
