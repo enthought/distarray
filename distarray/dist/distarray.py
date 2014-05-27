@@ -300,16 +300,12 @@ class DistArray(object):
 
         return self._reduce(_local_mean, axis, dtype, out)
 
-    def var(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.var(%s,%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+    def var(self, axis=None, dtype=float, out=None):
+        def _local_var(larr, out_comm, ddpr, dtype, axes):
+            from distarray.local.localarray import local_reduction, var_reducer
+            return local_reduction(var_reducer, out_comm, larr, ddpr, dtype=np.float, axes=axes)
+
+        return self._reduce(_local_var, axis, dtype, out)
 
     def std(self, axis=None, dtype=None, out=None):
         if axis or out is not None:

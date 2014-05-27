@@ -475,7 +475,17 @@ class TestReduceMethods(unittest.TestCase):
     def test_var(self):
         np_var = self.arr.var()
         da_var = self.darr.var()
-        self.assertEqual(da_var, np_var)
+        self.assertEqual(da_var.tondarray(), np_var)
+
+    def test_var_axis_0(self):
+        np_var = self.arr.var(axis=0)
+        da_var = self.darr.var(axis=0)
+        assert_allclose(da_var.tondarray(), np_var)
+
+    def test_var_axis_1(self):
+        np_var = self.arr.var(axis=1)
+        da_var = self.darr.var(axis=1)
+        assert_allclose(da_var.tondarray(), np_var)
 
     def test_var_dtype(self):
         np_var = self.arr.var(dtype=int)
