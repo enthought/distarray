@@ -4,6 +4,8 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+from __future__ import division
+
 import operator
 from itertools import product
 from functools import reduce
@@ -228,20 +230,39 @@ def _check_bounds(index, size):
         raise IndexError("Index %r out of bounds" % index)
 
 
-def tuple_intersection(t1, t2):
-    """Compute intersection of two (start, stop) tuples.
+def tuple_intersection(t0, t1):
+    """Compute intersection of a (start, stop, step) and a (start, stop) tuple.
+
+    Assumes all values are positive.
 
     Parameters
     ----------
-    t1, t2 : 2-tuples
+    t0: 2-tuple or 3-tuple
+        Tuple of (start, stop, [step]) representing an index range
+    t1: 2-tuple
+        Tuple of (start, stop) representing an index range
 
     Returns
     -------
-    2-tuple or None
+    3-tuple or None
+        A tightly bounded interval.
     """
-    stop = min(t1[1], t2[1])
-    start = max(t1[0], t2[0])
-    return (start, stop) if stop - start > 0 else None
+    if len(t0) == 2:
+        # default step is 1
+        t0 = t0 + (1,)
+
+    start0, stop0, step0 = t0
+    start1, stop1 = t1
+    n = int(numpy.ceil((start1 - start0) / step0))
+    start2 = start0 + n*step0
+
+    max_stop = min(t0[1], t1[1])
+    if (max_stop - start2) % step0 == 0:
+        n = ((max_stop - start2) // step0) - 1
+    else:
+        n = (max_stop - start2) // step0
+    stop2 = (start2 + n*step0) + 1
+    return (start2, stop2, step0) if stop2 > start2 else None
 
 
 def positivify(index, size):
@@ -323,7 +344,6 @@ def sanitize_indices(indices, ndim=None, shape=None):
             else:
                 return idx
         sanitized = tuple(replace_ellipsis(i) for i in sanitized)
-
 
     if ndim is not None:
         diff = ndim - len(sanitized)

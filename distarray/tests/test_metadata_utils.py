@@ -138,6 +138,58 @@ class TestSanitizeIndices(unittest.TestCase):
                                                          ndim=ndim)
         self.assertEqual(sanitized, (slice(None),) * 4 + (10,  slice(None)))
 
+    def test_step(self):
+        # currently doesn't touch step
+        indices = (slice(None, None, 2), slice(None, 8, 4))
+        tag, sanitized = metadata_utils.sanitize_indices(indices)
+        self.assertEqual(tag, 'view')
+        self.assertEqual(sanitized, indices)
+
+
+class TestTupleIntersection(unittest.TestCase):
+
+    def test_no_step_full_enclosure(self):
+        t0 = (0, 60)
+        t1 = (15, 30)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, (15, 30, 1))
+
+    def test_no_step_partial_overlap(self):
+        t0 = (0, 60)
+        t1 = (15, 90)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, (15, 60, 1))
+
+    def test_no_step_no_overlap(self):
+        t0 = (0, 60)
+        t1 = (80, 130)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, None)
+
+    def test_with_step_1(self):
+        t0 = (0, 60, 1)
+        t1 = (15, 30)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, (15, 30, 1))
+
+    def test_with_step_2(self):
+        t0 = (0, 60, 2)
+        t1 = (15, 30)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, (16, 29, 2))
+
+    def test_with_step_3(self):
+        t0 = (0, 59, 2)
+        t1 = (15, 90)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, (16, 59, 2))
+
+    def test_big_step(self):
+        t0 = (0, 59, 1000)
+        t1 = (15, 90)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, None)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
