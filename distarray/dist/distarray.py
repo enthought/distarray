@@ -313,18 +313,6 @@ class DistArray(object):
         """Return the maximum of array elements over the given axis."""
         return self._reduce('max_reducer', axis, dtype, out)
 
-    def argmin(self, axis):
-        """Return the locations of the minimum of array elements over the given axis."""
-        if not isinstance(axis, int):
-            raise TypeError("an integer is required for axis.")
-        return self._reduce('argmin_reducer', axis, dtype=None, out=None)
-
-    def argmax(self, axis):
-        """Return the locations of the maximum of array elements over the given axis."""
-        if not isinstance(axis, int):
-            raise TypeError("an integer is required for axis.")
-        return self._reduce('argmax_reducer', axis, dtype=None, out=None)
-
     def get_ndarrays(self):
         """Pull the local ndarrays from the engines.
 

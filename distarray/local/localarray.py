@@ -932,48 +932,6 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
     reduce_comm = larr.comm.Sub(remaining_dims)
     return reducer(reduce_comm, larr, out, axes, dtype)
 
-# --- Reductions for argmin and argmax --------------------------------------
-
-def _argminmax_reducer(reduce_comm, local_minmax, local_argminmax, 
-                       map, op, out, axes, dtype):
-    """ Handles either argmin or argmax reduction in one place.  Internal.
-    """
-    global_argmin = np.array([map.global_from_local(lidx) 
-                              for lidx in local_argminmax.flat])
-    global_argmin.shape = local_argminmax.shape
-    
-    pair_dtype = [('value', local_minmax.dtype),
-                  ('gidx', local_argminmax.dtype)]
-    paired = np.empty_like(local_argminmax, dtype=pair_dtype)
-    paired['value'] = local_minmax
-    paired['gidx'] = global_argmin
-
-    paired_out = np.empty_like(paired) if out is not None else None
-
-    reduce_comm.Reduce([paired, MPI.BYTE], [paired_out, MPI.BYTE],
-                       op=op, root=0)
-
-    if paired_out is not None:
-        out[...] = paired_out['gidx']
-
-    return out
-
-def argmin_reducer(reduce_comm, larr, out, axes, dtype):
-    """ Core reduction function for argmin."""
-    local_min = larr.ndarray.min(axis=axes[0])
-    local_argmin = larr.ndarray.argmin(axis=axes[0])
-    map = larr.distribution[axes[0]]
-    return _argminmax_reducer(reduce_comm, local_min, local_argmin,
-                              map, MPI.MIN, out, axes, dtype)
-
-def argmax_reducer(reduce_comm, larr, out, axes, dtype):
-    """ Core reduction function for argmax."""
-    local_max = larr.ndarray.max(axis=axes[0])
-    local_argmax = larr.ndarray.argmax(axis=axes[0])
-    map = larr.distribution[axes[0]]
-    return _argminmax_reducer(reduce_comm, local_max, local_argmax,
-                              map, MPI.MAX, out, axes, dtype)
-
 # --- Reductions for min, max, sum, mean, var, std ----------------------------
 
 def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
