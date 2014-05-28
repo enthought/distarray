@@ -13,7 +13,6 @@ from __future__ import absolute_import
 
 import collections
 import atexit
-import random
 
 import numpy
 
@@ -23,7 +22,7 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME, distarray_random_getstate
+from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 
 class Context(object):
@@ -68,33 +67,22 @@ class Context(object):
                     self.targets.append(target)
         self.targets = sorted(self.targets)
 
-        # FIXME: IPython bug #4296: This doesn't work under Python 3
-        #with self.view.sync_imports():
-        #    import distarray
+        # local imports
         self.view.execute("from functools import reduce; "
                           "from importlib import import_module; "
                           "import distarray.local; "
                           "import distarray.local.mpiutils; "
                           "import distarray.utils; "
+                          "import distarray.local.proxyize as proxyize; "
                           "import numpy")
+
+        self.context_key = self._setup_context_key()
 
         # setup proxyize which is used by context.apply in the rest of the
         # setup.
-        cmd = """
-def proxyize(obj, context_name='__main__'):
-    main = import_module('__main__')
-    if context_name != '__main__':
-        module = getattr(main, context_name)
-    else:
-        module = main
-    name = distarray.utils.uid()
-    setattr(module, name, obj)
-    return name
-"""
-
+        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
         self.view.execute(cmd)
 
-        self.context_key = self._setup_context_key()
         self._base_comm = self._make_base_comm()
         self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
         self.comm = self._make_subcomm(self.targets)
@@ -566,7 +554,7 @@ def proxyize(obj, context_name='__main__'):
             return a list of the results on the each engine.
         """
 
-        def func_wrapper(func, random_state, context_key, args, kwargs):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -581,9 +569,7 @@ def proxyize(obj, context_name='__main__'):
 
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
-
-            # set the random state on engines.
-            main.distarray.utils.distarray_random_setstate(random_state)  # noqa
+            main.proxyize.set_state(context_key)
 
             # Modify func to change the namespace it executes in.
             # but builtins don't have __code__, __globals__, etc.
@@ -620,11 +606,8 @@ def proxyize(obj, context_name='__main__'):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        random_state = distarray_random_getstate()
-        wrapped_args = (func, random_state, self.context_key, args, kwargs)
-        # increment the random state so we don't get the same state pushed to
-        # the engines if we do `context.apply twice in a row.
-        uid()
+        apply_nonce = uid()[13:]
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs)
 
         targets = self.targets if targets is None else targets
 
