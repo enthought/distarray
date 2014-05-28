@@ -31,6 +31,7 @@ import numpy as np
 
 from distarray.externals.six import add_metaclass
 from distarray.externals.six.moves import range, reduce
+from distarray.utils import remove_elements
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
@@ -621,19 +622,18 @@ class Distribution(object):
                 (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
                 all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))
 
-    def reduce(self, axis):
+    def reduce(self, axes):
         """
         Returns a new Distribution reduced along `axis`, i.e., the new
         distribution has one fewer dimension than `self`.
         """
 
         # the `axis` argument can actually be a sequence of axes, so we rename it.
-        axes = normalize_reduction_axes(axis, self.ndim)
-        del axis
+        axes = normalize_reduction_axes(axes, self.ndim)
 
-        reduced_shape = _remove_elements(axes, self.shape)
-        reduced_dist = _remove_elements(axes, self.dist)
-        reduced_grid_shape = _remove_elements(axes, self.grid_shape)
+        reduced_shape = remove_elements(axes, self.shape)
+        reduced_dist = remove_elements(axes, self.dist)
+        reduced_grid_shape = remove_elements(axes, self.grid_shape)
 
         # This block is required because np.min() works one axis at a time.
         reduced_ranks = self.rank_from_coords.copy()
@@ -647,11 +647,3 @@ class Distribution(object):
                                        dist=reduced_dist,
                                        grid_shape=reduced_grid_shape,
                                        targets=reduced_targets)
-
-
-# ----------------------------------------------------------------------------
-# Internal utility functions.
-# ----------------------------------------------------------------------------
-
-def _remove_elements(to_remove, seq):
-    return [x for (idx, x) in enumerate(seq) if idx not in to_remove]

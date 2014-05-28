@@ -214,6 +214,7 @@ def positivify(index, size):
     else:
         raise IndexError("Index %s out of bounds" % index)
 
+
 def normalize_reduction_axes(axes, ndim):
     if axes is None:
         axes = tuple(range(ndim))

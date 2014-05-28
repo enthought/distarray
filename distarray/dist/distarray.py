@@ -267,14 +267,14 @@ class DistArray(object):
             arr.fill(value)
         self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
-    def _reduce(self, local_reduce_name, axis=None, dtype=None, out=None):
+    def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
 
         if out is not None:
             _raise_nie()
 
         dtype = dtype or self.dtype 
 
-        out_dist = self.distribution.reduce(axis=axis)
+        out_dist = self.distribution.reduce(axes=axes)
         ddpr = out_dist.get_dim_data_per_rank()
 
         def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
@@ -284,7 +284,7 @@ class DistArray(object):
 
         out_key = self.context.apply(_local_reduce, 
                                      (local_reduce_name, self.key, out_dist.comm, 
-                                      ddpr, dtype, normalize_reduction_axes(axis, self.ndim)),
+                                      ddpr, dtype, normalize_reduction_axes(axes, self.ndim)),
                                      targets=self.targets, return_proxy=True)
 
         return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
