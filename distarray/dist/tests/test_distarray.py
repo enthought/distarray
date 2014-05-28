@@ -532,6 +532,21 @@ class TestReduceMethods(unittest.TestCase):
         da_max = self.darr.max(axis=1)
         assert_allclose(da_max.tondarray(), np_max)
 
+    def test_sum_4D_cyclic(self):
+        shape = (10, 20, 30, 40)
+        arr = numpy.zeros(shape)
+        arr.fill(3)
+        dist = Distribution.from_shape(self.context,
+                                       shape=shape,
+                                       dist=('c', 'c', 'c', 'c'))
+        darr = self.context.empty(distribution=dist)
+        darr.fill(3)
+        for axis in range(4):
+            arr_sum = arr.sum(axis=axis)
+            darr_sum = darr.sum(axis=axis)
+            assert_allclose(darr_sum.tondarray(), arr_sum)
+        assert_allclose(darr.sum().tondarray(), arr.sum())
+
 
 class TestFromLocalArrays(unittest.TestCase):
 
