@@ -561,11 +561,7 @@ class Context(object):
             `__distarray__<some uuid>`.
             """
             from importlib import import_module
-            import random
             import types
-
-            # set the random state
-            random.setstate(random_state)
 
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
