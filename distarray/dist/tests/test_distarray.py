@@ -158,6 +158,13 @@ class TestGetItemSlicing(unittest.TestCase):
         s2 = s1[-2:]
         assert_array_equal(s2.toarray(), expected[3:5])
 
+    def test_slice_block_dist_1d_with_step(self):
+        size = 10
+        step = 2
+        expected = numpy.random.randint(10, size=size)
+        darr = self.dac.fromarray(expected)
+        assert_array_equal(darr[::2], expected[::2])
+
     def test_partial_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
