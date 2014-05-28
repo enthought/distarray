@@ -557,7 +557,6 @@ class Distribution(object):
         * ``size`` integer, greater than or equal to zero.
 
         The global size of the array in this dimension.
-
         """
         self.context = context
         self.targets = sorted(targets or context.targets)
@@ -593,7 +592,6 @@ class Distribution(object):
         returns a list of more than one rank.
 
         If the `idxs` tuple is out of bounds, raises `IndexError`.
-
         """
         idxs = map(positivify, idxs, self.shape) # positivify and check
         dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
@@ -606,7 +604,6 @@ class Distribution(object):
         ranks.
 
         Convenience method meant for IPython parallel usage.
-
         """
         return [self.targets[r] for r in self.owning_ranks(idxs)]
 
@@ -628,7 +625,6 @@ class Distribution(object):
         """
         Returns a new Distribution reduced along `axis`, i.e., the new
         distribution has one fewer dimension than `self`.
-
         """
 
         # the `axis` argument can actually be a sequence of axes, so we rename it.
