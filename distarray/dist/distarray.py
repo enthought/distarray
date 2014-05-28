@@ -290,29 +290,37 @@ class DistArray(object):
         return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
 
     def sum(self, axis=None, dtype=None, out=None):
+        """Return the sum of array elements over the given axis."""
         return self._reduce('sum_reducer', axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
+        """Return the mean of array elements over the given axis."""
         return self._reduce('mean_reducer', axis, dtype, out)
 
     def var(self, axis=None, dtype=float, out=None):
+        """Return the variance of array elements over the given axis."""
         return self._reduce('var_reducer', axis, dtype, out)
 
     def std(self, axis=None, dtype=float, out=None):
+        """Return the standard deviation of array elements over the given axis."""
         return self._reduce('std_reducer', axis, dtype, out)
 
     def min(self, axis=None, dtype=None, out=None):
+        """Return the minimum of array elements over the given axis."""
         return self._reduce('min_reducer', axis, dtype, out)
 
     def max(self, axis=None, dtype=None, out=None):
+        """Return the maximum of array elements over the given axis."""
         return self._reduce('max_reducer', axis, dtype, out)
 
     def argmin(self, axis):
+        """Return the locations of the minimum of array elements over the given axis."""
         if not isinstance(axis, int):
             raise TypeError("an integer is required for axis.")
         return self._reduce('argmin_reducer', axis, dtype=None, out=None)
 
     def argmax(self, axis):
+        """Return the locations of the maximum of array elements over the given axis."""
         if not isinstance(axis, int):
             raise TypeError("an integer is required for axis.")
         return self._reduce('argmax_reducer', axis, dtype=None, out=None)

@@ -893,7 +893,6 @@ can_cast = np.can_cast
 # Reduction functions
 # ---------------------------------------------------------------------------
 
-
 def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
     """ Entry point for reductions on local arrays.
 
@@ -975,6 +974,7 @@ def argmax_reducer(reduce_comm, larr, out, axes, dtype):
     return _argminmax_reducer(reduce_comm, local_max, local_argmax,
                               map, MPI.MAX, out, axes, dtype)
 
+# --- Reductions for min, max, sum, mean, var, std ----------------------------
 
 def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
     """ Handles simple reductions: min, max, sum.  Internal. """
@@ -989,23 +989,26 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
 def min_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for min."""
     return _basic_reducer(reduce_comm, MPI.MIN,
-                          larr.ndarray.min, (), {'axis':axes}, out)
+                          larr.ndarray.min, 
+                          (), {'axis':axes}, out)
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for max."""
     return _basic_reducer(reduce_comm, MPI.MAX,
-                          larr.ndarray.max, (), {'axis':axes}, out)
+                          larr.ndarray.max, 
+                          (), {'axis':axes}, out)
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for sum."""
     return _basic_reducer(reduce_comm, MPI.SUM,
-                          larr.ndarray.sum, (), {'axis':axes, 'dtype':dtype}, out)
+                          larr.ndarray.sum, 
+                          (), {'axis':axes, 'dtype':dtype}, out)
 
 def mean_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for mean."""
     sum_reducer(reduce_comm, larr, out, axes, dtype)
     if out is not None:
-        out.ndarray /= (larr.global_size / float(out.global_size))
+        out.ndarray /= (larr.global_size / out.global_size)
     return out
 
 
@@ -1018,7 +1021,8 @@ def var_reducer(reduce_comm, larr, out, axes, dtype):
 
     # Make mean.ndarray's shape broadcastable.
     if mean is not None:
-        mean_shape = tuple(1 if axis in axes else s for (axis, s) in enumerate(larr.ndarray.shape))
+        mean_shape = tuple(1 if axis in axes else s
+                           for (axis, s) in enumerate(larr.ndarray.shape))
         mean.ndarray.shape = mean_shape
         # Copy mean.ndarray into temp.ndarray
         temp.ndarray[...] = mean.ndarray
