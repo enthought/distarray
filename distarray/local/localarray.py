@@ -893,7 +893,32 @@ can_cast = np.can_cast
 # Reduction functions
 # ---------------------------------------------------------------------------
 
+
 def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
+    """ Entry point for reductions on local arrays.
+
+    Parameters
+    ----------
+    reducer : callable 
+        Performs the core reduction operation.
+
+    out_comm: MPI Comm instance.
+        The MPI communicator for the result of the reduction.  Is equal to
+        MPI.COMM_NULL when this rank is not part of the output communicator.
+
+    larr: LocalArray
+        Input.  Defined for all ranks.
+
+    ddpr: sequence of dim-data dictionaries.
+
+    axes: Sequence of ints or None.
+
+    Returns
+    -------
+    LocalArray or None
+        When out_comm == MPI.COMM_NULL, returns None.
+        Otherwise, returns the LocalArray section of the reduction result.
+    """
 
     if out_comm == MPI.COMM_NULL:
         out = None
@@ -908,7 +933,51 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
     reduce_comm = larr.comm.Sub(remaining_dims)
     return reducer(reduce_comm, larr, out, axes, dtype)
 
+# --- Reductions for argmin and argmax --------------------------------------
+
+def _argminmax_reducer(reduce_comm, local_minmax, local_argminmax, 
+                       map, op, out, axes, dtype):
+    """ Handles either argmin or argmax reduction in one place.  Internal.
+    """
+    global_argmin = np.array([map.global_from_local(lidx) 
+                              for lidx in local_argminmax.flat])
+    global_argmin.shape = local_argminmax.shape
+    
+    pair_dtype = [('value', local_minmax.dtype),
+                  ('gidx', local_argminmax.dtype)]
+    paired = np.empty_like(local_argminmax, dtype=pair_dtype)
+    paired['value'] = local_minmax
+    paired['gidx'] = global_argmin
+
+    paired_out = np.empty_like(paired) if out is not None else None
+
+    reduce_comm.Reduce([paired, MPI.BYTE], [paired_out, MPI.BYTE],
+                       op=op, root=0)
+
+    if paired_out is not None:
+        out[...] = paired_out['gidx']
+
+    return out
+
+def argmin_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for argmin."""
+    local_min = larr.ndarray.min(axis=axes[0])
+    local_argmin = larr.ndarray.argmin(axis=axes[0])
+    map = larr.distribution[axes[0]]
+    return _argminmax_reducer(reduce_comm, local_min, local_argmin,
+                              map, MPI.MIN, out, axes, dtype)
+
+def argmax_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for argmax."""
+    local_max = larr.ndarray.max(axis=axes[0])
+    local_argmax = larr.ndarray.argmax(axis=axes[0])
+    map = larr.distribution[axes[0]]
+    return _argminmax_reducer(reduce_comm, local_max, local_argmax,
+                              map, MPI.MAX, out, axes, dtype)
+
+
 def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
+    """ Handles simple reductions: min, max, sum.  Internal. """
     if out is None:
         out_ndarray = None
     else:
@@ -918,19 +987,22 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
     return out
 
 def min_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for min."""
     return _basic_reducer(reduce_comm, MPI.MIN,
                           larr.ndarray.min, (), {'axis':axes}, out)
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for max."""
     return _basic_reducer(reduce_comm, MPI.MAX,
                           larr.ndarray.max, (), {'axis':axes}, out)
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for sum."""
     return _basic_reducer(reduce_comm, MPI.SUM,
                           larr.ndarray.sum, (), {'axis':axes, 'dtype':dtype}, out)
 
-
 def mean_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for mean."""
     sum_reducer(reduce_comm, larr, out, axes, dtype)
     if out is not None:
         out.ndarray /= (larr.global_size / float(out.global_size))
@@ -938,6 +1010,7 @@ def mean_reducer(reduce_comm, larr, out, axes, dtype):
 
 
 def var_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for var."""
     mean = empty_like(out, dtype=float) if out is not None else None
     mean = mean_reducer(reduce_comm, larr, mean, axes, dtype=float)
 
@@ -963,6 +1036,7 @@ def var_reducer(reduce_comm, larr, out, axes, dtype):
 
 
 def std_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for std."""
     var_reducer(reduce_comm, larr, out, axes, dtype)
     if out is not None:
         np.sqrt(out.ndarray, out=out.ndarray)

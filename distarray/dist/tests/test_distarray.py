@@ -532,7 +532,25 @@ class TestReduceMethods(unittest.TestCase):
         da_max = self.darr.max(axis=1)
         assert_allclose(da_max.tondarray(), np_max)
 
+    def test_argmin_axis_0(self):
+        np_argmin = self.arr.argmin(axis=0)
+        da_argmin = self.darr.argmin(axis=0)
+        assert_allclose(da_argmin.tondarray(), np_argmin)
 
+    def test_argmin_axis_1(self):
+        np_argmin = self.arr.argmin(axis=1)
+        da_argmin = self.darr.argmin(axis=1)
+        assert_allclose(da_argmin.tondarray(), np_argmin)
+
+    def test_argmax_axis_0(self):
+        np_argmax = self.arr.argmax(axis=0)
+        da_argmax = self.darr.argmax(axis=0)
+        assert_allclose(da_argmax.tondarray(), np_argmax)
+
+    def test_argmax_axis_1(self):
+        np_argmax = self.arr.argmax(axis=1)
+        da_argmax = self.darr.argmax(axis=1)
+        assert_allclose(da_argmax.tondarray(), np_argmax)
 
 class TestFromLocalArrays(unittest.TestCase):
 
