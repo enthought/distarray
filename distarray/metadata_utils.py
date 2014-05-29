@@ -247,14 +247,17 @@ def tuple_intersection(t0, t1):
     3-tuple or None
         A tightly bounded interval.
     """
-    if len(t0) == 2:
+    if len(t0) == 2 or t0[2] is None:
         # default step is 1
-        t0 = t0 + (1,)
+        t0 = (t0[0], t0[1], 1)
 
     start0, stop0, step0 = t0
     start1, stop1 = t1
-    n = int(numpy.ceil((start1 - start0) / step0))
-    start2 = start0 + n*step0
+    if start0 < start1:
+        n = int(numpy.ceil((start1 - start0) / step0))
+        start2 = start0 + n*step0
+    else:
+        start2 = start0
 
     max_stop = min(t0[1], t1[1])
     if (max_stop - start2) % step0 == 0:
