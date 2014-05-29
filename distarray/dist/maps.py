@@ -568,7 +568,7 @@ class Distribution(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
-        validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
+        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
 
         nelts = reduce(operator.mul, self.grid_shape, 1)
         self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)

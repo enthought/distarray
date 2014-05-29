@@ -129,17 +129,24 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         self.context.close()
 
     def test_from_global_dim_data_irregular_block(self):
-        global_size = 10
+
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
+
         bounds = (0, 2, 3, 4, 10)
         glb_dim_data = (
                 {'dist_type': 'b',
                  'bounds': bounds},
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
     def test_from_global_dim_data_1d(self):
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         total_size = 40
         list_of_indices = [
                 [29, 38, 18, 19, 11, 33, 10, 1, 22, 25],
@@ -152,7 +159,9 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices': list_of_indices,
                     },
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         for i in range(total_size):
             distarr[i] = i
@@ -161,6 +170,10 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             assert_allclose(arr, list_of_indices[i])
 
     def test_from_global_dim_data_bu(self):
+
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
+
         rows = 9
         row_break_point = rows // 2
         cols = 10
@@ -177,12 +190,18 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices' : indices
                 },
             )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
     def test_from_global_dim_data_bc(self):
         """ Test creation of a block-cyclic array. """
+
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
+
         rows, cols = 5, 9
         global_dim_data = (
                 # dim 0
@@ -199,7 +218,9 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'size': cols,
                     'block_size': 2,
                 },)
-        distribution = Distribution(self.context, global_dim_data)
+        distribution = Distribution(self.context,
+                                    global_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
         las = distarr.get_localarrays()
@@ -208,6 +229,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                                  [(3, 5), (3, 4), (2, 5), (2, 4)])
 
     def test_from_global_dim_data_uu(self):
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         rows = 6
         cols = 20
         row_ixs = numpy.random.permutation(range(rows))
@@ -220,11 +243,15 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 {'dist_type': 'u',
                     'indices' : col_indices},
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
     def test_global_dim_data_local_dim_data_equivalence(self):
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         rows, cols = 5, 9
         glb_dim_data = (
                 {'dist_type': 'c',
@@ -238,7 +265,9 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                  'size': cols,
                  },
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data,
+                                    targets=self.context.targets[:4])
         actual = distribution.get_dim_data_per_rank()
 
         expected = [
@@ -294,6 +323,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_irregular_block_assignment(self):
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         global_dim_data = (
                 {
                     'dist_type': 'b',
@@ -304,7 +335,9 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'bounds': (0, 2, 6, 7, 9),
                 }
             )
-        distribution = Distribution(self.context, global_dim_data)
+        distribution = Distribution(self.context,
+                                    global_dim_data,
+                                    targets=self.context.targets[:4])
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
@@ -355,9 +388,12 @@ class TestDistArrayCreation(unittest.TestCase):
 
     def test_grid_rank(self):
         # regression test for issue #235
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         d = Distribution.from_shape(self.context, (4, 4, 4),
                                     dist=('b', 'n', 'b'),
-                                    grid_shape=(1, 1, 4))
+                                    grid_shape=(1, 1, 4),
+                                    targets=self.context.targets[:4])
         a = self.context.empty(d)
         self.assertEqual(a.grid_shape, (1, 1, 4))
 
@@ -395,7 +431,10 @@ class TestReduceMethods(unittest.TestCase):
     def setUpClass(cls):
         cls.context = Context()
         cls.arr = numpy.arange(16).reshape(4, 4)
-        cls.darr = cls.context.fromndarray(cls.arr)
+        dist = Distribution.from_shape(cls.context,
+                                       cls.arr.shape, ('b', 'b'), (2, 2),
+                                       targets=cls.context.targets[:4])
+        cls.darr = cls.context.fromndarray(cls.arr, dist)
 
     @classmethod
     def tearDownClass(cls):

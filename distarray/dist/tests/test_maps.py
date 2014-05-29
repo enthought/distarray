@@ -22,9 +22,14 @@ class TestClientMap(unittest.TestCase):
         self.ctx.close()
 
     def test_2D_bn(self):
+        if len(self.ctx.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         nrows, ncols = 31, 53
-        cm = client_map.Distribution.from_shape(self.ctx, (nrows, ncols),
-                                                {0: 'b'}, (4, 1))
+        cm = client_map.Distribution.from_shape(self.ctx,
+                (nrows, ncols),
+                {0: 'b'},
+                (4, 1),
+                self.ctx.targets[:4])
         chunksize = (nrows // 4) + 1
         for _ in range(100):
             r, c = randrange(nrows), randrange(ncols)
@@ -32,11 +37,14 @@ class TestClientMap(unittest.TestCase):
             self.assertSequenceEqual(cm.owning_ranks((r,c)), [rank])
 
     def test_2D_bb(self):
+        if len(self.ctx.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
         cm = client_map.Distribution.from_shape(
                 self.ctx, (nrows, ncols), ('b', 'b'),
-                (nprocs_per_dim, nprocs_per_dim))
+                (nprocs_per_dim, nprocs_per_dim),
+                targets=self.ctx.targets[:4])
         row_chunks = nrows // nprocs_per_dim + 1
         col_chunks = ncols // nprocs_per_dim + 1
         for r in range(nrows):
@@ -46,11 +54,14 @@ class TestClientMap(unittest.TestCase):
                 self.assertSequenceEqual(actual, [rank])
 
     def test_2D_cc(self):
+        if len(self.ctx.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
         cm = client_map.Distribution.from_shape(
                 self.ctx, (nrows, ncols), ('c', 'c'),
-                (nprocs_per_dim, nprocs_per_dim))
+                (nprocs_per_dim, nprocs_per_dim),
+                self.ctx.targets[:4])
         for r in range(nrows):
             for c in range(ncols):
                 rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
@@ -81,10 +92,15 @@ class TestClientMap(unittest.TestCase):
         self.assertFalse(cm2.is_compatible(cm1))
 
     def test_reduce(self):
+        if len(self.ctx.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
+
         nr, nc, nd = 10**5, 10**6, 10**4
 
         dist = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'), grid_shape=(2, 2, 1))
+                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'), 
+                 grid_shape=(2, 2, 1),
+                 targets=self.ctx.targets[:4])
 
         new_dist0 = dist.reduce(axes=[0])
         self.assertEqual(new_dist0.dist, ('c', 'n'))
