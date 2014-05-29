@@ -565,7 +565,7 @@ class Context(object):
 
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
-            main.proxyize.set_state(context_key)
+            main.proxyize.set_state(apply_nonce)
 
             # Modify func to change the namespace it executes in.
             # but builtins don't have __code__, __globals__, etc.
