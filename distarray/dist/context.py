@@ -560,7 +560,8 @@ class Context(object):
             arguments on the engines that are passed in as names of the form
             `__distarray__<some uuid>`.
             """
-            main = __import__('__main__')
+            from importlib import import_module
+            main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
 
             # convert args

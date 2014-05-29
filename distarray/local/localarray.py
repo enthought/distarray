@@ -10,7 +10,6 @@ from __future__ import print_function, division
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
-import math
 from collections import Mapping
 
 import numpy as np
@@ -18,9 +17,11 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.metadata_utils import sanitize_indices
-from distarray.local.mpiutils import MPI
 from distarray.utils import _raise_nie
+from distarray.metadata_utils import sanitize_indices
+
+import distarray.local
+from distarray.local.mpiutils import MPI
 from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
@@ -126,16 +127,6 @@ class LocalArray(object):
         self.base = None  # mimic numpy.ndarray.base
         self.ctypes = None  # mimic numpy.ndarray.ctypes
 
-    def __del__(self):
-        # If the __init__ method fails, we may not have a valid comm
-        # attribute and this needs to be protected against.
-        if hasattr(self, 'comm'):
-            if self.comm is not None:
-                try:
-                    self.comm.Free()
-                except:
-                    pass
-
     @property
     def dim_data(self):
         return self.distribution.dim_data
@@ -155,6 +146,10 @@ class LocalArray(object):
     @property
     def global_size(self):
         return self.distribution.global_size
+
+    @property
+    def comm(self):
+        return self.distribution.comm
 
     @property
     def comm_size(self):
@@ -371,38 +366,6 @@ class LocalArray(object):
         else:
             raise IncompatibleArrayError("DistArrays have incompatible shape,"
                                          "dist or grid_shape")
-
-    #TODO FIXME: implement axis and out kwargs.
-    def sum(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        return sum(self, dtype=dtype)
-
-    def mean(self, axis=None, dtype=float, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        elif dtype is not None:
-            dtype = np.dtype(dtype)
-            return dtype.type((np.divide(self.sum(dtype=dtype),
-                                         self.global_size)))
-        else:
-            return np.divide(self.sum(dtype=dtype), self.global_size)
-
-    def var(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        mu = self.mean()
-        temp = (self - mu) ** 2
-        return temp.mean(dtype=dtype)
-
-    def std(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        elif dtype is not None:
-            dtype = np.dtype(dtype)
-            return dtype.type((math.sqrt(self.var())))
-        else:
-            return math.sqrt(self.var())
 
     #-------------------------------------------------------------------------
     # Basic customization
@@ -937,15 +900,119 @@ can_cast = np.can_cast
 
 
 # ---------------------------------------------------------------------------
-# Basic functions
+# Reduction functions
 # ---------------------------------------------------------------------------
 
+def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
+    """ Entry point for reductions on local arrays.
 
-def sum(a, dtype=None):
-    local_sum = a.ndarray.sum(dtype=dtype)
-    global_sum = a.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
-    return global_sum
+    Parameters
+    ----------
+    reducer : callable 
+        Performs the core reduction operation.
 
+    out_comm: MPI Comm instance.
+        The MPI communicator for the result of the reduction.  Is equal to
+        MPI.COMM_NULL when this rank is not part of the output communicator.
+
+    larr: LocalArray
+        Input.  Defined for all ranks.
+
+    ddpr: sequence of dim-data dictionaries.
+
+    axes: Sequence of ints or None.
+
+    Returns
+    -------
+    LocalArray or None
+        When out_comm == MPI.COMM_NULL, returns None.
+        Otherwise, returns the LocalArray section of the reduction result.
+    """
+
+    if out_comm == MPI.COMM_NULL:
+        out = None
+    else:
+        dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
+        dist = distarray.local.maps.Distribution(dim_data, out_comm)
+        out = distarray.local.empty(dist, dtype)
+
+    remaining_dims = [False] * larr.ndim
+    for axis in axes:
+        remaining_dims[axis] = True
+    reduce_comm = larr.comm.Sub(remaining_dims)
+    return reducer(reduce_comm, larr, out, axes, dtype)
+
+# --- Reductions for min, max, sum, mean, var, std ----------------------------
+
+def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
+    """ Handles simple reductions: min, max, sum.  Internal. """
+    if out is None:
+        out_ndarray = None
+    else:
+        out_ndarray = out.ndarray
+    local_reduce = func(*args, **kwargs)
+    reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
+    return out
+
+def min_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for min."""
+    return _basic_reducer(reduce_comm, MPI.MIN,
+                          larr.ndarray.min, 
+                          (), {'axis':axes}, out)
+
+def max_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for max."""
+    return _basic_reducer(reduce_comm, MPI.MAX,
+                          larr.ndarray.max, 
+                          (), {'axis':axes}, out)
+
+def sum_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for sum."""
+    return _basic_reducer(reduce_comm, MPI.SUM,
+                          larr.ndarray.sum, 
+                          (), {'axis':axes, 'dtype':dtype}, out)
+
+def mean_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for mean."""
+    sum_reducer(reduce_comm, larr, out, axes, dtype)
+    if out is not None:
+        out.ndarray /= (larr.global_size / out.global_size)
+    return out
+
+
+def var_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for var."""
+    mean = empty_like(out, dtype=float) if out is not None else None
+    mean = mean_reducer(reduce_comm, larr, mean, axes, dtype=float)
+
+    temp = empty_like(larr, dtype=float)
+
+    # Make mean.ndarray's shape broadcastable.
+    if mean is not None:
+        mean_shape = tuple(1 if axis in axes else s
+                           for (axis, s) in enumerate(larr.ndarray.shape))
+        mean.ndarray.shape = mean_shape
+        # Copy mean.ndarray into temp.ndarray
+        temp.ndarray[...] = mean.ndarray
+
+    # have to broadcast mean.ndarray to all ranks in this reduce_comm.
+    reduce_comm.Bcast(temp.ndarray, root=0)
+
+    # Do the variance calculation.
+    temp.ndarray[...] = (larr.ndarray - temp.ndarray) ** 2
+
+    # Get the mean reduction of temp's data.
+    mean_reducer(reduce_comm, temp, out, axes, dtype)
+
+    return out
+
+
+def std_reducer(reduce_comm, larr, out, axes, dtype):
+    """ Core reduction function for std."""
+    var_reducer(reduce_comm, larr, out, axes, dtype)
+    if out is not None:
+        np.sqrt(out.ndarray, out=out.ndarray)
+    return out
 
 # ---------------------------------------------------------------------------
 # More data type functions

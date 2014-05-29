@@ -8,10 +8,12 @@ from __future__ import print_function, absolute_import
 
 from distarray.dist.ipython_utils import IPythonClient
 
+
 def cleanup(view, module_name, prefix):
     """ Delete Context object with the given name from the given module"""
     def _cleanup(module_name, prefix):
-        ns = __import__(module_name)
+        from importlib import import_module
+        ns = import_module(module_name)
         for name in vars(ns).copy():
             if name.startswith(prefix):
                 delattr(ns, name)
