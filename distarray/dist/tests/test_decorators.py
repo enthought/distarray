@@ -178,6 +178,9 @@ class TestLocalDecorator(TestCase):
         assert_array_equal(da.toarray(), a)
 
     def test_different_contexts(self):
+        if len(self.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
+
         ctx1 = Context(targets=range(4))
         ctx2 = Context(targets=range(3))
         distribution1 = Distribution.from_shape(ctx1, (10,))

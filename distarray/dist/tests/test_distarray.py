@@ -430,6 +430,8 @@ class TestReduceMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = Context()
+        if len(cls.context.targets) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         cls.arr = numpy.arange(16).reshape(4, 4)
         dist = Distribution.from_shape(cls.context,
                                        cls.arr.shape, ('b', 'b'), (2, 2),
