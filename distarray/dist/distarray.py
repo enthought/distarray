@@ -25,6 +25,7 @@ import distarray
 from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
+from distarray.metadata_utils import normalize_reduction_axes
 
 __all__ = ['DistArray']
 
@@ -319,50 +320,51 @@ class DistArray(object):
             arr.fill(value)
         self.context.apply(inner_fill, args=(self.key, value), targets=self.targets)
 
-    # TODO FIXME: implement axis and out kwargs.
-    def sum(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
+    def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
+
+        if out is not None:
             _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.sum(%s,%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+
+        dtype = dtype or self.dtype 
+
+        out_dist = self.distribution.reduce(axes=axes)
+        ddpr = out_dist.get_dim_data_per_rank()
+
+        def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
+            import distarray.local.localarray as la
+            local_reducer = getattr(la, local_name)
+            return la.local_reduction(local_reducer, out_comm, larr, ddpr, dtype, axes)
+
+        out_key = self.context.apply(_local_reduce, 
+                                     (local_reduce_name, self.key, out_dist.comm, 
+                                      ddpr, dtype, normalize_reduction_axes(axes, self.ndim)),
+                                     targets=self.targets, return_proxy=True)
+
+        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
+
+    def sum(self, axis=None, dtype=None, out=None):
+        """Return the sum of array elements over the given axis."""
+        return self._reduce('sum_reducer', axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.mean(axis=%s, dtype=%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+        """Return the mean of array elements over the given axis."""
+        return self._reduce('mean_reducer', axis, dtype, out)
 
-    def var(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.var(%s,%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+    def var(self, axis=None, dtype=float, out=None):
+        """Return the variance of array elements over the given axis."""
+        return self._reduce('var_reducer', axis, dtype, out)
 
-    def std(self, axis=None, dtype=None, out=None):
-        if axis or out is not None:
-            _raise_nie()
-        keys = self.context._key_and_push(axis, dtype)
-        result_key = self.context._generate_key()
-        subs = (result_key, self.key) + keys
-        self.context._execute('%s = %s.std(%s,%s)' % subs,
-                              targets=self.targets)
-        result = self.context._pull(result_key, targets=self.targets[0])
-        return result
+    def std(self, axis=None, dtype=float, out=None):
+        """Return the standard deviation of array elements over the given axis."""
+        return self._reduce('std_reducer', axis, dtype, out)
+
+    def min(self, axis=None, dtype=None, out=None):
+        """Return the minimum of array elements over the given axis."""
+        return self._reduce('min_reducer', axis, dtype, out)
+
+    def max(self, axis=None, dtype=None, out=None):
+        """Return the maximum of array elements over the given axis."""
+        return self._reduce('max_reducer', axis, dtype, out)
 
     def get_ndarrays(self):
         """Pull the local ndarrays from the engines.

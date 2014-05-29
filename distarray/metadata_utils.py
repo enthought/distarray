@@ -44,7 +44,7 @@ def validate_grid_shape(grid_shape, dist, comm_size):
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
-    if reduce(operator.mul, grid_shape) != comm_size:
+    if reduce(operator.mul, grid_shape, 1) != comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
         raise InvalidGridShapeError(msg % (grid_shape, comm_size))
     return grid_shape
@@ -358,3 +358,13 @@ def sanitize_indices(indices, ndim=None, shape=None):
         sanitized = tuple(positivify(i, size) for (i, size) in zip(sanitized,
                                                                    shape))
     return (rtype, sanitized)
+
+
+def normalize_reduction_axes(axes, ndim):
+    if axes is None:
+        axes = tuple(range(ndim))
+    elif not isinstance(axes, Sequence):
+        axes = (positivify(axes, ndim),)
+    else:
+        axes = tuple(positivify(a, ndim) for a in axes)
+    return axes
