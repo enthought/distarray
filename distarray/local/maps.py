@@ -213,11 +213,19 @@ class BlockMap(MapBase):
                 raise IndexError("Global index %s out of bounds" % gidx)
             return gidx - self.start
         elif isinstance(gidx, slice):
+            # we don't make the effort to compute the exact slice
+            # `__getitem__` doesn't care about overly-large slices, we just
+            # have to get the offset from the start correct based on the `step`
             start = gidx.start if gidx.start is not None else 0
             stop = gidx.stop if gidx.stop is not None else self.global_size
-            new_start = max(start - self.start, 0)  # prevent negative inds
+            step = gidx.step if gidx.step is not None else 1
+            new_start = start - self.start
+            if new_start < 0:  # don't allow negative starts
+                new_start += step * abs(new_start // step)
+                if new_start < 0:
+                    new_start += step
             new_stop = stop - self.start
-            return slice(new_start, new_stop)
+            return slice(new_start, new_stop, gidx.step)
         else:
             raise TypeError("Index must be Integral or slice.")
 

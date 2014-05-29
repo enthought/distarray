@@ -4,7 +4,10 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+from __future__ import division
+
 import unittest
+import numpy
 from random import randrange
 
 from distarray.externals.six.moves import range
@@ -140,6 +143,29 @@ class TestSlice(unittest.TestCase):
         self.assertSequenceEqual(d1.dist, d0.dist)
         self.assertSequenceEqual(d1.targets, d0.targets)
         self.assertSequenceEqual(d1.maps[0].bounds, d0.maps[0].bounds)
+
+    def test_from_full_slice_with_step_1d_0(self):
+        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15,))
+
+        s = (slice(None, None, 2),)
+        d1 = d0.slice(s)
+
+        self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist)
+        self.assertSequenceEqual(d1.targets, d0.targets)
+        self.assertEqual(d1.maps[0].bounds[0][0], d0.maps[0].bounds[0][0])
+
+    def test_from_full_slice_with_step_1d_1(self):
+        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(30,))
+        step = 4
+
+        s = (slice(4, None, step),)
+        d1 = d0.slice(s)
+
+        self.assertEqual(len(d0.maps), len(d1.maps))
+        self.assertSequenceEqual(d1.dist, d0.dist)
+        self.assertSequenceEqual(d1.targets, d0.targets)
+        self.assertEqual(d1.maps[0].bounds[0][0], d0.maps[0].bounds[0][0])
 
     def test_from_full_slice_2d(self):
         d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15, 20))

@@ -21,7 +21,7 @@ distribution types, including `BlockMap`, `CyclicMap`, `NoDistMap`, and
 `UnstructuredMap`.
 
 """
-from __future__ import absolute_import
+from __future__ import division, absolute_import
 
 import operator
 from itertools import product
@@ -200,7 +200,13 @@ class NoDistMap(MapBase):
         if isinstance(idx, Integral):
             return [0] if 0 <= idx < self.size else []
         elif isinstance(idx, slice):
-            return [0]  # slicing doesn't complain about out-of-bounds indices
+            start = idx.start if idx.start is not None else 0
+            stop = idx.stop if idx.stop is not None else self.size
+            step = idx.step if idx.step is not None else 1
+            if tuple_intersection((start, stop, step), (0, self.size)):
+                return [0]
+            else:
+                return []
         else:
             raise TypeError("Index must be Integral or slice.")
 
@@ -216,14 +222,16 @@ class NoDistMap(MapBase):
         """Make a new Map from a slice."""
         start = idx.start if idx.start is not None else 0
         stop = idx.stop if idx.stop is not None else self.size
-        intersection = tuple_intersection((0, self.size), (start, stop))
-        if intersection:
-            intersection_size = intersection[1] - intersection[0]
+        step = idx.step if idx.step is not None else 1
+        isection = tuple_intersection((start, stop, step), (0, self.size))
+        if isection:
+            step = idx.step if idx.step is not None else 1
+            isection_size = int(np.ceil((isection[1] - isection[0]) // step))
         else:
-            intersection_size = 0
+            isection_size = 0
 
         return {'dist_type': self.dist,
-                'size': intersection_size}
+                'size': isection_size}
 
 
 class BlockMap(MapBase):
@@ -282,15 +290,13 @@ class BlockMap(MapBase):
                     coords.append(coord)
             return coords
         elif isinstance(idx, slice):
-            if idx.step not in {None, 1}:
-                msg = "Slicing only implemented for step=1"
-                raise NotImplementedError(msg)
+            start = idx.start if idx.start is not None else 0
+            stop = idx.stop if idx.stop is not None else self.size
+            step = idx.step if idx.step is not None else 1
             for (coord, (lower, upper)) in enumerate(self.bounds):
-                slice_tuple = (idx.start if idx.start is not None else 0,
-                               idx.stop if idx.stop is not None else self.size)
-                if tuple_intersection((lower, upper), slice_tuple):
+                if tuple_intersection((start, stop, step), (lower, upper)):
                     coords.append(coord)
-            return coords if coords != [] else [0]
+            return coords
         else:
             raise TypeError("Index must be Integral or slice.")
 
@@ -319,14 +325,17 @@ class BlockMap(MapBase):
         """Make a new Map from a slice."""
         new_bounds = [0]
         start = idx.start if idx.start is not None else 0
+        step = idx.step if idx.step is not None else 1
         # iterate over the processes in this dimension
         for proc_start, proc_stop in self.bounds:
             stop = idx.stop if idx.stop is not None else proc_stop
-            intersection = tuple_intersection((proc_start, proc_stop),
-                                              (start, stop))
-            if intersection:
-                size = intersection[1] - intersection[0]
-                new_bounds.append(size + new_bounds[-1])
+            isection = tuple_intersection((start, stop, step),
+                                              (proc_start, proc_stop))
+            if isection:
+                isection_size = int(np.ceil((isection[1] - (isection[0])) / step))
+                new_bounds.append(isection_size + new_bounds[-1])
+        if len(new_bounds) == [0]:
+            new_bounds = []
 
         return {'dist_type': self.dist,
                 'bounds': new_bounds}
@@ -429,7 +438,7 @@ class UnstructuredMap(MapBase):
         if isinstance(idx, Integral):
             return self._owners
         else:
-            msg = "Index for BlockCyclicMap must be an Integral."
+            msg = "Index for UnstructuredMap must be an Integral."
             raise NotImplementedError(msg)
 
     def get_dimdicts(self):
