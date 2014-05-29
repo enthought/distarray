@@ -31,13 +31,15 @@ import numpy as np
 
 from distarray.externals.six import add_metaclass
 from distarray.externals.six.moves import range, reduce
+from distarray.utils import remove_elements
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
                                       positivify,
                                       validate_grid_shape,
                                       _start_stop_block,
-                                      normalize_dim_dict)
+                                      normalize_dim_dict,
+                                      normalize_reduction_axes)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -415,7 +417,10 @@ class Distribution(object):
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
                   dim_data_per_rank]
-        self.rank_from_coords = {c: r for (r, c) in enumerate(coords)}
+
+        self.rank_from_coords = np.empty(self.grid_shape, dtype=np.int32)
+        for (r, c) in enumerate(coords):
+            self.rank_from_coords[c] = r
 
         # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
         # with duplicates removed.  It is a list of `axis_dim_dicts`.
@@ -457,8 +462,8 @@ class Distribution(object):
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
         # List of `ClientMap` objects, one per dimension.
         self.maps = [map_from_sizes(*args)
@@ -553,7 +558,6 @@ class Distribution(object):
         * ``size`` integer, greater than or equal to zero.
 
         The global size of the array in this dimension.
-
         """
         self.context = context
         self.targets = sorted(targets or context.targets)
@@ -566,8 +570,8 @@ class Distribution(object):
 
         validate_grid_shape(self.grid_shape, self.dist, len(context.targets))
 
-        nelts = reduce(operator.mul, self.grid_shape)
-        self.rank_from_coords = np.arange(nelts).reshape(*self.grid_shape)
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
     @property
     def has_precise_index(self):
@@ -589,7 +593,6 @@ class Distribution(object):
         returns a list of more than one rank.
 
         If the `idxs` tuple is out of bounds, raises `IndexError`.
-
         """
         idxs = map(positivify, idxs, self.shape) # positivify and check
         dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
@@ -602,12 +605,13 @@ class Distribution(object):
         ranks.
 
         Convenience method meant for IPython parallel usage.
-
         """
         return [self.targets[r] for r in self.owning_ranks(idxs)]
 
     def get_dim_data_per_rank(self):
         dds = [enumerate(m.get_dimdicts()) for m in self.maps]
+        if not dds:
+            return []
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]
         rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)
@@ -617,3 +621,29 @@ class Distribution(object):
         return ((self.context, self.targets, self.shape, self.ndim, self.dist, self.grid_shape) ==
                 (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
                 all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))
+
+    def reduce(self, axes):
+        """
+        Returns a new Distribution reduced along `axis`, i.e., the new
+        distribution has one fewer dimension than `self`.
+        """
+
+        # the `axis` argument can actually be a sequence of axes, so we rename it.
+        axes = normalize_reduction_axes(axes, self.ndim)
+
+        reduced_shape = remove_elements(axes, self.shape)
+        reduced_dist = remove_elements(axes, self.dist)
+        reduced_grid_shape = remove_elements(axes, self.grid_shape)
+
+        # This block is required because np.min() works one axis at a time.
+        reduced_ranks = self.rank_from_coords.copy()
+        for axis in axes:
+            reduced_ranks = np.min(reduced_ranks, axis=axis, keepdims=True)
+
+        reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
+
+        return Distribution.from_shape(context=self.context,
+                                       shape=reduced_shape,
+                                       dist=reduced_dist,
+                                       grid_shape=reduced_grid_shape,
+                                       targets=reduced_targets)
