@@ -492,30 +492,91 @@ class TestReduceMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.context.close()
 
-    def test_sum(self):
-        np_sum = self.arr.sum()
-        da_sum = self.darr.sum()
-        self.assertEqual(da_sum, np_sum)
+    def test_sum_last_axis(self):
+        da_sum = self.darr.sum(axis=-1)
+        da_sum2 = self.darr.sum(axis=(1,))
+        assert_allclose(da_sum.tondarray(), da_sum2.tondarray())
+
+    def test_sum_axis_none(self):
+        np_sum = self.arr.sum(axis=None)
+        da_sum = self.darr.sum(axis=None)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_multiaxis(self):
+        np_sum = self.arr.sum(axis=(0, 1))
+        da_sum = self.darr.sum(axis=(0, 1))
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_0d(self):
+        arr = numpy.arange(16)
+        darr = self.context.fromndarray(arr)
+        np_sum = arr.sum(axis=0)
+        da_sum = darr.sum(axis=0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_chained(self):
+        np_sum = self.arr.sum(axis=0).sum(axis=0)
+        da_sum = self.darr.sum(axis=0).sum(axis=0)
+        self.assertEqual(da_sum.ndim, 0)
+        self.assertEqual(np_sum.ndim, 0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_along_axis0(self):
+        np_sum = self.arr.sum(axis=0)
+        da_sum = self.darr.sum(axis=0)
+        assert_allclose(da_sum.tondarray(), np_sum)
+
+    def test_sum_along_axis1(self):
+        np_sum = self.arr.sum(axis=1)
+        da_sum = self.darr.sum(axis=1)
+        assert_allclose(da_sum.tondarray(), np_sum)
 
     def test_sum_dtype(self):
-        np_sum = self.arr.sum(dtype=int)
-        da_sum = self.darr.sum(dtype=int)
-        self.assertEqual(da_sum, np_sum)
+        da_sum = self.darr.sum(axis=0, dtype=int)
+        np_sum = self.arr.sum(axis=0, dtype=int)
+        assert_allclose(da_sum.tondarray(), np_sum)
 
-    def test_mean(self):
-        np_mean = self.arr.mean()
-        da_mean = self.darr.mean()
-        self.assertEqual(da_mean, np_mean)
+    def test_mean_axis_none(self):
+        np_mean = self.arr.mean(axis=None)
+        da_mean = self.darr.mean(axis=None)
+        assert_allclose(da_mean.tondarray(), np_mean)
+
+    def test_mean_multiaxis(self):
+        np_mean = self.arr.mean(axis=(0, 1))
+        da_mean = self.darr.mean(axis=(0, 1))
+        assert_allclose(da_mean.tondarray(), np_mean)
+
+    def test_mean_along_axis_1(self):
+        da_mean = self.darr.mean(axis=0)
+        np_mean = self.arr.mean(axis=0)
+        assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_mean_dtype(self):
-        np_mean = self.arr.mean(dtype=int)
-        da_mean = self.darr.mean(dtype=int)
-        self.assertEqual(da_mean, np_mean)
+        da_mean = self.darr.mean(axis=0, dtype=int)
+        np_mean = self.arr.mean(axis=0, dtype=int)
+        assert_allclose(da_mean.tondarray(), np_mean)
+
+    def test_mean_chained(self):
+        np_mean = self.arr.mean(axis=0).mean(axis=0)
+        da_mean = self.darr.mean(axis=0).mean(axis=0)
+        self.assertEqual(da_mean.ndim, 0)
+        self.assertEqual(np_mean.ndim, 0)
+        assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_var(self):
         np_var = self.arr.var()
         da_var = self.darr.var()
-        self.assertEqual(da_var, np_var)
+        self.assertEqual(da_var.tondarray(), np_var)
+
+    def test_var_axis_0(self):
+        np_var = self.arr.var(axis=0)
+        da_var = self.darr.var(axis=0)
+        assert_allclose(da_var.tondarray(), np_var)
+
+    def test_var_axis_1(self):
+        np_var = self.arr.var(axis=1)
+        da_var = self.darr.var(axis=1)
+        assert_allclose(da_var.tondarray(), np_var)
 
     def test_var_dtype(self):
         np_var = self.arr.var(dtype=int)
@@ -531,6 +592,51 @@ class TestReduceMethods(unittest.TestCase):
         np_std = self.arr.std(dtype=int)
         da_std = self.darr.std(dtype=int)
         self.assertEqual(da_std, np_std)
+
+    def test_std_axis_0(self):
+        np_std = self.arr.std(axis=0)
+        da_std = self.darr.std(axis=0)
+        assert_allclose(da_std.tondarray(), np_std)
+
+    def test_std_axis_1(self):
+        np_std = self.arr.std(axis=1)
+        da_std = self.darr.std(axis=1)
+        assert_allclose(da_std.tondarray(), np_std)
+
+    def test_min(self):
+        np_min = self.arr.min()
+        da_min = self.darr.min()
+        assert_allclose(da_min.tondarray(), np_min)
+
+    def test_min_axis_1(self):
+        np_min = self.arr.min(axis=1)
+        da_min = self.darr.min(axis=1)
+        assert_allclose(da_min.tondarray(), np_min)
+
+    def test_max(self):
+        np_max = self.arr.max()
+        da_max = self.darr.max()
+        assert_allclose(da_max.tondarray(), np_max)
+
+    def test_max_axis_1(self):
+        np_max = self.arr.max(axis=1)
+        da_max = self.darr.max(axis=1)
+        assert_allclose(da_max.tondarray(), np_max)
+
+    def test_sum_4D_cyclic(self):
+        shape = (10, 20, 30, 40)
+        arr = numpy.zeros(shape)
+        arr.fill(3)
+        dist = Distribution.from_shape(self.context,
+                                       shape=shape,
+                                       dist=('c', 'c', 'c', 'c'))
+        darr = self.context.empty(distribution=dist)
+        darr.fill(3)
+        for axis in range(4):
+            arr_sum = arr.sum(axis=axis)
+            darr_sum = darr.sum(axis=axis)
+            assert_allclose(darr_sum.tondarray(), arr_sum)
+        assert_allclose(darr.sum().tondarray(), arr.sum())
 
 
 class TestFromLocalArrays(unittest.TestCase):
