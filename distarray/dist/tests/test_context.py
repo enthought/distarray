@@ -68,6 +68,8 @@ class TestContextCreation(unittest.TestCase):
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
         client = IPythonClient()
+        if len(client) < 4:
+            raise unittest.SkipTest("not enough targets to run test.")
         targets = [3, 2]
         dac = Context(client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))
