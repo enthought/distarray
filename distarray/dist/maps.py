@@ -195,7 +195,6 @@ class NoDistMap(MapBase):
             raise ValueError(msg % grid_size)
         self.size = size
         self.grid_size = grid_size
-        self.bounds = [(0, self.size)]
 
     def owners(self, idx):
         if isinstance(idx, Integral):
@@ -212,6 +211,19 @@ class NoDistMap(MapBase):
             'proc_grid_size': 1,
             'proc_grid_rank': 0,
             },)
+
+    def slice(self, idx):
+        """Make a new Map from a slice."""
+        start = idx.start if idx.start is not None else 0
+        stop = idx.stop if idx.stop is not None else self.size
+        intersection = tuple_intersection((0, self.size), (start, stop))
+        if intersection:
+            intersection_size = intersection[1] - intersection[0]
+        else:
+            intersection_size = 0
+
+        return {'dist_type': self.dist,
+                'size': intersection_size}
 
 
 class BlockMap(MapBase):
@@ -302,6 +314,22 @@ class BlockMap(MapBase):
                 'padding': padding,
                 })
         return tuple(out)
+
+    def slice(self, idx):
+        """Make a new Map from a slice."""
+        new_bounds = [0]
+        start = idx.start if idx.start is not None else 0
+        # iterate over the processes in this dimension
+        for proc_start, proc_stop in self.bounds:
+            stop = idx.stop if idx.stop is not None else proc_stop
+            intersection = tuple_intersection((proc_start, proc_stop),
+                                              (start, stop))
+            if intersection:
+                size = intersection[1] - intersection[0]
+                new_bounds.append(size + new_bounds[-1])
+
+        return {'dist_type': self.dist,
+                'bounds': new_bounds}
 
 
 class BlockCyclicMap(MapBase):
@@ -615,44 +643,21 @@ class Distribution(object):
 
     def slice(self, index_tuple):
         """Make a new Distribution from a slice."""
-        if not all(dist_type in {'n', 'b'} for dist_type in self.dist):
-            msg = "Slicing only implemented for 'n' and 'b' dist_types."
-            raise NotImplementedError(msg)
-
         new_targets = self.owning_targets(index_tuple)
         global_dim_data = []
         # iterate over the dimensions
-        for dist, map_, idx in zip(self.dist, self.maps, index_tuple):
-            new_bounds = [0]
-
+        for map_, idx in zip(self.maps, index_tuple):
             if isinstance(idx, Integral):
                 continue  # integral indexing returns reduced dimensionality
-
             elif isinstance(idx, slice):
-                start = idx.start if idx.start is not None else 0
-                # iterate over the processes in this dimension
-                for proc_bounds in map_.bounds:
-                    stop = idx.stop if idx.stop is not None else proc_bounds[-1]
-                    intersection = tuple_intersection(proc_bounds,
-                                                      (start, stop))
-                    if intersection:
-                        size = intersection[1] - intersection[0]
-                        new_bounds.append(size + new_bounds[-1])
+                global_dim_data.append(map_.slice(idx))
             else:
                 msg = "Index must be a sequence of Integrals and slices."
                 raise TypeError(msg)
 
-            if dist == 'n':
-                global_dim_data.append({'dist_type': dist,
-                                        'size': new_bounds[-1]})
-            elif dist == 'b':
-                global_dim_data.append({'dist_type': dist,
-                                        'bounds': new_bounds})
-
         return self.__class__(context=self.context,
                               global_dim_data=global_dim_data,
                               targets=new_targets)
-
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the

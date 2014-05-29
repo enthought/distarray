@@ -150,7 +150,8 @@ class TestSlice(unittest.TestCase):
         self.assertEqual(len(d0.maps), len(d1.maps))
         self.assertSequenceEqual(d1.dist, d0.dist)
         for m0, m1 in zip(d0.maps, d1.maps):
-            self.assertSequenceEqual(m0.bounds, m1.bounds)
+            if m0.dist == 'b':
+                self.assertSequenceEqual(m0.bounds, m1.bounds)
         self.assertSequenceEqual(d1.targets, d0.targets)
 
     def test_from_partial_slice_2d(self):
