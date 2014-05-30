@@ -226,7 +226,7 @@ class NoDistMap(MapBase):
         isection = tuple_intersection((start, stop, step), (0, self.size))
         if isection:
             step = idx.step if idx.step is not None else 1
-            isection_size = int(np.ceil((isection[1] - isection[0]) // step))
+            isection_size = int(np.ceil((isection[1] - isection[0]) / step))
         else:
             isection_size = 0
 
