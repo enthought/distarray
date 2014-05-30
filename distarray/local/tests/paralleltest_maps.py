@@ -217,7 +217,7 @@ class TestGridShape(MpiTestCase):
         dist = Distribution.from_shape((20, 20), dist='b', comm=self.comm)
         self.assertEqual(dist.grid_shape, (12, 1))
         dist = Distribution.from_shape((2*10, 6*10), dist=('b', 'b'),
-                                                           comm=self.comm)
+                                       comm=self.comm)
         self.assertEqual(dist.grid_shape, (2, 6))
         dist = Distribution.from_shape((6*10, 2*10), dist='bb', comm=self.comm)
         self.assertEqual(dist.grid_shape, (6, 2))
