@@ -206,13 +206,14 @@ class TestApply(unittest.TestCase):
 
         self.assertEqual(val, [9] * self.num_targets)
 
-    def test_apply_return_proxy(self):
+    def test_apply_proxyize(self):
 
         def foo(a, b, c=None):
             c = 3 if c is None else c
-            return a + b + c
+            res = proxyize(a + b + c)  # noqa
+            return res
 
-        name = self.context.apply(foo, (1, 2), {'c': 5}, return_proxy=True)
+        name = self.context.apply(foo, (1, 2), {'c': 5})[0]
 
         val = self.context._pull(name, targets=self.context.targets)
 
@@ -221,14 +222,23 @@ class TestApply(unittest.TestCase):
     def test_apply_proxy(self):
 
         def foo():
-            return 10
-        name = self.context.apply(foo, return_proxy=True)
+            return proxyize(10)  # noqa
+        name = self.context.apply(foo)[0]
 
         def bar(obj):
             return obj + 10
         val = self.context.apply(bar, (name,))
 
         self.assertEqual(val, [20] * self.num_targets)
+
+    def test_apply_proxyize_sync(self):
+
+        def foo():
+            p1 = proxyize(10)  # noqa
+            p2 = proxyize(20)  # noqa
+            return p1, 6, p2
+        res = self.context.apply(foo)
+        self.assertTrue(res.count(res[0]) == len(res))
 
 
 if __name__ == '__main__':

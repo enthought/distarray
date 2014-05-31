@@ -45,7 +45,7 @@ class TestDnpyFileIO(unittest.TestCase):
         cls.distribution = Distribution.from_shape(cls.dac, (100,),
                                                    dist={0: 'b'})
         cls.da = cls.dac.empty(cls.distribution)
-        cls.output_paths = cls.dac.apply(engine_temp_path, return_proxy=False)
+        cls.output_paths = cls.dac.apply(engine_temp_path)
 
     def test_save_load_with_filenames(self):
 
@@ -166,7 +166,6 @@ class TestNpyFileLoad(unittest.TestCase):
             return output_path
 
         cls.output_path = cls.dac.apply(save_test_file, (cls.expected,),
-                                        return_proxy=False,
                                         targets=cls.dac.targets[0])
 
     @classmethod
@@ -222,8 +221,7 @@ class TestHdf5FileSave(unittest.TestCase):
         self.dac = Context()
         self.output_path = self.dac.apply(engine_temp_path,
                                           ('.hdf5',),
-                                          targets=self.dac.targets[0],
-                                          return_proxy=False)
+                                          targets=self.dac.targets[0])
 
     def tearDown(self):
         self.dac.apply(cleanup_file, (self.output_path,),
@@ -238,8 +236,7 @@ class TestHdf5FileSave(unittest.TestCase):
 
         file_check = self.dac.apply(check_hdf5_file,
                                     (self.output_path, expected),
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+                                    targets=self.dac.targets[0],)
         self.assertTrue(file_check)
 
     def test_save_3d(self):
@@ -253,8 +250,7 @@ class TestHdf5FileSave(unittest.TestCase):
         self.dac.save_hdf5(self.output_path, da, mode='w')
         file_check = self.dac.apply(check_hdf5_file,
                                     (self.output_path, expected),
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+                                    targets=self.dac.targets[0],)
         self.assertTrue(file_check)
 
     def test_save_two_datasets(self):
@@ -273,14 +269,12 @@ class TestHdf5FileSave(unittest.TestCase):
         foo_checks = self.dac.apply(check_hdf5_file,
                                     (self.output_path, foo),
                                     {'dataset': 'foo'},
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+                                    targets=self.dac.targets[0],)
         self.assertTrue(foo_checks)
         bar_checks = self.dac.apply(check_hdf5_file,
                                     (self.output_path, bar),
                                     {'dataset': 'bar'},
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+                                    targets=self.dac.targets[0],)
         self.assertTrue(bar_checks)
 
 
@@ -291,8 +285,7 @@ class TestHdf5FileLoad(unittest.TestCase):
         cls.h5py = import_or_skip('h5py')
         cls.dac = Context(targets=[0, 1])
         cls.output_path = cls.dac.apply(engine_temp_path, ('.hdf5',),
-                                        targets=cls.dac.targets[0],
-                                        return_proxy=False)
+                                        targets=cls.dac.targets[0])
         cls.expected = np.arange(20).reshape(2, 10)
 
         def make_test_file(output_path, arr):
