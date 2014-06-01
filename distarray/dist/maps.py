@@ -442,11 +442,11 @@ class Distribution(object):
                    targets=None):
 
         # special case when dist is all 'n's.
-        if (dist is not None) and all(map(lambda x: x is 'n', dist)):
+        if (dist is not None) and all(d == 'n' for d in dist):
             if (targets is not None) and (len(targets) != 1):
                 raise ValueError('target dist conflict')
             elif targets is None:
-                targets = [0]
+                targets = [context.targets[0]]
             else:
                 # then targets is set correctly
                 pass

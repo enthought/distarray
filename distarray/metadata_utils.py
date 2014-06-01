@@ -31,8 +31,10 @@ def normalize_grid_shape(grid_shape, ndims, dist, comm_size):
     grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
 
     # short circuit for special case
-    if all(map(lambda x: x is 'n', dist)):
-        assert all(map(lambda x: x == 1, grid_shape))
+    if all(x is 'n' for x in dist):
+        if not all(x == 1 for x in grid_shape):
+            raise ValueError("grid shape should be all `1`'s not %s." %
+                             grid_shape)
         return grid_shape
 
     if len(grid_shape) != len(dist):
@@ -77,8 +79,8 @@ def make_grid_shape(shape, dist, comm_size):
     ndistdim = len(distdims)
 
     if ndistdim == 0:
-        return (1,) * comm_size
-    if ndistdim == 1:
+        dist_grid_shape = ()
+    elif ndistdim == 1:
         # Trivial case: all processes used for the one distributed dimension.
         dist_grid_shape = (comm_size,)
 
