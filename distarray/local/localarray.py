@@ -898,7 +898,7 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
 
     Parameters
     ----------
-    reducer : callable 
+    reducer : callable
         Performs the core reduction operation.
 
     out_comm: MPI Comm instance.
