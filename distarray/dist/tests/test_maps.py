@@ -4,7 +4,6 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-import unittest
 from random import randrange
 
 from distarray.externals.six.moves import range
