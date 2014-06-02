@@ -153,7 +153,9 @@ class ContextTestCase(unittest.TestCase):
     """Base test class for test cases that use a Context.
 
     Overload the `ntargets` class attribute to change the default
-    (default is 4).
+    (default is 4).  A `cls.context` object will be created with
+    `targets=range(cls.ntargets)`.  Tests will be skipped if there are too
+    few targets.
     """
 
     ntargets = 4
