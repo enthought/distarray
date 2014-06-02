@@ -217,6 +217,7 @@ def check_hdf5_file(output_path, expected, dataset="buffer"):
 class TestHdf5FileSave(ContextTestCase):
 
     def setUp(self):
+        super(TestHdf5FileSave, self).setUp()
         self.h5py = import_or_skip('h5py')
         self.output_path = self.context.apply(engine_temp_path,
                                           ('.hdf5',),
