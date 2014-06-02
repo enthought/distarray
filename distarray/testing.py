@@ -19,6 +19,7 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals import protocol_validator
 
+from distarray.dist import Context
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
 
@@ -145,6 +146,33 @@ class MpiTestCase(unittest.TestCase):
     def tearDownClass(cls):
         if cls.comm != MPI.COMM_NULL:
             cls.comm.Free()
+
+
+class ContextTestCase(unittest.TestCase):
+
+    """Base test class for test cases that use a Context.
+
+    Overload the `ntargets` class attribute to change the default
+    (default is 4).
+    """
+
+    ntargets = 4
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.ntargets == 'any':
+            cls.context = Context()
+            cls.ntargets = len(cls.context.targets)
+        else:
+            try:
+                cls.context = Context(targets=six.moves.range(cls.ntargets))
+            except ValueError:
+                msg = "Must run with ntargets >= {}."
+                raise unittest.SkipTest(msg.format(cls.ntargets))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.close()
 
 
 def _assert_localarray_metadata_equal(l0, l1, check_dtype=False):
