@@ -214,5 +214,14 @@ class count_round_trips(object):
     def __exit__(self, type, value, traceback):
         self.update_count()
 
+
 def remove_elements(to_remove, seq):
     return [x for (idx, x) in enumerate(seq) if idx not in to_remove]
+
+
+def get_from_dotted_name(dotted_name):
+    from functools import reduce
+    from importlib import import_module
+    main = import_module('__main__')
+    thing = reduce(getattr, [main] + dotted_name.split('.'))
+    return thing

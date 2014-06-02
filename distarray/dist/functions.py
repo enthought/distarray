@@ -40,16 +40,10 @@ def unary_proxy(name):
         context = determine_context(a)
 
         def func_call(func_name, arr_name, args, kwargs):
-            from functools import reduce
-            from importlib import import_module
-            main = import_module('__main__')
+            from distarray.utils import get_from_dotted_name
             dotted_name = 'distarray.local.%s' % (func_name,)
-            func = reduce(getattr, [main] + dotted_name.split('.'))
-            if 'casting' in kwargs:
-                casting = kwargs.get('casting')
-            else:
-                casting = 'same_kind'
-            res = func(arr_name, casting=casting)
+            func = get_from_dotted_name(dotted_name)
+            res = func(arr_name, *args, **kwargs)
             return proxyize(res), res.dtype  # noqa
 
         res = context.apply(func_call, args=(name, a.key, args, kwargs))
@@ -84,16 +78,10 @@ def binary_proxy(name):
             raise TypeError('only DistArray or scalars are accepted')
 
         def func_call(func_name, a, b, args, kwargs):
-            from functools import reduce
-            from importlib import import_module
-            main = import_module('__main__')
+            from distarray.utils import get_from_dotted_name
             dotted_name = 'distarray.local.%s' % (func_name,)
-            func = reduce(getattr, [main] + dotted_name.split('.'))
-            if 'casting' in kwargs:
-                casting = kwargs.get('casting')
-            else:
-                casting = 'same_kind'
-            res = func(a, b, casting=casting)
+            func = get_from_dotted_name(dotted_name)
+            res = func(a, b, *args, **kwargs)
             return proxyize(res), res.dtype  # noqa
 
         res = context.apply(func_call, args=(name, a_key, b_key, args, kwargs))
