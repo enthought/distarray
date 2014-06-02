@@ -16,8 +16,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose
 
+from distarray.testing import ContextTestCase
 import distarray.dist.functions as functions
-from distarray.dist.context import Context
 
 
 def add_checkers(cls, ops, checker_name):
@@ -40,22 +40,20 @@ def add_checkers(cls, ops, checker_name):
         setattr(cls, op_test_name, check(op_name))
 
 
-class TestDistArrayUfuncs(unittest.TestCase):
+class TestDistArrayUfuncs(ContextTestCase):
     """Test ufuncs operating on distarrays"""
+
+    ntargets = 'any'
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestDistArrayUfuncs, cls).setUpClass()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
         cls.da = cls.context.fromndarray(cls.a)
         cls.db = cls.context.fromndarray(cls.b)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
 
     def check_binary_op(self, op_name):
         """Check binary operation for success.
@@ -87,22 +85,20 @@ class TestDistArrayUfuncs(unittest.TestCase):
         assert_allclose(result.toarray(), expected)
 
 
-class TestSpecialMethods(unittest.TestCase):
+class TestSpecialMethods(ContextTestCase):
     """Test the __methods__"""
+
+    ntargets = 'any'
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestSpecialMethods, cls).setUpClass()
         # Standard data
         cls.a = np.arange(1, 11)
         cls.b = np.ones_like(cls.a)*2
         # distributed array data
         cls.da = cls.context.fromndarray(cls.a)
         cls.db = cls.context.fromndarray(cls.b)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
 
     def check_op(self, op_name):
         distop = getattr(self.da, op_name)
