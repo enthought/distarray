@@ -17,25 +17,21 @@ from random import shuffle
 
 import numpy
 
+from distarray.testing import ContextTestCase
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
 
-class TestContext(unittest.TestCase):
+class TestContext(ContextTestCase):
     """Test Context methods"""
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestContext, cls).setUpClass()
         cls.ndarr = numpy.arange(16).reshape(4, 4)
         cls.darr = cls.context.fromndarray(cls.ndarr)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Close the client connections"""
-        cls.context.close()
 
     def test_get_localarrays(self):
         las = self.darr.get_localarrays()
@@ -104,15 +100,9 @@ class TestContextCreation(unittest.TestCase):
         client.close()
 
 
-class TestPrimeCluster(unittest.TestCase):
+class TestPrimeCluster(ContextTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.context = Context(targets=range(3))
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
+    ntargets = 3
 
     def test_1D(self):
         d = Distribution.from_shape(self.context, (3,))
@@ -141,12 +131,9 @@ class TestPrimeCluster(unittest.TestCase):
         self.assertEqual(c.grid_shape, (1, 1, 3))
 
 
-class TestApply(unittest.TestCase):
+class TestApply(Context):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.context = Context()
-        cls.num_targets = len(cls.context.targets)
+    ntargets = 'any'
 
     def test_apply_no_args(self):
 
@@ -155,7 +142,7 @@ class TestApply(unittest.TestCase):
 
         val = self.context.apply(foo)
 
-        self.assertEqual(val, [42] * self.num_targets)
+        self.assertEqual(val, [42] * self.ntargets)
 
     def test_apply_pos_args(self):
 
@@ -164,19 +151,19 @@ class TestApply(unittest.TestCase):
 
         # push all arguments
         val = self.context.apply(foo, (1, 2, 3))
-        self.assertEqual(val, [6] * self.num_targets)
+        self.assertEqual(val, [6] * self.ntargets)
 
         # some local, some pushed
         local_thing = self.context._key_and_push(2)[0]
         val = self.context.apply(foo, (1, local_thing, 3))
 
-        self.assertEqual(val, [6] * self.num_targets)
+        self.assertEqual(val, [6] * self.ntargets)
 
         # all pushed
         local_args = self.context._key_and_push(1, 2, 3)
         val = self.context.apply(foo, local_args)
 
-        self.assertEqual(val, [6] * self.num_targets)
+        self.assertEqual(val, [6] * self.ntargets)
 
     def test_apply_kwargs(self):
 
@@ -188,17 +175,17 @@ class TestApply(unittest.TestCase):
         # empty kwargs
         val = self.context.apply(foo, (1, 2))
 
-        self.assertEqual(val, [0] * self.num_targets)
+        self.assertEqual(val, [0] * self.ntargets)
 
         # some empty
         val = self.context.apply(foo, (1, 2), {'d': 3})
 
-        self.assertEqual(val, [5] * self.num_targets)
+        self.assertEqual(val, [5] * self.ntargets)
 
         # all kwargs
         val = self.context.apply(foo, (1, 2), {'c': 2, 'd': 3})
 
-        self.assertEqual(val, [8] * self.num_targets)
+        self.assertEqual(val, [8] * self.ntargets)
 
         # now with local values
         local_a = self.context._key_and_push(1)[0]
@@ -206,7 +193,7 @@ class TestApply(unittest.TestCase):
 
         val = self.context.apply(foo, (local_a, 2), {'c': local_c, 'd': 3})
 
-        self.assertEqual(val, [9] * self.num_targets)
+        self.assertEqual(val, [9] * self.ntargets)
 
     def test_apply_return_proxy(self):
 
@@ -230,7 +217,7 @@ class TestApply(unittest.TestCase):
             return obj + 10
         val = self.context.apply(bar, (name,))
 
-        self.assertEqual(val, [20] * self.num_targets)
+        self.assertEqual(val, [20] * self.ntargets)
 
 
 if __name__ == '__main__':
