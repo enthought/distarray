@@ -157,22 +157,32 @@ class ContextTestCase(unittest.TestCase):
     """
 
     ntargets = 4
+    skip = True
 
     @classmethod
     def setUpClass(cls):
         if cls.ntargets == 'any':
             cls.context = Context()
             cls.ntargets = len(cls.context.targets)
+            cls.skip = False
         else:
             try:
                 cls.context = Context(targets=six.moves.range(cls.ntargets))
+                cls.skip = False
             except ValueError:
-                msg = "Must run with ntargets >= {}."
-                raise unittest.SkipTest(msg.format(cls.ntargets))
+                pass
 
     @classmethod
     def tearDownClass(cls):
-        cls.context.close()
+        try:
+            cls.context.close()
+        except Exception:
+            pass
+
+    def setUp(self):
+        if self.skip:
+            msg = "Must run with ntargets >= {}."
+            raise unittest.SkipTest(msg.format(self.ntargets))
 
 
 def _assert_localarray_metadata_equal(l0, l1, check_dtype=False):
