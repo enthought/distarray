@@ -27,12 +27,12 @@ This is the second development release.
 Noteworthy improvements in 0.3 include:
 
 * support for distributions over a subset of processes;
-* distributed reductions with simple NumPy-like API: ``da.sum(axis=3)`` ;
-* easier to send functions to access and modify local arrays;
-* performance improvements and reduction in communication overhead;
+* distributed reductions with a simple NumPy-like API: ``da.sum(axis=3)`` ;
+* an ``apply()`` function for easier computation with process-local data;
+* performance improvements and reduced communication overhead;
 * cleanup, renamings, and refactorings;
 * test suite improvements for parallel testing; and
-* start of more frequent release schedule.
+* start of a more frequent release schedule.
 
 DistArray is not ready for real-world use.  We want to get input from the
 larger scientific-Python community to help drive its development. The API is
