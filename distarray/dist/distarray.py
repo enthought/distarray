@@ -272,7 +272,7 @@ class DistArray(object):
         if out is not None:
             _raise_nie()
 
-        dtype = dtype or self.dtype 
+        dtype = dtype or self.dtype
 
         out_dist = self.distribution.reduce(axes=axes)
         ddpr = out_dist.get_dim_data_per_rank()
@@ -280,14 +280,17 @@ class DistArray(object):
         def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
             import distarray.local.localarray as la
             local_reducer = getattr(la, local_name)
-            return la.local_reduction(local_reducer, out_comm, larr, ddpr, dtype, axes)
+            res = proxyize(la.local_reduction(local_reducer, out_comm, larr,  # noqa
+                                              ddpr, dtype, axes))
+            return res
 
-        out_key = self.context.apply(_local_reduce, 
-                                     (local_reduce_name, self.key, out_dist.comm, 
-                                      ddpr, dtype, normalize_reduction_axes(axes, self.ndim)),
-                                     targets=self.targets, return_proxy=True)
+        local_reduce_args = (local_reduce_name, self.key, out_dist.comm, ddpr,
+                             dtype, normalize_reduction_axes(axes, self.ndim))
+        out_key = self.context.apply(_local_reduce, local_reduce_args,
+                                     targets=self.targets)[0]
 
-        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
+        return DistArray.from_localarrays(key=out_key, distribution=out_dist,
+                                          dtype=dtype)
 
     def sum(self, axis=None, dtype=None, out=None):
         """Return the sum of array elements over the given axis."""

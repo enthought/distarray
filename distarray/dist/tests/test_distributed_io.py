@@ -44,7 +44,7 @@ class TestDnpyFileIO(ContextTestCase):
         cls.distribution = Distribution.from_shape(cls.context, (100,),
                                                    dist={0: 'b'})
         cls.da = cls.context.empty(cls.distribution)
-        cls.output_paths = cls.context.apply(engine_temp_path, return_proxy=False)
+        cls.output_paths = cls.context.apply(engine_temp_path)
 
     def test_save_load_with_filenames(self):
 
@@ -167,13 +167,12 @@ class TestNpyFileLoad(ContextTestCase):
             return output_path
 
         cls.output_path = cls.context.apply(save_test_file, (cls.expected,),
-                                        return_proxy=False,
-                                        targets=cls.context.targets[0])
+                                            targets=cls.context.targets[0])
 
     @classmethod
     def tearDownClass(cls):
         cls.context.apply(cleanup_file, (cls.output_path,),
-                      targets=cls.context.targets[0])
+                          targets=cls.context.targets[0])
         super(TestNpyFileLoad, cls).tearDownClass()
 
     def test_load_bn(self):
@@ -220,13 +219,12 @@ class TestHdf5FileSave(ContextTestCase):
         super(TestHdf5FileSave, self).setUp()
         self.h5py = import_or_skip('h5py')
         self.output_path = self.context.apply(engine_temp_path,
-                                          ('.hdf5',),
-                                          targets=self.context.targets[0],
-                                          return_proxy=False)
+                                              ('.hdf5',),
+                                              targets=self.context.targets[0])
 
     def tearDown(self):
         self.context.apply(cleanup_file, (self.output_path,),
-                       targets=self.context.targets[0])
+                           targets=self.context.targets[0])
 
     def test_save_block(self):
         datalen = 33
@@ -235,9 +233,8 @@ class TestHdf5FileSave(ContextTestCase):
         self.context.save_hdf5(self.output_path, da, mode='w')
 
         file_check = self.context.apply(check_hdf5_file,
-                                    (self.output_path, expected),
-                                    targets=self.context.targets[0],
-                                    return_proxy=False)
+                                        (self.output_path, expected),
+                                        targets=self.context.targets[0])
         self.assertTrue(file_check)
 
     def test_save_3d(self):
@@ -250,9 +247,8 @@ class TestHdf5FileSave(ContextTestCase):
 
         self.context.save_hdf5(self.output_path, da, mode='w')
         file_check = self.context.apply(check_hdf5_file,
-                                    (self.output_path, expected),
-                                    targets=self.context.targets[0],
-                                    return_proxy=False)
+                                        (self.output_path, expected),
+                                        targets=self.context.targets[0])
         self.assertTrue(file_check)
 
     def test_save_two_datasets(self):
@@ -269,16 +265,14 @@ class TestHdf5FileSave(ContextTestCase):
         self.context.save_hdf5(self.output_path, da_bar, key='bar', mode='a')
 
         foo_checks = self.context.apply(check_hdf5_file,
-                                    (self.output_path, foo),
-                                    {'dataset': 'foo'},
-                                    targets=self.context.targets[0],
-                                    return_proxy=False)
+                                        (self.output_path, foo),
+                                        {'dataset': 'foo'},
+                                        targets=self.context.targets[0])
         self.assertTrue(foo_checks)
         bar_checks = self.context.apply(check_hdf5_file,
-                                    (self.output_path, bar),
-                                    {'dataset': 'bar'},
-                                    targets=self.context.targets[0],
-                                    return_proxy=False)
+                                        (self.output_path, bar),
+                                        {'dataset': 'bar'},
+                                        targets=self.context.targets[0])
         self.assertTrue(bar_checks)
 
 
@@ -291,8 +285,7 @@ class TestHdf5FileLoad(ContextTestCase):
         cls.h5py = import_or_skip('h5py')
         super(TestHdf5FileLoad, cls).setUpClass()
         cls.output_path = cls.context.apply(engine_temp_path, ('.hdf5',),
-                                        targets=cls.context.targets[0],
-                                        return_proxy=False)
+                                            targets=cls.context.targets[0])
         cls.expected = np.arange(20).reshape(2, 10)
 
         def make_test_file(output_path, arr):
