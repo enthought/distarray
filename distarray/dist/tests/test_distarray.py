@@ -202,8 +202,6 @@ class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
                                  [(3, 5), (3, 4), (2, 5), (2, 4)])
 
     def test_from_global_dim_data_uu(self):
-        if len(self.context.targets) < 4:
-            raise unittest.SkipTest("not enough targets to run test.")
         rows = 6
         cols = 20
         row_ixs = numpy.random.permutation(range(rows))
@@ -569,6 +567,7 @@ class TestFromLocalArrays(ContextTestCase):
             DistArray.from_localarrays(self.distarray.key,
                                        context=self.context,
                                        distribution=self.distribution)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
