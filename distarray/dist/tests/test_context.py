@@ -45,59 +45,58 @@ class TestContext(ContextTestCase):
 class TestContextCreation(unittest.TestCase):
     """Test Context Creation"""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.client = IPythonClient()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.close()
+
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
-        client = IPythonClient()
-        dac = Context(client)
-        self.assertIs(dac.client, client)
-        dac.close()
-        client.close()
+        dac = Context(self.client)
+        self.assertIs(dac.client, self.client)
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        client = IPythonClient()
-        dac = Context(client, targets=[0, 1])
-        self.assertIs(dac.client, client)
+        if len(self.client) < 2:
+            raise unittest.SkipTest("Not enough targets to run test.")
+        dac = Context(self.client, targets=[0, 1])
+        self.assertIs(dac.client, self.client)
         dac.close()
-        client.close()
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
-        client = IPythonClient()
-        if len(client) < 4:
-            raise unittest.SkipTest("not enough targets to run test.")
+        if len(self.client) < 4:
+            raise unittest.SkipTest("Not enough targets to run test.")
         targets = [3, 2]
-        dac = Context(client, targets=targets)
+        dac = Context(self.client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))
         dac.close()
-        client.close()
 
     def test_context_target_reordering(self):
         """Are contexts' targets reordered in a consistent way?"""
-        client = IPythonClient()
-        orig_targets = client.ids
+        orig_targets = self.client.ids
         targets1 = orig_targets[:]
         targets2 = orig_targets[:]
         shuffle(targets1)
         shuffle(targets2)
-        ctx1 = Context(client, targets=targets1)
-        ctx2 = Context(client, targets=targets2)
+        ctx1 = Context(self.client, targets=targets1)
+        ctx2 = Context(self.client, targets=targets2)
         self.assertEqual(ctx1.targets, ctx2.targets)
         ctx1.close()
         ctx2.close()
-        client.close()
 
     def test_create_delete_key(self):
         """ Check that a key can be created and then destroyed. """
-        client = IPythonClient()
-        dac = Context(client)
+        dac = Context(self.client)
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
         dac._push({key: value}, targets=dac.targets)
         # Delete the key.
         dac.delete_key(key)
         dac.close()
-        client.close()
 
 
 class TestPrimeCluster(ContextTestCase):
