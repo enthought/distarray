@@ -170,7 +170,8 @@ class ContextTestCase(unittest.TestCase):
                 cls.context = Context(targets=six.moves.range(cls.ntargets))
                 cls.skip = False
             except ValueError:
-                pass
+                msg = "Must run with ntargets >= {}."
+                raise unittest.SkipTest(msg.format(cls.ntargets))
 
     @classmethod
     def tearDownClass(cls):
