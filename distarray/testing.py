@@ -128,8 +128,15 @@ class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
-    Overload the `comm_size` class attribute to change the default
-    (default is 4).
+    Overload the `comm_size` class attribute to change the default number of
+    processes required.
+
+    Attributes
+    ----------
+    comm_size : int, default=4
+        Indicates how many MPI processes are required for this test to
+        run.  If fewer than `comm_size` are available, the test will be
+        skipped.
     """
 
     comm_size = 4
@@ -152,10 +159,17 @@ class ContextTestCase(unittest.TestCase):
 
     """Base test class for test cases that use a Context.
 
-    Overload the `ntargets` class attribute to change the default
-    (default is 4).  A `cls.context` object will be created with
+    Overload the `ntargets` class attribute to change the default  number of
+    engines required.  A `cls.context` object will be created with
     `targets=range(cls.ntargets)`.  Tests will be skipped if there are too
     few targets.
+
+    Attributes
+    ----------
+    ntargets : int or 'any', default=4
+        If an int, indicates how many engines are required for this test to
+        run.  If the string 'any', indicates that any number of engines may
+        be used with this test.
     """
 
     ntargets = 4
