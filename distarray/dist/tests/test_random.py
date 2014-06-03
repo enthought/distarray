@@ -8,25 +8,23 @@
 
 import unittest
 
-from distarray.dist.context import Context
+from distarray.testing import ContextTestCase
 from distarray.dist.maps import Distribution
 from distarray.dist.random import Random
 
 
-class TestRandom(unittest.TestCase):
+class TestRandom(ContextTestCase):
     """Test the Random classes methods, since the expected results are
     'random' we just check for the correct shape. Which is dumb, but
     better than nothing.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        cls.context = Context()
-        cls.random = Random(cls.context)
+    ntargets = 'any'
 
     @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
+    def setUpClass(cls):
+        super(TestRandom, cls).setUpClass()
+        cls.random = Random(cls.context)
 
     def test_rand(self):
         shape = (3, 4)

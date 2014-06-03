@@ -42,7 +42,7 @@ class DistArray(object):
         # FIXME: code duplication with context.py.
         ctx = distribution.context
         # FIXME: this is bad...
-        comm_name = ctx.comm
+        comm_name = distribution.comm
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()

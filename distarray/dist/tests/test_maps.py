@@ -9,22 +9,18 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-from distarray.dist.context import Context
+from distarray.testing import ContextTestCase
 from distarray.dist import maps as client_map
 
 
-class TestClientMap(unittest.TestCase):
-
-    def setUp(self):
-        self.ctx = Context()
-
-    def tearDown(self):
-        self.ctx.close()
+class TestClientMap(ContextTestCase):
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53
-        cm = client_map.Distribution.from_shape(self.ctx, (nrows, ncols),
-                                                {0: 'b'}, (4, 1))
+        cm = client_map.Distribution.from_shape(self.context,
+                (nrows, ncols),
+                {0: 'b'},
+                (4, 1))
         chunksize = (nrows // 4) + 1
         for _ in range(100):
             r, c = randrange(nrows), randrange(ncols)
@@ -35,7 +31,7 @@ class TestClientMap(unittest.TestCase):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
         cm = client_map.Distribution.from_shape(
-                self.ctx, (nrows, ncols), ('b', 'b'),
+                self.context, (nrows, ncols), ('b', 'b'),
                 (nprocs_per_dim, nprocs_per_dim))
         row_chunks = nrows // nprocs_per_dim + 1
         col_chunks = ncols // nprocs_per_dim + 1
@@ -49,7 +45,7 @@ class TestClientMap(unittest.TestCase):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
         cm = client_map.Distribution.from_shape(
-                self.ctx, (nrows, ncols), ('c', 'c'),
+                self.context, (nrows, ncols), ('c', 'c'),
                 (nprocs_per_dim, nprocs_per_dim))
         for r in range(nrows):
             for c in range(ncols):
@@ -62,11 +58,11 @@ class TestClientMap(unittest.TestCase):
         nr, nc, nd = 10**5, 10**6, 10**4
 
         cm0 = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+                 self.context, (nr, nc, nd), ('b', 'c', 'n'))
         self.assertTrue(cm0.is_compatible(cm0))
 
         cm1 = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+                 self.context, (nr, nc, nd), ('b', 'c', 'n'))
         self.assertTrue(cm1.is_compatible(cm1))
 
         self.assertTrue(cm0.is_compatible(cm1))
@@ -75,7 +71,7 @@ class TestClientMap(unittest.TestCase):
         nr -= 1; nc -= 1; nd -= 1
 
         cm2 = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'))
+                 self.context, (nr, nc, nd), ('b', 'c', 'n'))
 
         self.assertFalse(cm1.is_compatible(cm2))
         self.assertFalse(cm2.is_compatible(cm1))
@@ -84,7 +80,8 @@ class TestClientMap(unittest.TestCase):
         nr, nc, nd = 10**5, 10**6, 10**4
 
         dist = client_map.Distribution.from_shape(
-                 self.ctx, (nr, nc, nd), ('b', 'c', 'n'), grid_shape=(2, 2, 1))
+                 self.context, (nr, nc, nd), ('b', 'c', 'n'),
+                 grid_shape=(2, 2, 1))
 
         new_dist0 = dist.reduce(axes=[0])
         self.assertEqual(new_dist0.dist, ('c', 'n'))
@@ -106,7 +103,7 @@ class TestClientMap(unittest.TestCase):
 
     def test_reduce_0D(self):
         N = 10**5
-        dist = client_map.Distribution.from_shape(self.ctx, (N,))
+        dist = client_map.Distribution.from_shape(self.context, (N,))
         new_dist = dist.reduce(axes=[0])
         self.assertEqual(new_dist.dist, ())
         self.assertSequenceEqual(new_dist.shape, ())
@@ -114,13 +111,13 @@ class TestClientMap(unittest.TestCase):
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
 
 
-class TestDistributionCreation(unittest.TestCase):
+class TestDistributionCreation(ContextTestCase):
     def test_all_n_dist(self):
-        context = Context()
-        distribution = client_map.Distribution.from_shape(context,
+        distribution = client_map.Distribution.from_shape(self.context,
                                                           shape=(3, 3),
                                                           dist=('n', 'n'))
-        context.ones(distribution)
+        self.context.ones(distribution)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

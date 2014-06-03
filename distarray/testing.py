@@ -18,7 +18,9 @@ from functools import wraps
 import numpy as np
 from distarray.externals import six
 from distarray.externals import protocol_validator
+from distarray.dist.ipython_utils import IPythonClient
 
+from distarray.dist import Context
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
 
@@ -127,8 +129,15 @@ class MpiTestCase(unittest.TestCase):
 
     """Base test class for MPI test cases.
 
-    Overload the `comm_size` class attribute to change the default
-    (default is 4).
+    Overload the `comm_size` class attribute to change the default number of
+    processes required.
+
+    Attributes
+    ----------
+    comm_size : int, default=4
+        Indicates how many MPI processes are required for this test to
+        run.  If fewer than `comm_size` are available, the test will be
+        skipped.
     """
 
     comm_size = 4
@@ -145,6 +154,59 @@ class MpiTestCase(unittest.TestCase):
     def tearDownClass(cls):
         if cls.comm != MPI.COMM_NULL:
             cls.comm.Free()
+
+
+class ContextTestCase(unittest.TestCase):
+
+    """Base test class for test cases that use a Context.
+
+    Overload the `ntargets` class attribute to change the default  number of
+    engines required.  A `cls.context` object will be created with
+    `targets=range(cls.ntargets)`.  Tests will be skipped if there are too
+    few targets.
+
+    Attributes
+    ----------
+    ntargets : int or 'any', default=4
+        If an int, indicates how many engines are required for this test to
+        run.  If the string 'any', indicates that any number of engines may
+        be used with this test.
+    """
+
+    ntargets = 4
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = IPythonClient()
+        if cls.ntargets == 'any':
+            cls.context = Context(client=cls.client)
+            cls.ntargets = len(cls.context.targets)
+        elif len(cls.client) < cls.ntargets:
+            msg = ("{}: "
+                   "This test class requires at least {} engines to run; "
+                   "only {} available.")
+            msg = msg.format(cls, cls.ntargets, len(cls.client))
+            raise unittest.SkipTest(msg)
+        else:
+            cls.context = Context(client=cls.client,
+                                  targets=six.moves.range(cls.ntargets))
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.context.close()
+            cls.client.close()
+        except RuntimeError:
+            pass
+
+
+def check_targets(required, available):
+    """If available < required, raise a SkipTest with a nice error message."""
+    if available < required:
+        msg = ("This test requires at least {} engines to run; "
+               "only {} available.")
+        msg = msg.format(required, available)
+        raise unittest.SkipTest(msg)
 
 
 def _assert_localarray_metadata_equal(l0, l1, check_dtype=False):
