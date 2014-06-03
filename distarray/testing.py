@@ -18,6 +18,7 @@ from functools import wraps
 import numpy as np
 from distarray.externals import six
 from distarray.externals import protocol_validator
+from distarray.dist.ipython_utils import IPythonClient
 
 from distarray.dist import Context
 from distarray.error import InvalidCommSizeError
@@ -176,20 +177,25 @@ class ContextTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.client = IPythonClient()
         if cls.ntargets == 'any':
-            cls.context = Context()
+            cls.context = Context(client=cls.client)
             cls.ntargets = len(cls.context.targets)
+        elif len(cls.client) < cls.ntargets:
+            msg = ("{}: "
+                   "This test class requires at least {} engines to run; "
+                   "only {} available.")
+            msg = msg.format(cls, cls.ntargets, len(cls.client))
+            raise unittest.SkipTest(msg)
         else:
-            try:
-                cls.context = Context(targets=six.moves.range(cls.ntargets))
-            except ValueError:
-                msg = "Must run with ntargets >= {}."
-                raise unittest.SkipTest(msg.format(cls.ntargets))
+            cls.context = Context(client=cls.client,
+                                  targets=six.moves.range(cls.ntargets))
 
     @classmethod
     def tearDownClass(cls):
         try:
             cls.context.close()
+            cls.client.close()
         except RuntimeError:
             pass
 
