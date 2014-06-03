@@ -269,6 +269,9 @@ class DistArray(object):
 
     def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
 
+        if any(0 in localshape for localshape in self.get_localshapes()):
+            raise NotImplementedError("Reduction not implemented for empty LocalArrays")
+
         if out is not None:
             _raise_nie()
 

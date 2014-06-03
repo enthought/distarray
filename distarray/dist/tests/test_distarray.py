@@ -547,6 +547,17 @@ class TestReduceMethods(unittest.TestCase):
             assert_allclose(darr_sum.tondarray(), arr_sum)
         assert_allclose(darr.sum().tondarray(), arr.sum())
 
+    def test_empty_localarray(self):
+        if len(self.context.targets) < 2:
+            raise self.skipTest("not enough targets to run test.")
+        dist = Distribution.from_shape(self.context,
+                                       shape=(1,),
+                                       dist=('b',),
+                                       targets=self.context.targets[:2])
+        darr = self.context.ones(dist)
+        self.assertRaises(NotImplementedError, darr.min, ())
+        self.assertRaises(NotImplementedError, darr.sum, (), {'axis':0})
+
 
 class TestFromLocalArrays(unittest.TestCase):
 
