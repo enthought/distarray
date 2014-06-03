@@ -200,6 +200,14 @@ class ContextTestCase(unittest.TestCase):
             pass
 
 
+def check_targets(required, available):
+    if available < required:
+        msg = ("This test requires at least {} engines to run; "
+               "only {} available.")
+        msg = msg.format(required, available)
+        raise unittest.SkipTest(msg)
+
+
 def _assert_localarray_metadata_equal(l0, l1, check_dtype=False):
     np.testing.assert_equal(l0.dist, l1.dist)
     np.testing.assert_equal(l0.global_shape, l1.global_shape)
