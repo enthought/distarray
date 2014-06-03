@@ -36,7 +36,6 @@ from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
                                       make_grid_shape,
                                       positivify,
-                                      validate_grid_shape,
                                       _start_stop_block,
                                       normalize_dim_dict,
                                       normalize_reduction_axes)
@@ -412,8 +411,8 @@ class Distribution(object):
         self.ndim = len(dd0)
         self.dist = tuple(dd['dist_type'] for dd in dd0)
         self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
-
-        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+                                               self.dist, len(self.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
                   dim_data_per_rank]
@@ -439,7 +438,18 @@ class Distribution(object):
         return self
 
     @classmethod
-    def from_shape(cls, context, shape, dist=None, grid_shape=None, targets=None):
+    def from_shape(cls, context, shape, dist=None, grid_shape=None,
+                   targets=None):
+
+        # special case when dist is all 'n's.
+        if (dist is not None) and all(d == 'n' for d in dist):
+            if (targets is not None) and (len(targets) != 1):
+                raise ValueError('target dist conflict')
+            elif targets is None:
+                targets = [context.targets[0]]
+            else:
+                # then targets is set correctly
+                pass
 
         self = cls.__new__(cls)
         self.context = context
@@ -448,17 +458,18 @@ class Distribution(object):
         self.shape = shape
         self.ndim = len(shape)
 
+        # dist
         if dist is None:
             dist = {0: 'b'}
         self.dist = normalize_dist(dist, self.ndim)
 
-        if grid_shape is None:  # Make a new grid_shape if not provided.
-            self.grid_shape = make_grid_shape(self.shape, self.dist,
-                                              len(self.targets))
-        else:  # Otherwise normalize the one passed in.
-            self.grid_shape = normalize_grid_shape(grid_shape, self.ndim)
-        # In either case, validate.
-        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
+        # grid_shape
+        if grid_shape is None:
+            grid_shape = make_grid_shape(self.shape, self.dist,
+                                         len(self.targets))
+
+        self.grid_shape = normalize_grid_shape(grid_shape, self.ndim,
+                                               self.dist, len(self.targets))
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
@@ -568,7 +579,8 @@ class Distribution(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
-        validate_grid_shape(self.grid_shape, self.dist, len(self.targets))
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+                                               self.dist, len(self.targets))
 
         nelts = reduce(operator.mul, self.grid_shape, 1)
         self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)

@@ -474,17 +474,17 @@ class TestReduceMethods(ContextTestCase):
     def test_var_dtype(self):
         np_var = self.arr.var(dtype=int)
         da_var = self.darr.var(dtype=int)
-        self.assertEqual(da_var, np_var)
+        self.assertEqual(da_var.toarray(), np_var)
 
     def test_std(self):
         np_std = self.arr.std()
         da_std = self.darr.std()
-        self.assertEqual(da_std, np_std)
+        self.assertEqual(da_std.toarray(), np_std)
 
     def test_std_dtype(self):
         np_std = self.arr.std(dtype=int)
         da_std = self.darr.std(dtype=int)
-        self.assertEqual(da_std, np_std)
+        self.assertEqual(da_std.toarray(), np_std)
 
     def test_std_axis_0(self):
         np_std = self.arr.std(axis=0)

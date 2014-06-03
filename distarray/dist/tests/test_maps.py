@@ -66,7 +66,7 @@ class TestClientMap(ContextTestCase):
 
         self.assertTrue(cm0.is_compatible(cm1))
         self.assertTrue(cm1.is_compatible(cm0))
-        
+
         nr -= 1; nc -= 1; nd -= 1
 
         cm2 = client_map.Distribution.from_shape(
@@ -108,3 +108,15 @@ class TestClientMap(ContextTestCase):
         self.assertSequenceEqual(new_dist.shape, ())
         self.assertEqual(new_dist.grid_shape, ())
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
+
+
+class TestDistributionCreation(unittest.TestCase):
+    def test_all_n_dist(self):
+        context = Context()
+        distribution = client_map.Distribution.from_shape(context,
+                                                          shape=(3, 3),
+                                                          dist=('n', 'n'))
+        context.ones(distribution)
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

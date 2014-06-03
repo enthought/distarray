@@ -27,9 +27,9 @@ import numpy as np
 from distarray.externals.six.moves import range, zip
 
 from distarray.local import construct
-from distarray.metadata_utils import (validate_grid_shape, make_grid_shape,
-                                      normalize_grid_shape, normalize_dist,
-                                      distribute_indices, positivify)
+from distarray.metadata_utils import (make_grid_shape, normalize_grid_shape,
+                                      normalize_dist, distribute_indices,
+                                      positivify)
 
 
 class Distribution(object):
@@ -56,10 +56,8 @@ class Distribution(object):
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
             grid_shape = make_grid_shape(shape, dist_tuple, comm_size)
-        else:  # Otherwise normalize the one passed in.
-            grid_shape = normalize_grid_shape(grid_shape, ndim)
-        # In either case, validate.
-        validate_grid_shape(grid_shape, dist_tuple, comm_size)
+        grid_shape = normalize_grid_shape(grid_shape, ndim,
+                                          dist_tuple, comm_size)
 
         comm = construct.init_comm(base_comm, grid_shape)
         grid_coords = comm.Get_coords(comm.Get_rank())
@@ -284,7 +282,7 @@ class BlockCyclicMap(MapBase):
     """
 
     dist = 'c'
-    
+
     def __init__(self, global_size, grid_size, grid_rank, start, block_size):
         if start % block_size:
             msg = "Value of start (%r) does not evenly divide block_size (%r)."
