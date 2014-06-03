@@ -8,8 +8,7 @@
 Create a distarray.
 """
 
-from distarray.context import Context
-from distarray.client_map import Distribution
+from distarray.dist import Context, Distribution
 
 
 c = Context()
