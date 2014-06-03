@@ -201,6 +201,7 @@ class ContextTestCase(unittest.TestCase):
 
 
 def check_targets(required, available):
+    """If available < required, raise a SkipTest with a nice error message."""
     if available < required:
         msg = ("This test requires at least {} engines to run; "
                "only {} available.")
