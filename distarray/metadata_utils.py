@@ -31,7 +31,7 @@ def normalize_grid_shape(grid_shape, ndims, dist, comm_size):
     grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
 
     # short circuit for special case
-    if all(x is 'n' for x in dist):
+    if all(x == 'n' for x in dist):
         if not all(x == 1 for x in grid_shape):
             raise ValueError("grid shape should be all `1`'s not %s." %
                              grid_shape)
