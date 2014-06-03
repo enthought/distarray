@@ -200,7 +200,7 @@ class LocalArray(object):
     #-------------------------------------------------------------------------
 
     @classmethod
-    def from_distarray(cls, obj, comm=None):
+    def from_distarray(cls, obj, comm):
         """Make a LocalArray from Distributed Array Protocol data structure.
 
         An object that supports the Distributed Array Protocol will have
@@ -627,7 +627,7 @@ def save_dnpy(file, arr):
             fid.close()
 
 
-def load_dnpy(file, comm=None):
+def load_dnpy(file, comm):
     """
     Load a LocalArray from a ``.dnpy`` file.
 
@@ -743,7 +743,7 @@ def compact_indices(dim_data):
     return tuple(index)
 
 
-def load_hdf5(filename, dim_data, key='buffer', comm=None):
+def load_hdf5(filename, dim_data, comm, key='buffer'):
     """
     Load a LocalArray from an ``.hdf5`` file.
 
@@ -756,10 +756,10 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
         https://github.com/enthought/distributed-array-protocol, describing
         which portions of the HDF5 file to load into this LocalArray, and with
         what metadata.
+    comm : MPI comm object
     key : str, optional
         The identifier for the group to load the LocalArray from (the default
         is 'buffer').
-    comm : MPI comm object, optional
 
     Returns
     -------
@@ -791,7 +791,7 @@ def load_hdf5(filename, dim_data, key='buffer', comm=None):
     return LocalArray(distribution=distribution, dtype=dtype, buf=buf)
 
 
-def load_npy(filename, dim_data, comm=None):
+def load_npy(filename, dim_data, comm):
     """
     Load a LocalArray from a ``.npy`` file.
 
@@ -804,7 +804,7 @@ def load_npy(filename, dim_data, comm=None):
         https://github.com/enthought/distributed-array-protocol, describing
         which portions of the HDF5 file to load into this LocalArray, and with
         what metadata.
-    comm : MPI comm object, optional
+    comm : MPI comm object
 
     Returns
     -------

@@ -43,7 +43,7 @@ def global_sum(da):
     global_sum = da.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    distribution = Distribution.from_shape((1,))
+    distribution = Distribution.from_shape((1,), comm=da.comm)
     new_distarray = LocalArray(distribution, buf=new_arr)
     return new_distarray
 

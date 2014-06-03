@@ -462,6 +462,14 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
 
 
+class TestComm(MpiTestCase):
+
+    def test_create_localarray(self):
+        # regression test for issue #144
+        dist = Distribution.from_shape((16, 16), dist=('n', 'b'), comm=self.comm)
+        la = LocalArray(dist)
+
+
 class TestNDEnumerate(MpiTestCase):
     """Make sure we generate indices compatible with __getitem__."""
 

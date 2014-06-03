@@ -473,16 +473,17 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        da_key = self._generate_key()
-        ddpr = distribution.get_dim_data_per_rank()
-        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (distribution.comm,) + self._key_and_push(key) + (distribution.comm,))
+        def _local_load_hdf5(filename, ddpr, comm, key):
+            from distarray.local import load_hdf5
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_hdf5(filename, dim_data, comm, key))
 
-        self._execute(
-            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs,
-            targets=distribution.targets
-        )
-        return DistArray.from_localarrays(da_key, distribution=distribution)
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_hdf5, (filename, ddpr, distribution.comm, key),
+                   targets=distribution.targets)
+
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
     def fromndarray(self, arr, distribution=None):
         """Create a DistArray from an ndarray.

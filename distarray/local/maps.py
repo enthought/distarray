@@ -39,14 +39,14 @@ class Distribution(object):
     Manages one or more one-dimensional map classes.
     """
 
-    def __init__(self, dim_data, comm=None):
+    def __init__(self, dim_data, comm):
         """Create a Distribution from a `dim_data` structure."""
         self._maps = tuple(map_from_dim_dict(dim_dict) for dim_dict in dim_data)
         self.base_comm = construct.init_base_comm(comm)
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
     @classmethod
-    def from_shape(cls, shape, dist=None, grid_shape=None, comm=None):
+    def from_shape(cls, shape, comm, dist=None, grid_shape=None):
         """Create a Distribution from a `shape` and optional arguments."""
         dist = {0: 'b'} if dist is None else dist
         ndim = len(shape)
