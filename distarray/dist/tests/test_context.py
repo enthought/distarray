@@ -130,7 +130,7 @@ class TestPrimeCluster(ContextTestCase):
         self.assertEqual(c.grid_shape, (1, 1, 3))
 
 
-class TestApply(Context):
+class TestApply(ContextTestCase):
 
     ntargets = 'any'
 
