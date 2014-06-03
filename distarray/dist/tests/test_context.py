@@ -17,7 +17,7 @@ from random import shuffle
 
 import numpy
 
-from distarray.testing import ContextTestCase
+from distarray.testing import ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.ipython_utils import IPythonClient
@@ -60,16 +60,14 @@ class TestContextCreation(unittest.TestCase):
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        if len(self.client) < 2:
-            raise unittest.SkipTest("Not enough targets to run test.")
+        check_targets(required=2, available=len(self.client))
         dac = Context(self.client, targets=[0, 1])
         self.assertIs(dac.client, self.client)
         dac.close()
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
-        if len(self.client) < 4:
-            raise unittest.SkipTest("Not enough targets to run test.")
+        check_targets(required=4, available=len(self.client))
         targets = [3, 2]
         dac = Context(self.client, targets=targets)
         self.assertEqual(set(dac.targets), set(targets))

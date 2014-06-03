@@ -17,7 +17,7 @@ from unittest import TestCase
 import numpy
 from numpy.testing import assert_array_equal
 
-from distarray.testing import ContextTestCase
+from distarray.testing import ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.decorators import DecoratorBase, local, vectorize
@@ -177,8 +177,7 @@ class TestLocalDecorator(ContextTestCase):
         assert_array_equal(da.toarray(), a)
 
     def test_different_contexts(self):
-        if len(self.context.targets) < 4:
-            raise unittest.SkipTest("Must run with ntargets >= 4.")
+        check_targets(required=4, available=len(self.context.targets))
 
         ctx1 = Context(targets=range(4))
         ctx2 = Context(targets=range(3))
