@@ -111,13 +111,13 @@ class TestClientMap(ContextTestCase):
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
 
 
-class TestDistributionCreation(unittest.TestCase):
+class TestDistributionCreation(ContextTestCase):
     def test_all_n_dist(self):
-        context = Context()
-        distribution = client_map.Distribution.from_shape(context,
+        distribution = client_map.Distribution.from_shape(self.context,
                                                           shape=(3, 3),
                                                           dist=('n', 'n'))
-        context.ones(distribution)
+        self.context.ones(distribution)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
