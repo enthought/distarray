@@ -9,6 +9,14 @@ dist Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`cleanup` Module
+---------------------
+
+.. automodule:: distarray.dist.cleanup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`context` Module
 ---------------------
 
