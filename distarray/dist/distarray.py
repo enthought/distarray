@@ -114,7 +114,7 @@ class DistArray(object):
         # sanity check that I didn't miss any cases above, because this is a
         # confusing function
         else:
-            assert(False)
+            assert False
         return da
 
     def __del__(self):
