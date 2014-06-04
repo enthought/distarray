@@ -364,20 +364,18 @@ class Context(object):
         da_key = self._generate_key()
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + self._key_and_push(name) + (self.comm,
-                    self.comm)
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs,
+                '%s = distarray.local.load_dnpy(%s, %s + "_" + str(%s.Get_rank()) + ".dnpy")' % subs,
                 targets=self.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + self._key_and_push(name) + (self.comm,
-                    self.comm)
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs,
+                '%s = distarray.local.load_dnpy(%s, %s[%s.Get_rank()])' % subs,
                 targets=self.targets
             )
         else:
@@ -438,16 +436,17 @@ class Context(object):
         result : DistArray
             A DistArray encapsulating the file loaded.
         """
-        da_key = self._generate_key()
-        ddpr = distribution.get_dim_data_per_rank()
-        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (distribution.comm,) + (distribution.comm,))
+        
+        def _local_load_npy(filename, ddpr, comm):
+            from distarray.local import load_npy
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_npy(comm, filename, dim_data))
 
-        self._execute(
-            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs,
-            targets=distribution.targets
-        )
-        return DistArray.from_localarrays(da_key, distribution=distribution)
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_npy, (filename, ddpr, distribution.comm),
+                            targets=distribution.targets)
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
     def load_hdf5(self, filename, distribution, key='buffer'):
         """
@@ -476,7 +475,7 @@ class Context(object):
         def _local_load_hdf5(filename, ddpr, comm, key):
             from distarray.local import load_hdf5
             dim_data = ddpr[comm.Get_rank()]
-            return proxyize(load_hdf5(filename, dim_data, comm, key))
+            return proxyize(load_hdf5(comm, filename, dim_data, key))
 
         ddpr = distribution.get_dim_data_per_rank()
 

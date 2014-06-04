@@ -198,7 +198,7 @@ class LocalArray(object):
     #-------------------------------------------------------------------------
 
     @classmethod
-    def from_distarray(cls, obj, comm):
+    def from_distarray(cls, comm, obj):
         """Make a LocalArray from Distributed Array Protocol data structure.
 
         An object that supports the Distributed Array Protocol will have
@@ -625,7 +625,7 @@ def save_dnpy(file, arr):
             fid.close()
 
 
-def load_dnpy(file, comm):
+def load_dnpy(comm, file):
     """
     Load a LocalArray from a ``.dnpy`` file.
 
@@ -649,7 +649,7 @@ def load_dnpy(file, comm):
 
     try:
         distbuffer = format.read_localarray(fid)
-        return LocalArray.from_distarray(distbuffer, comm=comm)
+        return LocalArray.from_distarray(comm=comm, obj=distbuffer)
 
     finally:
         if own_fid:
@@ -741,7 +741,7 @@ def compact_indices(dim_data):
     return tuple(index)
 
 
-def load_hdf5(filename, dim_data, comm, key='buffer'):
+def load_hdf5(comm, filename, dim_data, key='buffer'):
     """
     Load a LocalArray from an ``.hdf5`` file.
 
@@ -789,7 +789,7 @@ def load_hdf5(filename, dim_data, comm, key='buffer'):
     return LocalArray(distribution=distribution, dtype=dtype, buf=buf)
 
 
-def load_npy(filename, dim_data, comm):
+def load_npy(comm, filename, dim_data):
     """
     Load a LocalArray from a ``.npy`` file.
 
@@ -891,7 +891,7 @@ can_cast = np.can_cast
 # Reduction functions
 # ---------------------------------------------------------------------------
 
-def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
+def local_reduction(out_comm, reducer, larr, ddpr, dtype, axes):
     """ Entry point for reductions on local arrays.
 
     Parameters

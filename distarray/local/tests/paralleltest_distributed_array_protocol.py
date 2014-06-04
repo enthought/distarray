@@ -43,12 +43,11 @@ class DapRoundTripEqualityMixin(object):
         assert_array_equal(larr.ndarray, self.larr.ndarray)
 
     def test_round_trip_equality_from_object(self):
-        larr = LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = LocalArray.from_distarray(comm=self.comm, obj=self.larr)
         self.assert_round_trip_equality(larr)
 
     def test_round_trip_equality_from_dict(self):
-        larr = LocalArray.from_distarray(self.larr.__distarray__(),
-                                         comm=self.comm)
+        larr = LocalArray.from_distarray(comm=self.comm, obj=self.larr.__distarray__())
         self.assert_round_trip_equality(larr)
 
 
@@ -65,7 +64,7 @@ class DapValidatorMixin(object):
         validate_distbuffer(self.larr.__distarray__())
 
     def test_round_trip_elements(self):
-        larr = LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = LocalArray.from_distarray(comm=self.comm, obj=self.larr)
         if self.comm.Get_rank() == 0:
             idx = (0,) * larr.ndarray.ndim
             larr.ndarray[idx] = 99
@@ -183,7 +182,7 @@ class TestDapLopsided(DapValidatorMixin, MpiTestCase):
         elif self.comm.Get_rank() == 1:
             assert_array_equal(np.arange(30), self.larr.ndarray)
 
-        larr = LocalArray.from_distarray(self.larr, comm=self.comm)
+        larr = LocalArray.from_distarray(comm=self.comm, obj=self.larr)
         if self.comm.Get_rank() == 0:
             assert_array_equal(np.arange(20), larr.ndarray)
         elif self.comm.Get_rank() == 1:
