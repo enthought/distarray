@@ -8,7 +8,6 @@ from __future__ import division
 
 from distarray.local.mpiutils import MPI
 from distarray.local.error import NullCommError, InvalidBaseCommError
-from distarray.local import mpiutils
 
 
 # ---------------------------------------------------------------------------
