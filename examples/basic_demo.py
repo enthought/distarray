@@ -7,17 +7,15 @@
 from __future__ import print_function
 
 import numpy
-import distarray
 from distarray.externals.six.moves import input
-from distarray import Context
-from distarray.client_map import Distribution
-from distarray.decorators import local
+
+from distarray.dist import Context, Distribution
+from distarray.dist.decorators import local
 from pprint import pprint
 
 context = Context()
 
 numpy.set_printoptions(precision=2, linewidth=1000)
-context.view.execute("import numpy")
 
 
 @local
@@ -34,8 +32,8 @@ def local_sin_plus_50(da):
 
 @local
 def global_sum(da):
-    """Reproducing the `sum` function in densedistarray."""
-    from distarray.mpiutils import MPI
+    """Reproducing the `sum` function in LocalArray."""
+    from distarray.local.mpiutils import MPI
     from distarray.local import LocalArray
     from distarray.local.maps import Distribution
 
