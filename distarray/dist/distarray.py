@@ -23,7 +23,8 @@ import numpy as np
 import distarray
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
-from distarray.metadata_utils import normalize_reduction_axes
+from distarray.metadata_utils import (normalize_reduction_axes,
+                                      get_shape_from_dim_data_per_rank)
 
 __all__ = ['DistArray']
 
@@ -339,9 +340,8 @@ class DistArray(object):
         return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localshapes(self):
-        def get(key):
-            return key.local_shape
-        return self.context.apply(get, args=(self.key,), targets=self.targets)
+        ddpr = self.distribution.get_dim_data_per_rank()
+        return get_shape_from_dim_data_per_rank(ddpr)
 
     # Binary operators
 
