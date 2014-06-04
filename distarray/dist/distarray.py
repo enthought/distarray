@@ -49,8 +49,8 @@ class DistArray(object):
         ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = distarray.local.empty('
                'distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], '
-               '{comm_name}), {dtype_name})')
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
+               '{dtype_name})')
         ctx._execute(cmd.format(**locals()), targets=distribution.targets)
         self.distribution = distribution
         self.key = da_key
@@ -286,7 +286,7 @@ class DistArray(object):
         def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
             import distarray.local.localarray as la
             local_reducer = getattr(la, local_name)
-            res = proxyize(la.local_reduction(local_reducer, out_comm, larr,  # noqa
+            res = proxyize(la.local_reduction(out_comm, local_reducer, larr,  # noqa
                                               ddpr, dtype, axes))
             return res
 

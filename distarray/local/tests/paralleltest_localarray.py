@@ -21,12 +21,12 @@ class TestInit(MpiTestCase):
     """Is the __init__ method working properly?"""
 
     def setUp(self):
-        self.dist_1d = Distribution.from_shape((7,), grid_shape=(4,),
-                                               comm=self.comm)
+        self.dist_1d = Distribution.from_shape(comm=self.comm,
+                                        shape=(7,), grid_shape=(4,))
         self.larr_1d = LocalArray(self.dist_1d, buf=None)
 
-        self.dist_2d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                               comm=self.comm)
+        self.dist_2d = Distribution.from_shape(comm=self.comm,
+                                        shape=(16, 16), grid_shape=(4, 1))
         self.larr_2d = LocalArray(self.dist_2d, buf=None)
 
     def test_basic_1d(self):
@@ -99,7 +99,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_block_simple(self):
         """Can we compute local indices for a block distribution?"""
-        distribution = Distribution.from_shape((4, 4), comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm, shape=(4, 4))
         la = LocalArray(distribution)
         self.assertEqual(la.global_shape, (4, 4))
         self.assertEqual(la.grid_shape, (4, 1))
@@ -113,7 +113,7 @@ class TestLocalInd(MpiTestCase):
 
     def test_block_complex(self):
         """Can we compute local indices for a block distribution?"""
-        distribution = Distribution.from_shape((8, 2), comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm, shape=(8, 2))
         la = LocalArray(distribution)
         self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4, 1))
@@ -134,8 +134,8 @@ class TestLocalInd(MpiTestCase):
 
     def test_cyclic_simple(self):
         """Can we compute local indices for a cyclic distribution?"""
-        distribution = Distribution.from_shape((10,), dist={0: 'c'},
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(10,), dist={0: 'c'})
         la = LocalArray(distribution)
         self.assertEqual(la.global_shape, (10,))
         self.assertEqual(la.grid_shape, (4,))
@@ -165,8 +165,8 @@ class TestLocalInd(MpiTestCase):
 
     def test_cyclic_complex(self):
         """Can we compute local indices for a cyclic distribution?"""
-        distribution = Distribution.from_shape((8, 2), dist={0: 'c'},
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(8, 2), dist={0: 'c'})
         la = LocalArray(distribution)
         self.assertEqual(la.global_shape, (8, 2))
         self.assertEqual(la.grid_shape, (4, 1))
@@ -199,28 +199,29 @@ class TestGlobalInd(MpiTestCase):
 
     def test_block(self):
         """Can we go from global to local indices and back for block?"""
-        distribution = Distribution.from_shape((4, 4), comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm, shape=(4, 4))
         la = LocalArray(distribution)
         self.round_trip(la)
 
     def test_cyclic(self):
         """Can we go from global to local indices and back for cyclic?"""
-        distribution = Distribution.from_shape((8, 8), dist=('c', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(8, 8), dist=('c', 'n'))
         la = LocalArray(distribution)
         self.round_trip(la)
 
     def test_crazy(self):
         """Can we go from global to local indices and back for a complex case?"""
-        distribution = Distribution.from_shape((10, 100, 20),
-                                               dist=('b', 'c', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(10, 100, 20),
+                                        dist=('b', 'c', 'n'))
         la = LocalArray(distribution)
         self.round_trip(la)
 
     def test_global_limits_block(self):
         """Find the boundaries of a block distribution"""
-        d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(d)
 
         answers = [(0, 3), (4, 7), (8, 11), (12, 15)]
@@ -233,7 +234,8 @@ class TestGlobalInd(MpiTestCase):
 
     def test_global_limits_cyclic(self):
         """Find the boundaries of a cyclic distribution"""
-        d = Distribution.from_shape((16, 16), dist=('c', 'n'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), dist=('c', 'n'))
         a = LocalArray(d)
         answers = [(0, 12), (1, 13), (2, 14), (3, 15)]
         limits = a.global_limits(0)
@@ -244,7 +246,7 @@ class TestGlobalInd(MpiTestCase):
 
     def test_bad_global_limits(self):
         """ Test that invalid global_limits fails as expected. """
-        d = Distribution.from_shape((4, 4), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(4, 4))
         a = LocalArray(d)
         with self.assertRaises(InvalidDimensionError):
             a.global_limits(-1)
@@ -264,7 +266,7 @@ class TestRankCoords(MpiTestCase):
 
     def test_rank_coords(self):
         """ Test that we can go from rank to coords and back. """
-        d = Distribution.from_shape((4, 4), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(4, 4))
         la = LocalArray(d)
         max_size = self.comm.Get_size()
         for rank in range(max_size):
@@ -279,7 +281,8 @@ class TestArrayConversion(MpiTestCase):
         # so we force the numpy type to start with so we get back
         # the same thing.
         self.int_type = np.int64
-        self.distribution = Distribution.from_shape((4,), comm=self.comm)
+        self.distribution = Distribution.from_shape(comm=self.comm,
+                                                    shape=(4,))
         self.int_larr = LocalArray(self.distribution, dtype=self.int_type)
         self.int_larr.fill(3)
 
@@ -302,8 +305,8 @@ class TestIndexing(MpiTestCase):
 
     def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
-        distribution = Distribution.from_shape((16, 16), dist=('b', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(distribution)
         b = LocalArray(distribution)
         for global_inds, value in ndenumerate(a):
@@ -316,9 +319,8 @@ class TestIndexing(MpiTestCase):
 
     def test_indexing_1(self):
         """Can we get and set local elements for a complex dist?"""
-        distribution = Distribution.from_shape((16, 16, 2),
-                                               dist=('c', 'b', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(16, 16, 2), dist=('c', 'b', 'n'))
         a = LocalArray(distribution)
         b = LocalArray(distribution)
         for i, value in ndenumerate(a):
@@ -330,9 +332,8 @@ class TestIndexing(MpiTestCase):
             self.assertEqual(a.global_index[i], 0.0)
 
     def test_pack_unpack_index(self):
-        distribution = Distribution.from_shape((16, 16, 2),
-                                               dist=('c', 'b', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(16, 16, 2), dist=('c', 'b', 'n'))
         a = LocalArray(distribution)
         for global_inds, value in ndenumerate(a):
             packed_ind = a.pack_index(global_inds)
@@ -404,17 +405,15 @@ class TestLocalArrayMethods(MpiTestCase):
          ]
 
     def test_copy_bn(self):
-        distribution = Distribution.from_shape((16, 16),
-                                               dist=('b', 'n'),
-                                               comm=self.comm)
+        distribution = Distribution.from_shape(comm=self.comm,
+                                        shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(distribution, dtype=np.int_)
         a.fill(11)
         b = a.copy()
         assert_localarrays_equal(a, b, check_dtype=True)
 
     def test_copy_cbc(self):
-        distribution = Distribution(self.ddpr[self.comm.Get_rank()],
-                                    comm=self.comm)
+        distribution = Distribution(comm=self.comm, dim_data=self.ddpr[self.comm.Get_rank()])
         a = LocalArray(distribution, dtype=np.int_)
         a.fill(12)
         b = a.copy()
@@ -422,7 +421,8 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_astype_bn(self):
         new_dtype = np.float32
-        d = Distribution.from_shape((16, 16), dist=('b', 'n'),  comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                             shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(d, dtype=np.int_)
         a.fill(11)
         b = a.astype(new_dtype)
@@ -432,7 +432,7 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_astype_cbc(self):
         new_dtype = np.int8
-        d = Distribution(self.ddpr[self.comm.Get_rank()], comm=self.comm)
+        d = Distribution(comm=self.comm, dim_data=self.ddpr[self.comm.Get_rank()])
         a = LocalArray(d, dtype=np.int32)
         a.fill(12)
         b = a.astype(new_dtype)
@@ -441,7 +441,8 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(b.ndarray.dtype, new_dtype)
 
     def test_view_bn(self):
-        d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                             shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(d, dtype=np.int32)
         a.fill(11)
         b = a.view()
@@ -450,24 +451,35 @@ class TestLocalArrayMethods(MpiTestCase):
 
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
-        d = Distribution.from_shape((16, 16), dist=('b', 'n'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                             shape=(16, 16), dist=('b', 'n'))
         a = LocalArray(d)
         b = LocalArray(d)
         new_a = a.asdist_like(b)
         self.assertEqual(id(a), id(new_a))
 
-        d2 = Distribution.from_shape((16, 16), dist=('n', 'b'), comm=self.comm)
+        d2 = Distribution.from_shape(comm=self.comm,
+                              shape=(16, 16), dist=('n', 'b'))
         a = LocalArray(d)
         b = LocalArray(d2)
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
+
+
+class TestComm(MpiTestCase):
+
+    def test_create_localarray(self):
+        # regression test for issue #144
+        dist = Distribution.from_shape(comm=self.comm,
+                                shape=(16, 16), dist=('n', 'b'))
+        la = LocalArray(dist)
 
 
 class TestNDEnumerate(MpiTestCase):
     """Make sure we generate indices compatible with __getitem__."""
 
     def test_ndenumerate(self):
-        d = Distribution.from_shape((16, 16, 2), dist=('c', 'b', 'n'),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                             shape=(16, 16, 2), dist=('c', 'b', 'n'))
         a = LocalArray(d)
         for global_inds, value in ndenumerate(a):
             a.global_index[global_inds] = 0.0

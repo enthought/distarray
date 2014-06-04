@@ -40,7 +40,7 @@ class TestCreateCommAlternate(unittest.TestCase):
         # Run a simple test to confirm this comm works.
         size = len(nodes)
         nrows = size * 3
-        d = Distribution.from_shape((nrows, 20), comm=comm)
+        d = Distribution.from_shape(comm=comm, shape=(nrows, 20))
         a = zeros(d)
         expected = numpy.zeros((nrows // size, 20))
         assert_array_equal(a.ndarray, expected)
