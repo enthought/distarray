@@ -32,7 +32,7 @@ class TestCreateCommAlternate(unittest.TestCase):
 
     def test_create_comm_with_list(self):
         """ Test that create_comm_with_list() works correctly. """
-        nodes = [0, 1, 2, 3]
+        nodes = list(range(self.max_size))
         comm = create_comm_with_list(nodes)
         if comm == MPI.COMM_NULL:
             # Only proceed when not COMM_NULL.

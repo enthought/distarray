@@ -114,11 +114,14 @@ class DistArray(object):
         # sanity check that I didn't miss any cases above, because this is a
         # confusing function
         else:
-            assert(False)
+            assert False
         return da
 
     def __del__(self):
-        self.context.delete_key(self.key, self.targets)
+        try:
+            self.context.delete_key(self.key, self.targets)
+        except Exception:
+            pass
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
