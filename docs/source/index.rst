@@ -62,14 +62,11 @@ or::
     python setup.py develop
 
 
-To run the tests, you will need to start an IPython.parallel cluster with at
-least four engines, for example::
+To run the tests, you will need to start an IPython.parallel cluster.  You can
+use ``ipcluster``, or you can use the ``dacluster`` command which comes with
+DistArray::
 
-    ipcluster start -n4 --engines=MPI
-
-or under Python 3::
-
-    ipcluster3 start -n4 --engines=MPI
+    dacluster start
 
 You should then be able to run all the tests with::
 
