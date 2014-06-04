@@ -12,25 +12,27 @@ Usage:
 
 import sys
 
-import distarray
-from distarray.random import Random
-
 from util import timer
 
-context = distarray.Context()
+from distarray.dist import Context, Distribution, hypot
+from distarray.dist.random import Random
+
+
+context = Context()
 random = Random(context)
 
 
 @timer
 def calc_pi(n):
     """Estimate pi using distributed NumPy arrays."""
-    x = random.rand((n,))
-    y = random.rand((n,))
-    r = distarray.hypot(x, y)
-    return 4 * float((r < 1.).sum())/n
+    distribution = Distribution.from_shape(context=context, shape=(n,))
+    x = random.rand(distribution)
+    y = random.rand(distribution)
+    r = hypot(x, y)
+    return 4 * float((r < 1).sum()) / n
+
 
 if __name__ == '__main__':
     N = int(sys.argv[1])
     result, time = calc_pi(N)
     print('time  : %3.4g\nresult: %.7f' % (time, result))
-    context.view.client.purge_everything()
