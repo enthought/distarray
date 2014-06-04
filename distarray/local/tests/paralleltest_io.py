@@ -18,7 +18,7 @@ from distarray.local.maps import Distribution
 class TestDnpyFileIO(MpiTestCase):
 
     def setUp(self):
-        d = Distribution.from_shape((7,), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(7,))
         self.larr0 = LocalArray(d)
 
         # a different file on every engine
@@ -199,7 +199,7 @@ class TestHdf5FileSave(MpiTestCase):
         self.output_path = self.comm.bcast(self.output_path, root=0)
 
     def test_save_1d(self):
-        d = Distribution.from_shape((51,), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(51,))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)
@@ -212,7 +212,7 @@ class TestHdf5FileSave(MpiTestCase):
                 self.assertEqual(v, fp[self.key][i])
 
     def test_save_2d(self):
-        d = Distribution.from_shape((11, 15), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(11, 15))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)

@@ -218,7 +218,7 @@ class Context(object):
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}), '
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
                'dtype={dtype_name})')
         self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution,
@@ -531,7 +531,7 @@ class Context(object):
         comm_name = distribution.comm
         cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
                'distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]),'
                '**{kwargs_name})')
         self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_name, distribution=distribution)

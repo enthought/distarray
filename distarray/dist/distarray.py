@@ -49,8 +49,8 @@ class DistArray(object):
         ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = distarray.local.empty('
                'distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], '
-               '{comm_name}), {dtype_name})')
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
+               '{dtype_name})')
         ctx._execute(cmd.format(**locals()), targets=distribution.targets)
         self.distribution = distribution
         self.key = da_key

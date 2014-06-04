@@ -38,7 +38,8 @@ test_dim_data = (dd0, dd1, dd2, dd3)
 class TestDistributionCreation(MpiTestCase):
 
     def test_creation(self):
-        distribution = Distribution(test_dim_data, comm=self.comm)
+        distribution = Distribution(comm=self.comm,
+                                dim_data=test_dim_data)
         self.assertTrue(len(distribution) == len(test_dim_data))
 
 
@@ -48,8 +49,8 @@ class TestFromShape(MpiTestCase):
 
     def test_basic_1d(self):
         """Test basic Distribution.from_shape creation."""
-        self.dist_1d = Distribution.from_shape((7,), grid_shape=(4,),
-                                               comm=self.comm)
+        self.dist_1d = Distribution.from_shape(comm=self.comm,
+                                    shape=(7,), grid_shape=(4,))
         self.assertEqual(self.dist_1d.global_shape, (7,))
         self.assertEqual(self.dist_1d.dist, ('b',))
         self.assertEqual(self.dist_1d.grid_shape, (4,))
@@ -68,8 +69,8 @@ class TestFromShape(MpiTestCase):
 
     def test_basic_2d(self):
         """Test basic LocalArray creation."""
-        self.dist_2d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                               comm=self.comm)
+        self.dist_2d = Distribution.from_shape(comm=self.comm, shape=(16, 16),
+                                               grid_shape=(4, 1))
         self.assertEqual(self.dist_2d.global_shape, (16, 16))
         self.assertEqual(self.dist_2d.dist, ('b', 'b'))
         self.assertEqual(self.dist_2d.grid_shape, (4, 1))
@@ -90,12 +91,12 @@ class TestFromShape(MpiTestCase):
         """Test that invalid distribution type fails as expected."""
         with self.assertRaises(TypeError):
             # Invalid distribution type 'x'.
-            Distribution.from_shape((7,), dist={0: 'x'}, grid_shape=(4,),
-                                    comm=self.comm)
+            Distribution.from_shape(comm=self.comm, shape=(7,),
+                                    dist={0: 'x'}, grid_shape=(4,))
 
     def test_no_grid_shape(self):
         """Create array init when passing no grid_shape."""
-        dist_nogrid = Distribution.from_shape((7,), comm=self.comm)
+        dist_nogrid = Distribution.from_shape(comm=self.comm, shape=(7,))
         grid_shape = dist_nogrid.grid_shape
         # For 1D array as created here, we expect grid_shape
         # to just be the number of engines as a tuple.
@@ -105,14 +106,14 @@ class TestFromShape(MpiTestCase):
 
     def test_cart_coords(self):
         """Test getting the cart_coords attribute."""
-        self.dist_1d = Distribution.from_shape((7,), grid_shape=(4,),
-                                               comm=self.comm)
+        self.dist_1d = Distribution.from_shape(comm=self.comm, shape=(7,),
+                                               grid_shape=(4,))
         actual_1d = self.dist_1d.cart_coords
         expected_1d = tuple(self.dist_1d.comm.Get_coords(self.dist_1d.comm_rank))
         self.assertEqual(actual_1d, expected_1d)
 
-        self.dist_2d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                               comm=self.comm)
+        self.dist_2d = Distribution.from_shape(comm=self.comm, shape=(16, 16),
+                                               grid_shape=(4, 1))
         actual_2d = self.dist_2d.cart_coords
         expected_2d = tuple(self.dist_2d.comm.Get_coords(self.dist_2d.comm_rank))
         self.assertEqual(actual_2d, expected_2d)
@@ -164,10 +165,10 @@ class TestInitShapeEquivalence(MpiTestCase):
         dd1 = (dim10, dim11)
         dim_data_per_rank = (dd0, dd1)
 
-        d0 = Distribution(dim_data_per_rank[self.comm.Get_rank()],
-                          comm=self.comm)
-        d1 = Distribution.from_shape((16, 16), dist={0: 'b'},
-                                     grid_shape=(2, 1), comm=self.comm)
+        d0 = Distribution(comm=self.comm,
+                    dim_data=dim_data_per_rank[self.comm.Get_rank()])
+        d1 = Distribution.from_shape(comm=self.comm, shape=(16, 16),
+                                     dist={0: 'b'}, grid_shape=(2, 1))
         self.assert_alike(d0, d1)
 
     def test_cyclic(self):
@@ -200,10 +201,10 @@ class TestInitShapeEquivalence(MpiTestCase):
 
         dim_data_per_rank = (dd0, dd1)
 
-        larr = Distribution(dim_data_per_rank[self.comm.Get_rank()],
-                            comm=self.comm)
-        expected = Distribution.from_shape((16, 16), dist={1: 'c'},
-                                           grid_shape=(1, 2), comm=self.comm)
+        larr = Distribution(comm=self.comm,
+                dim_data=dim_data_per_rank[self.comm.Get_rank()])
+        expected = Distribution.from_shape(comm=self.comm, shape=(16, 16),
+                                           dist={1: 'c'}, grid_shape=(1, 2))
 
         self.assert_alike(larr, expected)
 
@@ -214,21 +215,22 @@ class TestGridShape(MpiTestCase):
 
     def test_grid_shape(self):
         """Test various ways of setting the grid_shape."""
-        dist = Distribution.from_shape((20, 20), dist='b', comm=self.comm)
+        dist = Distribution.from_shape(comm=self.comm, shape=(20, 20), dist='b')
         self.assertEqual(dist.grid_shape, (12, 1))
-        dist = Distribution.from_shape((2*10, 6*10), dist=('b', 'b'),
-                                       comm=self.comm)
+        dist = Distribution.from_shape(comm=self.comm, shape=(2*10, 6*10),
+                                       dist=('b', 'b'))
         self.assertEqual(dist.grid_shape, (2, 6))
-        dist = Distribution.from_shape((6*10, 2*10), dist='bb', comm=self.comm)
+        dist = Distribution.from_shape(comm=self.comm, shape=(6*10, 2*10),
+                                       dist='bb')
         self.assertEqual(dist.grid_shape, (6, 2))
-        dist = Distribution.from_shape((100, 10, 300), dist='bnc',
-                                       comm=self.comm )
+        dist = Distribution.from_shape(comm=self.comm, shape=(100, 10, 300),
+                                       dist='bnc')
         self.assertEqual(dist.grid_shape, (2, 1, 6))
-        dist = Distribution.from_shape((100, 50, 300), dist='bbb',
-                                       comm=self.comm)
+        dist = Distribution.from_shape(comm=self.comm, shape=(100, 50, 300),
+                                       dist='bbb')
         self.assertEqual(dist.grid_shape, (2, 1, 6))
-        dist = Distribution.from_shape((100, 100, 150), dist='bbb',
-                                       comm=self.comm)
+        dist = Distribution.from_shape(comm=self.comm, shape=(100, 100, 150),
+                                       dist='bbb')
         self.assertEqual(dist.grid_shape, (2, 2, 3))
 
     def test_ones_in_grid_shape(self):
@@ -236,8 +238,8 @@ class TestGridShape(MpiTestCase):
         dist = ('n', 'b', 'n', 'c', 'n')
         glb_shape = (2, 6, 2, 8, 2)
         grid_shape = (1, 3, 1, 4, 1)
-        dist_5d = Distribution.from_shape(glb_shape, grid_shape=grid_shape,
-                                          dist=dist, comm=self.comm)
+        dist_5d = Distribution.from_shape(comm=self.comm, shape=glb_shape,
+                                          grid_shape=grid_shape, dist=dist)
         self.assertEqual(dist_5d.global_shape, glb_shape)
         self.assertEqual(dist_5d.grid_shape, grid_shape)
         self.assertEqual(dist_5d.base_comm, self.comm)

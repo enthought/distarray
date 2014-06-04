@@ -10,7 +10,6 @@ from __future__ import print_function, division
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
-import math
 from collections import Mapping
 from numbers import Integral
 
@@ -19,7 +18,6 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-import distarray.local
 from distarray.local.mpiutils import MPI
 from distarray.utils import _raise_nie
 from distarray.local import format, maps
@@ -228,7 +226,7 @@ class LocalArray(object):
         buf = np.asarray(distbuffer['buffer'])
         dim_data = distbuffer['dim_data']
 
-        distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+        distribution = maps.Distribution(comm=comm, dim_data=dim_data)
         return cls(distribution=distribution, buf=buf)
 
     def __distarray__(self):
@@ -787,7 +785,7 @@ def load_hdf5(filename, dim_data, comm, key='buffer'):
         buf = dset[index]
         dtype = dset.dtype
 
-    distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+    distribution = maps.Distribution(comm=comm, dim_data=dim_data)
     return LocalArray(distribution=distribution, dtype=dtype, buf=buf)
 
 
@@ -823,7 +821,7 @@ def load_npy(filename, dim_data, comm):
     # http://stackoverflow.com/questions/6397495/unmap-of-numpy-memmap
 
     #data._mmap.close()
-    distribution = maps.Distribution(dim_data=dim_data, comm=comm)
+    distribution = maps.Distribution(comm=comm, dim_data=dim_data)
     return LocalArray(distribution=distribution, dtype=data.dtype, buf=buf)
 
 
@@ -923,8 +921,8 @@ def local_reduction(reducer, out_comm, larr, ddpr, dtype, axes):
         out = None
     else:
         dim_data = ddpr[out_comm.Get_rank()] if ddpr else ()
-        dist = distarray.local.maps.Distribution(dim_data, out_comm)
-        out = distarray.local.empty(dist, dtype)
+        dist = maps.Distribution(comm=out_comm, dim_data=dim_data)
+        out = empty(dist, dtype)
 
     remaining_dims = [False] * larr.ndim
     for axis in axes:
