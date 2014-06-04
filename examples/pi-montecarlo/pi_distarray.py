@@ -10,6 +10,8 @@ Usage:
     $ python pi_distarray.py <number of points>
 """
 
+from __future__ import division
+
 import sys
 
 from util import timer
@@ -22,6 +24,10 @@ context = Context()
 random = Random(context)
 
 
+def local_sum(mask):
+    return mask.ndarray.sum()
+
+
 @timer
 def calc_pi(n):
     """Estimate pi using distributed NumPy arrays."""
@@ -29,7 +35,9 @@ def calc_pi(n):
     x = random.rand(distribution)
     y = random.rand(distribution)
     r = hypot(x, y)
-    return 4 * float((r < 1).sum()) / n
+    mask = (r < 1)
+    lsum = context.apply(local_sum, (mask.key,))
+    return 4 * sum(lsum) / n
 
 
 if __name__ == '__main__':
