@@ -43,15 +43,15 @@ class DistArray(object):
         # FIXME: code duplication with context.py.
         ctx = distribution.context
         # FIXME: this is bad...
-        comm_name = ctx.comm
+        comm_name = distribution.comm
         # FIXME: and this is bad...
         da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = distarray.local.empty('
                'distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], '
-               '{comm_name}), {dtype_name})')
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
+               '{dtype_name})')
         ctx._execute(cmd.format(**locals()), targets=distribution.targets)
         self.distribution = distribution
         self.key = da_key
@@ -117,11 +117,14 @@ class DistArray(object):
         # sanity check that I didn't miss any cases above, because this is a
         # confusing function
         else:
-            assert(False)
+            assert False
         return da
 
     def __del__(self):
-        self.context.delete_key(self.key, self.targets)
+        try:
+            self.context.delete_key(self.key, self.targets)
+        except Exception:
+            pass
 
     def __repr__(self):
         s = '<DistArray(shape=%r, targets=%r)>' % \
@@ -133,6 +136,7 @@ class DistArray(object):
         if return_proxy:
             # proxy returned as result of slice
             # slicing shouldn't alter the dtype
+            result = result[0]
             return DistArray.from_localarrays(key=result,
                                               context=self.context,
                                               targets=targets,
@@ -164,9 +168,10 @@ class DistArray(object):
         # to be run locally
         def get_slice(arr, index, ddpr, comm):
             from distarray.local.maps import Distribution
-            local_distribution = Distribution(ddpr[comm.Get_rank()],
-                                              comm=comm)
-            return arr.global_index.get_slice(index, local_distribution)
+            local_distribution = Distribution(comm=comm,
+                                              dim_data=ddpr[comm.Get_rank()])
+            result = arr.global_index.get_slice(index, local_distribution)
+            return proxyize(result)
 
         return_type, index = sanitize_indices(index, ndim=self.ndim,
                                               shape=self.shape)
@@ -185,9 +190,7 @@ class DistArray(object):
         else:  # returning a value from unstructured
             local_fn = checked_getitem
 
-        result = self.context.apply(local_fn, args=args,
-                                    targets=targets,
-                                    return_proxy=return_proxy)
+        result = self.context.apply(local_fn, args=args, targets=targets)
         return self._process_return_value(result, return_proxy, index, targets)
 
     def __setitem__(self, index, value):
@@ -322,10 +325,13 @@ class DistArray(object):
 
     def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
 
+        if any(0 in localshape for localshape in self.get_localshapes()):
+            raise NotImplementedError("Reduction not implemented for empty LocalArrays")
+
         if out is not None:
             _raise_nie()
 
-        dtype = dtype or self.dtype 
+        dtype = dtype or self.dtype
 
         out_dist = self.distribution.reduce(axes=axes)
         ddpr = out_dist.get_dim_data_per_rank()
@@ -333,14 +339,17 @@ class DistArray(object):
         def _local_reduce(local_name, larr, out_comm, ddpr, dtype, axes):
             import distarray.local.localarray as la
             local_reducer = getattr(la, local_name)
-            return la.local_reduction(local_reducer, out_comm, larr, ddpr, dtype, axes)
+            res = proxyize(la.local_reduction(out_comm, local_reducer, larr,  # noqa
+                                              ddpr, dtype, axes))
+            return res
 
-        out_key = self.context.apply(_local_reduce, 
-                                     (local_reduce_name, self.key, out_dist.comm, 
-                                      ddpr, dtype, normalize_reduction_axes(axes, self.ndim)),
-                                     targets=self.targets, return_proxy=True)
+        local_reduce_args = (local_reduce_name, self.key, out_dist.comm, ddpr,
+                             dtype, normalize_reduction_axes(axes, self.ndim))
+        out_key = self.context.apply(_local_reduce, local_reduce_args,
+                                     targets=self.targets)[0]
 
-        return DistArray.from_localarrays(key=out_key, distribution=out_dist, dtype=dtype)
+        return DistArray.from_localarrays(key=out_key, distribution=out_dist,
+                                          dtype=dtype)
 
     def sum(self, axis=None, dtype=None, out=None):
         """Return the sum of array elements over the given axis."""

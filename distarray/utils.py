@@ -8,14 +8,29 @@ Utilities.
 """
 
 from math import sqrt
+import random
 import uuid
 
 from distarray.externals.six import next
 
 DISTARRAY_BASE_NAME = '__distarray__'
+DISTARRAY_RANDOM = random.Random()
+
+
+def distarray_random_setstate(state):
+    global DISTARRAY_RANDOM
+    DISTARRAY_RANDOM.setstate(state)
+
+
+def distarray_random_getstate():
+    global DISTARRAY_RANDOM
+    return DISTARRAY_RANDOM.getstate()
+
 
 def uid():
-    return DISTARRAY_BASE_NAME + uuid.uuid4().hex[:16]
+    suffix = uuid.UUID(int=DISTARRAY_RANDOM.getrandbits(8*16)).hex[:16]
+    return DISTARRAY_BASE_NAME + suffix
+
 
 def multi_for(iterables):
     if not iterables:
@@ -168,5 +183,14 @@ class count_round_trips(object):
     def __exit__(self, type, value, traceback):
         self.update_count()
 
+
 def remove_elements(to_remove, seq):
     return [x for (idx, x) in enumerate(seq) if idx not in to_remove]
+
+
+def get_from_dotted_name(dotted_name):
+    from functools import reduce
+    from importlib import import_module
+    main = import_module('__main__')
+    thing = reduce(getattr, [main] + dotted_name.split('.'))
+    return thing

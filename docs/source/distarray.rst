@@ -46,6 +46,7 @@ Subpackages
 
 .. toctree::
 
+    distarray.apps
     distarray.dist
     distarray.local
     distarray.plotting

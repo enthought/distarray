@@ -4,5 +4,5 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-__version__ = "0.3.0-dev"
+__version__ = "0.3.0"
 DISTARRAY_BASE_NAME = '__distarray__'

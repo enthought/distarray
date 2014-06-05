@@ -18,24 +18,18 @@ import numpy
 from numpy.testing import assert_array_equal, assert_allclose
 
 from distarray.externals.six.moves import range
+from distarray.testing import ContextTestCase
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
-from distarray.dist.context import Context
 
 
-class TestDistArray(unittest.TestCase):
-
-    def setUp(self):
-        self.dac = Context()
-
-    def tearDown(self):
-        self.dac.close()
+class TestDistArray(ContextTestCase):
 
     def test_set_and_getitem_block_dist(self):
         size = 10
-        distribution = Distribution.from_shape(self.dac, (size,),
+        distribution = Distribution.from_shape(self.context, (size,),
                                                dist={0: 'b'})
-        dap = self.dac.empty(distribution)
+        dap = self.context.empty(distribution)
 
         for val in range(size):
             dap[val] = val
@@ -49,9 +43,9 @@ class TestDistArray(unittest.TestCase):
 
     def test_set_and_getitem_nd_block_dist(self):
         size = 5
-        distribution = Distribution.from_shape(self.dac, (size, size),
+        distribution = Distribution.from_shape(self.context, (size, size),
                                                dist={0: 'b', 1: 'b'})
-        dap = self.dac.empty(distribution)
+        dap = self.context.empty(distribution)
 
         for row in range(size):
             for col in range(size):
@@ -66,9 +60,9 @@ class TestDistArray(unittest.TestCase):
 
     def test_set_and_getitem_cyclic_dist(self):
         size = 10
-        distribution = Distribution.from_shape(self.dac, (size,),
+        distribution = Distribution.from_shape(self.context, (size,),
                                                dist={0: 'c'})
-        dap = self.dac.empty(distribution)
+        dap = self.context.empty(distribution)
 
         for val in range(size):
             dap[val] = val
@@ -79,16 +73,16 @@ class TestDistArray(unittest.TestCase):
             self.assertEqual(dap[-i], i)
 
     def test_get_index_error(self):
-        distribution = Distribution.from_shape(self.dac, (10,), dist={0: 'c'})
-        dap = self.dac.empty(distribution)
+        distribution = Distribution.from_shape(self.context, (10,), dist={0: 'c'})
+        dap = self.context.empty(distribution)
         with self.assertRaises(IndexError):
             dap[11]
         with self.assertRaises(IndexError):
             dap[-11]
 
     def test_set_index_error(self):
-        distribution = Distribution.from_shape(self.dac, (10,), dist={0: 'c'})
-        dap = self.dac.empty(distribution)
+        distribution = Distribution.from_shape(self.context, (10,), dist={0: 'c'})
+        dap = self.context.empty(distribution)
         with self.assertRaises(IndexError):
             dap[11] = 55
         with self.assertRaises(IndexError):
@@ -96,16 +90,16 @@ class TestDistArray(unittest.TestCase):
 
     def test_iteration(self):
         size = 10
-        distribution = Distribution.from_shape(self.dac, (size,),
+        distribution = Distribution.from_shape(self.context, (size,),
                                                dist={0: 'c'})
-        dap = self.dac.empty(distribution)
+        dap = self.context.empty(distribution)
         dap.fill(10)
         for val in dap:
             self.assertEqual(val, 10)
 
     def test_tondarray(self):
-        distribution = Distribution.from_shape(self.dac, (3, 3))
-        dap = self.dac.empty(distribution)
+        distribution = Distribution.from_shape(self.context, (3, 3))
+        dap = self.context.empty(distribution)
         ndarr = numpy.arange(9).reshape(3, 3)
         for (i, j), val in numpy.ndenumerate(ndarr):
             dap[i, j] = ndarr[i, j]
@@ -113,37 +107,31 @@ class TestDistArray(unittest.TestCase):
 
     def test_global_tolocal_bug(self):
         # gh-issue #154
-        distribution = Distribution.from_shape(self.dac, (3, 3),
+        distribution = Distribution.from_shape(self.context, (3, 3),
                                                dist=('n', 'b'))
-        dap = self.dac.zeros(distribution)
+        dap = self.context.zeros(distribution)
         ndarr = numpy.zeros((3, 3))
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestGetItemSlicing(unittest.TestCase):
-
-    def setUp(self):
-        self.dac = Context()
-
-    def tearDown(self):
-        self.dac.close()
+class TestGetItemSlicing(ContextTestCase):
 
     def test_full_slice_block_dist(self):
         size = 10
         expected = numpy.random.randint(11, size=size)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[:].toarray(), expected)
 
     def test_partial_slice_block_dist(self):
         size = 10
         expected = numpy.random.randint(10, size=size)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[0:2].toarray(), expected[0:2])
 
     def test_slice_a_slice_block_dist_0(self):
         size = 10
         expected = numpy.random.randint(10, size=size)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         s0 = arr[:9]
         s1 = s0[0:5]
         s2 = s1[:2]
@@ -152,7 +140,7 @@ class TestGetItemSlicing(unittest.TestCase):
     def test_slice_a_slice_block_dist_1(self):
         size = 10
         expected = numpy.random.randint(10, size=size)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         s0 = arr[:9]
         s1 = s0[0:5]
         s2 = s1[-2:]
@@ -161,70 +149,62 @@ class TestGetItemSlicing(unittest.TestCase):
     def test_partial_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[2:6, 3:10].toarray(), expected[2:6, 3:10])
 
     def test_partial_negative_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[-6:-2, -10:-3].toarray(),
                            expected[-6:-2, -10:-3])
 
     def test_incomplete_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[3:9].toarray(), expected[3:9])
 
     def test_incomplete_index_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[1].toarray(), expected[1])
 
     def test_trailing_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[1, ...].toarray(), expected[1, ...])
 
     def test_leading_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[..., 3].toarray(), expected[..., 3])
 
     def test_multiple_ellipsis(self):
         shape = (2, 4, 2, 4, 1, 5)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[..., 3, ..., 4].toarray(),
                            expected[..., 3, ..., 4])
 
     def test_vestigial_ellipsis(self):
         shape = (1, 2, 3)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[0, :, 0, ...].toarray(),
                            expected[0, :, 0, ...])
 
 
-class TestSetItemSlicing(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.dac = Context()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.dac.close()
+class TestSetItemSlicing(ContextTestCase):
 
     def test_small_1d_slice(self):
         source = numpy.random.randint(10, size=20)
         new_data = numpy.random.randint(10, size=3)
         slc = slice(1, 4)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -233,7 +213,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=20)
         new_data = numpy.random.randint(10, size=10)
         slc = slice(5, 15)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -243,7 +223,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(10, 20))
         new_data = numpy.random.randint(10, size=(5, 10))
         slc = (slice(5, 10), slice(5, 15))
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -253,7 +233,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(10, 20))
         new_data = numpy.random.randint(10, size=(5, 10))
         slc = (slice(3, 8), slice(9, 19))
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -262,7 +242,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(3, 4, 5))
         new_data = numpy.random.randint(10, size=(3, 4, 5))
         slc = (slice(None), slice(None), slice(None))
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -271,7 +251,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(3, 4, 5))
         new_data = numpy.random.randint(10, size=(3, 4, 5))
         slc = Ellipsis
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -280,7 +260,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(3, 4, 5))
         new_data = numpy.random.randint(10, size=(4, 5))
         slc = (1,)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -289,7 +269,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(3, 4, 5))
         new_data = numpy.random.randint(10, size=(3, 5))
         slc = (slice(None), 2)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -298,7 +278,7 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=(3, 4))
         new_data = [42, 42, 42, 42]
         slc = (2,)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -307,27 +287,22 @@ class TestSetItemSlicing(unittest.TestCase):
         source = numpy.random.randint(10, size=21)
         new_data = numpy.random.randint(10, size=10)
         slc = slice(15, None)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         with self.assertRaises(ValueError):
             arr[slc] = new_data
 
 
-class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
-
-    def setUp(self):
-        self.context = Context()
-
-    def tearDown(self):
-        self.context.close()
+class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
     def test_from_global_dim_data_irregular_block(self):
-        global_size = 10
+
         bounds = (0, 2, 3, 4, 10)
         glb_dim_data = (
                 {'dist_type': 'b',
                  'bounds': bounds},
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
@@ -344,7 +319,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices': list_of_indices,
                     },
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
         for i in range(total_size):
             distarr[i] = i
@@ -353,6 +329,7 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
             assert_allclose(arr, list_of_indices[i])
 
     def test_from_global_dim_data_bu(self):
+
         rows = 9
         row_break_point = rows // 2
         cols = 10
@@ -369,12 +346,14 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'indices' : indices
                 },
             )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
     def test_from_global_dim_data_bc(self):
         """ Test creation of a block-cyclic array. """
+
         rows, cols = 5, 9
         global_dim_data = (
                 # dim 0
@@ -391,7 +370,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'size': cols,
                     'block_size': 2,
                 },)
-        distribution = Distribution(self.context, global_dim_data)
+        distribution = Distribution(self.context,
+                                    global_dim_data)
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
         las = distarr.get_localarrays()
@@ -412,7 +392,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                 {'dist_type': 'u',
                     'indices' : col_indices},
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data)
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
@@ -430,7 +411,8 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                  'size': cols,
                  },
                 )
-        distribution = Distribution(self.context, glb_dim_data)
+        distribution = Distribution(self.context,
+                                    glb_dim_data)
         actual = distribution.get_dim_data_per_rank()
 
         expected = [
@@ -496,20 +478,15 @@ class TestDistArrayCreationFromGlobalDimData(unittest.TestCase):
                     'bounds': (0, 2, 6, 7, 9),
                 }
             )
-        distribution = Distribution(self.context, global_dim_data)
+        distribution = Distribution(self.context,
+                                    global_dim_data)
         distarr = DistArray(distribution, dtype=int)
         distarr.toarray()
 
 
-class TestDistArrayCreation(unittest.TestCase):
+class TestDistArrayCreation(ContextTestCase):
 
     """Test distarray creation methods"""
-
-    def setUp(self):
-        self.context = Context()
-
-    def tearDown(self):
-        self.context.close()
 
     def test___init__(self):
         shape = (5, 5)
@@ -561,18 +538,13 @@ class TestDistArrayCreation(unittest.TestCase):
         assert_array_equal(expected, result.tondarray())
 
 
-class TestDistArrayCreationSubSet(unittest.TestCase):
-
-    def setUp(self):
-        self.context = Context()
-
-    def tearDown(self):
-        self.context.close()
+class TestDistArrayCreationSubSet(ContextTestCase):
 
     def test_create_target_subset(self):
         shape = (100, 100)
         subtargets = self.context.targets[::2]
-        distribution = Distribution.from_shape(self.context, shape=shape, targets=subtargets)
+        distribution = Distribution.from_shape(self.context, shape=shape,
+                                               targets=subtargets)
         darr = self.context.ones(distribution)
         lss = darr.get_localshapes()
         self.assertEqual(len(lss), len(subtargets))
@@ -581,18 +553,16 @@ class TestDistArrayCreationSubSet(unittest.TestCase):
         self.assertEqual(len(ddpr), len(subtargets))
 
 
-class TestReduceMethods(unittest.TestCase):
+class TestReduceMethods(ContextTestCase):
     """Test reduction methods"""
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestReduceMethods, cls).setUpClass()
         cls.arr = numpy.arange(16).reshape(4, 4)
-        cls.darr = cls.context.fromndarray(cls.arr)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
+        dist = Distribution.from_shape(cls.context,
+                                       cls.arr.shape, ('b', 'b'), (2, 2))
+        cls.darr = cls.context.fromndarray(cls.arr, dist)
 
     def test_sum_last_axis(self):
         da_sum = self.darr.sum(axis=-1)
@@ -683,17 +653,17 @@ class TestReduceMethods(unittest.TestCase):
     def test_var_dtype(self):
         np_var = self.arr.var(dtype=int)
         da_var = self.darr.var(dtype=int)
-        self.assertEqual(da_var, np_var)
+        self.assertEqual(da_var.toarray(), np_var)
 
     def test_std(self):
         np_std = self.arr.std()
         da_std = self.darr.std()
-        self.assertEqual(da_std, np_std)
+        self.assertEqual(da_std.toarray(), np_std)
 
     def test_std_dtype(self):
         np_std = self.arr.std(dtype=int)
         da_std = self.darr.std(dtype=int)
-        self.assertEqual(da_std, np_std)
+        self.assertEqual(da_std.toarray(), np_std)
 
     def test_std_axis_0(self):
         np_std = self.arr.std(axis=0)
@@ -740,12 +710,23 @@ class TestReduceMethods(unittest.TestCase):
             assert_allclose(darr_sum.tondarray(), arr_sum)
         assert_allclose(darr.sum().tondarray(), arr.sum())
 
+    def test_empty_localarray(self):
+        if len(self.context.targets) < 2:
+            raise self.skipTest("not enough targets to run test.")
+        dist = Distribution.from_shape(self.context,
+                                       shape=(1,),
+                                       dist=('b',),
+                                       targets=self.context.targets[:2])
+        darr = self.context.ones(dist)
+        self.assertRaises(NotImplementedError, darr.min, ())
+        self.assertRaises(NotImplementedError, darr.sum, (), {'axis':0})
 
-class TestFromLocalArrays(unittest.TestCase):
+
+class TestFromLocalArrays(ContextTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestFromLocalArrays, cls).setUpClass()
         cls.distribution = Distribution.from_shape((4, 4))
         cls.distarray = cls.context.ones(cls.distribution, dtype=int)
         cls.expected = numpy.ones((4, 4), dtype=int)

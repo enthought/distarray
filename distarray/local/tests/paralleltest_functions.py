@@ -20,14 +20,14 @@ class TestFunctions(MpiTestCase):
 
     def test_arecompatible(self):
         """Test if two DistArrays are compatible."""
-        d0 = Distribution.from_shape((16,16), comm=self.comm)
+        d0 = Distribution.from_shape(comm=self.comm, shape=(16,16))
         a = LocalArray(d0, dtype='int64')
         b = LocalArray(d0, dtype='float32')
         self.assertTrue(arecompatible(a,b))
 
-        da = Distribution.from_shape((16, 16), dist='c', comm=self.comm)
+        da = Distribution.from_shape(comm=self.comm, shape=(16, 16), dist='c')
         a = LocalArray(da, dtype='int64')
-        db = Distribution.from_shape((16, 16), dist='b', comm=self.comm)
+        db = Distribution.from_shape(comm=self.comm, shape=(16, 16), dist='b')
         b = LocalArray(db, dtype='float32')
         self.assertFalse(arecompatible(a,b))
 
@@ -36,7 +36,8 @@ class TestFunctions(MpiTestCase):
         def f(*global_inds):
             return 1.0
 
-        d = Distribution.from_shape((16, 16), dist=('b', 'c'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), dist=('b', 'c'))
         a = localarray.fromfunction(f, d, dtype='int64')
         self.assertEqual(a.global_shape, (16, 16))
         self.assertEqual(a.dtype, np.dtype('int64'))
@@ -48,7 +49,8 @@ class TestFunctions(MpiTestCase):
         def f(*global_inds):
             return sum(global_inds)
 
-        d = Distribution.from_shape((16, 16), dist=('b', 'c'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), dist=('b', 'c'))
         a = localarray.fromfunction(f, d,  dtype='int64')
         self.assertEqual(a.global_shape, (16,16))
         self.assertEqual(a.dtype, np.dtype('int64'))
@@ -57,7 +59,8 @@ class TestFunctions(MpiTestCase):
 
     def test_fromndarray_like(self):
         """Can we build an array using fromndarray_like?"""
-        d = Distribution.from_shape((16, 16), dist=('c', 'b'), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), dist=('c', 'b'))
         la0 = LocalArray(d, dtype='int8')
         la1 = localarray.fromndarray_like(la0.ndarray, la0)
         assert_localarrays_equal(la0, la1, check_dtype=True)
@@ -67,14 +70,14 @@ class TestCreationFunctions(MpiTestCase):
     def test_empty(self):
         size = self.comm_size
         nrows = size * 3
-        d = Distribution.from_shape((nrows, 20), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(nrows, 20))
         a = localarray.empty(d)
         self.assertEqual(a.global_shape, (nrows, 20))
 
     def test_zeros(self):
         size = self.comm_size
         nrows = size * 3
-        d = Distribution.from_shape((nrows, 20), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(nrows, 20))
         a = localarray.zeros(d)
         expected = np.zeros((nrows // size, 20))
         assert_array_equal(a.ndarray, expected)
@@ -82,7 +85,7 @@ class TestCreationFunctions(MpiTestCase):
     def test_ones(self):
         size = self.comm_size
         nrows = size * 3
-        d = Distribution.from_shape((nrows, 20), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(nrows, 20))
         a = localarray.ones(d)
         expected = np.ones((nrows // size, 20))
         assert_array_equal(a.ndarray, expected)
