@@ -57,6 +57,13 @@ local Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`proxyize` Module
+----------------------
+
+.. automodule:: distarray.local.proxyize
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 :mod:`random` Module
 --------------------

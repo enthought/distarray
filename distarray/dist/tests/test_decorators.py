@@ -17,6 +17,7 @@ from unittest import TestCase
 import numpy
 from numpy.testing import assert_array_equal
 
+from distarray.testing import ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.decorators import DecoratorBase, local, vectorize
@@ -78,7 +79,9 @@ class TestDecoratorBase(TestCase):
         self.assertTrue(db.key in kw_keys2)
 
 
-class TestLocalDecorator(TestCase):
+class TestLocalDecorator(ContextTestCase):
+
+    ntargets = 'any'
 
     # Functions for @local decorator tests. These are here so we can
     # guarantee they are pushed to the engines before we try to use them.
@@ -143,14 +146,10 @@ class TestLocalDecorator(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = Context()
+        super(TestLocalDecorator, cls).setUpClass()
         distribution = Distribution.from_shape(cls.context, (5, 5))
         cls.da = cls.context.empty(distribution)
         cls.da.fill(2 * numpy.pi)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.context.close()
 
     def test_local(self):
         """Test the @local decorator"""
@@ -178,6 +177,8 @@ class TestLocalDecorator(TestCase):
         assert_array_equal(da.toarray(), a)
 
     def test_different_contexts(self):
+        check_targets(required=4, available=len(self.context.targets))
+
         ctx1 = Context(targets=range(4))
         ctx2 = Context(targets=range(3))
         distribution1 = Distribution.from_shape(ctx1, (10,))
@@ -200,6 +201,8 @@ class TestLocalDecorator(TestCase):
 
     def test_local_sum(self):
         dd = self.local_sum(self.da)
+        if self.ntargets == 1:
+            dd = [dd]
         lshapes = self.da.get_localshapes()
         expected = []
         for lshape in lshapes:

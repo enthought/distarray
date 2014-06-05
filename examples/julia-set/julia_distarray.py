@@ -11,12 +11,11 @@ distarray passed via command line args. Usage:
 """
 
 import sys
-
 from matplotlib import pyplot
 
-from distarray import Context
-from distarray.client_map import Distribution
-from distarray.decorators import local, vectorize
+from distarray.dist import Context, Distribution
+from distarray.dist.decorators import local, vectorize
+
 
 context = Context()
 with context.view.sync_imports():

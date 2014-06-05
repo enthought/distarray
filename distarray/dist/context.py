@@ -67,18 +67,24 @@ class Context(object):
                     self.targets.append(target)
         self.targets = sorted(self.targets)
 
-        # FIXME: IPython bug #4296: This doesn't work under Python 3
-        #with self.view.sync_imports():
-        #    import distarray
+        # local imports
         self.view.execute("from functools import reduce; "
+                          "from importlib import import_module; "
                           "import distarray.local; "
                           "import distarray.local.mpiutils; "
                           "import distarray.utils; "
+                          "import distarray.local.proxyize as proxyize; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
+
+        # setup proxyize which is used by context.apply in the rest of the
+        # setup.
+        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
+        self.view.execute(cmd)
+
         self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)) : self._base_comm}
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
         self.comm = self._make_subcomm(self.targets)
 
     def _setup_context_key(self):
@@ -104,11 +110,12 @@ class Context(object):
             pass
 
         def _make_new_comm(rank_list, base_comm):
-            import distarray.local.mpiutils
-            return distarray.local.mpiutils.create_comm_with_list(rank_list, base_comm)
+            import distarray.local.mpiutils as mpiutils
+            res = mpiutils.create_comm_with_list(rank_list, base_comm)
+            return proxyize(res)  # noqa
 
-        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm), 
-                              targets=self.view.targets, return_proxy=True)
+        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm),
+                              targets=self.view.targets)[0]
 
         self._comm_from_targets[tuple(new_targets)] = new_comm
         return new_comm
@@ -142,12 +149,12 @@ class Context(object):
         # involved in the new communicator.  This is because
         # create_comm_with_list() issues a collective MPI operation.
         def _make_new_comm(rank_list):
-            import distarray.local.mpiutils
-            new_comm = distarray.local.mpiutils.create_comm_with_list(rank_list)
-            return new_comm
+            import distarray.local.mpiutils as mpiutils
+            new_comm = mpiutils.create_comm_with_list(rank_list)
+            return proxyize(new_comm)  # noqa
 
-        return self.apply(_make_new_comm, args=(ranks,), targets=self.view.targets, return_proxy=True)
-
+        return self.apply(_make_new_comm, args=(ranks,),
+                          targets=self.view.targets)[0]
 
     # Key management routines:
     @staticmethod
@@ -211,7 +218,7 @@ class Context(object):
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
         cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}), '
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
                'dtype={dtype_name})')
         self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_key, distribution=distribution,
@@ -357,20 +364,18 @@ class Context(object):
         da_key = self._generate_key()
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + self._key_and_push(name) + (self.comm,
-                    self.comm)
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s + "_" + str(%s.Get_rank()) + ".dnpy", %s)' % subs,
+                '%s = distarray.local.load_dnpy(%s, %s + "_" + str(%s.Get_rank()) + ".dnpy")' % subs,
                 targets=self.targets
             )
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + self._key_and_push(name) + (self.comm,
-                    self.comm)
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
             self._execute(
-                '%s = distarray.local.load_dnpy(%s[%s.Get_rank()], %s)' % subs,
+                '%s = distarray.local.load_dnpy(%s, %s[%s.Get_rank()])' % subs,
                 targets=self.targets
             )
         else:
@@ -431,16 +436,17 @@ class Context(object):
         result : DistArray
             A DistArray encapsulating the file loaded.
         """
-        da_key = self._generate_key()
-        ddpr = distribution.get_dim_data_per_rank()
-        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (distribution.comm,) + (distribution.comm,))
+        
+        def _local_load_npy(filename, ddpr, comm):
+            from distarray.local import load_npy
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_npy(comm, filename, dim_data))
 
-        self._execute(
-            '%s = distarray.local.load_npy(%s, %s[%s.Get_rank()], %s)' % subs,
-            targets=distribution.targets
-        )
-        return DistArray.from_localarrays(da_key, distribution=distribution)
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_npy, (filename, ddpr, distribution.comm),
+                            targets=distribution.targets)
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
     def load_hdf5(self, filename, distribution, key='buffer'):
         """
@@ -466,16 +472,17 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
             raise ImportError(errmsg)
 
-        da_key = self._generate_key()
-        ddpr = distribution.get_dim_data_per_rank()
-        subs = ((da_key,) + self._key_and_push(filename, ddpr) +
-                (distribution.comm,) + self._key_and_push(key) + (distribution.comm,))
+        def _local_load_hdf5(filename, ddpr, comm, key):
+            from distarray.local import load_hdf5
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_hdf5(comm, filename, dim_data, key))
 
-        self._execute(
-            '%s = distarray.local.load_hdf5(%s, %s[%s.Get_rank()], %s, %s)' % subs,
-            targets=distribution.targets
-        )
-        return DistArray.from_localarrays(da_key, distribution=distribution)
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_hdf5, (filename, ddpr, distribution.comm, key),
+                   targets=distribution.targets)
+
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
     def fromndarray(self, arr, distribution=None):
         """Create a DistArray from an ndarray.
@@ -523,13 +530,12 @@ class Context(object):
         comm_name = distribution.comm
         cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
                'distarray.local.maps.Distribution('
-               '{ddpr_name}[{comm_name}.Get_rank()], comm={comm_name}),'
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]),'
                '**{kwargs_name})')
         self._execute(cmd.format(**locals()), targets=distribution.targets)
         return DistArray.from_localarrays(da_name, distribution=distribution)
 
-    def apply(self, func, args=None, kwargs=None, targets=None,
-              return_proxy=False):
+    def apply(self, func, args=None, kwargs=None, targets=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -542,28 +548,42 @@ class Context(object):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
-        return_proxy : bool
-            if False (default) return result.
-            if True, return the name (as a str) of the result on the engines.
 
         Returns
         -------
-        if return_proxy:
             return a list of the results on the each engine.
-        else:
-            the name of the result on all the engines.
         """
 
-        def func_wrapper(func, result_name, args, kwargs):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
             `__distarray__<some uuid>`.
             """
             from importlib import import_module
+            import types
+
             main = import_module('__main__')
             prefix = main.distarray.utils.DISTARRAY_BASE_NAME
+            main.proxyize.set_state(apply_nonce)
 
+            # Modify func to change the namespace it executes in.
+            # but builtins don't have __code__, __globals__, etc.
+            if not isinstance(func, types.BuiltinFunctionType):
+                # get func's building  blocks first
+                func_code = func.__code__
+                func_globals = func.__globals__  # noqa we don't need these.
+                func_name = func.__name__
+                func_defaults = func.__defaults__
+                func_closure = func.__closure__
+
+                # build the func's new execution environment
+                main.__dict__.update({'context_key': context_key})
+                new_func_globals = main.__dict__
+                # create the new func
+                func = types.FunctionType(func_code, new_func_globals,
+                                          func_name, func_defaults,
+                                          func_closure)
             # convert args
             args = list(args)
             for i, a in enumerate(args):
@@ -577,24 +597,15 @@ class Context(object):
                 if (isinstance(val, str) and val.startswith(prefix)):
                     kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
 
-            if result_name is not None:
-                setattr(main, result_name, func(*args, **kwargs))
-                return result_name
-            else:
-                return func(*args, **kwargs)
+            return func(*args, **kwargs)
 
         # default arguments
-        result_name = None if not return_proxy else uid()
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        wrapped_args = (func, result_name, args, kwargs)
+        apply_nonce = uid()[13:]
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs)
 
         targets = self.targets if targets is None else targets
 
-        result = self.view._really_apply(func_wrapper, args=wrapped_args,
-                                         targets=targets, block=True)
-        if return_proxy:
-            # result is a list of the same name 4 times, so just return 1.
-            return result[0]
-        else:
-            return result
+        return self.view._really_apply(func_wrapper, args=wrapped_args,
+                                       targets=targets, block=True)

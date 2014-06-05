@@ -183,23 +183,23 @@ def print_array_documentation(context,
 
     # Examine the array on all the engines.
     cmd = 'distbuffer = %s.__distarray__()' % (array.key)
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     cmd = 'db_keys = list(distbuffer.keys())'
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     cmd = 'db_version = distbuffer["__version__"]'
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     cmd = 'db_buffer = distbuffer["buffer"]'
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     cmd = 'db_dim_data = distbuffer["dim_data"]'
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     cmd = 'db_coords = %s.cart_coords' % (array.key)
-    context._execute(cmd)
+    context._execute(cmd, targets=context.targets)
     # Get data from each engine.
-    db_keys = context._pull('db_keys')
-    db_version = context._pull('db_version')
-    db_buffer = context._pull('db_buffer')
-    db_dim_data = context._pull('db_dim_data')
-    db_coords = context._pull('db_coords')
+    db_keys = context._pull('db_keys', targets=context.targets)
+    db_version = context._pull('db_version', targets=context.targets)
+    db_buffer = context._pull('db_buffer', targets=context.targets)
+    db_dim_data = context._pull('db_dim_data', targets=context.targets)
+    db_coords = context._pull('db_coords', targets=context.targets)
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
@@ -336,8 +336,8 @@ def create_distribution_plot_and_documentation(context, params):
     # This is duplicating work in print_array_documentation(),
     # but it is needed for the local array plots.
     cmd = 'process_coords = %s.cart_coords' % (array.key)
-    context._execute(cmd)
-    process_coords = context._pull('process_coords')
+    context._execute(cmd, targets=context.targets)
+    process_coords = context._pull('process_coords', targets=context.targets)
 
     # Plot title and axis labels.
     plot_title = title + ' ' + shape_text(shape) + '\n'

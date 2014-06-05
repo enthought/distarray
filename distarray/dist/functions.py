@@ -38,17 +38,20 @@ for func_name in unary_names + binary_names:
 def unary_proxy(name):
     def proxy_func(a, *args, **kwargs):
         context = determine_context(a)
-        new_key = context._generate_key()
-        if 'casting' in kwargs:
-            exec_str = "%s = distarray.local.%s(%s, casting='%s')"
-            exec_str %= (new_key, name, a.key, kwargs['casting'])
-        else:
-            exec_str = '%s = distarray.local.%s(%s)'
-            exec_str %= (new_key, name, a.key)
 
-        context._execute(exec_str, targets=a.targets)
+        def func_call(func_name, arr_name, args, kwargs):
+            from distarray.utils import get_from_dotted_name
+            dotted_name = 'distarray.local.%s' % (func_name,)
+            func = get_from_dotted_name(dotted_name)
+            res = func(arr_name, *args, **kwargs)
+            return proxyize(res), res.dtype  # noqa
+
+        res = context.apply(func_call, args=(name, a.key, args, kwargs))
+        new_key = res[0][0]
+        dtype = res[0][1]
         return DistArray.from_localarrays(new_key,
-                                          distribution=a.distribution)
+                                          distribution=a.distribution,
+                                          dtype=dtype)
     return proxy_func
 
 
@@ -65,25 +68,28 @@ def binary_proxy(name):
             distribution = a.distribution
         elif is_a_dap and numpy.isscalar(b):
             a_key = a.key
-            b_key = context._key_and_push(b)[0]
+            b_key = b
             distribution = a.distribution
         elif is_b_dap and numpy.isscalar(a):
-            a_key = context._key_and_push(a)[0]
+            a_key = a
             b_key = b.key
             distribution = b.distribution
         else:
             raise TypeError('only DistArray or scalars are accepted')
-        new_key = context._generate_key()
 
-        if 'casting' in kwargs:
-            exec_str = "%s = distarray.local.%s(%s,%s, casting='%s')"
-            exec_str %= (new_key, name, a_key, b_key, kwargs['casting'])
-        else:
-            exec_str = '%s = distarray.local.%s(%s,%s)'
-            exec_str %= (new_key, name, a_key, b_key)
+        def func_call(func_name, a, b, args, kwargs):
+            from distarray.utils import get_from_dotted_name
+            dotted_name = 'distarray.local.%s' % (func_name,)
+            func = get_from_dotted_name(dotted_name)
+            res = func(a, b, *args, **kwargs)
+            return proxyize(res), res.dtype  # noqa
 
-        context._execute(exec_str, targets=distribution.targets)
-        return DistArray.from_localarrays(new_key, distribution=distribution)
+        res = context.apply(func_call, args=(name, a_key, b_key, args, kwargs))
+        new_key = res[0][0]
+        dtype = res[0][1]
+        return DistArray.from_localarrays(new_key,
+                                          distribution=distribution,
+                                          dtype=dtype)
     return proxy_func
 
 
