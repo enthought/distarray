@@ -133,9 +133,13 @@ def make_grid_shape(shape, dist, comm_size):
 
     if ndistdim == 0:
         dist_grid_shape = ()
+
     elif ndistdim == 1:
         # Trivial case: all processes used for the one distributed dimension.
-        dist_grid_shape = (comm_size,)
+        if distdims[0] >= shape[distdims[0]]:
+            dist_grid_shape = (comm_size,)
+        else:
+            dist_grid_shape = (shape[distdims[0]],)
 
     elif comm_size == 1:
         # Trivial case: only one process to distribute over!
