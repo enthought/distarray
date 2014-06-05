@@ -411,7 +411,7 @@ class Distribution(object):
         self.ndim = len(dd0)
         self.dist = tuple(dd['dist_type'] for dd in dd0)
         self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
@@ -468,7 +468,7 @@ class Distribution(object):
             grid_shape = make_grid_shape(self.shape, self.dist,
                                          len(self.targets))
 
-        self.grid_shape = normalize_grid_shape(grid_shape, self.ndim,
+        self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
@@ -579,7 +579,7 @@ class Distribution(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
         nelts = reduce(operator.mul, self.grid_shape, 1)

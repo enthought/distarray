@@ -56,7 +56,7 @@ class Distribution(object):
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
             grid_shape = make_grid_shape(shape, dist_tuple, comm_size)
-        grid_shape = normalize_grid_shape(grid_shape, ndim,
+        grid_shape = normalize_grid_shape(grid_shape, shape,
                                           dist_tuple, comm_size)
 
         comm = construct.init_comm(base_comm, grid_shape)
