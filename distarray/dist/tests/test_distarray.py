@@ -174,26 +174,26 @@ class TestGetItemSlicing(ContextTestCase):
     def test_trailing_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[1, ...].toarray(), expected[1, ...])
 
     def test_leading_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[..., 3].toarray(), expected[..., 3])
 
     def test_multiple_ellipsis(self):
         shape = (2, 4, 2, 4, 1, 5)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[..., 3, ..., 4].toarray(),
                            expected[..., 3, ..., 4])
 
     def test_vestigial_ellipsis(self):
         shape = (1, 2, 3)
         expected = numpy.random.randint(10, size=shape)
-        arr = self.dac.fromarray(expected)
+        arr = self.context.fromarray(expected)
         assert_array_equal(arr[0, :, 0, ...].toarray(),
                            expected[0, :, 0, ...])
 
