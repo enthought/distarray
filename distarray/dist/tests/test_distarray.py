@@ -150,7 +150,7 @@ class TestGetItemSlicing(ContextTestCase):
         size = 10
         step = 2
         expected = numpy.random.randint(10, size=size)
-        darr = self.dac.fromarray(expected)
+        darr = self.context.fromarray(expected)
         assert_array_equal(darr[::step].toarray(), expected[::step])
 
     def test_partial_slice_block_dist_2d(self):
@@ -229,7 +229,7 @@ class TestSetItemSlicing(ContextTestCase):
         source = numpy.random.randint(10, size=20)
         new_data = numpy.random.randint(10, size=5)
         slc = slice(7, 17, 2)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -248,7 +248,7 @@ class TestSetItemSlicing(ContextTestCase):
         source = numpy.random.randint(10, size=(10, 20))
         new_data = numpy.random.randint(10, size=(2, 5))
         slc = (slice(5, 10, 3), slice(5, 15, 2))
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
@@ -285,7 +285,7 @@ class TestSetItemSlicing(ContextTestCase):
         source = numpy.random.randint(10, size=(5, 4, 5))
         new_data = numpy.random.randint(10, size=(5, 2, 5))
         slc = (Ellipsis, slice(None, None, 2), Ellipsis)
-        arr = self.dac.fromarray(source)
+        arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)

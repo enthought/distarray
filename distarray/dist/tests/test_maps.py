@@ -7,7 +7,6 @@
 from __future__ import division
 
 import unittest
-import numpy
 from random import randrange
 
 from distarray.externals.six.moves import range
@@ -146,7 +145,7 @@ class TestSlice(ContextTestCase):
         self.assertSequenceEqual(d1.maps[0].bounds, d0.maps[0].bounds)
 
     def test_from_full_slice_with_step_1d_0(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15,))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15,))
 
         s = (slice(None, None, 2),)
         d1 = d0.slice(s)
@@ -157,7 +156,7 @@ class TestSlice(ContextTestCase):
         self.assertEqual(d1.maps[0].bounds[0][0], d0.maps[0].bounds[0][0])
 
     def test_from_full_slice_with_step_1d_1(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(30,))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(30,))
         step = 4
 
         s = (slice(4, None, step),)
