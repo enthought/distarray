@@ -10,27 +10,37 @@ Usage:
     $ python pi_distarray.py <number of points>
 """
 
-import sys
+from __future__ import division
 
-import distarray
-from distarray.random import Random
+import sys
 
 from util import timer
 
-context = distarray.Context()
+from distarray.dist import Context, Distribution, hypot
+from distarray.dist.random import Random
+
+
+context = Context()
 random = Random(context)
+
+
+def local_sum(mask):
+    return mask.ndarray.sum()
 
 
 @timer
 def calc_pi(n):
     """Estimate pi using distributed NumPy arrays."""
-    x = random.rand((n,))
-    y = random.rand((n,))
-    r = distarray.hypot(x, y)
-    return 4 * float((r < 1.).sum())/n
+    distribution = Distribution.from_shape(context=context, shape=(n,))
+    x = random.rand(distribution)
+    y = random.rand(distribution)
+    r = hypot(x, y)
+    mask = (r < 1)
+    lsum = context.apply(local_sum, (mask.key,))
+    return 4 * sum(lsum) / n
+
 
 if __name__ == '__main__':
     N = int(sys.argv[1])
     result, time = calc_pi(N)
     print('time  : %3.4g\nresult: %.7f' % (time, result))
-    context.view.client.purge_everything()

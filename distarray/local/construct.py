@@ -8,7 +8,6 @@ from __future__ import division
 
 from distarray.local.mpiutils import MPI
 from distarray.local.error import NullCommError, InvalidBaseCommError
-from distarray.local import mpiutils
 
 
 # ---------------------------------------------------------------------------
@@ -27,8 +26,6 @@ def init_base_comm(comm):
     """Sanitize an MPI.comm instance or create one."""
     if comm == MPI.COMM_NULL:
         raise NullCommError("Cannot create a LocalArray with COMM_NULL")
-    elif comm is None:
-        return mpiutils.COMM_PRIVATE
     elif isinstance(comm, MPI.Comm):
         return comm
     else:

@@ -62,14 +62,11 @@ or::
     python setup.py develop
 
 
-To run the tests, you will need to start an IPython.parallel cluster with at
-least four engines, for example::
+To run the tests, you will need to start an IPython.parallel cluster.  You can
+use ``ipcluster``, or you can use the ``dacluster`` command which comes with
+DistArray::
 
-    ipcluster start -n4 --engines=MPI
-
-or under Python 3::
-
-    ipcluster3 start -n4 --engines=MPI
+    dacluster start
 
 You should then be able to run all the tests with::
 
@@ -111,6 +108,15 @@ Other Documentation
    Notes on building HDF5 and h5py <hdf5-notes.rst>
    Notes on building environment-modules <environment-modules-notes.rst>
    Licensing for bundled `six` module (Python 2 / 3 compatibility) <six-license.rst>
+
+Release Notes
+-------------
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   releases/*
+
 
 
 Indices and tables

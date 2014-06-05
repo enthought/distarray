@@ -41,32 +41,32 @@ class TestBasic(MpiTestCase):
         self.assertFalse(state_equal)
 
     def test_beta(self):
-        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), grid_shape=(4, 1))
         la = local_random.beta(2, 5, distribution=d)
         self.shape_asserts(la)
 
     def test_normal(self):
-        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), grid_shape=(4, 1))
         la = local_random.normal(distribution=d)
         self.shape_asserts(la)
 
     def test_rand(self):
-        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), grid_shape=(4, 1))
         la = local_random.rand(d)
         self.shape_asserts(la)
 
     def test_randint(self):
-        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), grid_shape=(4, 1))
         la = local_random.randint(0, 10, distribution=d)
         self.shape_asserts(la)
 
     def test_randn(self):
-        d = Distribution.from_shape((16, 16), grid_shape=(4, 1),
-                                    comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm,
+                            shape=(16, 16), grid_shape=(4, 1))
         la = local_random.randn(distribution=d)
         self.shape_asserts(la)
 

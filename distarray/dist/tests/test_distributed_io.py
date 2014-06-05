@@ -20,9 +20,8 @@ from numpy.testing import assert_array_equal
 
 from distarray.externals.six.moves import range
 
-from distarray.testing import import_or_skip
+from distarray.testing import import_or_skip, ContextTestCase
 from distarray.dist.distarray import DistArray
-from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 
 
@@ -37,39 +36,39 @@ def engine_temp_path(extension=''):
     return temp_filepath(extension)
 
 
-class TestDnpyFileIO(unittest.TestCase):
+class TestDnpyFileIO(ContextTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dac = Context()
-        cls.distribution = Distribution.from_shape(cls.dac, (100,),
+        super(TestDnpyFileIO, cls).setUpClass()
+        cls.distribution = Distribution.from_shape(cls.context, (100,),
                                                    dist={0: 'b'})
-        cls.da = cls.dac.empty(cls.distribution)
-        cls.output_paths = cls.dac.apply(engine_temp_path, return_proxy=False)
+        cls.da = cls.context.empty(cls.distribution)
+        cls.output_paths = cls.context.apply(engine_temp_path)
 
     def test_save_load_with_filenames(self):
 
         try:
-            self.dac.save_dnpy(self.output_paths, self.da)
-            db = self.dac.load_dnpy(self.output_paths)
+            self.context.save_dnpy(self.output_paths, self.da)
+            db = self.context.load_dnpy(self.output_paths)
             self.assertTrue(isinstance(db, DistArray))
             self.assertEqual(self.da, db)
         finally:
-            for filepath, target in zip(self.output_paths, self.dac.targets):
-                self.dac.apply(cleanup_file, (filepath,), targets=(target,))
+            for filepath, target in zip(self.output_paths, self.context.targets):
+                self.context.apply(cleanup_file, (filepath,), targets=(target,))
 
     def test_save_load_with_prefix(self):
 
         output_path = self.output_paths[0]
         try:
-            self.dac.save_dnpy(output_path, self.da)
-            db = self.dac.load_dnpy(output_path)
+            self.context.save_dnpy(output_path, self.da)
+            db = self.context.load_dnpy(output_path)
             self.assertTrue(isinstance(db, DistArray))
             self.assertEqual(self.da, db)
         finally:
-            for rank in self.dac.targets:
+            for rank in self.context.targets:
                 filepath = output_path + "_" + str(rank) + ".dnpy"
-                self.dac.apply(cleanup_file, (filepath,), targets=(rank,))
+                self.context.apply(cleanup_file, (filepath,), targets=(rank,))
 
 
 bn_test_data = [
@@ -146,16 +145,18 @@ nu_test_data = [
     ]
 
 
-class TestNpyFileLoad(unittest.TestCase):
+class TestNpyFileLoad(ContextTestCase):
 
     """Try loading a .npy file on the engines.
 
     This test assumes that all engines have access to the same file system.
     """
 
+    ntargets = 2
+
     @classmethod
     def setUpClass(cls):
-        cls.dac = Context(targets=[0, 1])
+        super(TestNpyFileLoad, cls).setUpClass()
         cls.expected = np.arange(20).reshape(2, 10)
 
         def save_test_file(data):
@@ -165,38 +166,35 @@ class TestNpyFileLoad(unittest.TestCase):
             numpy.save(output_path, data)
             return output_path
 
-        cls.output_path = cls.dac.apply(save_test_file, (cls.expected,),
-                                        return_proxy=False,
-                                        targets=cls.dac.targets[0])
+        cls.output_path = cls.context.apply(save_test_file, (cls.expected,),
+                                            targets=cls.context.targets[0])
 
     @classmethod
     def tearDownClass(cls):
-        cls.dac.apply(cleanup_file, (cls.output_path,),
-                      targets=cls.dac.targets[0])
-
-        # clean up the context keys
-        cls.dac.close()
+        cls.context.apply(cleanup_file, (cls.output_path,),
+                          targets=cls.context.targets[0])
+        super(TestNpyFileLoad, cls).tearDownClass()
 
     def test_load_bn(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            bn_test_data)
-        da = self.dac.load_npy(self.output_path, distribution)
+        da = self.context.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nc(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            nc_test_data)
-        da = self.dac.load_npy(self.output_path, distribution)
+        da = self.context.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
 
     def test_load_nu(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            nu_test_data)
-        da = self.dac.load_npy(self.output_path, distribution)
+        da = self.context.load_npy(self.output_path, distribution)
         for i in range(da.shape[0]):
             for j in range(da.shape[1]):
                 self.assertEqual(da[i, j], self.expected[i, j])
@@ -215,31 +213,28 @@ def check_hdf5_file(output_path, expected, dataset="buffer"):
     return True
 
 
-class TestHdf5FileSave(unittest.TestCase):
+class TestHdf5FileSave(ContextTestCase):
 
     def setUp(self):
+        super(TestHdf5FileSave, self).setUp()
         self.h5py = import_or_skip('h5py')
-        self.dac = Context()
-        self.output_path = self.dac.apply(engine_temp_path,
-                                          ('.hdf5',),
-                                          targets=self.dac.targets[0],
-                                          return_proxy=False)
+        self.output_path = self.context.apply(engine_temp_path,
+                                              ('.hdf5',),
+                                              targets=self.context.targets[0])
 
     def tearDown(self):
-        self.dac.apply(cleanup_file, (self.output_path,),
-                       targets=self.dac.targets[0])
-        self.dac.close()
+        self.context.apply(cleanup_file, (self.output_path,),
+                           targets=self.context.targets[0])
 
     def test_save_block(self):
         datalen = 33
         expected = np.arange(datalen)
-        da = self.dac.fromarray(expected)
-        self.dac.save_hdf5(self.output_path, da, mode='w')
+        da = self.context.fromarray(expected)
+        self.context.save_hdf5(self.output_path, da, mode='w')
 
-        file_check = self.dac.apply(check_hdf5_file,
-                                    (self.output_path, expected),
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+        file_check = self.context.apply(check_hdf5_file,
+                                        (self.output_path, expected),
+                                        targets=self.context.targets[0])
         self.assertTrue(file_check)
 
     def test_save_3d(self):
@@ -247,52 +242,50 @@ class TestHdf5FileSave(unittest.TestCase):
         expected = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        distribution = Distribution.from_shape(self.dac, shape, dist=dist)
-        da = self.dac.fromarray(expected, distribution=distribution)
+        distribution = Distribution.from_shape(self.context, shape, dist=dist)
+        da = self.context.fromarray(expected, distribution=distribution)
 
-        self.dac.save_hdf5(self.output_path, da, mode='w')
-        file_check = self.dac.apply(check_hdf5_file,
-                                    (self.output_path, expected),
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+        self.context.save_hdf5(self.output_path, da, mode='w')
+        file_check = self.context.apply(check_hdf5_file,
+                                        (self.output_path, expected),
+                                        targets=self.context.targets[0])
         self.assertTrue(file_check)
 
     def test_save_two_datasets(self):
         datalen = 33
         foo = np.arange(datalen)
         bar = np.random.random(datalen)
-        da_foo = self.dac.fromarray(foo)
-        da_bar = self.dac.fromarray(bar)
+        da_foo = self.context.fromarray(foo)
+        da_bar = self.context.fromarray(bar)
 
         # save 'foo' to a file
-        self.dac.save_hdf5(self.output_path, da_foo, key='foo', mode='w')
+        self.context.save_hdf5(self.output_path, da_foo, key='foo', mode='w')
 
         # save 'bar' to a different dataset in the same file
-        self.dac.save_hdf5(self.output_path, da_bar, key='bar', mode='a')
+        self.context.save_hdf5(self.output_path, da_bar, key='bar', mode='a')
 
-        foo_checks = self.dac.apply(check_hdf5_file,
-                                    (self.output_path, foo),
-                                    {'dataset': 'foo'},
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+        foo_checks = self.context.apply(check_hdf5_file,
+                                        (self.output_path, foo),
+                                        {'dataset': 'foo'},
+                                        targets=self.context.targets[0])
         self.assertTrue(foo_checks)
-        bar_checks = self.dac.apply(check_hdf5_file,
-                                    (self.output_path, bar),
-                                    {'dataset': 'bar'},
-                                    targets=self.dac.targets[0],
-                                    return_proxy=False)
+        bar_checks = self.context.apply(check_hdf5_file,
+                                        (self.output_path, bar),
+                                        {'dataset': 'bar'},
+                                        targets=self.context.targets[0])
         self.assertTrue(bar_checks)
 
 
-class TestHdf5FileLoad(unittest.TestCase):
+class TestHdf5FileLoad(ContextTestCase):
+
+    ntargets = 2
 
     @classmethod
     def setUpClass(cls):
         cls.h5py = import_or_skip('h5py')
-        cls.dac = Context(targets=[0, 1])
-        cls.output_path = cls.dac.apply(engine_temp_path, ('.hdf5',),
-                                        targets=cls.dac.targets[0],
-                                        return_proxy=False)
+        super(TestHdf5FileLoad, cls).setUpClass()
+        cls.output_path = cls.context.apply(engine_temp_path, ('.hdf5',),
+                                            targets=cls.context.targets[0])
         cls.expected = np.arange(20).reshape(2, 10)
 
         def make_test_file(output_path, arr):
@@ -300,31 +293,31 @@ class TestHdf5FileLoad(unittest.TestCase):
             with h5py.File(output_path, 'w') as fp:
                 fp["test"] = arr
 
-        cls.dac.apply(make_test_file, (cls.output_path, cls.expected),
-                      targets=cls.dac.targets[0])
+        cls.context.apply(make_test_file, (cls.output_path, cls.expected),
+                      targets=cls.context.targets[0])
 
     @classmethod
     def tearDownClass(cls):
-        cls.dac.apply(cleanup_file, (cls.output_path,),
-                      targets=cls.dac.targets[0])
-        cls.dac.close()
+        cls.context.apply(cleanup_file, (cls.output_path,),
+                      targets=cls.context.targets[0])
+        super(TestHdf5FileLoad, cls).tearDownClass()
 
     def test_load_bn(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            bn_test_data)
-        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
+        da = self.context.load_hdf5(self.output_path, distribution, key="test")
         assert_array_equal(self.expected, da)
 
     def test_load_nc(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            nc_test_data)
-        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
+        da = self.context.load_hdf5(self.output_path, distribution, key="test")
         assert_array_equal(self.expected, da)
 
     def test_load_nu(self):
-        distribution = Distribution.from_dim_data_per_rank(self.dac,
+        distribution = Distribution.from_dim_data_per_rank(self.context,
                                                            nu_test_data)
-        da = self.dac.load_hdf5(self.output_path, distribution, key="test")
+        da = self.context.load_hdf5(self.output_path, distribution, key="test")
         assert_array_equal(self.expected, da)
 
 

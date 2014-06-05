@@ -18,7 +18,7 @@ from distarray.local.maps import Distribution
 class TestDnpyFileIO(MpiTestCase):
 
     def setUp(self):
-        d = Distribution.from_shape((7,), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(7,))
         self.larr0 = LocalArray(d)
 
         # a different file on every engine
@@ -47,14 +47,14 @@ class TestDnpyFileIO(MpiTestCase):
 
     def test_flat_file_save_load_with_filename(self):
         save_dnpy(self.output_path, self.larr0)
-        larr1 = load_dnpy(self.output_path, comm=self.comm)
+        larr1 = load_dnpy(comm=self.comm, file=self.output_path)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
     def test_flat_file_save_load_with_file_object(self):
         save_dnpy(self.output_path, self.larr0)
         with open(self.output_path, 'rb') as fp:
-            larr1 = load_dnpy(fp, comm=self.comm)
+            larr1 = load_dnpy(comm=self.comm, file=fp)
         self.assertTrue(isinstance(larr1, LocalArray))
         assert_allclose(self.larr0, larr1)
 
@@ -162,8 +162,8 @@ class TestNpyFileLoad(MpiTestCase):
 
     def test_load_bn(self):
         dim_data_per_rank = bn_test_data
-        la = load_npy(self.output_path, dim_data_per_rank[self.rank],
-                      comm=self.comm)
+        la = load_npy(comm=self.comm, filename=self.output_path,
+                      dim_data=dim_data_per_rank[self.rank])
         assert_equal(la, self.expected[numpy.newaxis, self.rank])
 
     def test_load_nc(self):
@@ -171,16 +171,16 @@ class TestNpyFileLoad(MpiTestCase):
         expected_slices = [(slice(None), slice(0, None, 2)),
                            (slice(None), slice(1, None, 2))]
 
-        la = load_npy(self.output_path, dim_data_per_rank[self.rank],
-                      comm=self.comm)
+        la = load_npy(comm=self.comm, filename=self.output_path,
+                      dim_data=dim_data_per_rank[self.rank])
         assert_equal(la, self.expected[expected_slices[self.rank]])
 
     def test_load_nu(self):
         dim_data_per_rank = nu_test_data
         expected_indices = [dd[1]['indices'] for dd in dim_data_per_rank]
 
-        la = load_npy(self.output_path, dim_data_per_rank[self.rank],
-                      comm=self.comm)
+        la = load_npy(comm=self.comm, filename=self.output_path,
+                      dim_data=dim_data_per_rank[self.rank])
         assert_equal(la, self.expected[:, expected_indices[self.rank]])
 
 
@@ -199,7 +199,7 @@ class TestHdf5FileSave(MpiTestCase):
         self.output_path = self.comm.bcast(self.output_path, root=0)
 
     def test_save_1d(self):
-        d = Distribution.from_shape((51,), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(51,))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)
@@ -212,7 +212,7 @@ class TestHdf5FileSave(MpiTestCase):
                 self.assertEqual(v, fp[self.key][i])
 
     def test_save_2d(self):
-        d = Distribution.from_shape((11, 15), comm=self.comm)
+        d = Distribution.from_shape(comm=self.comm, shape=(11, 15))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
         la.set_localarray(np_arr)
@@ -257,8 +257,9 @@ class TestHdf5FileLoad(MpiTestCase):
 
     def test_load_bn(self):
         dim_data_per_rank = bn_test_data
-        la = load_hdf5(self.output_path, dim_data_per_rank[self.rank],
-                       key=self.key, comm=self.comm)
+        la = load_hdf5(comm=self.comm, filename=self.output_path,
+                       dim_data=dim_data_per_rank[self.rank],
+                       key=self.key)
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:
             assert_equal(la, self.expected[numpy.newaxis, self.rank])
@@ -267,8 +268,9 @@ class TestHdf5FileLoad(MpiTestCase):
         dim_data_per_rank = nc_test_data
         expected_slices = [(slice(None), slice(0, None, 2)),
                            (slice(None), slice(1, None, 2))]
-        la = load_hdf5(self.output_path, dim_data_per_rank[self.rank],
-                       key=self.key, comm=self.comm)
+        la = load_hdf5(comm=self.comm, filename=self.output_path,
+                       dim_data=dim_data_per_rank[self.rank],
+                       key=self.key)
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:
             expected_slice = expected_slices[self.rank]
@@ -277,8 +279,9 @@ class TestHdf5FileLoad(MpiTestCase):
     def test_load_nu(self):
         dim_data_per_rank = nu_test_data
         expected_indices = [dd[1]['indices'] for dd in dim_data_per_rank]
-        la = load_hdf5(self.output_path, dim_data_per_rank[self.rank],
-                       key=self.key, comm=self.comm)
+        la = load_hdf5(comm=self.comm, filename=self.output_path,
+                       dim_data=dim_data_per_rank[self.rank],
+                       key=self.key)
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:
             assert_equal(la, self.expected[:, expected_indices[self.rank]])

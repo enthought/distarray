@@ -9,22 +9,18 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-from distarray.dist.context import Context
+from distarray.testing import ContextTestCase
 from distarray.dist import maps
 
 
-class TestClientMap(unittest.TestCase):
-
-    def setUp(self):
-        self.ctx = Context()
-
-    def tearDown(self):
-        self.ctx.close()
+class TestClientMap(ContextTestCase):
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53
-        cm = maps.Distribution.from_shape(self.ctx, (nrows, ncols),
-                                          {0: 'b'}, (4, 1))
+        cm = maps.Distribution.from_shape(self.context,
+                                                (nrows, ncols),
+                                                {0: 'b'},
+                                                (4, 1))
         chunksize = (nrows // 4) + 1
         for _ in range(100):
             r, c = randrange(nrows), randrange(ncols)
@@ -34,7 +30,9 @@ class TestClientMap(unittest.TestCase):
     def test_2D_bb(self):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
-        cm = maps.Distribution.from_shape(self.ctx, (nrows, ncols), ('b', 'b'),
+        cm = maps.Distribution.from_shape(self.context,
+                                          (nrows, ncols),
+                                          ('b', 'b'),
                                           (nprocs_per_dim, nprocs_per_dim))
         row_chunks = nrows // nprocs_per_dim + 1
         col_chunks = ncols // nprocs_per_dim + 1
@@ -47,31 +45,37 @@ class TestClientMap(unittest.TestCase):
     def test_2D_cc(self):
         nrows, ncols = 3, 5
         nprocs_per_dim = 2
-        cm = maps.Distribution.from_shape(self.ctx, (nrows, ncols), ('c', 'c'),
+        cm = maps.Distribution.from_shape(self.context,
+                                          (nrows, ncols),
+                                          ('c', 'c'),
                                           (nprocs_per_dim, nprocs_per_dim))
         for r in range(nrows):
             for c in range(ncols):
-                rank = (r % nprocs_per_dim) * nprocs_per_dim + (c % nprocs_per_dim)
+                rank = ((r % nprocs_per_dim) * nprocs_per_dim
+                        + (c % nprocs_per_dim))
                 actual = cm.owning_ranks((r,c))
                 self.assertSequenceEqual(actual, [rank])
 
     def test_is_compatible(self):
         nr, nc, nd = 10**5, 10**6, 10**4
 
-        cm0 = maps.Distribution.from_shape(self.ctx, (nr, nc, nd),
+        cm0 = maps.Distribution.from_shape(self.context,
+                                           (nr, nc, nd),
                                            ('b', 'c', 'n'))
         self.assertTrue(cm0.is_compatible(cm0))
 
-        cm1 = maps.Distribution.from_shape(self.ctx, (nr, nc, nd),
+        cm1 = maps.Distribution.from_shape(self.context,
+                                           (nr, nc, nd),
                                            ('b', 'c', 'n'))
         self.assertTrue(cm1.is_compatible(cm1))
 
         self.assertTrue(cm0.is_compatible(cm1))
         self.assertTrue(cm1.is_compatible(cm0))
-        
+
         nr -= 1; nc -= 1; nd -= 1
 
-        cm2 = maps.Distribution.from_shape(self.ctx, (nr, nc, nd),
+        cm2 = maps.Distribution.from_shape(self.context,
+                                           (nr, nc, nd),
                                            ('b', 'c', 'n'))
 
         self.assertFalse(cm1.is_compatible(cm2))
@@ -80,8 +84,10 @@ class TestClientMap(unittest.TestCase):
     def test_reduce(self):
         nr, nc, nd = 10**5, 10**6, 10**4
 
-        dist = maps.Distribution.from_shape(
-            self.ctx, (nr, nc, nd), ('b', 'c', 'n'), grid_shape=(2, 2, 1))
+        dist = maps.Distribution.from_shape(self.context,
+                                            (nr, nc, nd),
+                                            ('b', 'c', 'n'),
+                                            grid_shape=(2, 2, 1))
 
         new_dist0 = dist.reduce(axes=[0])
         self.assertEqual(new_dist0.dist, ('c', 'n'))
@@ -92,7 +98,8 @@ class TestClientMap(unittest.TestCase):
         new_dist1 = dist.reduce(axes=[1])
         self.assertEqual(new_dist1.dist, ('b', 'n'))
         self.assertSequenceEqual(new_dist1.shape, (nr, nd))
-        self.assertEqual(new_dist1.grid_shape, dist.grid_shape[:1]+dist.grid_shape[2:])
+        self.assertEqual(new_dist1.grid_shape,
+                         dist.grid_shape[:1] + dist.grid_shape[2:])
         self.assertLess(set(new_dist1.targets), set(dist.targets))
 
         new_dist2 = dist.reduce(axes=[2])
@@ -103,7 +110,7 @@ class TestClientMap(unittest.TestCase):
 
     def test_reduce_0D(self):
         N = 10**5
-        dist = maps.Distribution.from_shape(self.ctx, (N,))
+        dist = maps.Distribution.from_shape(self.context, (N,))
         new_dist = dist.reduce(axes=[0])
         self.assertEqual(new_dist.dist, ())
         self.assertSequenceEqual(new_dist.shape, ())
@@ -111,16 +118,10 @@ class TestClientMap(unittest.TestCase):
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
 
 
-class TestSlice(unittest.TestCase):
-
-    def setUp(self):
-        self.ctx = Context()
-
-    def tearDown(self):
-        self.ctx.close()
+class TestSlice(ContextTestCase):
 
     def test_from_partial_slice_1d(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15,))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15,))
 
         s = (slice(0, 3),)
         d1 = d0.slice(s)
@@ -131,7 +132,7 @@ class TestSlice(unittest.TestCase):
         self.assertSequenceEqual(d1.shape, (3,))
 
     def test_from_full_slice_1d(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15,))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15,))
 
         s = (slice(None),)
         d1 = d0.slice(s)
@@ -142,7 +143,7 @@ class TestSlice(unittest.TestCase):
         self.assertSequenceEqual(d1.maps[0].bounds, d0.maps[0].bounds)
 
     def test_from_full_slice_2d(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15, 20))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15, 20))
 
         s = (slice(None), slice(None))
         d1 = d0.slice(s)
@@ -155,7 +156,7 @@ class TestSlice(unittest.TestCase):
         self.assertSequenceEqual(d1.targets, d0.targets)
 
     def test_from_partial_slice_2d(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15, 20))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15, 20))
 
         s = (slice(3, 7), 4)
         d1 = d0.slice(s)
@@ -166,7 +167,7 @@ class TestSlice(unittest.TestCase):
             self.assertSequenceEqual(m.bounds, expected)
 
     def test_full_slice_with_int_2d(self):
-        d0 = maps.Distribution.from_shape(context=self.ctx, shape=(15, 20))
+        d0 = maps.Distribution.from_shape(context=self.context, shape=(15, 20))
 
         s = (slice(None), 4)
         d1 = d0.slice(s)
@@ -174,3 +175,15 @@ class TestSlice(unittest.TestCase):
         self.assertEqual(len(d0.maps)-1, len(d1.maps))
         self.assertSequenceEqual(d1.dist, d0.dist[:-1])
         self.assertEqual(d1.shape, (15,))
+
+
+class TestDistributionCreation(ContextTestCase):
+    def test_all_n_dist(self):
+        distribution = maps.Distribution.from_shape(self.context,
+                                                    shape=(3, 3),
+                                                    dist=('n', 'n'))
+        self.context.ones(distribution)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
