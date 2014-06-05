@@ -14,7 +14,7 @@ install_requires = [
 
 metadata = {
     'name': 'distarray',
-    'version': '0.3.0-dev',
+    'version': '0.3.0',
     'description': 'Distributed Memory Arrays for Python',
     'keywords': 'parallel mpi distributed array',
     'license': 'New BSD',

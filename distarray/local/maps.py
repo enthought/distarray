@@ -28,10 +28,9 @@ import numpy as np
 from distarray.externals.six.moves import range, zip
 
 from distarray.local import construct
-from distarray.metadata_utils import (validate_grid_shape, make_grid_shape,
-                                      normalize_grid_shape, normalize_dist,
-                                      distribute_indices, sanitize_indices)
-
+from distarray.metadata_utils import (make_grid_shape, normalize_grid_shape,
+                                      normalize_dist, distribute_indices,
+                                      sanitize_indices)
 
 # Register numpy integer types with numbers.Integral ABC.
 Integral.register(np.signedinteger)
@@ -45,14 +44,14 @@ class Distribution(object):
     Manages one or more one-dimensional map classes.
     """
 
-    def __init__(self, dim_data, comm=None):
+    def __init__(self, comm, dim_data):
         """Create a Distribution from a `dim_data` structure."""
         self._maps = tuple(map_from_dim_dict(dim_dict) for dim_dict in dim_data)
         self.base_comm = construct.init_base_comm(comm)
         self.comm = construct.init_comm(self.base_comm, self.grid_shape)
 
     @classmethod
-    def from_shape(cls, shape, dist=None, grid_shape=None, comm=None):
+    def from_shape(cls, comm, shape, dist=None, grid_shape=None):
         """Create a Distribution from a `shape` and optional arguments."""
         dist = {0: 'b'} if dist is None else dist
         ndim = len(shape)
@@ -62,10 +61,8 @@ class Distribution(object):
 
         if grid_shape is None:  # Make a new grid_shape if not provided.
             grid_shape = make_grid_shape(shape, dist_tuple, comm_size)
-        else:  # Otherwise normalize the one passed in.
-            grid_shape = normalize_grid_shape(grid_shape, ndim)
-        # In either case, validate.
-        validate_grid_shape(grid_shape, dist_tuple, comm_size)
+        grid_shape = normalize_grid_shape(grid_shape, ndim,
+                                          dist_tuple, comm_size)
 
         comm = construct.init_comm(base_comm, grid_shape)
         grid_coords = comm.Get_coords(comm.Get_rank())
@@ -80,7 +77,7 @@ class Distribution(object):
             distribute_indices(dim_dict)
             dim_data.append(dim_dict)
 
-        return cls(dim_data, comm=base_comm)
+        return cls(comm=base_comm, dim_data=dim_data)
 
     def __getitem__(self, idx):
         return self._maps[idx]
@@ -321,7 +318,7 @@ class BlockCyclicMap(MapBase):
     """
 
     dist = 'c'
-    
+
     def __init__(self, global_size, grid_size, grid_rank, start, block_size):
         if start % block_size:
             msg = "Value of start (%r) does not evenly divide block_size (%r)."

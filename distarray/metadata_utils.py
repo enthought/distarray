@@ -32,15 +32,19 @@ class GridShapeError(Exception):
     pass
 
 
-def normalize_grid_shape(grid_shape, ndims):
-    """Adds 1s to grid_shape so it has `ndims` dimensions."""
-    return tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
-
-
-def validate_grid_shape(grid_shape, dist, comm_size):
-    """ Validates `grid_shape` tuple against the `dist` tuple and
-    `comm_size`.
+def normalize_grid_shape(grid_shape, ndims, dist, comm_size):
+    """Adds 1s to grid_shape so it has `ndims` dimensions.  Validates
+    `grid_shape` tuple against the `dist` tuple and `comm_size`.
     """
+    grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
+
+    # short circuit for special case
+    if all(x == 'n' for x in dist):
+        if not all(x == 1 for x in grid_shape):
+            raise ValueError("grid shape should be all `1`'s not %s." %
+                             grid_shape)
+        return grid_shape
+
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
@@ -82,7 +86,9 @@ def make_grid_shape(shape, dist, comm_size):
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)
 
-    if ndistdim == 1:
+    if ndistdim == 0:
+        dist_grid_shape = ()
+    elif ndistdim == 1:
         # Trivial case: all processes used for the one distributed dimension.
         dist_grid_shape = (comm_size,)
 
