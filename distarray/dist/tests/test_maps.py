@@ -11,6 +11,7 @@ from distarray.externals.six.moves import range
 
 from distarray.testing import ContextTestCase
 from distarray.dist import maps as client_map
+from distarray.dist.maps import MapBase
 
 
 class TestClientMap(ContextTestCase):
@@ -109,6 +110,27 @@ class TestClientMap(ContextTestCase):
         self.assertSequenceEqual(new_dist.shape, ())
         self.assertEqual(new_dist.grid_shape, ())
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
+
+
+class TestDunderMethods(ContextTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestDunderMethods, cls).setUpClass()
+        cls.shape = (3, 4, 5, 6)
+        cls.cm = client_map.Distribution.from_shape(cls.context, cls.shape)
+
+    def test___len__(self):
+        self.assertEqual(len(self.cm), 4)
+
+    def test___getitem__(self):
+        for m in self.cm:
+            self.assertTrue(isinstance(m, MapBase))
+
+        self.assertEqual(self.cm[0].dist, 'b')
+        self.assertEqual(self.cm[1].dist, 'n')
+        self.assertEqual(self.cm[2].dist, 'n')
+        self.assertEqual(self.cm[-1].dist, 'n')
 
 
 class TestDistributionCreation(ContextTestCase):
