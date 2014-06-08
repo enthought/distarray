@@ -94,7 +94,7 @@ def normalize_grid_shape(grid_shape, shape, dist, comm_size):
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
-    if reduce(operator.mul, grid_shape, 1) != comm_size:
+    if reduce(operator.mul, grid_shape, 1) > comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
         raise InvalidGridShapeError(msg % (grid_shape, comm_size))
     return grid_shape
@@ -136,7 +136,7 @@ def make_grid_shape(shape, dist, comm_size):
 
     elif ndistdim == 1:
         # Trivial case: all processes used for the one distributed dimension.
-        if distdims[0] >= shape[distdims[0]]:
+        if comm_size >= shape[distdims[0]]:
             dist_grid_shape = (comm_size,)
         else:
             dist_grid_shape = (shape[distdims[0]],)
