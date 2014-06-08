@@ -61,9 +61,11 @@ def check_grid_shape_postconditions(grid_shape, shape, dist, comm_size):
                          "= %s" % (shape, grid_shape))
     if reduce(operator.mul, grid_shape, 1) > comm_size:
         raise ValueError("reduce(operator.mul, grid_shape, 1) <= comm_size not"
-                         " satisfied, grid_shape product = %s and comm_size = "
-                         " %s" % (reduce(operator.mul, grid_shape, 1),
-                                  comm_size))
+                         " satisfied, grid_shape = %s product = %s and "
+                         "comm_size = %s" % (
+                             grid_shape,
+                             reduce(operator.mul, grid_shape, 1),
+                             comm_size))
 
 
 def normalize_grid_shape(grid_shape, shape, dist, comm_size):
