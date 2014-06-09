@@ -453,8 +453,6 @@ class Distribution(object):
 
         self = cls.__new__(cls)
         self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
         self.shape = shape
         self.ndim = len(shape)
 
@@ -463,10 +461,17 @@ class Distribution(object):
             dist = {0: 'b'}
         self.dist = normalize_dist(dist, self.ndim)
 
+        # all possible targets
+        all_targets = sorted(targets or context.targets)
         # grid_shape
         if grid_shape is None:
             grid_shape = make_grid_shape(self.shape, self.dist,
-                                         len(self.targets))
+                                         len(all_targets))
+
+        # choose targets from grid_shape
+        self.targets = list(range(reduce(operator.mul, grid_shape, 1)))
+
+        self.comm = self.context._make_subcomm(self.targets)
 
         self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
                                                self.dist, len(self.targets))
