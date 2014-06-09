@@ -439,9 +439,14 @@ class TestReduceMethods(ContextTestCase):
         da_mean = self.darr.mean(axis=(0, 1))
         assert_allclose(da_mean.tondarray(), np_mean)
 
-    def test_mean_along_axis_1(self):
+    def test_mean_along_axis_0(self):
         da_mean = self.darr.mean(axis=0)
         np_mean = self.arr.mean(axis=0)
+        assert_allclose(da_mean.tondarray(), np_mean)
+
+    def test_mean_along_axis_1(self):
+        da_mean = self.darr.mean(axis=1)
+        np_mean = self.arr.mean(axis=1)
         assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_mean_dtype(self):
