@@ -197,6 +197,13 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[0, :, 0, ...].toarray(),
                            expected[0, :, 0, ...])
 
+    def test_all_ellipsis(self):
+        shape = (3, 2, 4)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[..., ..., ..., ...].toarray(),
+                           expected[..., ..., ..., ...])
+
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
