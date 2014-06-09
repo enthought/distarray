@@ -469,7 +469,8 @@ class Distribution(object):
                                          len(all_targets))
 
         # choose targets from grid_shape
-        self.targets = list(range(reduce(operator.mul, grid_shape, 1)))
+        self.targets = [all_targets[i] for i in range(reduce(operator.mul,
+                                                             grid_shape, 1))]
 
         self.comm = self.context._make_subcomm(self.targets)
 
