@@ -585,6 +585,12 @@ class Distribution(object):
         nelts = reduce(operator.mul, self.grid_shape, 1)
         self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
+    def __getitem__(self, idx):
+        return self.maps[idx]
+
+    def __len__(self):
+        return len(self.maps)
+
     @property
     def has_precise_index(self):
         """
