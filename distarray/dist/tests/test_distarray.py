@@ -204,6 +204,14 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[..., ..., ..., ...].toarray(),
                            expected[..., ..., ..., ...])
 
+    @unittest.skip("Waiting on 0d-array support.")
+    def test_0d_ellipsis(self):
+        shape = ()
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[...].toarray(),
+                           expected[...])
+
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
