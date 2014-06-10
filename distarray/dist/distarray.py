@@ -339,11 +339,9 @@ class DistArray(object):
         return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localshapes(self):
-        key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key),
-                              targets=self.targets)
-        result = self.context._pull(key, targets=self.targets)
-        return result
+        def get(key):
+            return key.local_shape
+        return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     # Binary operators
 
