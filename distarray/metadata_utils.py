@@ -303,9 +303,9 @@ def block_size(dim_data):
 def c_or_bc_chooser(dim_data):
     block_size = dim_data.get('block_size', 1)
     if block_size == 1:
-        return cyclic_size
+        return cyclic_size(dim_data)
     elif block_size > 1:
-        return block_cyclic_size
+        return block_cyclic_size(dim_data)
     else:
         raise ValueError("block_size %s is invalid" % block_size)
 
