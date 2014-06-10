@@ -293,8 +293,8 @@ def non_dist_size(dim_data):
 
 # b
 def block_size(dim_data):
-    stop = dim_data.get('stop', None)
-    start = dim_data.get('start', None)
+    stop = dim_data['stop']
+    start = dim_data['start']
     return stop - start
 
 
