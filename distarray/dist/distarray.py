@@ -257,14 +257,6 @@ class DistArray(object):
 
     toarray = tondarray
 
-    def get_dist_matrix(self):
-        key = self.context._generate_key()
-        self.context._execute0(
-            '%s = %s.get_dist_matrix()' % (key, self.key),
-            targets=self.targets)
-        result = self.context._pull(key, targets=self.targets[0])
-        return result
-
     def fill(self, value):
         def inner_fill(arr, value):
             arr.fill(value)
