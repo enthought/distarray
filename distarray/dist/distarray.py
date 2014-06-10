@@ -323,11 +323,9 @@ class DistArray(object):
             one ndarray per process
 
         """
-        key = self.context._generate_key()
-        self.context._execute('%s = %s.get_localarray()' % (key, self.key),
-                              targets=self.targets)
-        result = self.context._pull(key, targets=self.targets)
-        return result
+        def get(key):
+            return key.get_localarray()
+        return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localarrays(self):
         """Pull the LocalArray objects from the engines.
