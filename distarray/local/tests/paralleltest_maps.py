@@ -89,7 +89,7 @@ class TestFromShape(MpiTestCase):
 
     def test_bad_distribution(self):
         """Test that invalid distribution type fails as expected."""
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             # Invalid distribution type 'x'.
             Distribution.from_shape(comm=self.comm, shape=(7,),
                                     dist={0: 'x'}, grid_shape=(4,))
