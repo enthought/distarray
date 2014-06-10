@@ -6,6 +6,7 @@
 
 import unittest
 from distarray import metadata_utils
+from distarray.dist import Distribution, Context
 
 
 class TestMakeGridShape(unittest.TestCase):
@@ -24,6 +25,16 @@ class TestPositivify(unittest.TestCase):
     def test_negative_index(self):
         result = metadata_utils.positivify(-2, 10)
         self.assertEqual(result, 8)
+
+
+class TestGridSizes(unittest.TestCase):
+
+    def test_dist_sizes(self):
+        context = Context()
+        dist = Distribution.from_shape(context, (2, 3, 4, 5),
+                                       dist=('n', 'b', 'c'))
+        ddpr = dist.get_dim_data_per_rank()
+        metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
 
 
 if __name__ == '__main__':
