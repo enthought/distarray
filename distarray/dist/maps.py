@@ -468,14 +468,12 @@ class Distribution(object):
             grid_shape = make_grid_shape(self.shape, self.dist,
                                          len(all_targets))
 
-        # choose targets from grid_shape
-        self.targets = [all_targets[i] for i in range(reduce(operator.mul,
-                                                             grid_shape, 1))]
-
-        self.comm = self.context._make_subcomm(self.targets)
-
         self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
-                                               self.dist, len(self.targets))
+                                               self.dist, len(all_targets))
+        ntargets = reduce(operator.mul, self.grid_shape, 1)
+        # choose targets from grid_shape
+        self.targets = all_targets[:ntargets]
+        self.comm = self.context._make_subcomm(self.targets)
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
