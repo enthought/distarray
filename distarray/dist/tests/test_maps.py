@@ -299,6 +299,22 @@ class TestDistributionCreation(ContextTestCase):
                                     dist=('n', 'n'))
         self.context.ones(distribution)
 
+class TestRedistribution(ContextTestCase):
+
+    def test_block_redistribution(self):
+        dist0 = client_map.Distribution.from_shape(self.context,
+                                                   (40,), ('b',), (2,),
+                                                   targets=[1,3])
+        dist1 = client_map.Distribution.from_shape(self.context,
+                                                   (40,), ('b',), (2,),
+                                                   targets=[0,2])
+        plan = dist0.get_redist_plan(dist1)
+        expected = [
+                {'from_rank': 1, 'to_rank': 0, 'from_indices': (0, 20), 'to_indices': (0, 20)},
+                {'from_rank': 3, 'to_rank': 2, 'from_indices': (20, 40), 'to_indices': (20, 40)},
+                ]
+        self.assertEqual(plan, expected)
+
 
 class TestNoEmptyLocals(ContextTestCase):
 

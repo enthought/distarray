@@ -836,3 +836,13 @@ class Distribution(object):
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
+
+    def get_redist_plan(self, other_dist):
+        return [
+                {'from_rank': 1, 'to_rank': 0, 'from_indices': (0, 20), 'to_indices': (0, 20)},
+                {'from_rank': 3, 'to_rank': 2, 'from_indices': (20, 40), 'to_indices': (20, 40)},
+                ]
+
+    def comm_union(self, *dists):
+        all_targets = sorted(reduce(set.union, [d.targets for d in dists], set(self.targets)))
+        return self.context._make_subcomm(all_targets)

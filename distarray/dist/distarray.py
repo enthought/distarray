@@ -493,6 +493,25 @@ class DistArray(object):
         return DistArray.from_localarrays(key=new_key, distribution=new_dist,
                                           dtype=dtype)
 
+    def distribute_as(self, dist):
+
+        plan = self.distribution.get_redist_plan(dist)
+        ubercomm = self.distribution.comm_union(dist)
+        result = DistArray(dist, dtype=self.dtype)
+
+        def _local_redistribute(comm, plan, la0, la1):
+            myrank = comm.Get_rank()
+            for dta in plan:
+                if dta['from_rank'] == myrank:
+                    comm.Send(la0.ndarray, dest=dta['to_rank'])
+                if dta['to_rank'] == myrank:
+                    comm.Recv(la1.ndarray, source=dta['from_rank'])
+
+        self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
+                                                targets=self.context.targets)
+        return result
+        # return self.context.ones(dist)
+
     # Binary operators
 
     def _binary_op_from_ufunc(self, other, func, rop_str=None, *args, **kwargs):

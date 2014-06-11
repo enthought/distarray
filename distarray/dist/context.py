@@ -558,7 +558,7 @@ class Context(object):
                              targets=distribution.targets)
         return DistArray.from_localarrays(da_name[0], distribution=distribution)
 
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def apply(self, func, args=None, kwargs=None, targets=None, default=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -577,7 +577,7 @@ class Context(object):
             return a list of the results on the each engine.
         """
 
-        def func_wrapper(func, apply_nonce, context_key, args, kwargs):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs, default):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -611,22 +611,27 @@ class Context(object):
             args = list(args)
             for i, a in enumerate(args):
                 if (isinstance(a, str) and a.startswith(prefix)):
-                    args[i] = main.reduce(getattr, [main] + a.split('.'))
+                    try:
+                        args[i] = main.reduce(getattr, [main] + a.split('.'))
+                    except AttributeError:
+                        args[i] = default
             args = tuple(args)
 
             # convert kwargs
             for k in kwargs.keys():
                 val = kwargs[k]
                 if (isinstance(val, str) and val.startswith(prefix)):
-                    kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
-
+                    try:
+                        kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
+                    except AttributeError:
+                        kwargs[k] = default
             return func(*args, **kwargs)
 
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         apply_nonce = uid()[13:]
-        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs)
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, default)
 
         targets = self.targets if targets is None else targets
 

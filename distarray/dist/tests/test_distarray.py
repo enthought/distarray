@@ -1014,5 +1014,38 @@ class TestView(ContextTestCase):
             da.view(dtype=dtype)
 
 
+class TestBlockRedistribution(ContextTestCase):
+
+    def test_redist_1D(self):
+        dist0 = Distribution.from_shape(self.context,
+                                        (40,), ('b',), (2,),
+                                        targets=[1,3])
+        dist1 = Distribution.from_shape(self.context,
+                                        (40,), ('b',), (2,),
+                                        targets=[0,2])
+        da = self.context.ones(dist0)
+        db = da.distribute_as(dist1)
+
+        self.assertIs(db.distribution, dist1)
+        self.assertSequenceEqual(db.localshapes(), da.localshapes())
+        assert_array_equal(da.tondarray(), db.tondarray())
+
+        dist2 = Distribution.from_shape(self.context,
+                                        (40,), ('b',), (2,),
+                                        targets=[0,2])
+
+        da.fill(-42)
+        dc = da.distribute_as(dist2)
+        self.assertIs(dc.distribution, dist2)
+        self.assertSequenceEqual(dc.localshapes(), da.localshapes())
+        assert_array_equal(da.tondarray(), dc.tondarray())
+
+        # dist0 = Distribution.from_shape(self.context, (40,), ('b',), (4,))
+        # dist1 = Distribution.from_shape(self.context, (40,), ('b',), (3,),
+                                        # targets=self.context.targets[:3])
+        # self.assertEqual(len(dist0.targets), 4)
+        # self.assertEqual(len(dist1.targets), 3)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
