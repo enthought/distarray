@@ -439,9 +439,14 @@ class TestReduceMethods(ContextTestCase):
         da_mean = self.darr.mean(axis=(0, 1))
         assert_allclose(da_mean.tondarray(), np_mean)
 
-    def test_mean_along_axis_1(self):
+    def test_mean_along_axis_0(self):
         da_mean = self.darr.mean(axis=0)
         np_mean = self.arr.mean(axis=0)
+        assert_allclose(da_mean.tondarray(), np_mean)
+
+    def test_mean_along_axis_1(self):
+        da_mean = self.darr.mean(axis=1)
+        np_mean = self.arr.mean(axis=1)
         assert_allclose(da_mean.tondarray(), np_mean)
 
     def test_mean_dtype(self):
@@ -530,17 +535,6 @@ class TestReduceMethods(ContextTestCase):
             darr_sum = darr.sum(axis=axis)
             assert_allclose(darr_sum.tondarray(), arr_sum)
         assert_allclose(darr.sum().tondarray(), arr.sum())
-
-    def test_empty_localarray(self):
-        if len(self.context.targets) < 2:
-            raise self.skipTest("not enough targets to run test.")
-        dist = Distribution.from_shape(self.context,
-                                       shape=(1,),
-                                       dist=('b',),
-                                       targets=self.context.targets[:2])
-        darr = self.context.ones(dist)
-        self.assertRaises(NotImplementedError, darr.min, ())
-        self.assertRaises(NotImplementedError, darr.sum, (), {'axis':0})
 
 
 class TestFromLocalArrays(ContextTestCase):

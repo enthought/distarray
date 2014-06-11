@@ -24,23 +24,72 @@ class GridShapeError(Exception):
     pass
 
 
-def normalize_grid_shape(grid_shape, ndims, dist, comm_size):
+def check_grid_shape_preconditions(shape, dist, comm_size):
+    """
+    Verify various distarray parameters are correct before making a grid_shape.
+    """
+    if comm_size < 1:
+        raise ValueError("comm_size >= 1 not satisfied, comm_size = %s" %
+                         (comm_size,))
+    if len(shape) != len(dist):
+        raise ValueError("len(shape) == len(dist) not satisfied, len(shape) ="
+                         " %s and len(dist) = %s" % (len(shape), len(dist)))
+    if any(i < 0 for i in shape):
+        raise ValueError("shape must be a sequence of non-negative integers, "
+                         "shape = %s" % (shape,))
+    if any(i not in ('b', 'c', 'n', 'u') for i in dist):
+        raise ValueError("dist must be a sequence of 'b', 'n', 'c', 'u' "
+                         "strings, dist = %s" % (dist,))
+
+
+def check_grid_shape_postconditions(grid_shape, shape, dist, comm_size):
+    if not (len(grid_shape) == len(shape) == len(dist)):
+        raise ValueError("len(gird_shape) == len(shape) == len(dist) not "
+                         "satisfied, len(grid_shape) = %s and len(shape) = %s "
+                         "and len(dist) = %s" % (len(grid_shape), len(shape),
+                                                 len(dist)))
+    if any(gs < 1 for gs in grid_shape):
+        raise ValueError("all(gs >= 1 for gs in grid_shape) not satisfied, "
+                         "grid_shape = %s" % (grid_shape,))
+    if any(gs != 1 for (d, gs) in zip(dist, grid_shape) if d == 'n'):
+        raise ValueError("all(gs == 1 for (d, gs) in zip(dist, grid_shape) if "
+                         "d == 'n', not satified dist = %s and grid_shape = "
+                         "%s" % (dist, grid_shape))
+    if any(gs > s for (s, gs) in zip(shape, grid_shape) if s > 0):
+        raise ValueError("all(gs <= s for (s, gs) in zip(shape, grid_shape) "
+                         "if s > 0) not satisfied, shape = %s and grid_shape "
+                         "= %s" % (shape, grid_shape))
+    if reduce(operator.mul, grid_shape, 1) > comm_size:
+        raise ValueError("reduce(operator.mul, grid_shape, 1) <= comm_size not"
+                         " satisfied, grid_shape = %s product = %s and "
+                         "comm_size = %s" % (
+                             grid_shape,
+                             reduce(operator.mul, grid_shape, 1),
+                             comm_size))
+
+
+def normalize_grid_shape(grid_shape, shape, dist, comm_size):
     """Adds 1s to grid_shape so it has `ndims` dimensions.  Validates
     `grid_shape` tuple against the `dist` tuple and `comm_size`.
     """
-    grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
+    def check_normalization_preconditions(grid_shape, dist):
+        if any(i < 0 for i in grid_shape):
+            raise ValueError("grid_shape must be a sequence of non-negative "
+                             "integers, grid_shape = %s" % (grid_shape,))
+        if len(grid_shape) > len(dist):
+            raise ValueError("len(grid_shape) <= len(dist) not satisfied, "
+                             "len(grid_shape) = %s and len(dist) = %s" %
+                             (len(grid_shape), len(dist)))
+    check_grid_shape_preconditions(shape, dist, comm_size)
+    check_normalization_preconditions(grid_shape, dist)
 
-    # short circuit for special case
-    if all(x == 'n' for x in dist):
-        if not all(x == 1 for x in grid_shape):
-            raise ValueError("grid shape should be all `1`'s not %s." %
-                             grid_shape)
-        return grid_shape
+    ndims = len(shape)
+    grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
 
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
-    if reduce(operator.mul, grid_shape, 1) != comm_size:
+    if reduce(operator.mul, grid_shape, 1) > comm_size:
         msg = "grid shape %r not compatible with comm size of %d."
         raise InvalidGridShapeError(msg % (grid_shape, comm_size))
     return grid_shape
@@ -73,16 +122,19 @@ def make_grid_shape(shape, dist, comm_size):
         if not possible to distribute `comm_size` processes over number of
         dimensions.
     """
-    if not isinstance(dist, Sequence):
-        raise TypeError("`dist` argument should be a Sequence.")
+    check_grid_shape_preconditions(shape, dist, comm_size)
     distdims = tuple(i for (i, v) in enumerate(dist) if v != 'n')
     ndistdim = len(distdims)
 
     if ndistdim == 0:
         dist_grid_shape = ()
+
     elif ndistdim == 1:
         # Trivial case: all processes used for the one distributed dimension.
-        dist_grid_shape = (comm_size,)
+        if comm_size >= shape[distdims[0]]:
+            dist_grid_shape = (shape[distdims[0]],)
+        else:
+            dist_grid_shape = (comm_size,)
 
     elif comm_size == 1:
         # Trivial case: only one process to distribute over!
@@ -116,7 +168,9 @@ def make_grid_shape(shape, dist, comm_size):
     for distdim in distdims:
         grid_shape[distdim] = next(it)
 
-    return tuple(grid_shape)
+    out_grid_shape = tuple(grid_shape)
+    check_grid_shape_postconditions(out_grid_shape, shape, dist, comm_size)
+    return out_grid_shape
 
 
 def _compute_grid_ratios(shape):
