@@ -365,9 +365,10 @@ class TestDistArrayCreationSubSet(ContextTestCase):
     def test_create_target_subset(self):
         shape = (100, 100)
         subtargets = self.context.targets[::2]
-        distribution = Distribution.from_shape(self.context, shape=shape, targets=subtargets)
+        distribution = Distribution.from_shape(self.context, shape=shape,
+                                               targets=subtargets)
         darr = self.context.ones(distribution)
-        lss = darr.get_localshapes()
+        lss = darr.localshapes()
         self.assertEqual(len(lss), len(subtargets))
 
         ddpr = distribution.get_dim_data_per_rank()

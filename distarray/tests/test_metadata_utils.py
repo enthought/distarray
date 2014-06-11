@@ -6,6 +6,7 @@
 
 import unittest
 from distarray import metadata_utils
+from distarray.dist import Distribution, Context
 
 
 class TestMakeGridShape(unittest.TestCase):
@@ -24,6 +25,70 @@ class TestPositivify(unittest.TestCase):
     def test_negative_index(self):
         result = metadata_utils.positivify(-2, 10)
         self.assertEqual(result, 8)
+
+
+class TestGridSizes(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.context = Context()
+
+    def test_dist_sizes(self):
+        dist = Distribution.from_shape(self.context, (2, 3, 4),
+                                       dist=('n', 'b', 'c'))
+        ddpr = dist.get_dim_data_per_rank()
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
+        if len(self.context.view) == 4:
+            self.assertEqual(shapes, [(2, 2, 2), (2, 2, 2), (2, 1, 2),
+                                      (2, 1, 2)])
+
+    def test_n_size(self):
+        dim_dict = {'dist_type': 'n',
+                    'size': 42,
+                    'proc_grid_size': 1,
+                    'proc_grid_rank': 0}
+
+        dist = Distribution(self.context, (dim_dict,))
+        ddpr = dist.get_dim_data_per_rank()
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
+        self.assertEqual(shapes, [(42,)])
+
+    def test_b_size(self):
+        dim_dict = {'dist_type': 'b',
+                    'size': 42,
+                    'bounds': [0, 20, 42],
+                    'proc_grid_size': 2,
+                    'proc_grid_rank': 0,
+                    'start': 0,
+                    'stop': 42}
+        dist = Distribution(self.context, (dim_dict,))
+        ddpr = dist.get_dim_data_per_rank()
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
+        self.assertEqual(shapes, [(20,), (22,)])
+
+    def test_c_size(self):
+        dim_dict = {'dist_type': 'c',
+                    'size': 42,
+                    'proc_grid_size': 2,
+                    'proc_grid_rank': 0,
+                    'start': 0}
+        dist = Distribution(self.context, (dim_dict,))
+        ddpr = dist.get_dim_data_per_rank()
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
+        self.assertEqual(shapes, [(21,), (21,)])
+
+    def test_bc_size(self):
+        dim_dict = {'dist_type': 'b',
+                    'size': 42,
+                    'block_size': 2,
+                    'bounds': [0, 20, 42],
+                    'proc_grid_size': 2,
+                    'proc_grid_rank': 0,
+                    'start': 0}
+        dist = Distribution(self.context, (dim_dict,))
+        ddpr = dist.get_dim_data_per_rank()
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
+        self.assertEqual(shapes, [(20,), (22,)])
 
 
 if __name__ == '__main__':

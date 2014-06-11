@@ -203,7 +203,7 @@ class TestLocalDecorator(ContextTestCase):
         dd = self.local_sum(self.da)
         if self.ntargets == 1:
             dd = [dd]
-        lshapes = self.da.get_localshapes()
+        lshapes = self.da.localshapes()
         expected = []
         for lshape in lshapes:
             expected.append(lshape[0] * lshape[1] * (2 * numpy.pi))
@@ -234,7 +234,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @unittest.skip('Locally adding ndarrays not supported.')
     def test_local_add_ndarray(self):
-        shp = self.da.get_localshapes()[0]
+        shp = self.da.localshapes()[0]
         ndarr = numpy.empty(shp)
         ndarr.fill(33)
         dk = self.local_add_ndarray(self.da, 11, ndarr)

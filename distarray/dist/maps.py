@@ -38,7 +38,8 @@ from distarray.metadata_utils import (normalize_dist,
                                       positivify,
                                       _start_stop_block,
                                       normalize_dim_dict,
-                                      normalize_reduction_axes)
+                                      normalize_reduction_axes,
+                                      shapes_from_dim_data_per_rank)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -191,6 +192,7 @@ class NoDistMap(MapBase):
             msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
+        self.grid_size = grid_size
 
     def owners(self, idx):
         return [0] if 0 <= idx < self.size else []
@@ -669,3 +671,6 @@ class Distribution(object):
                                        dist=reduced_dist,
                                        grid_shape=reduced_grid_shape,
                                        targets=reduced_targets)
+
+    def localshapes(self):
+        return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
