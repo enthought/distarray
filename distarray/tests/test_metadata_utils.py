@@ -31,10 +31,13 @@ class TestGridSizes(unittest.TestCase):
 
     def test_dist_sizes(self):
         context = Context()
-        dist = Distribution.from_shape(context, (2, 3, 4, 5),
+        dist = Distribution.from_shape(context, (2, 3, 4),
                                        dist=('n', 'b', 'c'))
         ddpr = dist.get_dim_data_per_rank()
-        metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        if len(context.view) == 4:
+            self.assertEqual(shapes, [(2, 2, 2), (2, 2, 2), (2, 1, 2),
+                                      (2, 1, 2)])
 
 
 if __name__ == '__main__':
