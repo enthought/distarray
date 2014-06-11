@@ -670,3 +670,6 @@ class Distribution(object):
                                        dist=reduced_dist,
                                        grid_shape=reduced_grid_shape,
                                        targets=reduced_targets)
+
+    def localshapes(self):
+        return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
