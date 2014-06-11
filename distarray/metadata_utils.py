@@ -86,13 +86,6 @@ def normalize_grid_shape(grid_shape, shape, dist, comm_size):
     ndims = len(shape)
     grid_shape = tuple(grid_shape) + (1,) * (ndims - len(grid_shape))
 
-    # short circuit for special case
-    if all(x == 'n' for x in dist):
-        if not all(x == 1 for x in grid_shape):
-            raise ValueError("grid shape should be all `1`'s not %s." %
-                             grid_shape)
-        return grid_shape
-
     if len(grid_shape) != len(dist):
         msg = "grid_shape's length (%d) not equal to dist's length (%d)"
         raise InvalidGridShapeError(msg % (len(grid_shape), len(dist)))
