@@ -130,10 +130,10 @@ class DecoratorBase(object):
             client and return it.  If all but one of the pulled values is None,
             return that non-None value only.
         """
-        type_key = context._generate_key()
-        type_statement = "{} = str(type({}))".format(type_key, result_key)
-        context._execute(type_statement, targets=context.targets)
-        result_type_str = context._pull(type_key, targets=context.targets)
+        def get_type_str(key):
+            return str(type(key))
+        result_type_str = context.apply(get_type_str, args=(result_key,),
+                                        targets=context.targets)
 
         def is_NoneType(typestring):
             return (typestring == "<type 'NoneType'>" or
