@@ -37,7 +37,7 @@ class TestGridSizes(unittest.TestCase):
         dist = Distribution.from_shape(self.context, (2, 3, 4),
                                        dist=('n', 'b', 'c'))
         ddpr = dist.get_dim_data_per_rank()
-        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         if len(self.context.view) == 4:
             self.assertEqual(shapes, [(2, 2, 2), (2, 2, 2), (2, 1, 2),
                                       (2, 1, 2)])
@@ -50,7 +50,7 @@ class TestGridSizes(unittest.TestCase):
 
         dist = Distribution(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
-        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(42,)])
 
     def test_b_size(self):
@@ -63,7 +63,7 @@ class TestGridSizes(unittest.TestCase):
                     'stop': 42}
         dist = Distribution(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
-        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])
 
     def test_c_size(self):
@@ -74,7 +74,7 @@ class TestGridSizes(unittest.TestCase):
                     'start': 0}
         dist = Distribution(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
-        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(21,), (21,)])
 
     def test_bc_size(self):
@@ -87,7 +87,7 @@ class TestGridSizes(unittest.TestCase):
                     'start': 0}
         dist = Distribution(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
-        shapes = metadata_utils.get_shape_from_dim_data_per_rank(ddpr)
+        shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])
 
 

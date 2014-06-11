@@ -23,8 +23,7 @@ import numpy as np
 import distarray
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
-from distarray.metadata_utils import (normalize_reduction_axes,
-                                      get_shape_from_dim_data_per_rank)
+from distarray.metadata_utils import normalize_reduction_axes
 
 __all__ = ['DistArray']
 
@@ -263,8 +262,9 @@ class DistArray(object):
 
     def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
 
-        if any(0 in localshape for localshape in self.get_localshapes()):
-            raise NotImplementedError("Reduction not implemented for empty LocalArrays")
+        if any(0 in localshape for localshape in self.localshapes()):
+            raise NotImplementedError("Reduction not implemented for empty "
+                                      "LocalArrays")
 
         if out is not None:
             _raise_nie()
@@ -339,9 +339,8 @@ class DistArray(object):
             return key.copy()
         return self.context.apply(get, args=(self.key,), targets=self.targets)
 
-    def get_localshapes(self):
-        ddpr = self.distribution.get_dim_data_per_rank()
-        return get_shape_from_dim_data_per_rank(ddpr)
+    def localshapes(self):
+        return self.distribution.localshapes()
 
     # Binary operators
 

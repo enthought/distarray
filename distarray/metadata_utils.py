@@ -354,7 +354,7 @@ def size_chooser(dist_type):
     return chooser[dist_type]
 
 
-def get_shape_from_dim_data_per_rank(ddpr):  # ddpr = dim_data_per_rank
+def shapes_from_dim_data_per_rank(ddpr):  # ddpr = dim_data_per_rank
     """
     Given a dim_data_per_rank object, return the shapes of the localarrays.
     This requires no communication.

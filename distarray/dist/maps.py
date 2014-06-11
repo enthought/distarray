@@ -38,7 +38,8 @@ from distarray.metadata_utils import (normalize_dist,
                                       positivify,
                                       _start_stop_block,
                                       normalize_dim_dict,
-                                      normalize_reduction_axes)
+                                      normalize_reduction_axes,
+                                      shapes_from_dim_data_per_rank)
 
 
 def _dedup_dim_dicts(dim_dicts):
