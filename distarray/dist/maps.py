@@ -191,6 +191,7 @@ class NoDistMap(MapBase):
             msg = "grid_size for NoDistMap must be 1 (given %s)"
             raise ValueError(msg % grid_size)
         self.size = size
+        self.grid_size = grid_size
 
     def owners(self, idx):
         return [0] if 0 <= idx < self.size else []
