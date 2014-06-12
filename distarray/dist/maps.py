@@ -197,12 +197,10 @@ class NoDistMap(MapBase):
         self.grid_size = grid_size
 
     def index_owners(self, idx):
-        if isinstance(idx, Integral):
-            return [0] if 0 <= idx < self.size else []
-        elif isinstance(idx, slice):
-            return [0]  # slicing doesn't complain about out-of-bounds indices
-        else:
-            raise TypeError("Index must be Integral or slice.")
+        return [0] if 0 <= idx < self.size else []
+
+    def slice_owners(self, idx):
+        return [0]  # slicing doesn't complain about out-of-bounds indices
 
     def get_dimdicts(self):
         return ({
@@ -276,23 +274,22 @@ class BlockMap(MapBase):
 
     def index_owners(self, idx):
         coords = []
-        if isinstance(idx, Integral):
-            for (coord, (lower, upper)) in enumerate(self.bounds):
-                if lower <= idx < upper:
-                    coords.append(coord)
-            return coords
-        elif isinstance(idx, slice):
-            if idx.step not in {None, 1}:
-                msg = "Slicing only implemented for step=1"
-                raise NotImplementedError(msg)
-            for (coord, (lower, upper)) in enumerate(self.bounds):
-                slice_tuple = (idx.start if idx.start is not None else 0,
-                               idx.stop if idx.stop is not None else self.size)
-                if tuple_intersection((lower, upper), slice_tuple):
-                    coords.append(coord)
-            return coords if coords != [] else [0]
-        else:
-            raise TypeError("Index must be Integral or slice.")
+        for (coord, (lower, upper)) in enumerate(self.bounds):
+            if lower <= idx < upper:
+                coords.append(coord)
+        return coords
+
+    def slice_owners(self, idx):
+        coords = []
+        if idx.step not in {None, 1}:
+            msg = "Slicing only implemented for step=1"
+            raise NotImplementedError(msg)
+        for (coord, (lower, upper)) in enumerate(self.bounds):
+            slice_tuple = (idx.start if idx.start is not None else 0,
+                           idx.stop if idx.stop is not None else self.size)
+            if tuple_intersection((lower, upper), slice_tuple):
+                coords.append(coord)
+        return coords if coords != [] else [0]
 
     def get_dimdicts(self):
         grid_ranks = range(len(self.bounds))
@@ -367,12 +364,8 @@ class BlockCyclicMap(MapBase):
         self.block_size = block_size
 
     def index_owners(self, idx):
-        if isinstance(idx, Integral):
-            idx_block = idx // self.block_size
-            return [idx_block % self.grid_size]
-        else:
-            msg = "Index for BlockCyclicMap must be an Integral."
-            raise NotImplementedError(msg)
+        idx_block = idx // self.block_size
+        return [idx_block % self.grid_size]
 
     def get_dimdicts(self):
         return tuple(({'dist_type': 'c',
@@ -426,11 +419,7 @@ class UnstructuredMap(MapBase):
         # TODO: FIXME: for now, the unstructured map just returns all
         # processes.  Can be optimized if we know the upper and lower bounds
         # for each local array's global indices.
-        if isinstance(idx, Integral):
-            return self._index_owners
-        else:
-            msg = "Index for BlockCyclicMap must be an Integral."
-            raise NotImplementedError(msg)
+        return self._index_owners
 
     def get_dimdicts(self):
         if self.indices is None:
@@ -694,8 +683,14 @@ class Distribution(object):
         If the `idxs` tuple is out of bounds, raises `IndexError`.
         """
         _, idxs = sanitize_indices(idxs, ndim=self.ndim, shape=self.shape)
-        dim_coord_hits = [m.index_owners(idx) for (m, idx) in
-                          zip(self.maps, idxs)]
+        dim_coord_hits = []
+        for m, idx in zip(self.maps, idxs):
+            if isinstance(idx, Integral):
+                owners = m.index_owners(idx)
+            elif isinstance(idx, slice):
+                owners = m.slice_owners(idx)
+            dim_coord_hits.append(owners)
+
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
