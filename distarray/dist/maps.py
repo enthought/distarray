@@ -40,7 +40,8 @@ from distarray.metadata_utils import (normalize_dist,
                                       make_grid_shape,
                                       sanitize_indices,
                                       _start_stop_block,
-                                      tuple_intersection)
+                                      tuple_intersection,
+                                      shapes_from_dim_data_per_rank)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -469,7 +470,7 @@ class Distribution(object):
         self.ndim = len(dd0)
         self.dist = tuple(dd['dist_type'] for dd in dd0)
         self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
         coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
@@ -511,8 +512,6 @@ class Distribution(object):
 
         self = cls.__new__(cls)
         self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
         self.shape = shape
         self.ndim = len(shape)
 
@@ -521,13 +520,19 @@ class Distribution(object):
             dist = {0: 'b'}
         self.dist = normalize_dist(dist, self.ndim)
 
+        # all possible targets
+        all_targets = sorted(targets or context.targets)
         # grid_shape
         if grid_shape is None:
             grid_shape = make_grid_shape(self.shape, self.dist,
-                                         len(self.targets))
+                                         len(all_targets))
 
-        self.grid_shape = normalize_grid_shape(grid_shape, self.ndim,
-                                               self.dist, len(self.targets))
+        self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
+                                               self.dist, len(all_targets))
+        ntargets = reduce(operator.mul, self.grid_shape, 1)
+        # choose targets from grid_shape
+        self.targets = all_targets[:ntargets]
+        self.comm = self.context._make_subcomm(self.targets)
 
         # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
         # to how MPI does it.
@@ -637,11 +642,17 @@ class Distribution(object):
         self.dist = tuple(m.dist for m in self.maps)
         self.grid_shape = tuple(m.grid_size for m in self.maps)
 
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.ndim,
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
         nelts = reduce(operator.mul, self.grid_shape, 1)
         self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+
+    def __getitem__(self, idx):
+        return self.maps[idx]
+
+    def __len__(self):
+        return len(self.maps)
 
     @property
     def has_precise_index(self):
@@ -735,3 +746,6 @@ class Distribution(object):
                                        dist=reduced_dist,
                                        grid_shape=reduced_grid_shape,
                                        targets=reduced_targets)
+
+    def localshapes(self):
+        return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
