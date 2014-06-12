@@ -212,6 +212,13 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[...].toarray(),
                            expected[...])
 
+    def test_resulting_slice(self):
+        dist = Distribution.from_shape(self.context, (10, 20))
+        da = self.context.ones(dist)
+        db = da[:5, :10]
+        dc = db * 2
+        assert_array_equal(dc.toarray(), numpy.ones(dc.shape) * 2)
+
 
 class TestSetItemSlicing(ContextTestCase):
 
