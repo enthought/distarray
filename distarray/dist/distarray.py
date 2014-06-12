@@ -204,8 +204,12 @@ class DistArray(object):
 
         # to be run locally
         def set_slice(arr, index, value, value_slices):
-            local_slice = value_slices[arr.comm_rank]
-            arr.global_index[index] = value[local_slice]
+            from distarray.local.localarray import LocalArray
+            slice_ = value_slices[arr.comm_rank]
+            if isinstance(value, LocalArray):
+                arr.global_index[index] = value.ndarray
+            else:
+                arr.global_index[index] = value[slice_]
 
         set_type, index = sanitize_indices(index, ndim=self.ndim,
                                            shape=self.shape)
@@ -216,13 +220,20 @@ class DistArray(object):
             if set_type == 'value':
                 local_fn = raw_setitem
             elif set_type == 'view':
-                args[-1] = np.asarray(args[-1])  # convert to array
+                new_distribution = self.distribution.slice(index)
                 # this could be made more efficient
                 # we only need the bounds computed by distribution.slice
-                new_distribution = self.distribution.slice(index)
-                if args[-1].shape != new_distribution.shape:
-                    msg = "Slice shape does not equal rvalue shape."
-                    raise ValueError(msg)
+                if isinstance(args[-1], DistArray):
+                    if not args[-1].distribution.is_compatible(
+                            new_distribution):
+                        msg = "rvalue Distribution not compatible."
+                        raise ValueError(msg)
+                    args[-1] = args[-1].key
+                else:
+                    args[-1] = np.asarray(args[-1])  # convert to array
+                    if args[-1].shape != new_distribution.shape:
+                        msg = "Slice shape does not equal rvalue shape."
+                        raise ValueError(msg)
                 ddpr = new_distribution.get_dim_data_per_rank()
                 def bounds_slice(dd):
                     if dd['dist_type'] == 'b':
