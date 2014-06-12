@@ -18,11 +18,12 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 
 import unittest
 
-from distarray.dist import Context, Distribution
+from distarray.testing import ContextTestCase
+from distarray.dist import Distribution
 from distarray.testing import import_or_skip
 
 
-class TestContext(unittest.TestCase):
+class TestPlotting(ContextTestCase):
     """Test Context methods"""
 
     @classmethod
@@ -30,14 +31,9 @@ class TestContext(unittest.TestCase):
         # raise a skipTest if plotting import fails
         # (because matplotlib isn't installed, probably)
         cls.plt = import_or_skip("distarray.plotting")
-        cls.context = Context()
+        super(TestPlotting, cls).setUpClass()
         cls.da = Distribution.from_shape(cls.context, (64, 64))
         cls.arr = cls.context.ones(cls.da)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Close the client connections"""
-        cls.context.close()
 
     def test_plot_array_distribution(self):
         # Only tests that this runs, not that it's correct
