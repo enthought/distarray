@@ -499,18 +499,23 @@ class DistArray(object):
         ubercomm = self.distribution.comm_union(dist)
         result = DistArray(dist, dtype=self.dtype)
 
-        def _local_redistribute(comm, plan, la0, la1):
+        def _local_redistribute(comm, plan, la_from, la_to):
             myrank = comm.Get_rank()
             for dta in plan:
                 if dta['from_rank'] == myrank:
-                    comm.Send(la0.ndarray, dest=dta['to_rank'])
-                if dta['to_rank'] == myrank:
-                    comm.Recv(la1.ndarray, source=dta['from_rank'])
+                    start, stop = dta['from_indices'][:2]
+                    local_start, local_stop = map(la_from.local_from_global, (start, stop-1))
+                    from_slice = slice(local_start[0], local_stop[0] + 1)
+                    comm.Send(la_from.ndarray[from_slice], dest=dta['to_rank'])
+                elif dta['to_rank'] == myrank:
+                    start, stop = dta['to_indices'][:2]
+                    local_start, local_stop = map(la_to.local_from_global, (start, stop-1))
+                    to_slice = slice(local_start[0], local_stop[0] + 1)
+                    comm.Recv(la_to.ndarray[to_slice], source=dta['from_rank'])
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=self.context.targets)
         return result
-        # return self.context.ones(dist)
 
     # Binary operators
 
