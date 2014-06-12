@@ -235,7 +235,7 @@ class DistArray(object):
                 value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
                                  for dim_data in ddpr]
                 # but we need a data structure indexable by a target's rank
-                # assume contigious range of targets here
+                # assume contiguous range of targets here
                 value_slices_per_target = [None] * len(self.targets)
                 value_slices_per_target[targets[0]:targets[-1]] = value_slices
                 args.append(value_slices_per_target)
