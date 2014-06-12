@@ -595,6 +595,11 @@ class TestReduceMethods(ContextTestCase):
             assert_allclose(darr_sum.tondarray(), arr_sum)
         assert_allclose(darr.sum().tondarray(), arr.sum())
 
+    def test_gh_435_regression_with_var(self):
+        dist = Distribution.from_shape(self.context, shape=(14,), dist=('b'))
+        darr = self.context.ones(dist)
+        darr.var()
+
 
 class TestFromLocalArrays(ContextTestCase):
 
