@@ -978,28 +978,28 @@ def mean_reducer(reduce_comm, larr, out, axes, dtype):
 
 def var_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for var."""
+    temp = larr.copy()
+    temp.ndarray = temp.ndarray.astype(float)
+
+    # We hold the intermediate means in `mean`.
     mean = empty_like(out, dtype=float) if out is not None else None
     mean = mean_reducer(reduce_comm, larr, mean, axes, dtype=float)
 
-    temp = empty_like(larr, dtype=float)
+    # Have to broadcast mean.ndarray to all ranks in this reduce_comm.
+    mean = reduce_comm.bcast(mean, root=0)
 
-    # Make mean.ndarray's shape broadcastable.
-    if mean is not None:
-        mean_shape = tuple(1 if axis in axes else s
-                           for (axis, s) in enumerate(larr.ndarray.shape))
-        mean.ndarray.shape = mean_shape
-        # Copy mean.ndarray into temp.ndarray
-        temp.ndarray[...] = mean.ndarray
+    mean_shape = []
+    for (ax, s) in enumerate(larr.ndarray.shape):
+        mean_shape.append(1 if ax in axes else s)
+    mean_shape = tuple(mean_shape)
 
-    # have to broadcast mean.ndarray to all ranks in this reduce_comm.
-    reduce_comm.Bcast(temp.ndarray, root=0)
+    mean.ndarray.shape = mean_shape
 
     # Do the variance calculation.
-    temp.ndarray[...] = (larr.ndarray - temp.ndarray) ** 2
+    temp.ndarray[...] = (larr.ndarray - mean.ndarray) ** 2
 
     # Get the mean reduction of temp's data.
     mean_reducer(reduce_comm, temp, out, axes, dtype)
-
     return out
 
 
