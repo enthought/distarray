@@ -46,7 +46,8 @@ def unary_proxy(name):
             res = func(arr_name, *args, **kwargs)
             return proxyize(res), res.dtype  # noqa
 
-        res = context.apply(func_call, args=(name, a.key, args, kwargs))
+        res = context.apply(func_call, args=(name, a.key, args, kwargs),
+                            targets=a.targets)
         new_key = res[0][0]
         dtype = res[0][1]
         return DistArray.from_localarrays(new_key,
@@ -84,7 +85,8 @@ def binary_proxy(name):
             res = func(a, b, *args, **kwargs)
             return proxyize(res), res.dtype  # noqa
 
-        res = context.apply(func_call, args=(name, a_key, b_key, args, kwargs))
+        res = context.apply(func_call, args=(name, a_key, b_key, args, kwargs),
+                            targets=distribution.targets)
         new_key = res[0][0]
         dtype = res[0][1]
         return DistArray.from_localarrays(new_key,

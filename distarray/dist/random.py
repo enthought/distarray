@@ -62,7 +62,7 @@ class Random(object):
         da_key = self.context._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
-        comm_name = self.context.comm
+        comm_name = distribution.comm
         self.context._execute(
             '{da_key} = distarray.local.random.rand('
             'distribution=distarray.local.maps.Distribution('
@@ -122,7 +122,7 @@ class Random(object):
         ddpr = distribution.get_dim_data_per_rank()
         loc_name, scale_name, ddpr_name = \
             self.context._key_and_push(loc, scale, ddpr)
-        comm_name = self.context.comm
+        comm_name = distribution.comm
         self.context._execute(
             '{da_key} = distarray.local.random.normal('
             'loc={loc_name}, scale={scale_name},'
@@ -160,7 +160,7 @@ class Random(object):
         ddpr = distribution.get_dim_data_per_rank()
         low_name, high_name, ddpr_name = \
             self.context._key_and_push(low, high, ddpr)
-        comm_name = self.context.comm
+        comm_name = distribution.comm
         self.context._execute(
             '{da_key} = distarray.local.random.randint('
             'low={low_name}, high={high_name},'
@@ -186,7 +186,7 @@ class Random(object):
         da_key = self.context._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
         ddpr_name = self.context._key_and_push(ddpr)[0]
-        comm_name = self.context.comm
+        comm_name = distribution.comm
         self.context._execute(
             '{da_key} = distarray.local.random.randn('
             'distribution=distarray.local.maps.Distribution('

@@ -297,10 +297,7 @@ class DistArray(object):
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
-        local_name = self.context._generate_key()
-        self.context._execute('%s = %s.copy()' % (local_name, self.key),
-                              targets=self.targets)
-        local_arrays = self.context._pull(local_name, targets=self.targets)
+        local_arrays = self.get_localarrays()
         for local_array in local_arrays:
             maps = (list(ax_map.global_iter) for ax_map in
                     local_array.distribution)
@@ -310,14 +307,6 @@ class DistArray(object):
 
     toarray = tondarray
 
-    def get_dist_matrix(self):
-        key = self.context._generate_key()
-        self.context._execute0(
-            '%s = %s.get_dist_matrix()' % (key, self.key),
-            targets=self.targets)
-        result = self.context._pull(key, targets=self.targets[0])
-        return result
-
     def fill(self, value):
         def inner_fill(arr, value):
             arr.fill(value)
@@ -325,8 +314,9 @@ class DistArray(object):
 
     def _reduce(self, local_reduce_name, axes=None, dtype=None, out=None):
 
-        if any(0 in localshape for localshape in self.get_localshapes()):
-            raise NotImplementedError("Reduction not implemented for empty LocalArrays")
+        if any(0 in localshape for localshape in self.localshapes()):
+            raise NotImplementedError("Reduction not implemented for empty "
+                                      "LocalArrays")
 
         if out is not None:
             _raise_nie()
@@ -384,11 +374,9 @@ class DistArray(object):
             one ndarray per process
 
         """
-        key = self.context._generate_key()
-        self.context._execute('%s = %s.get_localarray()' % (key, self.key),
-                              targets=self.targets)
-        result = self.context._pull(key, targets=self.targets)
-        return result
+        def get(key):
+            return key.get_localarray()
+        return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localarrays(self):
         """Pull the LocalArray objects from the engines.
@@ -399,15 +387,12 @@ class DistArray(object):
             one localarray per process
 
         """
-        result = self.context._pull(self.key, targets=self.targets)
-        return result
+        def get(key):
+            return key.copy()
+        return self.context.apply(get, args=(self.key,), targets=self.targets)
 
-    def get_localshapes(self):
-        key = self.context._generate_key()
-        self.context._execute('%s = %s.local_shape' % (key, self.key),
-                              targets=self.targets)
-        result = self.context._pull(key, targets=self.targets)
-        return result
+    def localshapes(self):
+        return self.distribution.localshapes()
 
     # Binary operators
 

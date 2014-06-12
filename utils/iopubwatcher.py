@@ -67,7 +67,7 @@ def main(connection_file):
         elif msg['msg_type'] == 'pyerr':
             # Python traceback
             c = msg['content']
-            print(topic + ':')
+            print(topic + b':')
             for line in c['traceback']:
                 # indent lines
                 print('    ' + line)
