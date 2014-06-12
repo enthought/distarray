@@ -114,6 +114,64 @@ class TestDistArray(ContextTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
+class TestGetItemSlicing(ContextTestCase):
+
+    def test_full_slice_block_dist(self):
+        size = 10
+        expected = numpy.random.randint(11, size=size)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[:].toarray(), expected)
+
+    def test_partial_slice_block_dist(self):
+        size = 10
+        expected = numpy.random.randint(10, size=size)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[0:2].toarray(), expected[0:2])
+
+    def test_slice_a_slice_block_dist_0(self):
+        size = 10
+        expected = numpy.random.randint(10, size=size)
+        arr = self.context.fromarray(expected)
+        s0 = arr[:9]
+        s1 = s0[0:5]
+        s2 = s1[:2]
+        assert_array_equal(s2.toarray(), expected[:2])
+
+    def test_slice_a_slice_block_dist_1(self):
+        size = 10
+        expected = numpy.random.randint(10, size=size)
+        arr = self.context.fromarray(expected)
+        s0 = arr[:9]
+        s1 = s0[0:5]
+        s2 = s1[-2:]
+        assert_array_equal(s2.toarray(), expected[3:5])
+
+    def test_partial_slice_block_dist_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[2:6, 3:10].toarray(), expected[2:6, 3:10])
+
+    def test_partial_negative_slice_block_dist_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[-6:-2, -10:-3].toarray(),
+                           expected[-6:-2, -10:-3])
+
+    def test_incomplete_slice_block_dist_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[3:9].toarray(), expected[3:9])
+
+    def test_incomplete_index_block_dist_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[1].toarray(), expected[1])
+
+
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
     def test_from_global_dim_data_irregular_block(self):

@@ -17,10 +17,12 @@ from __future__ import absolute_import
 import operator
 from itertools import product
 from functools import reduce
+from collections import Sequence
 
 import numpy as np
 
 import distarray
+from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
 from distarray.metadata_utils import normalize_reduction_axes
@@ -31,7 +33,6 @@ __all__ = ['DistArray']
 # ---------------------------------------------------------------------------
 # Code
 # ---------------------------------------------------------------------------
-
 
 class DistArray(object):
 
@@ -84,7 +85,8 @@ class DistArray(object):
 
         # has context, get dist and dtype
         elif (distribution is None) and (dtype is None):
-            res = context.apply(get_dim_datas_and_dtype, args=(key,))
+            res = context.apply(get_dim_datas_and_dtype, args=(key,),
+                                targets=targets)
             dim_datas = [i[0] for i in res]
             dtypes = [i[1] for i in res]
             da._dtype = dtypes[0]
@@ -95,7 +97,8 @@ class DistArray(object):
         # has context and dtype, get dist
         elif (distribution is None) and (dtype is not None):
             da._dtype = dtype
-            dim_datas = context.apply(getattr, args=(key, 'dim_data'))
+            dim_datas = context.apply(getattr, args=(key, 'dim_data'),
+                                      targets=targets)
             da.distribution = Distribution.from_dim_data_per_rank(context,
                                                                   dim_datas,
                                                                   targets)
@@ -128,10 +131,31 @@ class DistArray(object):
             (self.shape, self.targets)
         return s
 
+    def _process_return_value(self, result, return_proxy, index, targets):
+
+        if return_proxy:
+            # proxy returned as result of slice
+            # slicing shouldn't alter the dtype
+            result = result[0]
+            return DistArray.from_localarrays(key=result,
+                                              context=self.context,
+                                              targets=targets,
+                                              dtype=self.dtype)
+
+        elif isinstance(result, Sequence):
+            somethings = [i for i in result if i is not None]
+            if len(somethings) == 0:
+                # using checked_getitem and all return None
+                raise IndexError("Index %r is is not present." % (index,))
+            if len(somethings) == 1:
+                return somethings[0]
+            else:
+                return result
+        else:
+            assert False  # impossible is nothing
+
+
     def __getitem__(self, index):
-        #TODO: FIXME: major performance improvements possible here,
-        # especially for special cases like `index == slice(None)`.
-        # This would dramatically improve tondarray's performance.
 
         # to be run locally
         def checked_getitem(arr, index):
@@ -141,30 +165,34 @@ class DistArray(object):
         def raw_getitem(arr, index):
             return arr.global_index[index]
 
-        if isinstance(index, int) or isinstance(index, slice):
-            tuple_index = (index,)
-            return self.__getitem__(tuple_index)
+        # to be run locally
+        def get_slice(arr, index, ddpr, comm):
+            from distarray.local.maps import Distribution
+            local_distribution = Distribution(comm=comm,
+                                              dim_data=ddpr[comm.Get_rank()])
+            result = arr.global_index.get_slice(index, local_distribution)
+            return proxyize(result)
 
-        elif isinstance(index, tuple):
-            targets = self.distribution.owning_targets(index)
+        return_type, index = sanitize_indices(index, ndim=self.ndim,
+                                              shape=self.shape)
+        return_proxy = (return_type == 'view')
+        targets = self.distribution.owning_targets(index)
 
-            args = (self.key, index)
-            if self.distribution.has_precise_index:
-                result = self.context.apply(raw_getitem, args=args,
-                                            targets=targets)
-            else:
-                result = self.context.apply(checked_getitem, args=args,
-                                            targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) != 1:
-                raise IndexError("Getting more than one result (%s) is not "
-                                 "supported yet." % (result,))
-            elif result is None:
-                raise IndexError("Index %r is out of bounds" % (index,))
-            else:
-                return result[0]
-        else:
-            raise TypeError("Invalid index type.")
+        args = [self.key, index]
+        if self.distribution.has_precise_index:
+            if return_proxy:  # returning a new DistArray view
+                new_distribution = self.distribution.slice(index)
+                ddpr = new_distribution.get_dim_data_per_rank()
+                args.extend([ddpr, new_distribution.comm])
+                local_fn = get_slice
+            else:  # returning a value
+                local_fn = raw_getitem
+        else:  # returning a value from unstructured
+            local_fn = checked_getitem
+
+        result = self.context.apply(local_fn, args=args, targets=targets)
+        return self._process_return_value(result, return_proxy, index, targets)
+
 
     def __setitem__(self, index, value):
         #TODO: FIXME: major performance improvements possible here.
@@ -181,26 +209,21 @@ class DistArray(object):
         def raw_setitem(arr, index, value):
             arr.global_index[index] = value
 
-        if isinstance(index, int) or isinstance(index, slice):
-            tuple_index = (index,)
-            return self.__setitem__(tuple_index, value)
+        _, index = sanitize_indices(index, ndim=self.ndim, shape=self.shape)
 
-        elif isinstance(index, tuple):
-            targets = self.distribution.owning_targets(index)
-            args = (self.key, index, value)
-            if self.distribution.has_precise_index:
-                self.context.apply(raw_setitem, args=args, targets=targets)
-            else:
-                result = self.context.apply(checked_setitem, args=args,
-                                            targets=targets)
-                result = [i for i in result if i is not None]
-                if len(result) > 1:
-                    raise IndexError("Setting more than one result (%s) is "
-                                     "not supported yet." % (result,))
-                elif result == []:
-                    raise IndexError("Index %s is out of bounds" % (index,))
+        targets = self.distribution.owning_targets(index)
+        args = (self.key, index, value)
+        if self.distribution.has_precise_index:
+            self.context.apply(raw_setitem, args=args, targets=targets)
         else:
-            raise TypeError("Invalid index type.")
+            result = self.context.apply(checked_setitem, args=args,
+                                        targets=targets)
+            result = [i for i in result if i is not None]
+            if len(result) > 1:
+                raise IndexError("Setting more than one result (%s) is "
+                                 "not supported yet." % (result,))
+            elif result == []:
+                raise IndexError("Index %s is out of bounds" % (index,))
 
     @property
     def context(self):

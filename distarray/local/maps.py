@@ -22,6 +22,7 @@ from __future__ import division
 
 import operator
 from functools import reduce
+from numbers import Integral
 
 import numpy as np
 from distarray.externals.six.moves import range, zip
@@ -29,7 +30,11 @@ from distarray.externals.six.moves import range, zip
 from distarray.local import construct
 from distarray.metadata_utils import (make_grid_shape, normalize_grid_shape,
                                       normalize_dist, distribute_indices,
-                                      positivify)
+                                      sanitize_indices)
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(np.signedinteger)
+Integral.register(np.unsignedinteger)
 
 
 class Distribution(object):
@@ -134,14 +139,28 @@ class Distribution(object):
 
     def local_from_global(self, *global_ind):
         """ Given `global_ind` indices, translate into local indices."""
-        global_ind = tuple(map(positivify, global_ind, self.global_shape))
-        return tuple(self._maps[dim].local_from_global(global_ind[dim])
-                     for dim in range(self.ndim))
+        _, idxs = sanitize_indices(global_ind, self.ndim, self.global_shape)
+        local_idxs = []
+        for m, idx in zip(self._maps, global_ind):
+            if isinstance(idx, Integral):
+                local_idxs.append(m.local_from_global_index(idx))
+            elif isinstance(idx, slice):
+                local_idxs.append(m.local_from_global_slice(idx))
+            else:
+                raise TypeError("Index must be Integral or slice.")
+        return tuple(local_idxs)
 
     def global_from_local(self, *local_ind):
         """ Given `local_ind` indices, translate into global indices."""
-        return tuple(self._maps[dim].global_from_local(local_ind[dim])
-                     for dim in range(self.ndim))
+        global_idxs = []
+        for m, idx in zip(self._maps, local_ind):
+            if isinstance(idx, Integral):
+                global_idxs.append(m.global_from_local_index(idx))
+            elif isinstance(idx, slice):
+                global_idxs.append(m.global_from_local_slice(idx))
+            else:
+                raise TypeError("Index must be Integral or slice.")
+        return tuple(global_idxs)
 
 
 def map_from_dim_dict(dd):
@@ -199,15 +218,29 @@ class BlockMap(MapBase):
         self.grid_size = grid_size
         self.grid_rank = grid_rank
 
-    def local_from_global(self, gidx):
+    def local_from_global_index(self, gidx):
         if gidx < self.start or gidx >= self.stop:
             raise IndexError("Global index %s out of bounds" % gidx)
         return gidx - self.start
 
-    def global_from_local(self, lidx):
+    def local_from_global_slice(self, gidx):
+        start = gidx.start if gidx.start is not None else 0
+        stop = gidx.stop if gidx.stop is not None else self.global_size
+        new_start = max(start - self.start, 0)  # prevent negative inds
+        new_stop = stop - self.start
+        return slice(new_start, new_stop)
+
+    def global_from_local_index(self, lidx):
         if lidx >= self.local_size:
             raise IndexError("Local index %s out of bounds" % lidx)
         return lidx + self.start
+
+    def global_from_local_slice(self, lidx):
+        start = lidx.start if lidx.start is not None else 0
+        stop = lidx.stop if lidx.stop is not None else self.global_size
+        new_start = start + self.start
+        new_stop = stop + self.start
+        return slice(new_start, new_stop)
 
     @property
     def dim_dict(self):
@@ -248,13 +281,12 @@ class CyclicMap(MapBase):
         self.local_size = (global_size - 1 - grid_rank) // grid_size + 1
         self.global_size = global_size
 
-
-    def local_from_global(self, gidx):
+    def local_from_global_index(self, gidx):
         if (gidx - self.start) % self.grid_size:
             raise IndexError("Global index %s out of bounds" % gidx)
         return (gidx - self.start) // self.grid_size
 
-    def global_from_local(self, lidx):
+    def global_from_local_index(self, lidx):
         if lidx >= self.local_size:
             raise IndexError("Local index %s out of bounds" % lidx)
         return (lidx * self.grid_size) + self.start
@@ -299,14 +331,13 @@ class BlockCyclicMap(MapBase):
         self.local_size = local_nblocks * block_size + local_partial
         self.global_size = global_size
 
-
-    def local_from_global(self, gidx):
+    def local_from_global_index(self, gidx):
         global_block, offset = divmod(gidx, self.block_size)
         if (global_block - self.start_block) % self.grid_size:
             raise IndexError("Global index %s out of bounds" % gidx)
         return self.block_size * ((global_block - self.start_block) // self.grid_size) + offset
 
-    def global_from_local(self, lidx):
+    def global_from_local_index(self, lidx):
         if lidx >= self.local_size:
             raise IndexError("Local index %s out of bounds" % lidx)
         local_block, offset = divmod(lidx, self.block_size)
@@ -328,7 +359,7 @@ class BlockCyclicMap(MapBase):
         _global_index = np.empty((self.local_size,), dtype=np.int32)
         # FIXME: this is the slow way to do this...
         for i in range(self.local_size):
-            _global_index[i] = self.global_from_local(i)
+            _global_index[i] = self.global_from_local_index(i)
         return iter(_global_index)
 
     @property
@@ -351,14 +382,14 @@ class UnstructuredMap(MapBase):
         local_indices = range(self.local_size)
         self._local_index = dict(zip(self.indices, local_indices))
 
-    def local_from_global(self, gidx):
+    def local_from_global_index(self, gidx):
         try:
             lidx = self._local_index[gidx]
         except KeyError:
             raise IndexError("Global index %s out of bounds" % gidx)
         return lidx
 
-    def global_from_local(self, lidx):
+    def global_from_local_index(self, lidx):
         return self.indices[lidx]
 
     @property

@@ -11,37 +11,22 @@ from __future__ import print_function, division
 # Imports
 # ---------------------------------------------------------------------------
 from collections import Mapping
-from numbers import Integral
 
 import numpy as np
 
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.local.mpiutils import MPI
 from distarray.utils import _raise_nie
+from distarray.metadata_utils import sanitize_indices
+
+from distarray.local.mpiutils import MPI
 from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-# Register numpy integer types with numbers.Integral ABC.
-Integral.register(np.signedinteger)
-Integral.register(np.unsignedinteger)
-
-
-def _sanitize_indices(indices):
-    if isinstance(indices, Integral) or isinstance(indices, slice):
-        return (indices,)
-    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
-        return indices
-    else:
-        raise TypeError("Index must be a sequence of ints and slices")
-
-
 class GlobalIndex(object):
-    """Object which provides access to global indexing on
-    LocalArrays.
-    """
+    """Object which provides access to global indexing on LocalArrays."""
     def __init__(self, distribution, ndarray):
         self.distribution = distribution
         self.ndarray = ndarray
@@ -65,16 +50,32 @@ class GlobalIndex(object):
     def local_to_global(self, *local_ind):
         return self.distribution.global_from_local(*local_ind)
 
-    def __getitem__(self, global_inds):
-        global_inds = _sanitize_indices(global_inds)
+    def get_slice(self, global_inds, new_distribution):
         try:
             local_inds = self.global_to_local(*global_inds)
-            return self.ndarray[local_inds]
+        except KeyError as err:
+            raise IndexError(err)
+        view = self.ndarray[local_inds]
+        return LocalArray(distribution=new_distribution,
+                          dtype=self.ndarray.dtype,
+                          buf=view)
+
+    def __getitem__(self, global_inds):
+        return_type, global_inds = sanitize_indices(global_inds)
+        if return_type == 'view':
+            msg = "__getitem__ does not support slices.  See `get_slice`."
+            raise TypeError(msg)
+
+        try:
+            local_inds = self.global_to_local(*global_inds)
         except KeyError as err:
             raise IndexError(err)
 
+        return self.ndarray[local_inds]
+
+
     def __setitem__(self, global_inds, value):
-        global_inds = _sanitize_indices(global_inds)
+        _, global_inds = sanitize_indices(global_inds)
         try:
             local_inds = self.global_to_local(*global_inds)
             self.ndarray[local_inds] = value
@@ -399,7 +400,14 @@ class LocalArray(object):
 
     def __getitem__(self, index):
         """Get a local item."""
-        return self.ndarray[index]
+        return_type, index = sanitize_indices(index)
+        if return_type == 'value':
+            return self.ndarray[index]
+        elif return_type == 'view':
+            msg = "__getitem__ does not support slices.  See `global_index.get_item`."
+            raise TypeError(msg)
+        else:
+            assert False  # impossible is nothing
 
     def __setitem__(self, index, value):
         """Set a local item."""

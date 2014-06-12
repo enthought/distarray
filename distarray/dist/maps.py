@@ -26,6 +26,7 @@ from __future__ import absolute_import
 import operator
 from itertools import product
 from abc import ABCMeta, abstractmethod
+from numbers import Integral
 
 import numpy as np
 
@@ -34,11 +35,12 @@ from distarray.externals.six.moves import range, reduce
 from distarray.utils import remove_elements
 from distarray.metadata_utils import (normalize_dist,
                                       normalize_grid_shape,
-                                      make_grid_shape,
-                                      positivify,
-                                      _start_stop_block,
                                       normalize_dim_dict,
                                       normalize_reduction_axes,
+                                      make_grid_shape,
+                                      sanitize_indices,
+                                      _start_stop_block,
+                                      tuple_intersection,
                                       shapes_from_dim_data_per_rank)
 
 
@@ -137,13 +139,13 @@ class MapBase(object):
     dimension of a distributed array.  Maps allow distributed arrays to keep
     track of which process to talk to when indexing and slicing.
 
-    Classes that inherit from `MapBase` must implement the `owners()`
+    Classes that inherit from `MapBase` must implement the `index_owners()`
     abstractmethod.
 
     """
 
     @abstractmethod
-    def owners(self, idx):
+    def index_owners(self, idx):
         """ Returns a list of process IDs in this dimension that might possibly
         own `idx`.
 
@@ -194,8 +196,11 @@ class NoDistMap(MapBase):
         self.size = size
         self.grid_size = grid_size
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         return [0] if 0 <= idx < self.size else []
+
+    def slice_owners(self, idx):
+        return [0]  # slicing doesn't complain about out-of-bounds indices
 
     def get_dimdicts(self):
         return ({
@@ -204,6 +209,19 @@ class NoDistMap(MapBase):
             'proc_grid_size': 1,
             'proc_grid_rank': 0,
             },)
+
+    def slice(self, idx):
+        """Make a new Map from a slice."""
+        start = idx.start if idx.start is not None else 0
+        stop = idx.stop if idx.stop is not None else self.size
+        intersection = tuple_intersection((0, self.size), (start, stop))
+        if intersection:
+            intersection_size = intersection[1] - intersection[0]
+        else:
+            intersection_size = 0
+
+        return {'dist_type': self.dist,
+                'size': intersection_size}
 
 
 class BlockMap(MapBase):
@@ -254,12 +272,24 @@ class BlockMap(MapBase):
                        for grid_rank in range(grid_size)]
         self.boundary_padding = self.comm_padding = 0
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         coords = []
         for (coord, (lower, upper)) in enumerate(self.bounds):
             if lower <= idx < upper:
                 coords.append(coord)
         return coords
+
+    def slice_owners(self, idx):
+        coords = []
+        if idx.step not in {None, 1}:
+            msg = "Slicing only implemented for step=1"
+            raise NotImplementedError(msg)
+        for (coord, (lower, upper)) in enumerate(self.bounds):
+            slice_tuple = (idx.start if idx.start is not None else 0,
+                           idx.stop if idx.stop is not None else self.size)
+            if tuple_intersection((lower, upper), slice_tuple):
+                coords.append(coord)
+        return coords if coords != [] else [0]
 
     def get_dimdicts(self):
         grid_ranks = range(len(self.bounds))
@@ -281,6 +311,22 @@ class BlockMap(MapBase):
                 'padding': padding,
                 })
         return tuple(out)
+
+    def slice(self, idx):
+        """Make a new Map from a slice."""
+        new_bounds = [0]
+        start = idx.start if idx.start is not None else 0
+        # iterate over the processes in this dimension
+        for proc_start, proc_stop in self.bounds:
+            stop = idx.stop if idx.stop is not None else proc_stop
+            intersection = tuple_intersection((proc_start, proc_stop),
+                                              (start, stop))
+            if intersection:
+                size = intersection[1] - intersection[0]
+                new_bounds.append(size + new_bounds[-1])
+
+        return {'dist_type': self.dist,
+                'bounds': new_bounds}
 
 
 class BlockCyclicMap(MapBase):
@@ -317,7 +363,7 @@ class BlockCyclicMap(MapBase):
         self.grid_size = grid_size
         self.block_size = block_size
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         idx_block = idx // self.block_size
         return [idx_block % self.grid_size]
 
@@ -367,13 +413,13 @@ class UnstructuredMap(MapBase):
         if self.indices is not None:
             # Convert to NumPy arrays if not already.
             self.indices = [np.asarray(ind) for ind in self.indices]
-        self._owners = range(self.grid_size)
+        self._index_owners = range(self.grid_size)
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         # TODO: FIXME: for now, the unstructured map just returns all
         # processes.  Can be optimized if we know the upper and lower bounds
         # for each local array's global indices.
-        return self._owners
+        return self._index_owners
 
     def get_dimdicts(self):
         if self.indices is None:
@@ -607,6 +653,24 @@ class Distribution(object):
         """
         return not any(isinstance(m, UnstructuredMap) for m in self.maps)
 
+    def slice(self, index_tuple):
+        """Make a new Distribution from a slice."""
+        new_targets = self.owning_targets(index_tuple)
+        global_dim_data = []
+        # iterate over the dimensions
+        for map_, idx in zip(self.maps, index_tuple):
+            if isinstance(idx, Integral):
+                continue  # integral indexing returns reduced dimensionality
+            elif isinstance(idx, slice):
+                global_dim_data.append(map_.slice(idx))
+            else:
+                msg = "Index must be a sequence of Integrals and slices."
+                raise TypeError(msg)
+
+        return self.__class__(context=self.context,
+                              global_dim_data=global_dim_data,
+                              targets=new_targets)
+
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
         `idxs` tuple.
@@ -618,8 +682,15 @@ class Distribution(object):
 
         If the `idxs` tuple is out of bounds, raises `IndexError`.
         """
-        idxs = map(positivify, idxs, self.shape) # positivify and check
-        dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
+        _, idxs = sanitize_indices(idxs, ndim=self.ndim, shape=self.shape)
+        dim_coord_hits = []
+        for m, idx in zip(self.maps, idxs):
+            if isinstance(idx, Integral):
+                owners = m.index_owners(idx)
+            elif isinstance(idx, slice):
+                owners = m.slice_owners(idx)
+            dim_coord_hits.append(owners)
+
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks

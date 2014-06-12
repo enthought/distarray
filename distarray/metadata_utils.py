@@ -7,13 +7,19 @@
 import operator
 from itertools import product
 from functools import reduce
+from numbers import Integral
 from collections import Sequence, Mapping
 
 import numpy
 
 from distarray import utils
 from distarray.externals.six import next
-from distarray.externals.six.moves import map
+from distarray.externals.six.moves import map, zip
+
+
+# Register numpy integer types with numbers.Integral ABC.
+Integral.register(numpy.signedinteger)
+Integral.register(numpy.unsignedinteger)
 
 
 class InvalidGridShapeError(Exception):
@@ -266,13 +272,112 @@ def normalize_dim_dict(dd):
         dd['proc_grid_rank'] = 0
 
 
-def positivify(index, size):
-    if 0 <= index < size:
+def _positivify(index, size):
+    """Return a positive index offset from a Sequence's start."""
+    if index is None or index >= 0:
         return index
-    elif -size <= index < 0:
+    elif index < 0:
         return size + index
+
+def _check_bounds(index, size):
+    """Check if an index is in bounds.
+
+    Assumes a positive index as returned by _positivify.
+    """
+    if not 0 <= index < size:
+        raise IndexError("Index %r out of bounds" % index)
+
+
+def tuple_intersection(t1, t2):
+    """Compute intersection of two (start, stop) tuples.
+
+    Parameters
+    ----------
+    t1, t2 : 2-tuples
+
+    Returns
+    -------
+    2-tuple or None
+    """
+    stop = min(t1[1], t2[1])
+    start = max(t1[0], t2[0])
+    return (start, stop) if stop - start > 0 else None
+
+
+def positivify(index, size):
+    """Check that an index is within bounds and return a positive version.
+
+    Parameters
+    ----------
+    index : Integral or slice
+    size : Integral
+
+    Raises
+    ------
+    IndexError
+        for out-of-bounds indices
+    NotImplementedError
+        for negative steps
+    """
+    if isinstance(index, Integral):
+        index = _positivify(index, size)
+        _check_bounds(index, size)
+        return index
+    elif isinstance(index, slice):
+        start = _positivify(index.start, size)
+        stop = _positivify(index.stop, size)
+        # slice indexing doesn't check bounds
+        return slice(start, stop, index.step)
     else:
-        raise IndexError("Index %s out of bounds" % index)
+        raise TypeError("`index` must be of type Integral or slice.")
+
+
+def sanitize_indices(indices, ndim=None, shape=None):
+    """Classify and sanitize `indices`.
+
+    * Wrap Integral or slice indices into tuples
+    * Classify as 'value' or 'view'
+    * If the length of the tuple-ized `indices` is < ndim (and it's
+      provided),  add slice(None)'s to indices until `indices` is ndim long
+    * If `shape` is provided, call `positivify` on the indices
+
+    Raises
+    ------
+    TypeError
+        If `indices` is other than Integral, slice or a Sequence of these
+    IndexError
+        If len(indices) > ndim
+
+    Returns
+    -------
+    2-tuple of (str, ndim-tuple of slices and Integral values)
+    """
+    if isinstance(indices, Integral):
+        rtype, sanitized = 'value', (indices,)
+    elif isinstance(indices, slice):
+        rtype, sanitized = 'view', (indices,)
+    elif all(isinstance(i, Integral) for i in indices):
+        rtype, sanitized = 'value', indices
+    elif all(isinstance(i, Integral) or isinstance(i, slice) for i in indices):
+        rtype, sanitized = 'view', indices
+    else:
+        msg = ("Index must be an Integral, a slice, or a sequence of "
+               "Integrals and slices.")
+        raise TypeError(msg)
+
+    if ndim is not None:
+        diff = ndim - len(sanitized)
+        if diff < 0:
+            raise IndexError("Too many indices.")
+        if diff > 0:
+            # allow incomplete indexing
+            rtype = 'view'
+            sanitized = sanitized + (slice(None),) * diff
+
+    if shape is not None:
+        sanitized = tuple(positivify(i, size) for (i, size) in zip(sanitized,
+                                                                   shape))
+    return (rtype, sanitized)
 
 
 def normalize_reduction_axes(axes, ndim):
