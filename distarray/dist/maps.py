@@ -139,13 +139,13 @@ class MapBase(object):
     dimension of a distributed array.  Maps allow distributed arrays to keep
     track of which process to talk to when indexing and slicing.
 
-    Classes that inherit from `MapBase` must implement the `owners()`
+    Classes that inherit from `MapBase` must implement the `index_owners()`
     abstractmethod.
 
     """
 
     @abstractmethod
-    def owners(self, idx):
+    def index_owners(self, idx):
         """ Returns a list of process IDs in this dimension that might possibly
         own `idx`.
 
@@ -196,7 +196,7 @@ class NoDistMap(MapBase):
         self.size = size
         self.grid_size = grid_size
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         if isinstance(idx, Integral):
             return [0] if 0 <= idx < self.size else []
         elif isinstance(idx, slice):
@@ -274,7 +274,7 @@ class BlockMap(MapBase):
                        for grid_rank in range(grid_size)]
         self.boundary_padding = self.comm_padding = 0
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         coords = []
         if isinstance(idx, Integral):
             for (coord, (lower, upper)) in enumerate(self.bounds):
@@ -366,7 +366,7 @@ class BlockCyclicMap(MapBase):
         self.grid_size = grid_size
         self.block_size = block_size
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         if isinstance(idx, Integral):
             idx_block = idx // self.block_size
             return [idx_block % self.grid_size]
@@ -420,14 +420,14 @@ class UnstructuredMap(MapBase):
         if self.indices is not None:
             # Convert to NumPy arrays if not already.
             self.indices = [np.asarray(ind) for ind in self.indices]
-        self._owners = range(self.grid_size)
+        self._index_owners = range(self.grid_size)
 
-    def owners(self, idx):
+    def index_owners(self, idx):
         # TODO: FIXME: for now, the unstructured map just returns all
         # processes.  Can be optimized if we know the upper and lower bounds
         # for each local array's global indices.
         if isinstance(idx, Integral):
-            return self._owners
+            return self._index_owners
         else:
             msg = "Index for BlockCyclicMap must be an Integral."
             raise NotImplementedError(msg)
@@ -694,7 +694,8 @@ class Distribution(object):
         If the `idxs` tuple is out of bounds, raises `IndexError`.
         """
         _, idxs = sanitize_indices(idxs, ndim=self.ndim, shape=self.shape)
-        dim_coord_hits = [m.owners(idx) for (m, idx) in zip(self.maps, idxs)]
+        dim_coord_hits = [m.index_owners(idx) for (m, idx) in
+                          zip(self.maps, idxs)]
         all_coords = product(*dim_coord_hits)
         ranks = [self.rank_from_coords[c] for c in all_coords]
         return ranks
