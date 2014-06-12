@@ -313,14 +313,11 @@ class TestSetItemSlicing(ContextTestCase):
         with self.assertRaises(ValueError):
             arr[slc] = new_data
 
-    def test_resulting_slice(self):
+    def test_set_DistArray_slice(self):
         dist = Distribution.from_shape(self.context, (10, 20))
         da = self.context.ones(dist)
-        db = da[:5, :10]
-        arr = db.tondarray()
-        db[...] = arr * 2
-        assert_array_equal(db.toarray(), numpy.ones(db.shape) * 2)
-        db[...] = db * 2
+        db = self.context.zeros(dist)
+        da[...] = db
 
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
