@@ -890,7 +890,4 @@ def indices_intersection(source_dimdata, dest_dimdata):
     source_idxs = source_dimdict['start'], source_dimdict['stop']
     dest_idxs = dest_dimdict['start'], dest_dimdict['stop']
 
-    lower = max(source_idxs[0], dest_idxs[0])
-    upper = min(source_idxs[1], dest_idxs[1])
-
-    return (lower, upper) if upper > lower else ()
+    return tuple_intersection(source_idxs, dest_idxs)
