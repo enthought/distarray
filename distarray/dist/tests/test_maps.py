@@ -301,17 +301,31 @@ class TestDistributionCreation(ContextTestCase):
 
 class TestRedistribution(ContextTestCase):
 
-    def test_block_redistribution(self):
-        dist0 = client_map.Distribution.from_shape(self.context,
+    def test_block_redistribution_one_to_one(self):
+        source_dist = client_map.Distribution.from_shape(self.context,
                                                    (40,), ('b',), (2,),
-                                                   targets=[1,3])
-        dist1 = client_map.Distribution.from_shape(self.context,
+                                                   targets=[1, 3])
+        dest_dist = client_map.Distribution.from_shape(self.context,
+                                                   (40,), ('b',), (2,),
+                                                   targets=[0, 2])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20)},
+                {'source_rank': 3, 'dest_rank': 2, 'indices': (20, 40)},
+                ]
+        self.assertEqual(plan, expected)
+
+    def test_block_redist_one_to_many(self):
+        source_dist = client_map.Distribution.from_shape(self.context,
+                                                   (40,), ('b',), (1,),
+                                                   targets=[1])
+        dest_dist = client_map.Distribution.from_shape(self.context,
                                                    (40,), ('b',), (2,),
                                                    targets=[0,2])
-        plan = dist0.get_redist_plan(dist1)
+        plan = source_dist.get_redist_plan(dest_dist)
         expected = [
-                {'from_rank': 1, 'to_rank': 0, 'from_indices': (0, 20), 'to_indices': (0, 20)},
-                {'from_rank': 3, 'to_rank': 2, 'from_indices': (20, 40), 'to_indices': (20, 40)},
+                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20)},
+                {'source_rank': 1, 'dest_rank': 2, 'indices': (20, 40)},
                 ]
         self.assertEqual(plan, expected)
 
