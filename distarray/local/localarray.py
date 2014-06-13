@@ -950,23 +950,27 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
     reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
     return out
 
+
 def min_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for min."""
     return _basic_reducer(reduce_comm, MPI.MIN,
-                          larr.ndarray.min, 
-                          (), {'axis':axes}, out)
+                          larr.ndarray.min,
+                          (), {'axis': axes}, out)
+
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for max."""
     return _basic_reducer(reduce_comm, MPI.MAX,
-                          larr.ndarray.max, 
-                          (), {'axis':axes}, out)
+                          larr.ndarray.max,
+                          (), {'axis': axes}, out)
+
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for sum."""
     return _basic_reducer(reduce_comm, MPI.SUM,
-                          larr.ndarray.sum, 
-                          (), {'axis':axes, 'dtype':dtype}, out)
+                          larr.ndarray.sum,
+                          (), {'axis': axes, 'dtype': dtype}, out)
+
 
 def mean_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for mean."""
@@ -978,8 +982,7 @@ def mean_reducer(reduce_comm, larr, out, axes, dtype):
 
 def var_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for var."""
-    temp = larr.copy()
-    temp.ndarray = temp.ndarray.astype(float)
+    temp = empty_like(larr, dtype=float)
 
     # We hold the intermediate means in `mean`.
     mean = empty_like(out, dtype=float) if out is not None else None
