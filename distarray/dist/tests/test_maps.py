@@ -302,10 +302,10 @@ class TestDistributionCreation(ContextTestCase):
 class TestRedistribution(ContextTestCase):
 
     def test_block_redistribution_one_to_one(self):
-        source_dist = client_map.Distribution.from_shape(self.context,
+        source_dist = Distribution.from_shape(self.context,
                                                    (40,), ('b',), (2,),
                                                    targets=[1, 3])
-        dest_dist = client_map.Distribution.from_shape(self.context,
+        dest_dist = Distribution.from_shape(self.context,
                                                    (40,), ('b',), (2,),
                                                    targets=[0, 2])
         plan = source_dist.get_redist_plan(dest_dist)
@@ -316,10 +316,10 @@ class TestRedistribution(ContextTestCase):
         self.assertEqual(plan, expected)
 
     def test_block_redist_one_to_many(self):
-        source_dist = client_map.Distribution.from_shape(self.context,
+        source_dist = Distribution.from_shape(self.context,
                                                    (40,), ('b',), (1,),
                                                    targets=[1])
-        dest_dist = client_map.Distribution.from_shape(self.context,
+        dest_dist = Distribution.from_shape(self.context,
                                                    (40,), ('b',), (2,),
                                                    targets=[0,2])
         plan = source_dist.get_redist_plan(dest_dist)
