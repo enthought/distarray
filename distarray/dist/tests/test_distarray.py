@@ -171,6 +171,18 @@ class TestGetItemSlicing(ContextTestCase):
         arr = self.context.fromarray(expected)
         assert_array_equal(arr[1].toarray(), expected[1])
 
+    def test_empty_slice_1d(self):
+        shape = (10,)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[100:].toarray(), expected[100:])
+
+    def test_empty_slice_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[100:, 100:].toarray(), expected[100:, 100:])
+
     def test_trailing_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
