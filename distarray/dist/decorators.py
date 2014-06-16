@@ -14,7 +14,7 @@ import functools
 
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
-from distarray.error import ContextError
+from distarray.error import DistributionError
 from distarray.utils import has_exactly_one
 
 
@@ -55,7 +55,7 @@ class DecoratorBase(object):
             msg = ("Arguments must use the same Distribution (given arguments "
                    "of type %r)")
             msg %= (tuple(set(dists)),)
-            raise ContextError(msg)
+            raise DistributionError(msg)
 
         return dists[0]
 
@@ -77,7 +77,8 @@ class DecoratorBase(object):
         """
 
         if context is None:
-            context = self.determine_context(args, kwargs)
+            distribution = self.determine_distribution(args, kwargs)
+            context = distribution.context
 
         # handle positional arguments
         arg_keys = []
