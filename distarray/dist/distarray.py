@@ -168,8 +168,11 @@ class DistArray(object):
         # to be run locally
         def get_slice(arr, index, ddpr, comm):
             from distarray.local.maps import Distribution
-            local_distribution = Distribution(comm=comm,
-                                              dim_data=ddpr[comm.Get_rank()])
+            if len(ddpr) == 0:
+                dim_data = ()
+            else:
+                dim_data = ddpr[comm.Get_rank()]
+            local_distribution = Distribution(comm=comm, dim_data=dim_data)
             result = arr.global_index.get_slice(index, local_distribution)
             return proxyize(result)
 

@@ -240,7 +240,7 @@ class BlockMap(MapBase):
         self.bounds = list(zip(bounds[:-1], bounds[1:]))
 
         self.size = bounds[-1]
-        self.grid_size = len(bounds) - 1
+        self.grid_size = max(len(bounds) - 1, 1)
 
         self.comm_padding = int(glb_dim_dict.get('comm_padding', 0))
         self.boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
@@ -292,12 +292,14 @@ class BlockMap(MapBase):
         return coords if coords != [] else [0]
 
     def get_dimdicts(self):
-        grid_ranks = range(len(self.bounds))
+        bounds = self.bounds or [[0, 0]]
+        grid_ranks = range(len(bounds))
         cpadding = self.comm_padding
-        padding = [[cpadding, cpadding] for i in grid_ranks]
-        padding[0][0] = self.boundary_padding
-        padding[-1][-1] = self.boundary_padding
-        data_tuples = zip(grid_ranks, padding, self.bounds)
+        padding = [[cpadding, cpadding] for _ in grid_ranks]
+        if len(padding) > 0:
+            padding[0][0] = self.boundary_padding
+            padding[-1][-1] = self.boundary_padding
+        data_tuples = zip(grid_ranks, padding, bounds)
         # Build the result
         out = []
         for grid_rank, padding, (start, stop) in data_tuples:
@@ -709,7 +711,8 @@ class Distribution(object):
             return []
         cart_dds = product(*dds)
         coord_and_dd = [zip(*cdd) for cdd in cart_dds]
-        rank_and_dd = sorted((self.rank_from_coords[c], dd) for (c, dd) in coord_and_dd)
+        rank_and_dd = sorted((self.rank_from_coords[c], dd)
+                             for (c, dd) in coord_and_dd)
         return [dd for (_, dd) in rank_and_dd]
 
     def is_compatible(self, o):

@@ -171,6 +171,59 @@ class TestGetItemSlicing(ContextTestCase):
         arr = self.context.fromarray(expected)
         assert_array_equal(arr[1].toarray(), expected[1])
 
+    def test_empty_slice_1d(self):
+        shape = (10,)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[100:].toarray(), expected[100:])
+
+    def test_empty_slice_2d(self):
+        shape = (10, 20)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[100:, 100:].toarray(), expected[100:, 100:])
+
+    def test_trailing_ellipsis(self):
+        shape = (2, 3, 7, 6)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[1, ...].toarray(), expected[1, ...])
+
+    def test_leading_ellipsis(self):
+        shape = (2, 3, 7, 6)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[..., 3].toarray(), expected[..., 3])
+
+    def test_multiple_ellipsis(self):
+        shape = (2, 4, 2, 4, 1, 5)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[..., 3, ..., 4].toarray(),
+                           expected[..., 3, ..., 4])
+
+    def test_vestigial_ellipsis(self):
+        shape = (1, 2, 3)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[0, :, 0, ...].toarray(),
+                           expected[0, :, 0, ...])
+
+    def test_all_ellipsis(self):
+        shape = (3, 2, 4)
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[..., ..., ..., ...].toarray(),
+                           expected[..., ..., ..., ...])
+
+    @unittest.skip("Waiting on 0d-array support.")
+    def test_0d_ellipsis(self):
+        shape = ()
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[...].toarray(),
+                           expected[...])
+
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
