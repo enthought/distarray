@@ -316,8 +316,6 @@ def positivify(index, size):
     ------
     IndexError
         for out-of-bounds indices
-    NotImplementedError
-        for negative steps
     """
     if isinstance(index, Integral):
         index = _positivify(index, size)
@@ -366,7 +364,7 @@ def sanitize_indices(indices, ndim=None, shape=None):
     else:
         msg = ("Index must be an Integral, a slice, or a sequence of "
                "Integrals and slices.")
-        raise TypeError(msg)
+        raise IndexError(msg)
 
     if Ellipsis in sanitized:
         if ndim is None:

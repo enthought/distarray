@@ -224,6 +224,113 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[...].toarray(),
                            expected[...])
 
+    def test_resulting_slice(self):
+        dist = Distribution.from_shape(self.context, (10, 20))
+        da = self.context.ones(dist)
+        db = da[:5, :10]
+        dc = db * 2
+        assert_array_equal(dc.toarray(), numpy.ones(dc.shape) * 2)
+
+
+class TestSetItemSlicing(ContextTestCase):
+
+    def test_small_1d_slice(self):
+        source = numpy.random.randint(10, size=20)
+        new_data = numpy.random.randint(10, size=3)
+        slc = slice(1, 4)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_large_1d_slice(self):
+        source = numpy.random.randint(10, size=20)
+        new_data = numpy.random.randint(10, size=10)
+        slc = slice(5, 15)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_2d_slice_0(self):
+        # on process boundaries
+        source = numpy.random.randint(10, size=(10, 20))
+        new_data = numpy.random.randint(10, size=(5, 10))
+        slc = (slice(5, 10), slice(5, 15))
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_2d_slice_1(self):
+        # off process boundaries
+        source = numpy.random.randint(10, size=(10, 20))
+        new_data = numpy.random.randint(10, size=(5, 10))
+        slc = (slice(3, 8), slice(9, 19))
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_full_3d_slice(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(3, 4, 5))
+        slc = (slice(None), slice(None), slice(None))
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_full_3d_slice_ellipsis(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(3, 4, 5))
+        slc = Ellipsis
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_partial_indexing_0(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(4, 5))
+        slc = (1,)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_partial_indexing_1(self):
+        source = numpy.random.randint(10, size=(3, 4, 5))
+        new_data = numpy.random.randint(10, size=(3, 5))
+        slc = (slice(None), 2)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_non_array_data(self):
+        source = numpy.random.randint(10, size=(3, 4))
+        new_data = [42, 42, 42, 42]
+        slc = (2,)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_valueerror(self):
+        source = numpy.random.randint(10, size=21)
+        new_data = numpy.random.randint(10, size=10)
+        slc = slice(15, None)
+        arr = self.context.fromarray(source)
+        with self.assertRaises(ValueError):
+            arr[slc] = new_data
+
+    def test_set_DistArray_slice(self):
+        dist = Distribution.from_shape(self.context, (10, 20))
+        da = self.context.ones(dist)
+        db = self.context.zeros(dist)
+        da[...] = db
+
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
