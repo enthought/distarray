@@ -30,3 +30,7 @@ class InvalidRankError(MPIDistArrayError):
 
 class MPICommError(MPIDistArrayError):
     pass
+
+
+class DistributionError(DistArrayError):
+    pass
