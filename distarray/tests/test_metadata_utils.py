@@ -139,6 +139,81 @@ class TestSanitizeIndices(unittest.TestCase):
                                                          ndim=ndim)
         self.assertEqual(sanitized, (slice(None),) * 4 + (10,  slice(None)))
 
+    def test_step(self):
+        # currently doesn't touch step
+        indices = (slice(None, None, 2), slice(None, 8, 4))
+        tag, sanitized = metadata_utils.sanitize_indices(indices)
+        self.assertEqual(tag, 'view')
+        self.assertEqual(sanitized, indices)
+
+
+class TestTupleIntersection(unittest.TestCase):
+
+    def check_intersection_and_reverse(self, t0, t1, expected):
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, expected)
+        result = metadata_utils.tuple_intersection(t1, t0)
+        self.assertEqual(result, expected)
+
+    def test_no_step_full_enclosure(self):
+        t0 = (0, 60)
+        t1 = (15, 30)
+        expected = (15, 30, 1)
+        self.check_intersection_and_reverse(t0, t1, expected)
+
+    def test_no_step_partial_overlap(self):
+        t0 = (0, 60)
+        t1 = (15, 90)
+        expected = (15, 60, 1)
+        self.check_intersection_and_reverse(t0, t1, expected)
+
+    def test_no_step_no_overlap(self):
+        t0 = (0, 60)
+        t1 = (80, 130)
+        expected = None
+        self.check_intersection_and_reverse(t0, t1, expected)
+
+    def test_no_step_partial_overlap_0(self):
+        t0 = (0, 60)
+        t1 = (15, 90)
+        expected = (15, 60, 1)
+        self.check_intersection_and_reverse(t0, t1, expected)
+
+    def test_no_step_partial_overlap_1(self):
+        # regression test
+        t0 = (0, 4)
+        t1 = (3, 7)
+        expected = (3, 4, 1)
+        self.check_intersection_and_reverse(t0, t1, expected)
+
+    def test_with_step_1(self):
+        t0 = (0, 60, 1)
+        t1 = (15, 30)
+        expected = (15, 30, 1)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertSequenceEqual(result, expected)
+
+    def test_with_step_2(self):
+        t0 = (0, 60, 2)
+        t1 = (15, 30)
+        expected = (16, 29, 2)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertSequenceEqual(result, expected)
+
+    def test_with_step_3(self):
+        t0 = (0, 59, 2)
+        t1 = (15, 90)
+        expected = (16, 59, 2)
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertSequenceEqual(result, expected)
+
+    def test_big_step(self):
+        t0 = (0, 59, 1000)
+        t1 = (15, 90)
+        expected = None
+        result = metadata_utils.tuple_intersection(t0, t1)
+        self.assertEqual(result, expected)
+
 
 class TestGridSizes(unittest.TestCase):
 

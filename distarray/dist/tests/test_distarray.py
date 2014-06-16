@@ -146,6 +146,13 @@ class TestGetItemSlicing(ContextTestCase):
         s2 = s1[-2:]
         assert_array_equal(s2.toarray(), expected[3:5])
 
+    def test_slice_block_dist_1d_with_step(self):
+        size = 10
+        step = 2
+        expected = numpy.random.randint(10, size=size)
+        darr = self.context.fromarray(expected)
+        assert_array_equal(darr[::step].toarray(), expected[::step])
+
     def test_partial_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
@@ -252,11 +259,29 @@ class TestSetItemSlicing(ContextTestCase):
         arr[slc] = new_data
         assert_array_equal(arr.toarray(), source)
 
+    def test_1d_slice_with_step(self):
+        source = numpy.random.randint(10, size=20)
+        new_data = numpy.random.randint(10, size=5)
+        slc = slice(7, 17, 2)
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
     def test_2d_slice_0(self):
         # on process boundaries
         source = numpy.random.randint(10, size=(10, 20))
         new_data = numpy.random.randint(10, size=(5, 10))
         slc = (slice(5, 10), slice(5, 15))
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_2d_slice_with_step(self):
+        source = numpy.random.randint(10, size=(10, 20))
+        new_data = numpy.random.randint(10, size=(2, 5))
+        slc = (slice(5, 10, 3), slice(5, 15, 2))
         arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
@@ -285,6 +310,15 @@ class TestSetItemSlicing(ContextTestCase):
         source = numpy.random.randint(10, size=(3, 4, 5))
         new_data = numpy.random.randint(10, size=(3, 4, 5))
         slc = Ellipsis
+        arr = self.context.fromarray(source)
+        source[slc] = new_data
+        arr[slc] = new_data
+        assert_array_equal(arr.toarray(), source)
+
+    def test_3d_slice_ellipsis_with_step(self):
+        source = numpy.random.randint(10, size=(5, 4, 5))
+        new_data = numpy.random.randint(10, size=(5, 2, 5))
+        slc = (Ellipsis, slice(None, None, 2), Ellipsis)
         arr = self.context.fromarray(source)
         source[slc] = new_data
         arr[slc] = new_data
