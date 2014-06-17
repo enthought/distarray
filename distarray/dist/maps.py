@@ -782,3 +782,10 @@ class Distribution(object):
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
+
+    def localsizes(self):
+        lshapes = shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
+        sizes = []
+        for shape in lshapes:
+            sizes.append(reduce(operator.mul, shape, 1))
+        return tuple(sizes)
