@@ -329,6 +329,20 @@ class TestRedistribution(ContextTestCase):
                 ]
         self.assertEqual(plan, expected)
 
+    def test_block_redist_many_to_one(self):
+        source_dist = Distribution.from_shape(self.context,
+                                              (40,), ('b',), (2,),
+                                              targets=[1, 2])
+        dest_dist = Distribution.from_shape(self.context,
+                                            (40,), ('b',), (1,),
+                                            targets=[0])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20, 1)},
+                {'source_rank': 2, 'dest_rank': 0, 'indices': (20, 40, 1)},
+                ]
+        self.assertEqual(plan, expected)
+
     def test_block_redist_identity(self):
         source_dist = dest_dist = Distribution.from_shape(self.context,
                                                           (40,), ('b',), (4,))
