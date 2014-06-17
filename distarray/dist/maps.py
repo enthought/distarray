@@ -856,8 +856,8 @@ class Distribution(object):
 
         plan = []
         for source_dd, dest_dd in source_dest_pairs:
-            intersection = indices_intersection(source_dd, dest_dd)
-            if intersection:
+            intersections = indices_intersections(source_dd, dest_dd)
+            if any(i for i in intersections):
                 source_coords = tuple(dd['proc_grid_rank'] for dd in source_dd)
                 source_rank = self.rank_from_coords[source_coords]
                 dest_coords = tuple(dd['proc_grid_rank'] for dd in dest_dd)
@@ -866,7 +866,7 @@ class Distribution(object):
                         {
                             'source_rank': union_rank_from_source_rank[source_rank],
                             'dest_rank': union_rank_from_dest_rank[dest_rank],
-                            'indices': intersection,
+                            'indices': intersections,
                             }
                         )
 
@@ -877,17 +877,19 @@ class Distribution(object):
         return self.context._make_subcomm(all_targets)
 
 
-def indices_intersection(source_dimdata, dest_dimdata):
-    if not (len(source_dimdata) == len(dest_dimdata) == 1):
-        raise NotImplementedError()
+def indices_intersections(source_dimdata, dest_dimdata):
 
-    source_dimdict = source_dimdata[0]
-    dest_dimdict = dest_dimdata[0]
+    intersections = []
+    for source_dimdict, dest_dimdict in zip(source_dimdata, dest_dimdata):
+        source_dimdict = source_dimdata[0]
+        dest_dimdict = dest_dimdata[0]
 
-    if not (source_dimdict['dist_type'] == dest_dimdict['dist_type'] == 'b'):
-        raise ValueError("Only 'b' dist_type supported")
+        if not (source_dimdict['dist_type'] == dest_dimdict['dist_type'] == 'b'):
+            raise ValueError("Only 'b' dist_type supported")
 
-    source_idxs = source_dimdict['start'], source_dimdict['stop']
-    dest_idxs = dest_dimdict['start'], dest_dimdict['stop']
+        source_idxs = source_dimdict['start'], source_dimdict['stop']
+        dest_idxs = dest_dimdict['start'], dest_dimdict['stop']
 
-    return tuple_intersection(source_idxs, dest_idxs)
+        intersections.append(tuple_intersection(source_idxs, dest_idxs))
+
+    return intersections

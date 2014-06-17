@@ -310,8 +310,8 @@ class TestRedistribution(ContextTestCase):
                                                    targets=[0, 2])
         plan = source_dist.get_redist_plan(dest_dist)
         expected = [
-                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20, 1)},
-                {'source_rank': 3, 'dest_rank': 2, 'indices': (20, 40, 1)},
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 3, 'dest_rank': 2, 'indices': [(20, 40, 1)]},
                 ]
         self.assertEqual(plan, expected)
 
@@ -324,8 +324,8 @@ class TestRedistribution(ContextTestCase):
                                                    targets=[0,2])
         plan = source_dist.get_redist_plan(dest_dist)
         expected = [
-                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20, 1)},
-                {'source_rank': 1, 'dest_rank': 2, 'indices': (20, 40, 1)},
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 1, 'dest_rank': 2, 'indices': [(20, 40, 1)]},
                 ]
         self.assertEqual(plan, expected)
 
@@ -338,8 +338,8 @@ class TestRedistribution(ContextTestCase):
                                             targets=[0])
         plan = source_dist.get_redist_plan(dest_dist)
         expected = [
-                {'source_rank': 1, 'dest_rank': 0, 'indices': (0, 20, 1)},
-                {'source_rank': 2, 'dest_rank': 0, 'indices': (20, 40, 1)},
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 2, 'dest_rank': 0, 'indices': [(20, 40, 1)]},
                 ]
         self.assertEqual(plan, expected)
 
@@ -351,9 +351,19 @@ class TestRedistribution(ContextTestCase):
         self.assertSequenceEqual(plan_a, plan_b)
         for p, lshape in zip(plan_a, source_dist.localshapes()):
             self.assertEqual(p['source_rank'], p['dest_rank'])
-            start, stop, step = p['indices']
+            start, stop, step = p['indices'][0]
             self.assertEqual(step, 1)
             self.assertEqual(stop - start, lshape[0])
+
+    def test_block_redist_2D_identity(self):
+        source_dist = dest_dist = Distribution.from_shape(self.context,
+                                              (10, 10), ('b', 'b'), (1, 1),
+                                              targets=[0])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 0, 'dest_rank': 0, 'indices': [(0, 10, 1), (0, 10, 1)]},
+                ]
+        self.assertEqual(plan, expected)
 
 
 class TestNoEmptyLocals(ContextTestCase):

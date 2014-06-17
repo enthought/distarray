@@ -503,15 +503,19 @@ class DistArray(object):
             myrank = comm.Get_rank()
             for dta in plan:
                 if dta['source_rank'] == myrank:
-                    start, stop = dta['indices'][:2]
-                    local_start, local_stop = map(la_from.local_from_global, (start, stop-1))
-                    source_slice = slice(local_start[0], local_stop[0] + 1)
-                    comm.Send(la_from.ndarray[source_slice], dest=dta['dest_rank'])
+                    source_slices = []
+                    for indices in dta['indices']:
+                        start, stop = indices[:2]
+                        local_start, local_stop = map(la_from.local_from_global, (start, stop-1))
+                        source_slices.append(slice(local_start[0], local_stop[0] + 1))
+                    comm.Send(la_from.ndarray[source_slices], dest=dta['dest_rank'])
                 elif dta['dest_rank'] == myrank:
-                    start, stop = dta['indices'][:2]
-                    local_start, local_stop = map(la_to.local_from_global, (start, stop-1))
-                    dest_slice = slice(local_start[0], local_stop[0] + 1)
-                    comm.Recv(la_to.ndarray[dest_slice], source=dta['source_rank'])
+                    dest_slices = []
+                    for indices in dta['indices']:
+                        start, stop = indices[:2]
+                        local_start, local_stop = map(la_to.local_from_global, (start, stop-1))
+                        dest_slices.append(slice(local_start[0], local_stop[0] + 1))
+                    comm.Recv(la_to.ndarray[dest_slices], source=dta['source_rank'])
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=self.context.targets)
