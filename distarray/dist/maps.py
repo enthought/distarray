@@ -519,6 +519,11 @@ class Distribution(object):
         self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
                      axis_dim_dicts in axis_dim_dicts_per_axis]
 
+        # check for empty localarrays
+        sizes = self.localsizes()
+        if 0 in sizes:
+            raise ValueError("A localarray has zero size")
+
         return self
 
     @classmethod
@@ -567,6 +572,12 @@ class Distribution(object):
         # List of `ClientMap` objects, one per dimension.
         self.maps = [map_from_sizes(*args)
                      for args in zip(self.shape, self.dist, self.grid_shape)]
+
+        # check for empty localarrays
+        sizes = self.localsizes()
+        if 0 in sizes:
+            raise ValueError("A localarray has zero size")
+
         return self
 
     def __init__(self, context, global_dim_data, targets=None):
@@ -672,6 +683,11 @@ class Distribution(object):
 
         nelts = reduce(operator.mul, self.grid_shape, 1)
         self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+
+        # check for empty localarrays
+        sizes = self.localsizes()
+        if 0 in sizes:
+            raise ValueError("A localarray has zero size")
 
     def __getitem__(self, idx):
         return self.maps[idx]
