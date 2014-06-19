@@ -857,7 +857,7 @@ class Distribution(object):
         plan = []
         for source_dd, dest_dd in source_dest_pairs:
             intersections = indices_intersections(source_dd, dest_dd)
-            if any(i for i in intersections):
+            if all(i for i in intersections):
                 source_coords = tuple(dd['proc_grid_rank'] for dd in source_dd)
                 source_rank = self.rank_from_coords[source_coords]
                 dest_coords = tuple(dd['proc_grid_rank'] for dd in dest_dd)
@@ -881,8 +881,6 @@ def indices_intersections(source_dimdata, dest_dimdata):
 
     intersections = []
     for source_dimdict, dest_dimdict in zip(source_dimdata, dest_dimdata):
-        source_dimdict = source_dimdata[0]
-        dest_dimdict = dest_dimdata[0]
 
         if not (source_dimdict['dist_type'] == dest_dimdict['dist_type'] == 'b'):
             raise ValueError("Only 'b' dist_type supported")

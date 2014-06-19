@@ -365,6 +365,40 @@ class TestRedistribution(ContextTestCase):
                 ]
         self.assertEqual(plan, expected)
 
+    def test_block_redist_2D_many_to_one(self):
+        source_dist = Distribution.from_shape(self.context,
+                                              (9, 9), ('b', 'b'), (2, 2),
+                                              targets=range(4))
+        dest_dist = Distribution.from_shape(self.context,
+                                              (9, 9), ('b', 'b'), (1, 1),
+                                              targets=[2])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 0, 'dest_rank': 2, 'indices': [(0, 5, 1), (0, 5, 1)]},
+                {'source_rank': 1, 'dest_rank': 2, 'indices': [(0, 5, 1), (5, 9, 1)]},
+                {'source_rank': 2, 'dest_rank': 2, 'indices': [(5, 9, 1), (0, 5, 1)]},
+                {'source_rank': 3, 'dest_rank': 2, 'indices': [(5, 9, 1), (5, 9, 1)]},
+                ]
+        for p, e in zip(plan, expected):
+            self.assertEqual(p, e)
+
+    def test_block_redist_2D_one_to_many(self):
+        source_dist = Distribution.from_shape(self.context,
+                                              (9, 9), ('b', 'b'), (1, 1),
+                                              targets=[2])
+        dest_dist = Distribution.from_shape(self.context,
+                                              (9, 9), ('b', 'b'), (2, 2),
+                                              targets=range(4))
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 2, 'dest_rank': 0, 'indices': [(0, 5, 1), (0, 5, 1)]},
+                {'source_rank': 2, 'dest_rank': 1, 'indices': [(0, 5, 1), (5, 9, 1)]},
+                {'source_rank': 2, 'dest_rank': 2, 'indices': [(5, 9, 1), (0, 5, 1)]},
+                {'source_rank': 2, 'dest_rank': 3, 'indices': [(5, 9, 1), (5, 9, 1)]},
+                ]
+        for p, e in zip(plan, expected):
+            self.assertEqual(p, e)
+
 
 class TestNoEmptyLocals(ContextTestCase):
 
