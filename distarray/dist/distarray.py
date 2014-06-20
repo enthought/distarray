@@ -502,29 +502,6 @@ class DistArray(object):
         def _local_redistribute(comm, plan, la_from, la_to):
             from distarray.local import redistribute
             redistribute(comm, plan, la_from, la_to)
-            # myrank = comm.Get_rank()
-            # for dta in plan:
-                # if dta['source_rank'] == myrank:
-                    # source_slices = []
-                    # for indices in dta['indices']:
-                        # start, stop = indices[:2]
-                        # local_start, local_stop = map(la_from.local_from_global, (start, stop-1))
-                        # source_slices.append(slice(local_start[0], local_stop[0] + 1))
-                        # sliced_ndarr = la_from.ndarray[source_slices]
-                        # sliced_buffer = sliced_ndarr.ravel()
-                        # # if not sliced_ndarr.flags.contiguous:
-                            # # raise RuntimeError("slice %s not contiguous for Send() on rank %s" % (source_slices, myrank))
-                    # comm.Send(sliced_buffer, dest=dta['dest_rank'])
-                # elif dta['dest_rank'] == myrank:
-                    # dest_slices = []
-                    # for indices in dta['indices']:
-                        # start, stop = indices[:2]
-                        # local_start, local_stop = map(la_to.local_from_global, (start, stop-1))
-                        # dest_slices.append(slice(local_start[0], local_stop[0] + 1))
-                        # sliced_ndarr = la_to.ndarray[dest_slices]
-                        # if not sliced_ndarr.flags.contiguous:
-                            # sliced_ndarr = sliced_ndarr.ravel()
-                    # comm.Recv(sliced_ndarr, source=dta['source_rank'])
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=all_targets)

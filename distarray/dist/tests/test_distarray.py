@@ -1049,35 +1049,27 @@ class TestBlockRedistribution(ContextTestCase):
         self.assertSequenceEqual(dc.localshapes(), da.localshapes())
         assert_array_equal(da.tondarray(), dc.tondarray())
 
-        # dist0 = Distribution.from_shape(self.context, (40,), ('b',), (4,))
-        # dist1 = Distribution.from_shape(self.context, (40,), ('b',), (3,),
-                                        # targets=self.context.targets[:3])
-        # self.assertEqual(len(dist0.targets), 4)
-        # self.assertEqual(len(dist1.targets), 3)
+    def test_redist_2D(self):
+        nrows, ncols = 7, 13
+        source_dist = Distribution.from_shape(self.context,
+                                              (nrows, ncols), ('b', 'b'), (2, 2),
+                                              targets=range(4))
+        dest_gdd = (
+                {
+                    'dist_type': 'b',
+                    'bounds': [0, nrows//3, nrows],
+                    },
+                {
+                    'dist_type': 'b',
+                    'bounds': [0, ncols//3, ncols],
+                    }
+                )
+        dest_dist = Distribution(self.context, dest_gdd, targets=range(4))
+        source_da = self.context.empty(source_dist, dtype=numpy.int32)
+        source_da.fill(-42)
 
-
-    # def _test_redist_2D(self):
-        # nrows, ncols = 7, 13
-        # source_dist = Distribution.from_shape(self.context,
-                                              # (nrows, ncols), ('b', 'b'), (2, 2),
-                                              # targets=range(4))
-        # dest_gdd = (
-                # {
-                    # 'dist_type': 'b',
-                    # 'bounds': [0, nrows//3, nrows],
-                    # },
-                # {
-                    # 'dist_type': 'b',
-                    # 'bounds': [0, ncols//3, ncols],
-                    # }
-                # )
-        # import ipdb; ipdb.set_trace()
-        # dest_dist = Distribution(self.context, dest_gdd, targets=range(4))
-        # source_da = self.context.empty(source_dist, dtype=numpy.int32)
-        # source_da.fill(-42)
-
-        # dest_da = source_da.distribute_as(dest_dist)
-        # assert_array_equal(source_da.tondarray(), dest_da.tondarray())
+        dest_da = source_da.distribute_as(dest_dist)
+        assert_array_equal(source_da.tondarray(), dest_da.tondarray())
 
 
 if __name__ == '__main__':
