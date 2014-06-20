@@ -11,8 +11,9 @@ communicate with `LocalArray`\s.
 
 from __future__ import absolute_import
 
-import collections
 import atexit
+import collections
+import types
 
 import numpy
 
@@ -24,6 +25,10 @@ from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME
+
+# mpi contetx
+from distarray.dist.mpionly_utils import (make_targets_comm, get_nengines,
+                                          get_rank, initial_comm_setup)
 
 
 class Context(object):
@@ -632,3 +637,504 @@ class Context(object):
 
         with self.view.temp_flags(targets=targets):
             return self.view.apply_sync(func_wrapper, *wrapped_args)
+
+
+class MPIContext(object):
+    """
+    Context objects manage the setup and communication of the worker processes
+    for DistArray objects.  A DistArray object has a context, and contexts have
+    an MPI intracommunicator that they use to communicate with worker
+    processes.
+
+    Typically there is just one context object that uses all processes,
+    although it is possible to have more than one context with a different
+    selection of engines.
+    """
+
+    _CLEANUP = None
+    _COMM_INITIALIZED = False
+
+    def __init__(self, targets=None):
+
+        if not self._COMM_INITIALIZED:
+            initial_comm_setup()
+            assert get_rank() == 0
+            self._COMM_INITIALIZED = True
+
+        self.nengines = get_nengines()
+
+        self.all_targets = list(range(self.nengines))
+        targets = list(range(self.nengines)) if targets is None else targets
+        self.targets = targets
+        self.ntargets = len(self.targets)
+
+        # make/get comms
+        # this is the object we want to use with push, pull, etc'
+        self.intercomm = distarray.INTERCOMM
+        self._base_comm = distarray._BASE_COMM
+        self.comm = self._make_subcomm(self.targets)
+
+        if Context._CLEANUP is None:
+            Context._CLEANUP = atexit.register(self.cleanup)
+
+        # local imports
+        self._execute("from functools import reduce; "
+                      "from importlib import import_module; "
+                      "import distarray.local; "
+                      "import distarray.local.mpiutils; "
+                      "import distarray.utils; "
+                      "from distarray.local.proxyize import Proxyize; "
+                      "import numpy")
+
+        self.context_key = self._setup_context_key()
+
+        # setup proxyize which is used by context.apply in the rest of the
+        # setup.
+        cmd = "proxyize = Proxyize('%s')" % (self.context_key,)
+        self._execute(cmd)
+
+    def _setup_context_key(self):
+        """
+        Create a dict on the engines which will hold everything from
+        this context.
+        """
+        context_key = uid()
+        cmd = ("import types, sys;"
+               "%s = types.ModuleType('%s');")
+        cmd %= (context_key, context_key)
+        self._execute(cmd)
+        return context_key
+
+    # Key management routines:
+    @staticmethod
+    def _key_prefix():
+        """ Get the base name for all keys. """
+        return DISTARRAY_BASE_NAME
+
+    def _generate_key(self):
+        """ Generate a unique key name for this context. """
+        key = "%s.%s" % (self.context_key, uid())
+        return key
+
+    def _key_and_push(self, *values, **kwargs):
+        keys = [self._generate_key() for value in values]
+        targets = kwargs.get('targets', self.targets)
+        self._push(dict(zip(keys, values)), targets=targets)
+        return tuple(keys)
+
+    def delete_key(self, key, targets=None):
+        """ Delete the specific key from all the engines. """
+        cmd = ('try: del %s\n'
+               'except NameError: pass') % key
+        targets = targets or self.targets
+        self._execute(cmd, targets=targets)
+
+    def cleanup(self):
+        """ Delete keys that this context created from all the engines. """
+        msg = ('kill',)
+        self._send_msg(msg)
+
+    # End of key management routines.
+
+    def _send_msg(self, msg, targets=None):
+        targets = self.targets if targets is None else targets
+        for t in targets:
+            self.intercomm.send(msg, dest=t)
+
+    def _recv_msg(self, targets=None):
+        res = []
+        targets = self.targets if targets is None else targets
+        for t in targets:
+            res.append(self.intercomm.recv(source=t))
+        return res
+
+    def _make_subcomm(self, targets):
+        msg = ('make_targets_comm', targets)
+        self._send_msg(msg, targets=self.all_targets)
+        comm_name = make_targets_comm(targets)
+        return comm_name
+
+    def _execute(self, lines, targets=None):
+        msg = ('execute', lines)
+        return self._send_msg(msg, targets=targets)
+
+    def _push(self, d, targets=None):
+        msg = ('push', d)
+        return self._send_msg(msg, targets=targets)
+
+    def _pull(self, k, targets=None):
+        msg = ('pull', k)
+        return self._send_msg(msg, targets=targets)
+
+    def _execute0(self, lines):
+        return self._execute(lines, targets=self.targets[0])
+
+    def _push0(self, d):
+        return self._push(d, targets=self.targets[0])
+
+    def _pull0(self, k):
+        return self._pull(k, targets=self.targets[0])
+
+    def _create_local(self, local_call, distribution, dtype):
+        """Creates LocalArrays with the method named in `local_call`."""
+        da_key = self._generate_key()
+        comm_name = distribution.comm
+        ddpr = distribution.get_dim_data_per_rank()
+        ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
+        cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
+               'dtype={dtype_name})')
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
+        return DistArray.from_localarrays(da_key, distribution=distribution,
+                                          dtype=dtype)
+
+    def empty(self, distribution, dtype=float):
+        """Create an empty Distarray.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, with uninitialized values.
+        """
+        return self._create_local(local_call='distarray.local.empty',
+                                  distribution=distribution, dtype=dtype)
+
+    def zeros(self, distribution, dtype=float):
+        """Create a Distarray filled with zeros.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with zeros.
+        """
+        return self._create_local(local_call='distarray.local.zeros',
+                                  distribution=distribution, dtype=dtype)
+
+    def ones(self, distribution, dtype=float):
+        """Create a Distarray filled with ones.
+
+        Parameters
+        ----------
+        distribution : Distribution object
+        dtype : NumPy dtype, optional (default float)
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, filled with ones.
+        """
+        return self._create_local(local_call='distarray.local.ones',
+                                  distribution=distribution, dtype=dtype,)
+
+    def save_dnpy(self, name, da):
+        """
+        Save a distributed array to files in the ``.dnpy`` format.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
+
+        Parameters
+        ----------
+        name : str or list of str
+            If a str, this is used as the prefix for the filename used by each
+            engine.  Each engine will save a file named ``<name>_<rank>.dnpy``.
+            If a list of str, each engine will use the name at the index
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the context's communicator's size.
+        da : DistArray
+            Array to save to files.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an sequence whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        load_dnpy : Loading files saved with save_dnpy.
+        """
+        if isinstance(name, six.string_types):
+            subs = self._key_and_push(name) + (da.key, da.key)
+            self._execute(
+                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs,
+                targets=da.targets
+            )
+        elif isinstance(name, collections.Sequence):
+            if len(name) != len(self.targets):
+                errmsg = "`name` must be the same length as `self.targets`."
+                raise TypeError(errmsg)
+            subs = self._key_and_push(name) + (da.key, da.key)
+            self._execute(
+                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs,
+                targets=da.targets
+            )
+        else:
+            errmsg = "`name` must be a string or a list."
+            raise TypeError(errmsg)
+
+
+    def load_dnpy(self, name):
+        """
+        Load a distributed array from ``.dnpy`` files.
+
+        The ``.dnpy`` file format is a binary format inspired by NumPy's
+        ``.npy`` format.  The header of a particular ``.dnpy`` file contains
+        information about which portion of a DistArray is saved in it (using
+        the metadata outlined in the Distributed Array Protocol), and the data
+        portion contains the output of NumPy's `save` function for the local
+        array data.  See the module docstring for `distarray.local.format` for
+        full details.
+
+        Parameters
+        ----------
+        name : str or list of str
+            If a str, this is used as the prefix for the filename used by each
+            engine.  Each engine will load a file named ``<name>_<rank>.dnpy``.
+            If a list of str, each engine will use the name at the index
+            corresponding to its rank.  An exception is raised if the length of
+            this list is not the same as the context's communicator's size.
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded on each engine.
+
+        Raises
+        ------
+        TypeError
+            If `name` is an iterable whose length is different from the
+            context's communicator's size.
+
+        See Also
+        --------
+        save_dnpy : Saving files to load with with load_dnpy.
+        """
+        da_key = self._generate_key()
+
+        if isinstance(name, six.string_types):
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
+            self._execute(
+                '%s = distarray.local.load_dnpy(%s, %s + "_" + str(%s.Get_rank()) + ".dnpy")' % subs,
+                targets=self.targets
+            )
+        elif isinstance(name, collections.Sequence):
+            if len(name) != len(self.targets):
+                errmsg = "`name` must be the same length as `self.targets`."
+                raise TypeError(errmsg)
+            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
+            self._execute(
+                '%s = distarray.local.load_dnpy(%s, %s[%s.Get_rank()])' % subs,
+                targets=self.targets
+            )
+        else:
+            errmsg = "`name` must be a string or a list."
+            raise TypeError(errmsg)
+
+        return DistArray.from_localarrays(da_key, context=self)
+
+    def save_hdf5(self, filename, da, key='buffer', mode='a'):
+        """
+        Save a DistArray to a dataset in an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of file to write to.
+        da : DistArray
+            Array to save to a file.
+        key : str, optional
+            The identifier for the group to save the DistArray to (the default
+            is 'buffer').
+        mode : optional, {'w', 'w-', 'a'}, default 'a'
+
+            ``'w'``
+                Create file, truncate if exists
+            ``'w-'``
+                Create file, fail if exists
+            ``'a'``
+                Read/write if exists, create otherwise (default)
+        """
+        try:
+            # this is just an early check,
+            # h5py isn't necessary until the local call on the engines
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
+            raise ImportError(errmsg)
+
+        subs = (self._key_and_push(filename) + (da.key,) +
+                self._key_and_push(key, mode))
+        self._execute(
+            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs,
+            targets=da.targets
+        )
+
+    def load_npy(self, filename, distribution):
+        """
+        Load a DistArray from a dataset in a ``.npy`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to load.
+        distribution: Distribution object
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded.
+        """
+
+        def _local_load_npy(filename, ddpr, comm):
+            from distarray.local import load_npy
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_npy(comm, filename, dim_data))
+
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_npy, (filename, ddpr, distribution.comm),
+                            targets=distribution.targets)
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
+
+    def load_hdf5(self, filename, distribution, key='buffer'):
+        """
+        Load a DistArray from a dataset in an ``.hdf5`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename to load.
+        distribution: Distribution object
+        key : str, optional
+            The identifier for the group to load the DistArray from (the
+            default is 'buffer').
+
+        Returns
+        -------
+        result : DistArray
+            A DistArray encapsulating the file loaded.
+        """
+        try:
+            import h5py
+        except ImportError:
+            errmsg = "An MPI-enabled h5py must be available to use load_hdf5."
+            raise ImportError(errmsg)
+
+        def _local_load_hdf5(filename, ddpr, comm, key):
+            from distarray.local import load_hdf5
+            dim_data = ddpr[comm.Get_rank()]
+            return proxyize(load_hdf5(comm, filename, dim_data, key))
+
+        ddpr = distribution.get_dim_data_per_rank()
+
+        da_key = self.apply(_local_load_hdf5, (filename, ddpr, distribution.comm, key),
+                   targets=distribution.targets)
+
+        return DistArray.from_localarrays(da_key[0], distribution=distribution)
+
+    def fromndarray(self, arr, distribution=None):
+        """Create a DistArray from an ndarray.
+
+        Parameters
+        ----------
+        distribution : Distribution object, optional
+            If a Distribution object is not provided, one is created with
+            `Distribution.from_shape(arr.shape)`.
+
+        Returns
+        -------
+        DistArray
+            A DistArray distributed as specified, using the values and dtype
+            from `arr`.
+        """
+        if distribution is None:
+            distribution = Distribution.from_shape(self, arr.shape)
+        out = self.empty(distribution, dtype=arr.dtype)
+        for index, value in numpy.ndenumerate(arr):
+            out[index] = value
+        return out
+
+    fromarray = fromndarray
+
+    def fromfunction(self, function, shape, **kwargs):
+        """Create a DistArray from a function over global indices.
+
+        Unlike numpy's `fromfunction`, the result of distarray's
+        `fromfunction` is restricted to the same Distribution as the
+        index array generated from `shape`.
+
+        See numpy.fromfunction for more details.
+        """
+        dtype = kwargs.get('dtype', None)
+        dist = kwargs.get('dist', None)
+        grid_shape = kwargs.get('grid_shape', None)
+        distribution = Distribution.from_shape(context=self,
+                                               shape=shape, dist=dist,
+                                               grid_shape=grid_shape)
+        ddpr = distribution.get_dim_data_per_rank()
+        function_name, ddpr_name, kwargs_name = \
+            self._key_and_push(function, ddpr, kwargs)
+        da_name = self._generate_key()
+        comm_name = distribution.comm
+        cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
+               'distarray.local.maps.Distribution('
+               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]),'
+               '**{kwargs_name})')
+        self._execute(cmd.format(**locals()), targets=distribution.targets)
+        return DistArray.from_localarrays(da_name, distribution=distribution)
+
+    def apply(self, func, args=None, kwargs=None, targets=None):
+        """
+        Analogous to IPython.parallel.view.apply_sync
+
+        Parameters
+        ----------
+        func : function
+        args : tuple
+            positional arguments to func
+        kwargs : dict
+            key word arguments to func
+        targets : sequence of integers
+            engines func is to be run on.
+
+        Returns
+        -------
+            return a list of the results on the each engine.
+        """
+        # default arguments
+        args = () if args is None else args
+        kwargs = {} if kwargs is None else kwargs
+        targets = self.targets if targets is None else targets
+
+        apply_nonce = uid()[13:]
+        apply_metadata = (apply_nonce, self.context_key)
+
+        if not isinstance(func, types.BuiltinFunctionType):
+            # break up the function
+            func_code = func.__code__
+            func_globals = func.__globals__  # noqa we don't need these.
+            func_name = func.__name__
+            func_defaults = func.__defaults__
+            func_closure = func.__closure__
+
+            func_data = (func_code, func_name, func_defaults, func_closure)
+
+            msg = ('func_call', func_data, args, kwargs, apply_metadata)
+            self._send_msg(msg, targets=targets)
+            return self._recv_msg(targets=targets)
