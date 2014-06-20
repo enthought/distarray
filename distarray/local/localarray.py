@@ -23,6 +23,36 @@ from distarray.local.mpiutils import MPI
 from distarray.local import format, maps
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
+def make_local_slices(local_arr, glb_indices):
+    local_slices = []
+    for indices in glb_indices:
+        start, stop = indices[:2]
+        local_start, local_stop = map(local_arr.local_from_global, (start, stop-1))
+        local_slices.append(slice(local_start[0], local_stop[0] + 1))
+    return local_slices
+
+def redistribute(comm, plan, la_from, la_to):
+    myrank = comm.Get_rank()
+    for dta in plan:
+        if dta['source_rank'] == dta['dest_rank'] == myrank:
+            # simple local copy from `la_from` to `la_to`
+            slices = make_local_slices(la_from, dta['indices'])
+            la_to.ndarray[slices] = la_from.ndarray[slices]
+        elif dta['source_rank'] == myrank:
+            print(myrank, dta, "send")
+            source_slices = make_local_slices(la_from, dta['indices'])
+            sliced_ndarr = la_from.ndarray[source_slices]
+            # sliced_buffer = sliced_ndarr.ravel()
+            # if not sliced_ndarr.flags.contiguous:
+                # raise RuntimeError("slice %s not contiguous for Send() on rank %s" % (source_slices, myrank))
+            comm.Send(sliced_ndarr, dest=dta['dest_rank'])
+        elif dta['dest_rank'] == myrank:
+            print(myrank, dta, "recv")
+            dest_slices = make_local_slices(la_to, dta['indices'])
+            sliced_ndarr = la_to.ndarray[dest_slices]
+            # if not sliced_ndarr.flags.contiguous:
+                # sliced_ndarr = sliced_ndarr.ravel()
+            comm.Recv(sliced_ndarr, source=dta['source_rank'])
 
 class GlobalIndex(object):
     """Object which provides access to global indexing on LocalArrays."""

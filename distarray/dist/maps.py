@@ -874,7 +874,7 @@ class Distribution(object):
 
     def comm_union(self, *dists):
         all_targets = sorted(reduce(set.union, [d.targets for d in dists], set(self.targets)))
-        return self.context._make_subcomm(all_targets)
+        return self.context._make_subcomm(all_targets), all_targets
 
 
 def indices_intersections(source_dimdata, dest_dimdata):
