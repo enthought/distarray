@@ -10,12 +10,31 @@ problems for us. In particular, the master branch of h5py gives errors about fai
 due to objects still being open. However, the tag 2.3.0 seems to be ok. However, h5py-2.3.0 does
 not work with the latest HDF5-1.8.13. I was able to use HDF5-1.8.12.
 
+****
+https://groups.google.com/forum/#!topic/h5py/cFCGH3Gv-9o
+
+> h5py/h5fd.c:1018:39: error: ‘H5FD_MPIPOSIX’ undeclared (first use in this
+> function)
+
+Yes, there's an issue using the current version of h5py with HDF5
+1.8.13.  We still have code that uses the old MPIPOSIX symbols, which
+were retired in 1.8.13.  It should be fixed in h5py 2.3.1; in the
+meantime, using HDF5 1.8.12 should fix the issue.
+
+See also:
+
+https://github.com/h5py/h5py/issues/446
+
+Andrew [Collette]
+****
+
 I had troubles with multiple versions of these libraries on my system, so I manually found and
 removed all hdf5/h5py related files (headers, libraries). After this, I mostly followed Bob Grant's
 notes, namely:
 
 HDF5:
 
+After downloading the .tar and extracting,
 CFLAGS=-O0 CC=mpicc ./configure --enable-shared --enable-parallel
 make
 make check

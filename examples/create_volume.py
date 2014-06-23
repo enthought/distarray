@@ -3,11 +3,11 @@ Create a fake 3D array that will pretend to be a seismic volume.
 """
 
 from math import exp
-import numpy.random
+import numpy, numpy.random
 import h5py
 
-SIZE = (10, 10, 20)
-#SIZE = (4, 4, 10)
+#SIZE = (10, 10, 20)
+SIZE = (4, 4, 10)
 
 def g(z, z0):
     '''Gaussian.'''
@@ -35,7 +35,7 @@ def create_plane():
 
 def create_volume():
     #vol = numpy.random.randn(SIZE[0], SIZE[1], SIZE[2])
-    vol = numpy.zeros(SIZE)
+    vol = numpy.zeros(SIZE, dtype=numpy.float32)
     horizon = create_plane()
     for i in xrange(SIZE[0]):
         for j in xrange(SIZE[1]):
