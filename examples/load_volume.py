@@ -6,24 +6,40 @@ import h5py
 
 from distarray.dist import Context, Distribution
 
-#SIZE = (10, 10, 20)
-SIZE = (4, 4, 10)
+
+def get_hdf5_dataset_shape(pathname, key):
+    ''' Get the shape of the array in the HDF5 file. '''
+    with h5py.File(pathname, 'r') as f:
+        dataset = f[key]
+        shape = dataset.shape
+    return shape
+
+
+def load_hdf5_distarray(context, filename, key, dist):
+    ''' Create a distarray from the specified section of the HDF5 file. '''
+    # Filename for load_hdf5() needs the full path.
+    pathname = os.path.abspath(filename)
+    # Get array shape.
+    array_shape = get_hdf5_dataset_shape(pathname, key)
+    # Create distribution.
+    distribution = Distribution.from_shape(context, array_shape, dist=dist)
+    # Load HDF5 file into DistArray.
+    distarray = context.load_hdf5(filename=pathname, distribution=distribution, key=key)
+    return distarray
+
 
 def load_volume():
-    context = Context()
-
-    # Filename for load_hdf5() needs the full path.
+    # Filename with data.
     filename = 'seismic.hdf5'
-    pathname = os.path.abspath(filename)
-
-    # Need to know array size.
-    distribution = Distribution.from_shape(context, SIZE, dist=('b', 'b', 'n'))
-
     # Name of data block inside file.
     key = 'seismic'
-
-    # Load HDF5 file into DistArray.
-    da = context.load_hdf5(filename=pathname, distribution=distribution, key=key)
+    # Desired distribution method.
+    #dist = ('b', 'b', 'n')
+    dist = ('c', 'c', 'n')
+    # Create context.
+    context = Context()
+    # Load HDF5 file as DistArray.
+    da = load_hdf5_distarray(context, filename, key, dist)
 
     # Print some stuff about the array.
     # (Mostly only practical for small ones.)

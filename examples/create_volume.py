@@ -6,8 +6,8 @@ from math import exp
 import numpy, numpy.random
 import h5py
 
-#SIZE = (10, 10, 20)
-SIZE = (4, 4, 10)
+PHYSICAL_SIZE = (10.0, 10.0, 20.0)
+ARRAY_SIZE = (4, 4, 25)
 
 def g(z, z0):
     '''Gaussian.'''
@@ -18,36 +18,56 @@ def g(z, z0):
     return g
 
 def p(x, y):
-    '''Get the depth on the plane.'''
+    '''Get the depth on the plane where we want to put the peak.'''
     nx, ny, nz = 0.1, -0.2, 1.0
-    D = 0.5 * SIZE[2]
+    D = 0.5 * PHYSICAL_SIZE[2]
     # Depth of peak.
     z0 = (D - nx * x - ny * y) / nz
     return z0
 
+def get_physical(index, dimension):
+    ''' Convert array index into physical value.'''
+    return PHYSICAL_SIZE[dimension] * float(index) / float(ARRAY_SIZE[dimension])
+
+def get_x(i):
+    return get_physical(i, 0)
+
+def get_y(j):
+    return get_physical(j, 1)
+
+def get_z(k):
+    return get_physical(k, 2)
+
 def create_plane():
-    '''Get the plane for the peak.'''
-    horizon = numpy.zeros((SIZE[0], SIZE[1]))
-    for i in xrange(SIZE[0]):
-        for j in xrange(SIZE[1]):
-            horizon[i, j] = p(i, j)
+    '''Get the plane for the peak location.'''
+    horizon = numpy.zeros((ARRAY_SIZE[0], ARRAY_SIZE[1]))
+    for i in xrange(ARRAY_SIZE[0]):
+        x = get_x(i)
+        for j in xrange(ARRAY_SIZE[1]):
+            y = get_y(j)
+            horizon[i, j] = p(x, y)
+    #print 'Horizon:'
+    #print horizon
     return horizon
 
 def create_volume():
     #vol = numpy.random.randn(SIZE[0], SIZE[1], SIZE[2])
-    vol = numpy.zeros(SIZE, dtype=numpy.float32)
+    vol = numpy.zeros(ARRAY_SIZE, dtype=numpy.float32)
     horizon = create_plane()
-    for i in xrange(SIZE[0]):
-        for j in xrange(SIZE[1]):
+    for i in xrange(ARRAY_SIZE[0]):
+        x = get_x(i)
+        for j in xrange(ARRAY_SIZE[1]):
+            y = get_y(j)
             z0 = horizon[i, j]
-            for k in xrange(SIZE[2]):
-                vol[i, j, k] = g(k, z0)
+            for k in xrange(ARRAY_SIZE[2]):
+                z = get_z(k)
+                vol[i, j, k] = g(z, z0)
     return vol
 
 def create_file(volume):
     '''Create an HDF5 file with the seismic volume.'''
     f = h5py.File("seismic.hdf5", "w")
-    dataset = f.create_dataset("seismic", SIZE, dtype='f')
+    dataset = f.create_dataset("seismic", ARRAY_SIZE, dtype='f')
     print "Dataset dataspace is", dataset.shape
     print "Dataset Numpy datatype is", dataset.dtype
     print "Dataset name is", dataset.name
