@@ -128,14 +128,14 @@ class Context(object):
         """
 
         def get_rank():
-            from distarray.local.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_rank()
+            from distarray.local.mpiutils import get_comm_private
+            return get_comm_private().Get_rank()
 
         # self.view's engines must encompass all ranks in the MPI communicator,
         # i.e., everything in rank_map.values().
         def get_size():
-            from distarray.local.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_size()
+            from distarray.local.mpiutils import get_comm_private
+            return get_comm_private().Get_size()
 
         # get a mapping of IPython engine ID to MPI rank
         rank_from_target = self.view.apply_async(get_rank).get_dict()
