@@ -8,6 +8,7 @@ import h5py
 
 PHYSICAL_SIZE = (10.0, 10.0, 20.0)
 ARRAY_SIZE = (4, 4, 25)
+#ARRAY_SIZE = (512, 512, 1024)
 
 def g(z, z0):
     '''Gaussian.'''
@@ -46,22 +47,23 @@ def create_plane():
         for j in xrange(ARRAY_SIZE[1]):
             y = get_y(j)
             horizon[i, j] = p(x, y)
-    #print 'Horizon:'
-    #print horizon
     return horizon
 
 def create_volume():
+    print 'Creating volume array...'
     #vol = numpy.random.randn(SIZE[0], SIZE[1], SIZE[2])
     vol = numpy.zeros(ARRAY_SIZE, dtype=numpy.float32)
+    print 'Creating horizon...'
     horizon = create_plane()
+    print 'Filling array...'
     for i in xrange(ARRAY_SIZE[0]):
-        x = get_x(i)
+        print i, ARRAY_SIZE[0]
         for j in xrange(ARRAY_SIZE[1]):
-            y = get_y(j)
             z0 = horizon[i, j]
             for k in xrange(ARRAY_SIZE[2]):
                 z = get_z(k)
                 vol[i, j, k] = g(z, z0)
+    print 'Done.'
     return vol
 
 def create_file(volume):
