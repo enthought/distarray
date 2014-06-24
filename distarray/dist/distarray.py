@@ -131,15 +131,16 @@ class DistArray(object):
             (self.shape, self.targets)
         return s
 
-    def _process_return_value(self, result, return_proxy, index, targets):
+    def _process_return_value(self, result, return_proxy, index, targets,
+                              new_distribution=None):
 
         if return_proxy:
             # proxy returned as result of slice
             # slicing shouldn't alter the dtype
             result = result[0]
             return DistArray.from_localarrays(key=result,
-                                              context=self.context,
                                               targets=targets,
+                                              distribution=new_distribution,
                                               dtype=self.dtype)
 
         elif isinstance(result, Sequence):
@@ -182,6 +183,7 @@ class DistArray(object):
         targets = self.distribution.owning_targets(index) or [0]
 
         args = [self.key, index]
+        new_distribution = None
         if self.distribution.has_precise_index:
             if return_proxy:  # returning a new DistArray view
                 new_distribution = self.distribution.slice(index)
@@ -195,7 +197,8 @@ class DistArray(object):
             local_fn = checked_getitem
 
         result = self.context.apply(local_fn, args=args, targets=targets)
-        return self._process_return_value(result, return_proxy, index, targets)
+        return self._process_return_value(result, return_proxy, index, targets,
+                                          new_distribution=new_distribution)
 
     def __setitem__(self, index, value):
         # to be run locally
