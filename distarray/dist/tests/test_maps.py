@@ -84,6 +84,22 @@ class TestClientMap(ContextTestCase):
         self.assertFalse(cm1.is_compatible(cm2))
         self.assertFalse(cm2.is_compatible(cm1))
 
+    def test_is_compatible_nodist(self):
+        # See GH issue #461.
+        dist_bcn = maps.Distribution.from_shape(self.context,
+                                                (10, 10, 10),
+                                                ('b', 'c', 'n'),
+                                                (1,   1,   1),
+                                                targets=[0])
+        dist_nnn = maps.Distribution.from_shape(self.context,
+                                                (10, 10, 10),
+                                                ('n', 'n', 'n'),
+                                                (1,   1,   1),
+                                                targets=[0])
+        self.assertTrue(dist_bcn.is_compatible(dist_nnn))
+        self.assertTrue(dist_nnn.is_compatible(dist_bcn))
+
+
     def test_reduce(self):
         nr, nc, nd = 10**5, 10**6, 10**4
 
