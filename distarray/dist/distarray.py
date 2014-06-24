@@ -179,12 +179,13 @@ class DistArray(object):
         return_type, index = sanitize_indices(index, ndim=self.ndim,
                                               shape=self.shape)
         return_proxy = (return_type == 'view')
-        targets = self.distribution.owning_targets(index)
+        targets = self.distribution.owning_targets(index) or [0]
 
         args = [self.key, index]
         if self.distribution.has_precise_index:
             if return_proxy:  # returning a new DistArray view
                 new_distribution = self.distribution.slice(index)
+                targets = new_distribution.targets
                 ddpr = new_distribution.get_dim_data_per_rank()
                 args.extend([ddpr, new_distribution.comm])
                 local_fn = get_slice
