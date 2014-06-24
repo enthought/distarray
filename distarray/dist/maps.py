@@ -666,7 +666,7 @@ class Distribution(object):
 
     def slice(self, index_tuple):
         """Make a new Distribution from a slice."""
-        new_targets = self.owning_targets(index_tuple)
+        new_targets = self.owning_targets(index_tuple) or [0]
         global_dim_data = []
         # iterate over the dimensions
         for map_, idx in zip(self.maps, index_tuple):
