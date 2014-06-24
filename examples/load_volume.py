@@ -35,6 +35,18 @@ def load_hdf5_distarray(context, filename, key, dist):
     return distarray
 
 
+def save_hdf5_distarray(context, filename, key, distarray):
+    ''' Write a distarray to an HDF5 file. '''
+    pathname = os.path.abspath(filename)
+    context.save_hdf5(pathname, distarray, key=key, mode='w')
+
+
+def save_dnpy_distarray(context, filename, distarray):
+    ''' Write a distarray to a .dnpy file. '''
+    pathname = os.path.abspath(filename)
+    context.save_dnpy(pathname, distarray)
+
+
 # Print some stuff about the array.
 # (Mostly only practical for small ones.)
 
@@ -191,15 +203,26 @@ def local_filter_3(la):
     return rtn
 
 
+def distributed_filter_3(context, distarray):
+    ''' Filter a DistArray, via 3-point average over z slices. '''
+    filtered_key = context.apply(local_filter_3, (distarray.key,))
+    filtered_da = DistArray.from_localarrays(filtered_key[0], context=context)
+    return filtered_da
+
+
+def undistributed_filter_3(ndarray):
+    ''' Filter a NumPy array, via 3-point average over z slices. '''
+    filtered_nd = filter_3(ndarray)
+    return filtered_nd
+
+
 def analyze_filter(context, da):
     ''' Apply the filter both via DistArray methods and via NumPy methods. '''
     # Via DistArray.
-    res_key = context.apply(local_filter_3, (da.key,))
-    res_da = DistArray.from_localarrays(res_key[0], context=context)
+    res_da = distributed_filter_3(context, da)
     res_nd = res_da.toarray()
     # Filter via NumPy array.
-    nd = da.toarray()
-    res2_nd = filter_3(da.toarray())
+    res2_nd = undistributed_filter_3(da.toarray())
     # Print results of averaging.
     print 'Original:'
     print da.toarray()
@@ -213,6 +236,7 @@ def analyze_filter(context, da):
     print diff
     is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
     print 'is_close:', is_close
+    return res_da
 
 
 #
@@ -236,7 +260,15 @@ def load_volume():
     # Statistics per-trace
     analyze_statistics(da, verbose=True)
     # 3-point filter.
-    analyze_filter(context, da)
+    filtered_da = analyze_filter(context, da)
+    print 'Filtered DistArray:'
+    print filtered_da
+    # Save to new HDF5 file.
+    output_filename = 'filtered.hdf5'
+    save_hdf5_distarray(context, output_filename, key, filtered_da)
+    # And a .dnpy file.
+    output_dnpy_filename = 'filtered'
+    save_dnpy_distarray(context, output_dnpy_filename, filtered_da)
 
 
 def main():
