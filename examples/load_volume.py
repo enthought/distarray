@@ -5,6 +5,7 @@ import numpy
 import h5py
 
 from distarray.dist import Context, Distribution
+from distarray.dist.distarray import DistArray
 
 
 # Load the seismic data from the HDF5 file.
@@ -137,7 +138,40 @@ def analyze_statistics(distarray, verbose=False):
     # Compare.
     compare_stats(distributed_stats, undistributed_stats, verbose=verbose)
 
-#
+
+# 3-point averaging filter. This uses a 2-point average on the ends.
+
+def filter_3(a):
+    ''' Filter a local array via 3-point average over z axis.
+    A 2-point average is used at the ends. '''
+    from numpy import empty_like
+    b = empty_like(a)
+    b[:, :, 0] = (a[:, :, 0] + a[:, :, 1]) / 2.0
+    b[:, :, 1:-1] = (a[:, :, :-2] + a[:, :, 1:-1] + a[:, :, 2:]) / 3.0
+    b[:, :, -1] = (a[:, :, -2] + a[:, :, -1]) / 2.0
+    return b
+
+
+def local_filter_3(la):
+    ''' Filter a local array via 3-point average over z axis. '''
+
+    def filter_3(a):
+        ''' Filter a local array via 3-point average over z axis.
+        A 2-point average is used at the ends. '''
+        from numpy import empty_like
+        b = empty_like(a)
+        b[:, :, 0] = (a[:, :, 0] + a[:, :, 1]) / 2.0
+        b[:, :, 1:-1] = (a[:, :, :-2] + a[:, :, 1:-1] + a[:, :, 2:]) / 3.0
+        b[:, :, -1] = (a[:, :, -2] + a[:, :, -1]) / 2.0
+        return b
+
+    from distarray.local import LocalArray
+    a = la.ndarray
+    b = filter_3(a)
+    res = LocalArray(la.distribution, buf=b)
+    rtn = proxyize(res)
+    return rtn
+
 
 def load_volume():
     # Filename with data.
@@ -174,6 +208,28 @@ def load_volume():
 
     # Statistics per-trace
     analyze_statistics(da, verbose=True)
+
+    # 3-point filter.
+    # Filter via DistArray.
+    res_key = context.apply(local_filter_3, (da.key,))
+    res_da = DistArray.from_localarrays(res_key[0], context=context)
+    res_nd = res_da.toarray()
+    # Filter via NumPy array.
+    nd = da.toarray()
+    res2_nd = filter_3(da.toarray())
+    # Print results of averaging.
+    print 'Original:'
+    print da.toarray()
+    print 'Averaged:'
+    print res_nd
+    # Difference between DistArray and NumPy results.
+    distributed_filtered = res_nd
+    undistributed_filtered = res2_nd
+    diff = distributed_filtered - undistributed_filtered
+    print 'Difference of DistArray - NumPy filters:'
+    print diff
+    is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
+    print 'is_close:', is_close
 
 
 def main():
