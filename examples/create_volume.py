@@ -9,12 +9,14 @@ import h5py
 PHYSICAL_SIZE = (10.0, 10.0, 20.0)
 ARRAY_SIZE = (4, 4, 25)
 #ARRAY_SIZE = (512, 512, 1024)
+ARRAY_SIZE = (2, 2, 10)
 
 def g(z, z0):
     '''Gaussian.'''
     A = 100.0
     C = 2.5
     mu = 2.0
+    mu = 0.1
     g = A * exp(-mu * (z - z0)**2) + C
     return g
 

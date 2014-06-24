@@ -172,13 +172,24 @@ def analyze_statistics(distarray, verbose=False):
 # 3-point averaging filter. This uses a 2-point average on the ends.
 
 def filter_3(a):
-    ''' Filter a local array via 3-point average over z axis.
+    ''' Filter a numpy array via 3-point average over z axis.
     A 2-point average is used at the ends. '''
     from numpy import empty_like
     b = empty_like(a)
     b[:, :, 0] = (a[:, :, 0] + a[:, :, 1]) / 2.0
     b[:, :, 1:-1] = (a[:, :, :-2] + a[:, :, 1:-1] + a[:, :, 2:]) / 3.0
     b[:, :, -1] = (a[:, :, -2] + a[:, :, -1]) / 2.0
+    return b
+
+
+def filter_max3(a):
+    from numpy import empty_like
+    b = empty_like(a)
+    shape = a.shape
+    for k in xrange(shape[2]):
+        k0 = max(k - 1, 0)
+        k1 = min(k + 1, shape[2] - 1)
+        b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
     return b
 
 
@@ -212,7 +223,8 @@ def distributed_filter_3(context, distarray):
 
 def undistributed_filter_3(ndarray):
     ''' Filter a NumPy array, via 3-point average over z slices. '''
-    filtered_nd = filter_3(ndarray)
+    #filtered_nd = filter_3(ndarray)
+    filtered_nd = filter_max3(ndarray)
     return filtered_nd
 
 
@@ -227,7 +239,8 @@ def analyze_filter(context, da):
     print 'Original:'
     print da.toarray()
     print 'Averaged:'
-    print res_nd
+    #print res_nd
+    print res2_nd
     # Difference between DistArray and NumPy results.
     distributed_filtered = res_nd
     undistributed_filtered = res2_nd
