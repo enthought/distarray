@@ -192,7 +192,11 @@ class TestGetItemSlicing(ContextTestCase):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[100:, 100:].toarray(), expected[100:, 100:])
+        out = arr[100:, 100:]
+        self.assertEqual(out.shape, (0, 0))
+        self.assertEqual(out.grid_shape, (1, 1))
+        self.assertEqual(len(out.targets), 1)
+        assert_array_equal(out.toarray(), expected[100:, 100:])
 
     def test_trailing_ellipsis(self):
         shape = (2, 3, 7, 6)
