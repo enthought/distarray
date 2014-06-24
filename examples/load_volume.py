@@ -35,6 +35,24 @@ def load_hdf5_distarray(context, filename, key, dist):
     return distarray
 
 
+# Print some stuff about the array.
+# (Mostly only practical for small ones.)
+
+def dump_distarray_info(da):
+    ''' Print some stuff about the array. '''
+    print 'Local Shapes:'
+    localshapes = da.localshapes()
+    print localshapes
+    print 'Arrays Per Process:'
+    ndarrays = da.get_ndarrays()
+    for i, ndarray in enumerate(ndarrays):
+        print 'Process:', i
+        print ndarray
+    print 'Full Array:'
+    ndarray = da.toarray()
+    print ndarray
+
+
 # Calculate statistics on each trace [z slice].
 # We get the same results when calculating via DistArray and via NumPy on the full array.
 
@@ -173,44 +191,9 @@ def local_filter_3(la):
     return rtn
 
 
-def load_volume():
-    # Filename with data.
-    filename = 'seismic.hdf5'
-    #filename = 'seismic_512.hdf5'
-    # Name of data block inside file.
-    key = 'seismic'
-    # Desired distribution method.
-    #dist = ('b', 'b', 'n')
-    dist = ('c', 'c', 'n')
-    # Create context.
-    context = Context()
-    # Load HDF5 file as DistArray.
-    da = load_hdf5_distarray(context, filename, key, dist)
-
-    # Print some stuff about the array.
-    # (Mostly only practical for small ones.)
-    if False:
-        print 'Local Shapes:'
-        localshapes = da.localshapes()
-        print localshapes
-
-    if False:
-        print 'Arrays Per Process:'
-        ndarrays = da.get_ndarrays()
-        for i, ndarray in enumerate(ndarrays):
-            print 'Process:', i
-            print ndarray
-
-    if False:
-        print 'Full Array:'
-        ndarray = da.toarray()
-        print ndarray
-
-    # Statistics per-trace
-    analyze_statistics(da, verbose=True)
-
-    # 3-point filter.
-    # Filter via DistArray.
+def analyze_filter(context, da):
+    ''' Apply the filter both via DistArray methods and via NumPy methods. '''
+    # Via DistArray.
     res_key = context.apply(local_filter_3, (da.key,))
     res_da = DistArray.from_localarrays(res_key[0], context=context)
     res_nd = res_da.toarray()
@@ -230,6 +213,30 @@ def load_volume():
     print diff
     is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
     print 'is_close:', is_close
+
+
+#
+
+def load_volume():
+    # Filename with data.
+    filename = 'seismic.hdf5'
+    #filename = 'seismic_512.hdf5'
+    # Name of data block inside file.
+    key = 'seismic'
+    # Desired distribution method.
+    #dist = ('b', 'b', 'n')
+    dist = ('c', 'c', 'n')
+    # Create context.
+    context = Context()
+    # Load HDF5 file as DistArray.
+    da = load_hdf5_distarray(context, filename, key, dist)
+    # Print some stuff about the array.
+    if False:
+        dump_distarray_info(da)
+    # Statistics per-trace
+    analyze_statistics(da, verbose=True)
+    # 3-point filter.
+    analyze_filter(context, da)
 
 
 def main():
