@@ -318,9 +318,8 @@ class DistArray(object):
         local_arrays = self.get_localarrays()
         try:
             for local_array in local_arrays:
-                slices = tuple(map_.global_slice for map_ in
-                               local_array.distribution)
-                arr[slices] = local_array.ndarray[...]
+                gslice = local_array.distribution.global_slice
+                arr[gslice] = local_array.ndarray[...]
         except AttributeError:
             # do it the slow way
             for local_array in local_arrays:

@@ -131,6 +131,13 @@ class Distribution(object):
         assert coords == tuple(self.comm.Get_coords(self.comm_rank))
         return coords
 
+    @property
+    def global_slice(self):
+        """Return a slice representing the global index space of this
+        dimension.
+        """
+        return tuple(m.global_slice for m in self._maps)
+
     def coords_from_rank(self, rank):
         return self.comm.Get_coords(rank)
 
