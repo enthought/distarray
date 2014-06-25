@@ -171,7 +171,7 @@ def analyze_statistics(distarray, verbose=False):
 
 # 3-point averaging filter. This uses a 2-point average on the ends.
 
-def filter_3(a):
+def filter_avg3(a):
     ''' Filter a numpy array via 3-point average over z axis.
     A 2-point average is used at the ends. '''
     from numpy import empty_like
@@ -182,21 +182,10 @@ def filter_3(a):
     return b
 
 
-def filter_max3(a):
-    from numpy import empty_like
-    b = empty_like(a)
-    shape = a.shape
-    for k in xrange(shape[2]):
-        k0 = max(k - 1, 0)
-        k1 = min(k + 1, shape[2] - 1)
-        b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
-    return b
-
-
-def local_filter_3(la):
+def local_filter_avg3(la):
     ''' Filter a local array via 3-point average over z axis. '''
 
-    def filter_3(a):
+    def filter_avg3(a):
         ''' Filter a local array via 3-point average over z axis.
         A 2-point average is used at the ends. '''
         from numpy import empty_like
@@ -208,39 +197,73 @@ def local_filter_3(la):
 
     from distarray.local import LocalArray
     a = la.ndarray
-    b = filter_3(a)
+    b = filter_avg3(a)
     res = LocalArray(la.distribution, buf=b)
     rtn = proxyize(res)
     return rtn
 
 
-def distributed_filter_3(context, distarray):
-    ''' Filter a DistArray, via 3-point average over z slices. '''
-    filtered_key = context.apply(local_filter_3, (distarray.key,))
+# 3-point maximum window filter.
+
+def filter_max3(a):
+    ''' Filter a numpy array via a 3-element window maximum. '''
+    from numpy import empty_like
+    b = empty_like(a)
+    shape = a.shape
+    for k in xrange(shape[2]):
+        k0 = max(k - 1, 0)
+        k1 = min(k + 1, shape[2] - 1)
+        b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
+    return b
+
+
+def local_filter_max3(la):
+    ''' Filter a local array via 3-point average over z axis. '''
+
+    def filter_max3(a):
+        ''' Filter a numpy array via a 3-element window maximum. '''
+        from numpy import empty_like
+        b = empty_like(a)
+        shape = a.shape
+        for k in xrange(shape[2]):
+            k0 = max(k - 1, 0)
+            k1 = min(k + 1, shape[2] - 1)
+            b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
+        return b
+
+    from distarray.local import LocalArray
+    a = la.ndarray
+    b = filter_max3(a)
+    res = LocalArray(la.distribution, buf=b)
+    rtn = proxyize(res)
+    return rtn
+
+
+def distributed_filter(context, distarray, local_filter):
+    ''' Filter a DistArray. '''
+    filtered_key = context.apply(local_filter, (distarray.key,))
     filtered_da = DistArray.from_localarrays(filtered_key[0], context=context)
     return filtered_da
 
 
-def undistributed_filter_3(ndarray):
-    ''' Filter a NumPy array, via 3-point average over z slices. '''
-    #filtered_nd = filter_3(ndarray)
-    filtered_nd = filter_max3(ndarray)
+def undistributed_filter(ndarray, numpy_filter):
+    ''' Filter a NumPy array. '''
+    filtered_nd = numpy_filter(ndarray)
     return filtered_nd
 
 
-def analyze_filter(context, da):
+def analyze_filter(context, da, local_filter, numpy_filter):
     ''' Apply the filter both via DistArray methods and via NumPy methods. '''
     # Via DistArray.
-    res_da = distributed_filter_3(context, da)
+    res_da = distributed_filter(context, da, local_filter)
     res_nd = res_da.toarray()
     # Filter via NumPy array.
-    res2_nd = undistributed_filter_3(da.toarray())
+    res2_nd = undistributed_filter(da.toarray(), numpy_filter)
     # Print results of averaging.
     print 'Original:'
     print da.toarray()
     print 'Averaged:'
-    #print res_nd
-    print res2_nd
+    print res_nd
     # Difference between DistArray and NumPy results.
     distributed_filtered = res_nd
     undistributed_filtered = res2_nd
@@ -272,8 +295,10 @@ def load_volume():
         dump_distarray_info(da)
     # Statistics per-trace
     analyze_statistics(da, verbose=True)
-    # 3-point filter.
-    filtered_da = analyze_filter(context, da)
+    # 3-point average filter.
+    filtered_da = analyze_filter(context, da, local_filter_avg3, filter_avg3)
+    # 3-point maximum filter.
+    filtered_da = analyze_filter(context, da, local_filter_max3, filter_max3)
     print 'Filtered DistArray:'
     print filtered_da
     # Save to new HDF5 file.
