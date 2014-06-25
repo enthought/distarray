@@ -70,42 +70,30 @@ def dump_distarray_info(da):
 # Calculate statistics on each trace [z slice].
 # We get the same results when calculating via DistArray and via NumPy on the full array.
 
-def calc_distributed_stats(distarray, verbose=False):
+def calc_distributed_stats(distarray):
     ''' Calculate some statistics on each trace [z slices] in the distarray. '''
-    if verbose: print 'min...' 
-    trace_min = distarray.min(axis=2).toarray()
-    if verbose: print 'max...' 
-    trace_max = distarray.max(axis=2).toarray()
-    if verbose: print 'mean...' 
-    trace_mean = distarray.mean(axis=2).toarray()
-    if verbose: print 'var...' 
-    trace_var = distarray.var(axis=2).toarray()
-    if verbose: print 'std...' 
-    trace_std = distarray.std(axis=2).toarray()
+    trace_min = distarray.min(axis=2)
+    trace_max = distarray.max(axis=2)
+    trace_mean = distarray.mean(axis=2)
+    trace_var = distarray.var(axis=2)
+    trace_std = distarray.std(axis=2)
     # Collect into dict.
-    distributed_stats = {
+    distarray_stats = {
         'min': trace_min,
         'max': trace_max,
         'mean': trace_mean,
         'var': trace_var,
         'std': trace_std,
     }
-    return distributed_stats
+    return distarray_stats
 
 
-def calc_undistributed_stats(ndarray, verbose=False):
+def calc_undistributed_stats(ndarray):
     ''' Calculate some statistics on each trace [z slices] in the ndarray. '''
-    # Statistics per-trace
-    if verbose: print 'NumPy array statistics...' 
-    if verbose: print 'min...' 
     trace_min = ndarray.min(axis=2)
-    if verbose: print 'max...' 
     trace_max = ndarray.max(axis=2)
-    if verbose: print 'mean...' 
     trace_mean = ndarray.mean(axis=2)
-    if verbose: print 'var...' 
     trace_var = ndarray.var(axis=2)
-    if verbose: print 'std...' 
     trace_std = ndarray.std(axis=2)
     # Collect into dict.
     undistributed_stats = {
@@ -118,7 +106,7 @@ def calc_undistributed_stats(ndarray, verbose=False):
     return undistributed_stats
 
 
-def compare_stats(distributed_stats, undistributed_stats, verbose=False):
+def compare_stats(distarray_stats, numpy_stats, verbose=False):
     ''' Compare the statistics made on DistArray vs NumPy array. '''
 
     stat_keys = ['min', 'max', 'mean', 'var', 'std']
@@ -130,30 +118,34 @@ def compare_stats(distributed_stats, undistributed_stats, verbose=False):
             print stat
             print stat_dict[stat]
 
+    # Convert DistArray to NumPy array to allow comparison.
+    for stat in stat_keys:
+        distarray_stats[stat] = distarray_stats[stat].toarray()
+
     # The difference is ideally zero.
     if verbose: print 'Calculating difference...'
     difference_stats = {}
-    for stat in distributed_stats:
-        diff = distributed_stats[stat] - undistributed_stats[stat]
+    for stat in stat_keys:
+        diff = distarray_stats[stat] - numpy_stats[stat]
         difference_stats[stat] = diff
 
     # Print statistics.
     if verbose:
-        print_stats('Distributed stats:', distributed_stats)
-        print_stats('Undistributed stats:', undistributed_stats)
+        print_stats('Distributed stats:', distarray_stats)
+        print_stats('Undistributed stats:', numpy_stats)
         print_stats('Difference:', difference_stats)
 
-    # Test with allclose().
+    # Test that results are effectively the same with allclose().
     for stat in stat_keys:
-        distributed_stat = distributed_stats[stat]
-        undistributed_stat = undistributed_stats[stat]
+        distributed_stat = distarray_stats[stat]
+        undistributed_stat = numpy_stats[stat]
         # For 512x512x1024, single precision, var has errors which exceed
         # the default allclose() bounds, many about 0.004.
         is_close = numpy.allclose(distributed_stat, undistributed_stat)
         print stat, 'is_close:', is_close
 
 
-def analyze_statistics(distarray, verbose=False):
+def analyze_statistics(distarray, compare=True, verbose=False):
     ''' Calculate statistics on each trace, via DistArray and NumPy.
 
     The results should match within numerical precision.
@@ -161,14 +153,15 @@ def analyze_statistics(distarray, verbose=False):
     if verbose: print 'Calculating statistics...'
     # Using DistArray methods.
     if verbose: print 'DistArray statistics...'
-    distributed_stats = calc_distributed_stats(distarray, verbose=verbose)
-    # Convert to NumPy array and use NumPy methods.
-    if verbose: print 'NumPy array statistics...' 
-    ndarray = distarray.tondarray()
-    if verbose: print 'Converted to ndarray...'
-    undistributed_stats = calc_undistributed_stats(ndarray, verbose=verbose)
-    # Compare.
-    compare_stats(distributed_stats, undistributed_stats, verbose=verbose)
+    distributed_stats = calc_distributed_stats(distarray)
+    if compare:
+        # Convert to NumPy array and use NumPy methods.
+        if verbose: print 'NumPy array statistics...' 
+        ndarray = distarray.tondarray()
+        if verbose: print 'Converted to ndarray...'
+        undistributed_stats = calc_undistributed_stats(ndarray)
+        # Compare.
+        compare_stats(distributed_stats, undistributed_stats, verbose=verbose)
 
 
 # 3-point averaging filter. This uses a 2-point average on the ends.
@@ -242,7 +235,7 @@ def local_filter_max3(la):
 
 
 def distributed_filter(distarray, local_filter):
-    ''' Filter a DistArray. '''
+    ''' Filter a DistArray, returning a new DistArray. '''
     context = distarray.context
     filtered_key = context.apply(local_filter, (distarray.key,))
     filtered_da = DistArray.from_localarrays(filtered_key[0], context=context)
@@ -250,45 +243,47 @@ def distributed_filter(distarray, local_filter):
 
 
 def undistributed_filter(ndarray, numpy_filter):
-    ''' Filter a NumPy array. '''
+    ''' Filter a NumPy array, returning a new NumPy array. '''
     filtered_nd = numpy_filter(ndarray)
     return filtered_nd
 
 
-def analyze_filter(da, local_filter, numpy_filter):
+def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
     ''' Apply the filter both via DistArray methods and via NumPy methods. '''
     # Via DistArray.
-    res_da = distributed_filter(da, local_filter)
-    res_nd = res_da.toarray()
-    # Filter via NumPy array.
-    res2_nd = undistributed_filter(da.toarray(), numpy_filter)
-    # Print results of averaging.
-    print 'Original:'
-    print da.toarray()
-    print 'Averaged:'
-    print res_nd
-    # Difference between DistArray and NumPy results.
-    distributed_filtered = res_nd
-    undistributed_filtered = res2_nd
-    diff = distributed_filtered - undistributed_filtered
-    print 'Difference of DistArray - NumPy filters:'
-    print diff
-    is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
-    print 'is_close:', is_close
-    return res_da
+    result_distarray = distributed_filter(da, local_filter)
+    if verbose:
+        # Print results of averaging.
+        print 'Original:'
+        print da.toarray()
+        print 'Filtered:'
+        print result_distarray.toarray()
+    if compare:
+        # Filter via NumPy array.
+        ndarray = da.toarray()
+        result_numpy = undistributed_filter(ndarray, numpy_filter)
+        # Difference between DistArray and NumPy results.
+        distributed_filtered = result_distarray.toarray()
+        undistributed_filtered = result_numpy
+        diff = distributed_filtered - undistributed_filtered
+        print 'Difference of DistArray - NumPy filters:'
+        if verbose:
+            print diff
+        is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
+        print 'is_close:', is_close
+    # Return the filtered distarray.
+    return result_distarray
 
 
-#
+# Main processing function.
 
-def load_volume():
-    # Filename with data.
-    filename = 'seismic.hdf5'
-    #filename = 'seismic_512.hdf5'
-    # Name of data block inside file.
-    key = 'seismic'
-    # Desired distribution method.
-    #dist = ('b', 'b', 'n')
-    dist = ('c', 'c', 'n')
+def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
+    ''' Load the seismic volume from the specified HDF5 file,
+    and do some DistArray processing with it.
+
+    Also do the same calculations on the global NumPy array,
+    to confirm that the distributed methods give the same results.
+    '''
     # Create context.
     context = Context()
     # Load HDF5 file as DistArray.
@@ -297,23 +292,40 @@ def load_volume():
     if False:
         dump_distarray_info(da)
     # Statistics per-trace
-    analyze_statistics(da, verbose=True)
+    analyze_statistics(da, compare=compare, verbose=verbose)
     # 3-point average filter.
-    filtered_da = analyze_filter(da, local_filter_avg3, filter_avg3)
+    filtered_avg3_da = analyze_filter(da,
+                                      local_filter_avg3,
+                                      filter_avg3,
+                                      compare=compare,
+                                      verbose=verbose)
     # 3-point maximum filter.
-    filtered_da = analyze_filter(da, local_filter_max3, filter_max3)
-    print 'Filtered DistArray:'
-    print filtered_da
-    # Save to new HDF5 file.
-    output_filename = 'filtered.hdf5'
-    save_hdf5_distarray(output_filename, key, filtered_da)
-    # And a .dnpy file.
-    output_dnpy_filename = 'filtered'
-    save_dnpy_distarray(output_dnpy_filename, filtered_da)
+    filtered_max3_da = analyze_filter(da,
+                                      local_filter_max3,
+                                      filter_max3,
+                                      compare=compare,
+                                      verbose=verbose)
+    # Save filtered distarray to new HDF5 file.
+    output_filename = 'filtered_avg3.hdf5'
+    save_hdf5_distarray(output_filename, key, filtered_avg3_da)
+    # And .dnpy files.
+    output_dnpy_filename = 'filtered_avg3'
+    save_dnpy_distarray(output_dnpy_filename, filtered_avg3_da)
 
 
 def main():
-    load_volume()
+    # Filename with data.
+    #filename = 'seismic.hdf5'
+    filename = 'seismic_512.hdf5'
+    # Name of data block inside file.
+    key = 'seismic'
+    # Desired distribution method.
+    dist = ('b', 'b', 'n')
+    #dist = ('c', 'c', 'n')
+    # Processing options.
+    compare = False
+    verbose = False
+    process_seismic_volume(filename=filename, key=key, dist=dist, compare=compare, verbose=verbose)
 
 
 if __name__ == '__main__':
