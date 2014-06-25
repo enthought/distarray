@@ -31,7 +31,7 @@ def load_hdf5_distarray(context, filename, key, dist):
     # Load HDF5 file into DistArray.
     print 'Loading HDF5 file...'
     distarray = context.load_hdf5(filename=pathname, distribution=distribution, key=key)
-    print 'Done.'
+    print 'Loaded.'
     return distarray
 
 
@@ -292,31 +292,36 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
     if False:
         dump_distarray_info(da)
     # Statistics per-trace
+    print 'Analyzing statistics...'
     analyze_statistics(da, compare=compare, verbose=verbose)
     # 3-point average filter.
+    print 'Filtering avg3...'
     filtered_avg3_da = analyze_filter(da,
                                       local_filter_avg3,
                                       filter_avg3,
                                       compare=compare,
                                       verbose=verbose)
     # 3-point maximum filter.
+    print 'Filtering max3...'
     filtered_max3_da = analyze_filter(da,
                                       local_filter_max3,
                                       filter_max3,
                                       compare=compare,
                                       verbose=verbose)
-    # Save filtered distarray to new HDF5 file.
-    output_filename = 'filtered_avg3.hdf5'
-    save_hdf5_distarray(output_filename, key, filtered_avg3_da)
-    # And .dnpy files.
+    # Save filtered output to .dnpy files.
+    print 'Saving .dnpy files...'
     output_dnpy_filename = 'filtered_avg3'
     save_dnpy_distarray(output_dnpy_filename, filtered_avg3_da)
+    # Save filtered distarray to new HDF5 file.
+    print 'Saving .hdf5 file...'
+    output_filename = 'filtered_avg3.hdf5'
+    save_hdf5_distarray(output_filename, key, filtered_avg3_da)
 
 
 def main():
     # Filename with data.
-    #filename = 'seismic.hdf5'
-    filename = 'seismic_512.hdf5'
+    filename = 'seismic.hdf5'
+    #filename = 'seismic_512.hdf5'
     # Name of data block inside file.
     key = 'seismic'
     # Desired distribution method.
