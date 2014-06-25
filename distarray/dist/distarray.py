@@ -316,11 +316,18 @@ class DistArray(object):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
         local_arrays = self.get_localarrays()
-        for local_array in local_arrays:
-            maps = (list(ax_map.global_iter) for ax_map in
-                    local_array.distribution)
-            for index in product(*maps):
-                arr[index] = local_array.global_index[index]
+        try:
+            for local_array in local_arrays:
+                slices = tuple(map_.global_slice for map_ in
+                               local_array.distribution)
+                arr[slices] = local_array.ndarray[...]
+        except AttributeError:
+            # do it the slow way
+            for local_array in local_arrays:
+                maps = (list(ax_map.global_iter) for ax_map in
+                        local_array.distribution)
+                for index in product(*maps):
+                    arr[index] = local_array.global_index[index]
         return arr
 
     toarray = tondarray
