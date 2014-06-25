@@ -503,7 +503,7 @@ class Context(object):
             distribution = Distribution.from_shape(self, arr.shape)
         out = self.empty(distribution, dtype=arr.dtype)
         try:
-            out[:] = arr
+            out[...] = arr
         except AttributeError:
             # no slicing for a given map type; do it the slow way
             for index, value in numpy.ndenumerate(arr):
