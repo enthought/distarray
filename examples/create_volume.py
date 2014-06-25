@@ -1,22 +1,23 @@
 """
 Create a fake 3D array that will pretend to be a seismic volume.
+
+This is not particularly efficient, especially for large files.
 """
 
 from math import exp
 import numpy, numpy.random
 import h5py
 
+# Physical size of volume.
 PHYSICAL_SIZE = (10.0, 10.0, 20.0)
+
+# Array size of volume.
 ARRAY_SIZE = (4, 4, 25)
 #ARRAY_SIZE = (512, 512, 1024)
-ARRAY_SIZE = (2, 2, 10)
+#ARRAY_SIZE = (2, 2, 10)
 
-def g(z, z0):
-    '''Gaussian.'''
-    A = 100.0
-    C = 2.5
-    mu = 2.0
-    mu = 0.1
+def g(z, z0, A=100.0, C=2.5, mu=0.1):
+    '''Gaussian.  Put a peak at depth z=z0.'''
     g = A * exp(-mu * (z - z0)**2) + C
     return g
 
@@ -41,8 +42,8 @@ def get_y(j):
 def get_z(k):
     return get_physical(k, 2)
 
-def create_plane():
-    '''Get the plane for the peak location.'''
+def create_horizon():
+    '''Get the horizon surface where we will place the peak.'''
     horizon = numpy.zeros((ARRAY_SIZE[0], ARRAY_SIZE[1]))
     for i in xrange(ARRAY_SIZE[0]):
         x = get_x(i)
@@ -56,7 +57,7 @@ def create_volume():
     #vol = numpy.random.randn(SIZE[0], SIZE[1], SIZE[2])
     vol = numpy.zeros(ARRAY_SIZE, dtype=numpy.float32)
     print 'Creating horizon...'
-    horizon = create_plane()
+    horizon = create_horizon()
     print 'Filling array...'
     for i in xrange(ARRAY_SIZE[0]):
         print i, ARRAY_SIZE[0]
@@ -87,4 +88,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
