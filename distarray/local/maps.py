@@ -268,6 +268,13 @@ class BlockMap(MapBase):
     def size(self):
         return self.local_size
 
+    @property
+    def global_slice(self):
+        """Return a slice representing the global index space of this
+        dimension.
+        """
+        return slice(self.start, self.stop)
+
 
 class CyclicMap(MapBase):
     """ One-dimensional cyclic map class.
@@ -315,6 +322,13 @@ class CyclicMap(MapBase):
     @property
     def size(self):
         return self.local_size
+
+    @property
+    def global_slice(self):
+        """Return a slice representing the global index space of this
+        dimension.
+        """
+        return slice(self.start, self.global_size, self.grid_size)
 
 
 class BlockCyclicMap(MapBase):
@@ -373,6 +387,17 @@ class BlockCyclicMap(MapBase):
     @property
     def size(self):
         return self.local_size
+
+    @property
+    def global_slice(self):
+        """Return a slice representing the global index space of this
+        dimension; only possible for block_size == 1.
+        """
+        if self.block_size == 1:
+            return slice(self.start, self.global_size, self.grid_size)
+        else:
+            msg = "`global_slice` not possible for block_size > 1."
+            raise AttributeError(msg)
 
 
 class UnstructuredMap(MapBase):
