@@ -736,6 +736,9 @@ class MPIContext(BaseContext):
         msg = ('kill',)
         self._send_msg(msg)
 
+    def delete_key(*args, **kwargs):
+        pass
+
     # End of key management routines.
 
     def _send_msg(self, msg, targets=None):
