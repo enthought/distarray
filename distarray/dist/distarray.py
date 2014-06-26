@@ -201,17 +201,18 @@ class DistArray(object):
 
         return result
 
-    def __setitem__(self, index, value):
+    def _set_value(self, index, value):
         # to be run locally
-        def checked_setitem(arr, index, value):
-            return arr.global_index.checked_setitem(index, value)
-
-        # to be run locally
-        def raw_setitem(arr, index, value):
+        def set_value(arr, index, value):
             arr.global_index[index] = value
 
+        targets = self.distribution.owning_targets(index)
+        args = [self.key, index, value]
+        self.context.apply(set_value, args=args, targets=targets)
+
+    def _set_view(self, index, value):
         # to be run locally
-        def set_slice(arr, index, value, value_slices):
+        def set_view(arr, index, value, value_slices):
             from distarray.local.localarray import LocalArray
             slice_ = value_slices[arr.comm_rank]
             if isinstance(value, LocalArray):
@@ -219,59 +220,69 @@ class DistArray(object):
             else:
                 arr.global_index[index] = value[slice_]
 
-        set_type, index = sanitize_indices(index, ndim=self.ndim,
-                                           shape=self.shape)
+        def bounds_slice(dd):
+            if dd['dist_type'] == 'b':
+                return slice(dd['start'], dd['stop'])
+            elif dd['dist_type'] == 'n':
+                return slice(0, dd['size'])
+            else:
+                msg = "Function only works for 'n' and 'b' 'dist_type's"
+                raise TypeError(msg)
 
         targets = self.distribution.owning_targets(index)
         args = [self.key, index, value]
-        if self.distribution.has_precise_index:
-            if set_type == 'value':
-                local_fn = raw_setitem
-            elif set_type == 'view':
-                new_distribution = self.distribution.slice(index)
-                # this could be made more efficient
-                # we only need the bounds computed by distribution.slice
-                if isinstance(args[-1], DistArray):
-                    if not args[-1].distribution.is_compatible(
-                            new_distribution):
-                        msg = "rvalue Distribution not compatible."
-                        raise ValueError(msg)
-                    args[-1] = args[-1].key
-                else:
-                    args[-1] = np.asarray(args[-1])  # convert to array
-                    if args[-1].shape != new_distribution.shape:
-                        msg = "Slice shape does not equal rvalue shape."
-                        raise ValueError(msg)
-                ddpr = new_distribution.get_dim_data_per_rank()
-                def bounds_slice(dd):
-                    if dd['dist_type'] == 'b':
-                        return slice(dd['start'], dd['stop'])
-                    elif dd['dist_type'] == 'n':
-                        return slice(0, dd['size'])
-                    else:
-                        msg = "Function only works for 'n' and 'b' 'dist_type's"
-                        raise TypeError(msg)
-                value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
-                                 for dim_data in ddpr]
-                # but we need a data structure indexable by a target's rank
-                # assume contiguous range of targets here
-                value_slices_per_target = [None] * len(self.targets)
-                value_slices_per_target[targets[0]:targets[-1]] = value_slices
-                args.append(value_slices_per_target)
-                local_fn = set_slice
-            else:
-                assert False
-            self.context.apply(local_fn, args=args, targets=targets)
+        new_distribution = self.distribution.slice(index)
+        # this could be made more efficient
+        # we only need the bounds computed by distribution.slice
+        if isinstance(args[-1], DistArray):
+            if not args[-1].distribution.is_compatible(
+                    new_distribution):
+                msg = "rvalue Distribution not compatible."
+                raise ValueError(msg)
+            args[-1] = args[-1].key
+        else:
+            args[-1] = np.asarray(args[-1])  # convert to array
+            if args[-1].shape != new_distribution.shape:
+                msg = "Slice shape does not equal rvalue shape."
+                raise ValueError(msg)
+        ddpr = new_distribution.get_dim_data_per_rank()
 
-        else:  # setting unstructured elements
-            local_fn = checked_setitem
-            result = self.context.apply(local_fn, args=args, targets=targets)
-            result = [i for i in result if i is not None]
-            if len(result) > 1:
-                raise IndexError("Setting more than one result (%s) is "
-                                 "not supported yet." % (result,))
-            elif result == []:
-                raise IndexError("Index %s is out of bounds" % (index,))
+        value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
+                         for dim_data in ddpr]
+        # but we need a data structure indexable by a target's rank
+        # assume contiguous range of targets here
+        value_slices_per_target = [None] * len(self.targets)
+        value_slices_per_target[targets[0]:targets[-1]] = value_slices
+        args.append(value_slices_per_target)
+        self.context.apply(set_view, args=args, targets=targets)
+
+    def _checked_setitem(self, index, value):
+        # to be run locally
+        def checked_setitem(arr, index, value):
+            return arr.global_index.checked_setitem(index, value)
+
+        targets = self.distribution.owning_targets(index)
+        args = [self.key, index, value]
+        result = self.context.apply(checked_setitem, args=args,
+                                    targets=targets)
+        result = [i for i in result if i is not None]
+        if len(result) > 1:
+            raise IndexError("Setting more than one result (%s) is "
+                             "not supported yet." % (result,))
+        elif result == []:
+            raise IndexError("Index %s is out of bounds" % (index,))
+
+    def __setitem__(self, index, value):
+        set_type, index = sanitize_indices(index, ndim=self.ndim,
+                                           shape=self.shape)
+        if not self.distribution.has_precise_index:
+            self._checked_setitem(index, value)
+        elif set_type == 'view':
+            self._set_view(index, value)
+        elif set_type == 'value':
+            self._set_value(index, value)
+        else:
+            assert False
 
     @property
     def context(self):
