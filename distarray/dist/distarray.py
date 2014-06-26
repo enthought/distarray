@@ -313,6 +313,13 @@ class DistArray(object):
     def targets(self):
         return self.distribution.targets
 
+    @property
+    def __array_interface__(self):
+        return {'shape': self.shape,
+                'typestr': self.dtype.str,
+                'data': self.tondarray(),
+                'version': 3}
+
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
         arr = np.empty(self.shape, dtype=self.dtype)
