@@ -135,3 +135,10 @@ def initial_comm_setup(targets=None):
 
     # make interomm available at distarray.INTERCOMM
     setattr(distarray, 'INTERCOMM', intercomm)
+
+
+def is_solo_mpi_process():
+    if world.size == 1:
+        return True
+    else:
+        return False
