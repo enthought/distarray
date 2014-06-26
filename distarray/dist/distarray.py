@@ -320,7 +320,7 @@ class DistArray(object):
         try:
             for local_array in local_arrays:
                 gslice = local_array.distribution.global_slice
-                arr[gslice] = local_array.ndarray[...]
+                arr[gslice] = local_array.ndarray
         except AttributeError:
             # do it the slow way
             for local_array in local_arrays:
