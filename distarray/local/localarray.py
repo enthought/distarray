@@ -696,8 +696,13 @@ def save_hdf5(filename, arr, key='buffer', mode='a'):
     with h5py.File(filename, mode, driver='mpio',
                    comm=arr.distribution.comm) as fp:
         dset = fp.create_dataset(key, arr.global_shape, dtype=arr.dtype)
-        for index, value in ndenumerate(arr):
-            dset[index] = value
+        try:
+            gslice = arr.distribution.global_slice
+            dset[gslice] = arr
+        except AttributeError:
+            # can't represent index with a slice; do it the slow way
+            for index, value in ndenumerate(arr):
+                dset[index] = value
 
 
 def compact_indices(dim_data):
