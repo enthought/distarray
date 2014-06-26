@@ -22,6 +22,24 @@ client_rank = 0
 engine_ranks = [i for i in world_ranks if i != client_rank]
 
 
+def arg_kwarg_proxy_converter(args, kwargs):
+    module = import_module('__main__')
+    # convert args
+    args = list(args)
+    for i, a in enumerate(args):
+        if (isinstance(a, str) and a.startswith(prefix)):
+            args[i] = reduce(getattr, [module] + a.split('.'))
+    args = tuple(args)
+
+    # convert kwargs
+    for k in kwargs.keys():
+        val = kwargs[k]
+        if (isinstance(val, str) and val.startswith(prefix)):
+            kwargs[k] = module.reduce(getattr, [module] + val.split('.'))
+
+    return args, kwargs
+
+
 def is_engine():
     if world.rank != client_rank:
         return True
@@ -36,7 +54,8 @@ def parse_msg(msg):
             'push': push,
             'pull': pull,
             'kill': kill,
-            'make_targets_comm': engine_make_targets_comm}
+            'make_targets_comm': engine_make_targets_comm,
+            'builtin_call': builtin_call}
     func = what[to_do]
     ret = func(msg)
     return ret
@@ -52,18 +71,7 @@ def func_call(msg):
     module = import_module('__main__')
     module.proxyize.set_state(nonce)
 
-    # convert args
-    args = list(args)
-    for i, a in enumerate(args):
-        if (isinstance(a, str) and a.startswith(prefix)):
-            args[i] = reduce(getattr, [module] + a.split('.'))
-    args = tuple(args)
-
-    # convert kwargs
-    for k in kwargs.keys():
-        val = kwargs[k]
-        if (isinstance(val, str) and val.startswith(prefix)):
-            kwargs[k] = module.reduce(getattr, [module] + val.split('.'))
+    args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
 
     new_func_globals = module.__dict__  # add proper proxyize, context_key
     new_func_globals.update({'proxyize': module.proxyize,
@@ -95,7 +103,7 @@ def pull(msg):
     name = msg[1]
     module = import_module(__name__)
     res = getattr(module, name)
-    world.send(res, dest=client_rank)
+    distarray.INTERCOMM.send(res, dest=client_rank)
 
 
 def kill(msg):
@@ -106,6 +114,17 @@ def kill(msg):
 def engine_make_targets_comm(msg):
     targets = msg[1]
     make_targets_comm(targets)
+
+
+def builtin_call(msg):
+    func = msg[1]
+    args = msg[2]
+    kwargs = msg[3]
+
+    args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
+
+    res = func(*args, **kwargs)
+    distarray.INTERCOMM.send(res, dest=client_rank)
 
 
 def engine_loop():

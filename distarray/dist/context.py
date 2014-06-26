@@ -817,5 +817,9 @@ class MPIContext(BaseContext):
             func_data = (func_code, func_name, func_defaults, func_closure)
 
             msg = ('func_call', func_data, args, kwargs, apply_metadata)
-            self._send_msg(msg, targets=targets)
-            return self._recv_msg(targets=targets)
+
+        else:
+            msg = ('builtin_call', func, args, kwargs)
+
+        self._send_msg(msg, targets=targets)
+        return self._recv_msg(targets=targets)
