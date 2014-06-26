@@ -99,6 +99,19 @@ class TestClientMap(ContextTestCase):
         self.assertTrue(dist_bcn.is_compatible(dist_nnn))
         self.assertTrue(dist_nnn.is_compatible(dist_bcn))
 
+    def test_is_compatible_degenerate(self):
+        dist_bc = maps.Distribution.from_shape(self.context,
+                                               (10, 10),
+                                               ('b', 'c'),
+                                               (1,   1),
+                                               targets=[0])
+        dist_cb = maps.Distribution.from_shape(self.context,
+                                                (10, 10),
+                                                ('c', 'b'),
+                                                (1,   1),
+                                                targets=[0])
+        self.assertTrue(dist_bc.is_compatible(dist_cb))
+        self.assertTrue(dist_cb.is_compatible(dist_bc))
 
     def test_reduce(self):
         nr, nc, nd = 10**5, 10**6, 10**4

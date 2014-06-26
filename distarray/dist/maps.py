@@ -154,9 +154,19 @@ class MapBase(object):
         """
         raise IndexError()
 
+    def _is_compatible_degenerate(self, map):
+        right_types = all(isinstance(m, (NoDistMap, BlockMap, BlockCyclicMap))
+                          for m in (self, map))
+        return (right_types
+                and self.grid_size == map.grid_size == 1
+                and self.size == map.size)
+
     def is_compatible(self, map):
-        return ((self.dist == map.dist) and
-                (vars(self) == vars(map)))
+        if self._is_compatible_degenerate(map):
+            return True
+        else:
+            return ((self.dist == map.dist) and
+                    (vars(self) == vars(map)))
 
 
 # ---------------------------------------------------------------------------
