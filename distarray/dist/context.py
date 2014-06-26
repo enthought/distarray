@@ -28,7 +28,8 @@ from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 # mpi contetx
 from distarray.dist.mpionly_utils import (make_targets_comm, get_nengines,
-                                          get_rank, initial_comm_setup)
+                                          get_rank, initial_comm_setup,
+                                          is_solo_mpi_process)
 
 
 class BaseContext(object):
@@ -470,7 +471,7 @@ class BaseContext(object):
         return DistArray.from_localarrays(da_name[0], distribution=distribution)
 
 
-class Context(BaseContext):
+class IPythonContext(BaseContext):
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
@@ -823,3 +824,8 @@ class MPIContext(BaseContext):
 
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
+
+if is_solo_mpi_process():
+    Context = IPythonContext
+else:
+    Context = MPIContext
