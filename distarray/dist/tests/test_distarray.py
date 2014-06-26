@@ -105,6 +105,13 @@ class TestDistArray(ContextTestCase):
             dap[i, j] = ndarr[i, j]
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
+    def test__array_interface(self):
+        distribution = Distribution.from_shape(self.context, (7, 9))
+        darr = self.context.ones(distribution)
+        nparr = numpy.array(darr)
+        assert_array_equal(darr.tondarray(), nparr)
+        assert_array_equal(numpy.ones((7, 9)), nparr)
+
     def test_global_tolocal_bug(self):
         # gh-issue #154
         distribution = Distribution.from_shape(self.context, (3, 3),
