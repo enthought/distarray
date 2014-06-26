@@ -146,6 +146,43 @@ class TestClientMap(ContextTestCase):
         self.assertTrue(dist_block.is_compatible(dist_block_cyclic))
         self.assertTrue(dist_cyclic.is_compatible(dist_block_cyclic))
 
+    def test_not_compatible(self):
+        dist_b1 = Distribution.from_shape(self.context,
+                                          (10,), ('b',),
+                                          (1,), targets=[0])
+
+        dist_b2 = Distribution.from_shape(self.context,
+                                          (9,), ('b',),
+                                          (1,), targets=[0])
+
+        self.assertFalse(dist_b1.is_compatible(dist_b2))
+        self.assertFalse(dist_b2.is_compatible(dist_b1))
+
+        dist_b3 = Distribution.from_shape(self.context,
+                                          (10,), ('b',),
+                                          (2,), targets=[0,1])
+
+        self.assertFalse(dist_b1.is_compatible(dist_b3))
+        self.assertFalse(dist_b3.is_compatible(dist_b1))
+
+        dist_b4 = Distribution.from_shape(self.context,
+                                          (10,), ('c',),
+                                          (2,), targets=[0,1])
+
+        self.assertFalse(dist_b4.is_compatible(dist_b3))
+        self.assertFalse(dist_b3.is_compatible(dist_b4))
+
+        gdd_unstructured = (
+                {
+                    'dist_type': 'u',
+                    'indices': [range(10)],
+                    },
+                )
+        dist_u = Distribution(self.context, gdd_unstructured)
+
+        self.assertFalse(dist_u.is_compatible(dist_b1))
+        self.assertFalse(dist_b1.is_compatible(dist_u))
+
     def test_reduce(self):
         nr, nc, nd = 10**5, 10**6, 10**4
 
