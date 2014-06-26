@@ -113,6 +113,40 @@ class TestClientMap(ContextTestCase):
         self.assertTrue(dist_bc.is_compatible(dist_cb))
         self.assertTrue(dist_cb.is_compatible(dist_bc))
 
+    def test_is_compatible_degenerate_block_cyclic(self):
+        size = 19937
+        gdd_block_cyclic = (
+                {
+                    'dist_type': 'c',
+                    'proc_grid_size': 1,
+                    'block_size': 7,
+                    'size': size,
+                    },
+                )
+        gdd_block = (
+                {
+                    'dist_type': 'b',
+                    'proc_grid_size': 1,
+                    'bounds': [0, size],
+                    },
+                )
+        gdd_cyclic = (
+                {
+                    'dist_type': 'c',
+                    'proc_grid_size': 1,
+                    'size': size,
+                    },
+                )
+        dist_block_cyclic = maps.Distribution(self.context, gdd_block_cyclic)
+        dist_block = maps.Distribution(self.context, gdd_block)
+        dist_cyclic = maps.Distribution(self.context, gdd_cyclic)
+
+        self.assertTrue(dist_block_cyclic.is_compatible(dist_block))
+        self.assertTrue(dist_block_cyclic.is_compatible(dist_cyclic))
+
+        self.assertTrue(dist_block.is_compatible(dist_block_cyclic))
+        self.assertTrue(dist_cyclic.is_compatible(dist_block_cyclic))
+
     def test_reduce(self):
         nr, nc, nd = 10**5, 10**6, 10**4
 
