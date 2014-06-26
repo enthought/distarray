@@ -206,8 +206,8 @@ class DistArray(object):
         def set_value(arr, index, value):
             arr.global_index[index] = value
 
-        targets = self.distribution.owning_targets(index)
         args = [self.key, index, value]
+        targets = self.distribution.owning_targets(index)
         self.context.apply(set_value, args=args, targets=targets)
 
     def _set_view(self, index, value):
@@ -229,31 +229,30 @@ class DistArray(object):
                 msg = "Function only works for 'n' and 'b' 'dist_type's"
                 raise TypeError(msg)
 
-        targets = self.distribution.owning_targets(index)
-        args = [self.key, index, value]
-        new_distribution = self.distribution.slice(index)
         # this could be made more efficient
         # we only need the bounds computed by distribution.slice
-        if isinstance(args[-1], DistArray):
-            if not args[-1].distribution.is_compatible(
-                    new_distribution):
+        new_distribution = self.distribution.slice(index)
+        if isinstance(value, DistArray):
+            if not value.distribution.is_compatible(new_distribution):
                 msg = "rvalue Distribution not compatible."
                 raise ValueError(msg)
-            args[-1] = args[-1].key
+            value = value.key
         else:
-            args[-1] = np.asarray(args[-1])  # convert to array
-            if args[-1].shape != new_distribution.shape:
+            value = np.asarray(value)  # convert to array
+            if value.shape != new_distribution.shape:
                 msg = "Slice shape does not equal rvalue shape."
                 raise ValueError(msg)
-        ddpr = new_distribution.get_dim_data_per_rank()
 
+        ddpr = new_distribution.get_dim_data_per_rank()
         value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
                          for dim_data in ddpr]
         # but we need a data structure indexable by a target's rank
         # assume contiguous range of targets here
+        targets = self.distribution.owning_targets(index)
         value_slices_per_target = [None] * len(self.targets)
         value_slices_per_target[targets[0]:targets[-1]] = value_slices
-        args.append(value_slices_per_target)
+
+        args = [self.key, index, value, value_slices_per_target]
         self.context.apply(set_view, args=args, targets=targets)
 
     def _checked_setitem(self, index, value):
@@ -261,8 +260,8 @@ class DistArray(object):
         def checked_setitem(arr, index, value):
             return arr.global_index.checked_setitem(index, value)
 
-        targets = self.distribution.owning_targets(index)
         args = [self.key, index, value]
+        targets = self.distribution.owning_targets(index)
         result = self.context.apply(checked_setitem, args=args,
                                     targets=targets)
         result = [i for i in result if i is not None]
