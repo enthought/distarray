@@ -303,7 +303,7 @@ class DistArray(object):
 
     @property
     def dtype(self):
-        return self._dtype
+        return np.dtype(self._dtype)
 
     @property
     def itemsize(self):
