@@ -644,7 +644,6 @@ class TestDistArrayCreation(ContextTestCase):
         for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
 
-    @unittest.skip('')
     def test_fromndarray_0d(self):
         ndarr = numpy.array(42)
         distarr = self.context.fromarray(ndarr)

@@ -21,7 +21,7 @@ from collections import Sequence
 
 import numpy as np
 
-import distarray
+import distarray.local
 from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
@@ -215,7 +215,10 @@ class DistArray(object):
         def set_view(arr, index, value, ddpr, comm):
             from distarray.local.localarray import LocalArray
             from distarray.local.maps import Distribution
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr) > 0:
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = []
             dist = Distribution(comm=comm, dim_data=dim_data)
             if isinstance(value, LocalArray):
                 arr.global_index[index] = value.ndarray
