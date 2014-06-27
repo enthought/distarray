@@ -1,9 +1,12 @@
 ''' Load the fake seismic volume and do stuff with it. '''
 
+from __future__ import print_function
+
 import os.path
+
 import numpy
 import h5py
-from matplotlib import pyplot, colors, cm
+from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
@@ -24,15 +27,17 @@ def load_hdf5_distarray(context, filename, key, dist):
     # Filename for load_hdf5() needs the full path.
     pathname = os.path.abspath(filename)
     # Get array shape.
-    print 'Getting array shape...'
+    print('Getting array shape...')
     array_shape = get_hdf5_dataset_shape(pathname, key)
     # Create distribution.
-    print 'Creating distribution...'
+    print('Creating distribution...')
     distribution = Distribution.from_shape(context, array_shape, dist=dist)
     # Load HDF5 file into DistArray.
-    print 'Loading HDF5 file...'
-    distarray = context.load_hdf5(filename=pathname, distribution=distribution, key=key)
-    print 'Loaded.'
+    print('Loading HDF5 file...')
+    distarray = context.load_hdf5(filename=pathname,
+                                  distribution=distribution,
+                                  key=key)
+    print('Loaded.')
     return distarray
 
 
@@ -55,24 +60,25 @@ def save_dnpy_distarray(filename, distarray):
 
 def dump_distarray_info(da):
     ''' Print some stuff about the array. '''
-    print 'Local Shapes:'
+    print('Local Shapes:')
     localshapes = da.localshapes()
-    print localshapes
-    print 'Arrays Per Process:'
+    print(localshapes)
+    print('Arrays Per Process:')
     ndarrays = da.get_ndarrays()
     for i, ndarray in enumerate(ndarrays):
-        print 'Process:', i
-        print ndarray
-    print 'Full Array:'
+        print('Process:', i)
+        print(ndarray)
+    print('Full Array:')
     ndarray = da.toarray()
-    print ndarray
+    print(ndarray)
 
 
 # Calculate statistics on each trace [z slice].
-# We get the same results when calculating via DistArray and via NumPy on the full array.
+# We get the same results when calculating via DistArray,
+# and via NumPy on the full array.
 
 def calc_distributed_stats(distarray):
-    ''' Calculate some statistics on each trace [z slices] in the distarray. '''
+    '''Calculate some statistics on each trace [z slices] in the distarray.'''
     trace_min = distarray.min(axis=2)
     trace_max = distarray.max(axis=2)
     trace_mean = distarray.mean(axis=2)
@@ -114,17 +120,18 @@ def compare_stats(distarray_stats, numpy_stats, verbose=False):
 
     def print_stats(title, stat_dict):
         ''' Print out the statistics. '''
-        print title
+        print(title)
         for stat in stat_keys:
-            print stat
-            print stat_dict[stat]
+            print(stat)
+            print(stat_dict[stat])
 
     # Convert DistArray to NumPy array to allow comparison.
     for stat in stat_keys:
         distarray_stats[stat] = distarray_stats[stat].toarray()
 
     # The difference is ideally zero.
-    if verbose: print 'Calculating difference...'
+    if verbose:
+        print('Calculating difference...')
     difference_stats = {}
     for stat in stat_keys:
         diff = distarray_stats[stat] - numpy_stats[stat]
@@ -143,7 +150,7 @@ def compare_stats(distarray_stats, numpy_stats, verbose=False):
         # For 512x512x1024, single precision, var has errors which exceed
         # the default allclose() bounds, many about 0.004.
         is_close = numpy.allclose(distributed_stat, undistributed_stat)
-        print stat, 'is_close:', is_close
+        print(stat, 'is_close:', is_close)
 
 
 def analyze_statistics(distarray, compare=True, verbose=False):
@@ -151,15 +158,19 @@ def analyze_statistics(distarray, compare=True, verbose=False):
 
     The results should match within numerical precision.
     '''
-    if verbose: print 'Calculating statistics...'
+    if verbose:
+        print('Calculating statistics...')
     # Using DistArray methods.
-    if verbose: print 'DistArray statistics...'
+    if verbose:
+        print('DistArray statistics...')
     distributed_stats = calc_distributed_stats(distarray)
     if compare:
         # Convert to NumPy array and use NumPy methods.
-        if verbose: print 'NumPy array statistics...' 
+        if verbose:
+            print('NumPy array statistics...')
         ndarray = distarray.tondarray()
-        if verbose: print 'Converted to ndarray...'
+        if verbose:
+            print('Converted to ndarray...')
         undistributed_stats = calc_undistributed_stats(ndarray)
         # Compare.
         compare_stats(distributed_stats, undistributed_stats, verbose=verbose)
@@ -209,7 +220,7 @@ def filter_max3(a):
     for k in xrange(shape[2]):
         k0 = max(k - 1, 0)
         k1 = min(k + 1, shape[2] - 1)
-        b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
+        b[:, :, k] = a[:, :, k0:k1 + 1].max(axis=2)
     return b
 
 
@@ -224,7 +235,7 @@ def local_filter_max3(la):
         for k in xrange(shape[2]):
             k0 = max(k - 1, 0)
             k1 = min(k + 1, shape[2] - 1)
-            b[:, :, k] = a[:, :, k0:k1+1].max(axis=2)
+            b[:, :, k] = a[:, :, k0:k1 + 1].max(axis=2)
         return b
 
     from distarray.local import LocalArray
@@ -249,16 +260,16 @@ def undistributed_filter(ndarray, numpy_filter):
     return filtered_nd
 
 
-def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
+def analyze_filter(da, local_filter, numpy_filter, compare, verbose):
     ''' Apply the filter both via DistArray methods and via NumPy methods. '''
     # Via DistArray.
     result_distarray = distributed_filter(da, local_filter)
     if verbose:
         # Print results of averaging.
-        print 'Original:'
-        print da.toarray()
-        print 'Filtered:'
-        print result_distarray.toarray()
+        print('Original:')
+        print(da.toarray())
+        print('Filtered:')
+        print(result_distarray.toarray())
     if compare:
         # Filter via NumPy array.
         ndarray = da.toarray()
@@ -267,11 +278,11 @@ def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
         distributed_filtered = result_distarray.toarray()
         undistributed_filtered = result_numpy
         diff = distributed_filtered - undistributed_filtered
-        print 'Difference of DistArray - NumPy filters:'
+        print('Difference of DistArray - NumPy filters:')
         if verbose:
-            print diff
+            print(diff)
         is_close = numpy.allclose(distributed_filtered, undistributed_filtered)
-        print 'is_close:', is_close
+        print('is_close:', is_close)
     # Return the filtered distarray.
     return result_distarray
 
@@ -280,7 +291,7 @@ def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
 
 def plot_slice(distarray_slice, filename, title, x_label, y_label):
     ''' Create an array plot of the 2D slice. '''
-    print 'Visualizing slice', title
+    print('Visualizing slice', title)
     num_dim = len(distarray_slice.shape)
     if (num_dim != 2):
         raise ValueError('Slice must be 2D for plotting.')
@@ -289,8 +300,6 @@ def plot_slice(distarray_slice, filename, title, x_label, y_label):
     # Transpose to make depth look like depth.
     slice_nd = slice_nd.transpose()
     # Plot.
-    figure = pyplot.gcf()
-    #cmap = 'hot'
     cmap = 'jet'
     pyplot.matshow(slice_nd, cmap=cmap)
     if False:
@@ -310,17 +319,17 @@ def slice_volume(distarray, base_filename='slice_'):
     j_index = (2 * shape[1]) // 3
     k_index = shape[2] // 2
     # Slice and visualize result.
-    print 'Taking I-Slice...'
+    print('Taking I-Slice...')
     i_slice = distarray[i_index, :, :]
     filename = base_filename + 'i_plot.png'
     title = 'Vertical Slice [i = %d]' % (i_index)
     plot_slice(i_slice, filename, title, 'j', 'depth')
-    print 'Taking J-Slice...'
+    print('Taking J-Slice...')
     filename = base_filename + 'j_plot.png'
     title = 'Vertical Slice [j = %d]' % (j_index)
     j_slice = distarray[:, j_index, :]
     plot_slice(j_slice, filename, title, 'i', 'depth')
-    print 'Taking K-Slice...'
+    print('Taking K-Slice...')
     filename = base_filename + 'k_plot.png'
     title = 'Horizontal Slice [k = %d]' % (k_index)
     k_slice = distarray[:, :, k_index]
@@ -344,34 +353,34 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
     if False:
         dump_distarray_info(da)
     # Slicing.
-    print 'Slicing...'
+    print('Slicing...')
     slice_volume(da, base_filename='slice_')
     # Statistics per-trace
-    print 'Analyzing statistics...'
+    print('Analyzing statistics...')
     analyze_statistics(da, compare=compare, verbose=verbose)
     # 3-point average filter.
-    print 'Filtering avg3...'
+    print('Filtering avg3...')
     filtered_avg3_da = analyze_filter(da,
                                       local_filter_avg3,
                                       filter_avg3,
                                       compare=compare,
                                       verbose=verbose)
     # 3-point maximum filter.
-    print 'Filtering max3...'
+    print('Filtering max3...')
     filtered_max3_da = analyze_filter(da,
                                       local_filter_max3,
                                       filter_max3,
                                       compare=compare,
                                       verbose=verbose)
     # Slice the filtered array.
-    print 'Slicing filtered array...'
+    print('Slicing filtered array...')
     slice_volume(filtered_avg3_da, base_filename='filtered_')
     # Save filtered output to .dnpy files.
-    print 'Saving .dnpy files...'
+    print('Saving .dnpy files...')
     output_dnpy_filename = 'filtered_avg3'
     save_dnpy_distarray(output_dnpy_filename, filtered_avg3_da)
     # Save filtered distarray to new HDF5 file.
-    print 'Saving .hdf5 file...'
+    print('Saving .hdf5 file...')
     output_filename = 'filtered_avg3.hdf5'
     save_hdf5_distarray(output_filename, key, filtered_avg3_da)
 
@@ -379,18 +388,20 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
 def main():
     # Filename with data.
     filename = 'seismic.hdf5'
-    #filename = 'seismic_512.hdf5'
     # Name of data block inside file.
     key = 'seismic'
     # Desired distribution method.
     dist = ('b', 'b', 'n')
-    #dist = ('c', 'c', 'n')
     # Processing options.
     compare = False
     verbose = False
-    process_seismic_volume(filename=filename, key=key, dist=dist, compare=compare, verbose=verbose)
+    process_seismic_volume(filename=filename,
+                           key=key,
+                           dist=dist,
+                           compare=compare,
+                           verbose=verbose)
 
 
 if __name__ == '__main__':
     main()
-    print 'Done.'
+    print('Done.')
