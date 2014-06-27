@@ -278,16 +278,27 @@ def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
 
 # Slicing examples.
 
-def plot_slice(distarray_slice, name, filename):
+def plot_slice(distarray_slice, filename, title, x_label, y_label):
     ''' Create an array plot of the 2D slice. '''
-    print 'Visualizing slice', name
+    print 'Visualizing slice', title
     num_dim = len(distarray_slice.shape)
     if (num_dim != 2):
         raise ValueError('Slice must be 2D for plotting.')
     # Convert to ndarray for plotting.
     slice_nd = distarray_slice.toarray()
+    # Transpose to make depth look like depth.
+    slice_nd = slice_nd.transpose()
     # Plot.
-    pyplot.matshow(slice_nd)   #, cmap=cmap, norm=norm, *args, **kwargs)
+    figure = pyplot.gcf()
+    #cmap = 'hot'
+    cmap = 'jet'
+    pyplot.matshow(slice_nd, cmap=cmap)
+    if False:
+        # This looks bad without more effort.
+        pyplot.colorbar()
+    pyplot.title(title)
+    pyplot.xlabel(x_label)
+    pyplot.ylabel(y_label)
     pyplot.savefig(filename, dpi=100)
 
 
@@ -302,15 +313,18 @@ def slice_volume(distarray, base_filename='slice_'):
     print 'Taking I-Slice...'
     i_slice = distarray[i_index, :, :]
     filename = base_filename + 'i_plot.png'
-    plot_slice(i_slice, 'I-Slice', filename)
+    title = 'Vertical Slice [i = %d]' % (i_index)
+    plot_slice(i_slice, filename, title, 'j', 'depth')
     print 'Taking J-Slice...'
     filename = base_filename + 'j_plot.png'
+    title = 'Vertical Slice [j = %d]' % (j_index)
     j_slice = distarray[:, j_index, :]
-    plot_slice(j_slice, 'J-Slice', filename)
+    plot_slice(j_slice, filename, title, 'i', 'depth')
     print 'Taking K-Slice...'
     filename = base_filename + 'k_plot.png'
+    title = 'Horizontal Slice [k = %d]' % (k_index)
     k_slice = distarray[:, :, k_index]
-    plot_slice(k_slice, 'K-Slice', filename)
+    plot_slice(k_slice, filename, title, 'i', 'j')
 
 
 # Main processing function.
