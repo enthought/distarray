@@ -278,7 +278,6 @@ def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
 
 # Slicing examples.
 
-
 def plot_slice(distarray_slice, name, filename):
     ''' Create an array plot of the 2D slice. '''
     print 'Visualizing slice', name
@@ -286,38 +285,32 @@ def plot_slice(distarray_slice, name, filename):
     if (num_dim != 2):
         raise ValueError('Slice must be 2D for plotting.')
     # Convert to ndarray for plotting.
-    #print 'Slice:'
-    #print distarray_slice
     slice_nd = distarray_slice.toarray()
-    #print 'Slice Ndarray:'
-    #print slice_nd
     # Plot.
     pyplot.matshow(slice_nd)   #, cmap=cmap, norm=norm, *args, **kwargs)
     pyplot.savefig(filename, dpi=100)
 
 
-def slice_volume(distarray):
+def slice_volume(distarray, base_filename='slice_'):
     ''' Slice the volume three different ways and plot result. '''
     shape = distarray.shape
-    print 'Shape:'
-    print shape
     # Choose (arbitrary) indices for slicing.
     i_index = shape[0] // 4
     j_index = (2 * shape[1]) // 3
     k_index = shape[2] // 2
-    print 'i_index:', i_index
-    print 'j_index:', j_index
-    print 'k_index:', k_index
     # Slice and visualize result.
     print 'Taking I-Slice...'
     i_slice = distarray[i_index, :, :]
-    plot_slice(i_slice, 'I-Slice', 'slice_i_plot.png')
+    filename = base_filename + 'i_plot.png'
+    plot_slice(i_slice, 'I-Slice', filename)
     print 'Taking J-Slice...'
+    filename = base_filename + 'j_plot.png'
     j_slice = distarray[:, j_index, :]
-    plot_slice(j_slice, 'J-Slice', 'slice_j_plot.png')
+    plot_slice(j_slice, 'J-Slice', filename)
     print 'Taking K-Slice...'
+    filename = base_filename + 'k_plot.png'
     k_slice = distarray[:, :, k_index]
-    plot_slice(k_slice, 'K-Slice', 'slice_k_plot.png')
+    plot_slice(k_slice, 'K-Slice', filename)
 
 
 # Main processing function.
@@ -338,7 +331,7 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
         dump_distarray_info(da)
     # Slicing.
     print 'Slicing...'
-    slice_volume(da)
+    slice_volume(da, base_filename='slice_')
     # Statistics per-trace
     print 'Analyzing statistics...'
     analyze_statistics(da, compare=compare, verbose=verbose)
@@ -356,6 +349,9 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
                                       filter_max3,
                                       compare=compare,
                                       verbose=verbose)
+    # Slice the filtered array.
+    print 'Slicing filtered array...'
+    slice_volume(filtered_avg3_da, base_filename='filtered_')
     # Save filtered output to .dnpy files.
     print 'Saving .dnpy files...'
     output_dnpy_filename = 'filtered_avg3'
