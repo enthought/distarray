@@ -3,6 +3,7 @@
 import os.path
 import numpy
 import h5py
+from matplotlib import pyplot, colors, cm
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
@@ -275,6 +276,50 @@ def analyze_filter(da, local_filter, numpy_filter, compare=True, verbose=False):
     return result_distarray
 
 
+# Slicing examples.
+
+
+def plot_slice(distarray_slice, name, filename):
+    ''' Create an array plot of the 2D slice. '''
+    print 'Visualizing slice', name
+    num_dim = len(distarray_slice.shape)
+    if (num_dim != 2):
+        raise ValueError('Slice must be 2D for plotting.')
+    # Convert to ndarray for plotting.
+    #print 'Slice:'
+    #print distarray_slice
+    slice_nd = distarray_slice.toarray()
+    #print 'Slice Ndarray:'
+    #print slice_nd
+    # Plot.
+    pyplot.matshow(slice_nd)   #, cmap=cmap, norm=norm, *args, **kwargs)
+    pyplot.savefig(filename, dpi=100)
+
+
+def slice_volume(distarray):
+    ''' Slice the volume three different ways and plot result. '''
+    shape = distarray.shape
+    print 'Shape:'
+    print shape
+    # Choose (arbitrary) indices for slicing.
+    i_index = shape[0] // 4
+    j_index = (2 * shape[1]) // 3
+    k_index = shape[2] // 2
+    print 'i_index:', i_index
+    print 'j_index:', j_index
+    print 'k_index:', k_index
+    # Slice and visualize result.
+    print 'Taking I-Slice...'
+    i_slice = distarray[i_index, :, :]
+    plot_slice(i_slice, 'I-Slice', 'slice_i_plot.png')
+    print 'Taking J-Slice...'
+    j_slice = distarray[:, j_index, :]
+    plot_slice(j_slice, 'J-Slice', 'slice_j_plot.png')
+    print 'Taking K-Slice...'
+    k_slice = distarray[:, :, k_index]
+    plot_slice(k_slice, 'K-Slice', 'slice_k_plot.png')
+
+
 # Main processing function.
 
 def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
@@ -291,6 +336,9 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
     # Print some stuff about the array.
     if False:
         dump_distarray_info(da)
+    # Slicing.
+    print 'Slicing...'
+    slice_volume(da)
     # Statistics per-trace
     print 'Analyzing statistics...'
     analyze_statistics(da, compare=compare, verbose=verbose)
