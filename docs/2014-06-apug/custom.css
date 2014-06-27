@@ -1,0 +1,5 @@
+/* make the default font-size bigger in slides mode */
+
+.reveal {
+    font-size: 250%;
+}

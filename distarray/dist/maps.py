@@ -154,9 +154,19 @@ class MapBase(object):
         """
         raise IndexError()
 
+    def _is_compatible_degenerate(self, map):
+        right_types = all(isinstance(m, (NoDistMap, BlockMap, BlockCyclicMap))
+                          for m in (self, map))
+        return (right_types
+                and self.grid_size == map.grid_size == 1
+                and self.size == map.size)
+
     def is_compatible(self, map):
-        return ((self.dist == map.dist) and
-                (vars(self) == vars(map)))
+        if self._is_compatible_degenerate(map):
+            return True
+        else:
+            return ((self.dist == map.dist) and
+                    (vars(self) == vars(map)))
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +240,11 @@ class NoDistMap(MapBase):
 
         return {'dist_type': self.dist,
                 'size': isection_size}
+
+    def is_compatible(self, other):
+        return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
+                other.grid_size == self.grid_size and 
+                other.size == self.size)
 
 
 class BlockMap(MapBase):
@@ -339,6 +354,11 @@ class BlockMap(MapBase):
         return {'dist_type': self.dist,
                 'bounds': new_bounds}
 
+    def is_compatible(self, other):
+        if isinstance(other, NoDistMap):
+            return other.is_compatible(self)
+        return super(BlockMap, self).is_compatible(other)
+
 
 class BlockCyclicMap(MapBase):
 
@@ -386,6 +406,11 @@ class BlockCyclicMap(MapBase):
                         'start': grid_rank * self.block_size,
                         'block_size': self.block_size,
                         }) for grid_rank in range(self.grid_size))
+
+    def is_compatible(self, other):
+        if isinstance(other, NoDistMap):
+            return other.is_compatible(self)
+        return super(BlockCyclicMap, self).is_compatible(other)
 
 
 class UnstructuredMap(MapBase):
@@ -666,7 +691,7 @@ class Distribution(object):
 
     def slice(self, index_tuple):
         """Make a new Distribution from a slice."""
-        new_targets = self.owning_targets(index_tuple)
+        new_targets = self.owning_targets(index_tuple) or [0]
         global_dim_data = []
         # iterate over the dimensions
         for map_, idx in zip(self.maps, index_tuple):
@@ -725,8 +750,8 @@ class Distribution(object):
         return [dd for (_, dd) in rank_and_dd]
 
     def is_compatible(self, o):
-        return ((self.context, self.targets, self.shape, self.ndim, self.dist, self.grid_shape) ==
-                (o.context,    o.targets,    o.shape,    o.ndim,    o.dist,    o.grid_shape) and
+        return ((self.context, self.targets, self.shape, self.ndim, self.grid_shape) ==
+                (o.context,    o.targets,    o.shape,    o.ndim,    o.grid_shape) and
                 all(m.is_compatible(om) for (m, om) in zip(self.maps, o.maps)))
 
     def reduce(self, axes):

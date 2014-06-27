@@ -120,13 +120,17 @@ class TestGetItemSlicing(ContextTestCase):
         size = 10
         expected = numpy.random.randint(11, size=size)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[:].toarray(), expected)
+        out = arr[:]
+        self.assertSequenceEqual(out.dist, ('b',))
+        assert_array_equal(out.toarray(), expected)
 
     def test_partial_slice_block_dist(self):
         size = 10
         expected = numpy.random.randint(10, size=size)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[0:2].toarray(), expected[0:2])
+        out = arr[0:2]
+        self.assertSequenceEqual(out.dist, ('b',))
+        assert_array_equal(out.toarray(), expected[0:2])
 
     def test_slice_a_slice_block_dist_0(self):
         size = 10
@@ -135,6 +139,7 @@ class TestGetItemSlicing(ContextTestCase):
         s0 = arr[:9]
         s1 = s0[0:5]
         s2 = s1[:2]
+        self.assertSequenceEqual(s2.dist, ('b',))
         assert_array_equal(s2.toarray(), expected[:2])
 
     def test_slice_a_slice_block_dist_1(self):
@@ -144,6 +149,7 @@ class TestGetItemSlicing(ContextTestCase):
         s0 = arr[:9]
         s1 = s0[0:5]
         s2 = s1[-2:]
+        self.assertSequenceEqual(s2.dist, ('b',))
         assert_array_equal(s2.toarray(), expected[3:5])
 
     def test_slice_block_dist_1d_with_step(self):
@@ -151,58 +157,78 @@ class TestGetItemSlicing(ContextTestCase):
         step = 2
         expected = numpy.random.randint(10, size=size)
         darr = self.context.fromarray(expected)
-        assert_array_equal(darr[::step].toarray(), expected[::step])
+        out = darr[::step]
+        self.assertSequenceEqual(out.dist, ('b',))
+        assert_array_equal(out.toarray(), expected[::step])
 
     def test_partial_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[2:6, 3:10].toarray(), expected[2:6, 3:10])
+        out = arr[2:6, 3:10]
+        self.assertSequenceEqual(out.dist, ('b', 'n'))
+        assert_array_equal(out.toarray(), expected[2:6, 3:10])
 
     def test_partial_negative_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[-6:-2, -10:-3].toarray(),
+        out = arr[-6:-2, -10:-3]
+        self.assertSequenceEqual(out.dist, ('b', 'n'))
+        assert_array_equal(out.toarray(),
                            expected[-6:-2, -10:-3])
 
     def test_incomplete_slice_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[3:9].toarray(), expected[3:9])
+        out = arr[3:9]
+        self.assertSequenceEqual(out.dist, ('b', 'n'))
+        assert_array_equal(out.toarray(), expected[3:9])
 
     def test_incomplete_index_block_dist_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[1].toarray(), expected[1])
+        out = arr[1]
+        self.assertSequenceEqual(out.dist, ('n'))
+        assert_array_equal(out.toarray(), expected[1])
 
-    @unittest.expectedFailure
     def test_empty_slice_1d(self):
         shape = (10,)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[100:].toarray(), expected[100:])
+        out = arr[100:]
+        self.assertEqual(out.shape, (0,))
+        self.assertEqual(out.grid_shape, (1,))
+        self.assertEqual(len(out.targets), 1)
+        assert_array_equal(out.toarray(), expected[100:])
 
-    @unittest.expectedFailure
     def test_empty_slice_2d(self):
         shape = (10, 20)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[100:, 100:].toarray(), expected[100:, 100:])
+        out = arr[100:, 100:]
+        self.assertEqual(out.shape, (0, 0))
+        self.assertEqual(out.grid_shape, (1, 1))
+        self.assertEqual(len(out.targets), 1)
+        assert_array_equal(out.toarray(), expected[100:, 100:])
 
     def test_trailing_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[1, ...].toarray(), expected[1, ...])
+        out = arr[1, ...]
+        self.assertSequenceEqual(out.dist, ('n', 'n', 'n'))
+        assert_array_equal(out.toarray(), expected[1, ...])
 
     def test_leading_ellipsis(self):
         shape = (2, 3, 7, 6)
         expected = numpy.random.randint(10, size=shape)
         arr = self.context.fromarray(expected)
-        assert_array_equal(arr[..., 3].toarray(), expected[..., 3])
+        out = arr[..., 3]
+        self.assertSequenceEqual(out.dist, ('b', 'n', 'n'))
+        assert_array_equal(out.toarray(), expected[..., 3])
 
     def test_multiple_ellipsis(self):
         shape = (2, 4, 2, 4, 1, 5)

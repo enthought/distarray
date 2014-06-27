@@ -26,7 +26,7 @@ MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n ${NPROCS}
 # PARALLEL_TEST_REGULAR or PARALLEL_TEST_COVERAGE from above.  See the
 # `test_engines` and `test_engines_with_coverage` targets.
 MPI_EXEC_CMD = (${MPIEXEC} ${MPIEXEC_ARGS} ${PARALLEL_TEST} ; OUT=$$? ; \
-			   for f in ${MPI_OUT_PREFIX}* ; do echo "====> " $$f ; cat $$f ; done ; \
+			   for f in ${MPI_OUT_PREFIX}* ; do echo "====> " $$f ; tail -1 $$f ; done ; \
 			   exit $$OUT)
 
 # default number of engines to use.
