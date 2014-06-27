@@ -212,25 +212,16 @@ class DistArray(object):
 
     def _set_view(self, index, value):
         # to be run locally
-        def set_view(arr, index, value, value_slices):
+        def set_view(arr, index, value, ddpr, comm):
             from distarray.local.localarray import LocalArray
-            slice_ = value_slices[arr.comm_rank]
+            from distarray.local.maps import Distribution
+            dim_data = ddpr[comm.Get_rank()]
+            dist = Distribution(comm=comm, dim_data=dim_data)
             if isinstance(value, LocalArray):
                 arr.global_index[index] = value.ndarray
             else:
-                arr.global_index[index] = value[slice_]
+                arr.global_index[index] = value[dist.global_slice]
 
-        def bounds_slice(dd):
-            if dd['dist_type'] == 'b':
-                return slice(dd['start'], dd['stop'])
-            elif dd['dist_type'] == 'n':
-                return slice(0, dd['size'])
-            else:
-                msg = "Function only works for 'n' and 'b' 'dist_type's"
-                raise TypeError(msg)
-
-        # this could be made more efficient
-        # we only need the bounds computed by distribution.slice
         new_distribution = self.distribution.slice(index)
         if isinstance(value, DistArray):
             if not value.distribution.is_compatible(new_distribution):
@@ -244,15 +235,9 @@ class DistArray(object):
                 raise ValueError(msg)
 
         ddpr = new_distribution.get_dim_data_per_rank()
-        value_slices =  [tuple(bounds_slice(dd) for dd in dim_data)
-                         for dim_data in ddpr]
-        # but we need a data structure indexable by a target's rank
-        # assume contiguous range of targets here
-        targets = self.distribution.owning_targets(index)
-        value_slices_per_target = [None] * len(self.targets)
-        value_slices_per_target[targets[0]:targets[-1]] = value_slices
-
-        args = [self.key, index, value, value_slices_per_target]
+        comm = new_distribution.comm
+        targets = new_distribution.targets
+        args = [self.key, index, value, ddpr, comm]
         self.context.apply(set_view, args=args, targets=targets)
 
     def _checked_setitem(self, index, value):
