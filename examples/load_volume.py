@@ -393,7 +393,7 @@ def main():
     # Desired distribution method.
     dist = ('b', 'b', 'n')
     # Processing options.
-    compare = False
+    compare = True
     verbose = False
     process_seismic_volume(filename=filename,
                            key=key,
