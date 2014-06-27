@@ -112,6 +112,20 @@ class TestDistArray(ContextTestCase):
         assert_array_equal(darr.tondarray(), nparr)
         assert_array_equal(numpy.ones((7, 9)), nparr)
 
+    def test_set_numpy_array_full_slice_with_distarray(self):
+        distribution = Distribution.from_shape(self.context, (7, 9))
+        darr = self.context.ones(distribution)
+        nparr = numpy.zeros_like(darr)
+        nparr[...] = darr
+        assert_array_equal(nparr, darr.toarray())
+
+    def test_set_numpy_array_partial_slice_with_distarray(self):
+        distribution = Distribution.from_shape(self.context, (15, 4))
+        darr = self.context.ones(distribution)
+        nparr = numpy.zeros_like(darr)
+        nparr[3, :] = darr[3, :]
+        assert_array_equal(nparr[3, :], darr[3, :].toarray())
+
     def test_global_tolocal_bug(self):
         # gh-issue #154
         distribution = Distribution.from_shape(self.context, (3, 3),
