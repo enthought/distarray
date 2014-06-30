@@ -303,7 +303,7 @@ class DistArray(object):
 
     @property
     def dtype(self):
-        return self._dtype
+        return np.dtype(self._dtype)
 
     @property
     def itemsize(self):
@@ -312,6 +312,13 @@ class DistArray(object):
     @property
     def targets(self):
         return self.distribution.targets
+
+    @property
+    def __array_interface__(self):
+        return {'shape': self.shape,
+                'typestr': self.dtype.str,
+                'data': self.tondarray(),
+                'version': 3}
 
     def tondarray(self):
         """Returns the distributed array as an ndarray."""
