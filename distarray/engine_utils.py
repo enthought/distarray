@@ -101,7 +101,7 @@ def push(msg):
 
 def pull(msg):
     name = msg[1]
-    module = import_module(__name__)
+    module = import_module('__main__')
     res = getattr(module, name)
     distarray.INTERCOMM.send(res, dest=client_rank)
 
