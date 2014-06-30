@@ -264,7 +264,6 @@ class TestGetItemSlicing(ContextTestCase):
         arr = self.context.fromarray(expected)
         assert_array_equal(arr[()], expected[()])
 
-    @unittest.skip('Ellipsis not yet supported for 0d.')
     def test_0d_ellipsis(self):
         shape = ()
         expected = numpy.random.randint(10, size=shape)
