@@ -15,7 +15,7 @@ from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
-from distarray.dist.decorators import local, vectorize
+from distarray.dist.decorators import local
 
 
 context = Context()
@@ -48,51 +48,31 @@ def draw_coord(arr, re_ax, im_ax, resolution):
     return arr
 
 
-# This exactly the same function as the one in julia_numpy.py, but here
-# we use distarray's vectorize decorator.
-@vectorize
-def julia_calc(z, c, z_max, n_max):
-    n = 0
-    fn = lambda z, c: z**2 + c
-    while abs(z) < z_max and n < n_max:
-        z = fn(z, c)
-        n += 1
-    return n
+def local_julia_calc(la, c, z_max, n_max):
+    ''' Calculate the number of iterations for the point to escape. '''
 
-
-def local_julia_calc(la, c):
-    ''' Filter a local array via 3-point average over z axis. '''
-
-    def julia_calc(a):
-        ''' Filter a local array via 3-point average over z axis.
-        A 2-point average is used at the ends. '''
-        from numpy import empty_like, empty
-        b = empty(a.shape, dtype=int)
-        z_max = 10
-        n_max = 100
-        for i in xrange(a.shape[0]):
-            for j in xrange(a.shape[1]):
-                z0 = a[i, j]
-                n = 0
-                z = z0
-                while abs(z) < z_max and n < n_max:
-                    z = z*z + c
-                    n += 1
-                b[i, j] = n
-        return b
+    @numpy.vectorize
+    def julia_calc(z, c, z_max, n_max):
+        ''' Use usual numpy.vectorize to apply on all the complex points. '''
+        n = 0
+        while abs(z) < z_max and n < n_max:
+            z = z*z + c
+            n += 1
+        return n
 
     from distarray.local import LocalArray
     a = la.ndarray
-    b = julia_calc(a)
+    b = julia_calc(a, c, z_max=z_max, n_max=n_max)
     res = LocalArray(la.distribution, buf=b)
     rtn = proxyize(res)
     return rtn
 
 
-def distributed_julia_calc(distarray, c):
-    ''' Filter a DistArray, returning a new DistArray. '''
+def distributed_julia_calc(distarray, c, z_max=10, n_max=100):
+    ''' Calculate the Julia set for an array of points in the complex plane. '''
     context = distarray.context
-    iters_key = context.apply(local_julia_calc, (distarray.key, c))
+    iters_key = context.apply(local_julia_calc,
+                              (distarray.key, c, z_max, n_max))
     iters_da = DistArray.from_localarrays(iters_key[0], context=context)
     return iters_da
 
@@ -114,7 +94,10 @@ if __name__ == '__main__':
     complex_plane = make_empty_da(dimensions, dist, dtype=complex)
     complex_plane = draw_coord(complex_plane, re_ax, im_ax, dimensions)
     # Calculate the number of iterations to escape.
-    num_iters = distributed_julia_calc(complex_plane, c)
+    num_iters = distributed_julia_calc(complex_plane,
+                                       c,
+                                       z_max=z_max,
+                                       n_max=n_max)
     # Draw the iteration count.
     image = num_iters.tondarray()
     pyplot.matshow(image)
