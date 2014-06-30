@@ -58,7 +58,7 @@ def julia_calc(z, c, z_max, n_max):
         n += 1
     return n
 
-# Grid parameteres
+# Grid parameters
 re_ax = (-1.5, 1.5)
 im_ax = (-1.5, 1.5)
 dimensions = (500, 500)
