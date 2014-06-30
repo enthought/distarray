@@ -397,6 +397,18 @@ class TestSetItemSlicing(ContextTestCase):
         db = self.context.zeros(dist)
         da[...] = db
 
+    def test_set_0d_slice(self):
+        expected = numpy.array(33)
+        arr = self.context.fromarray(expected)
+
+        val0 = 55
+        arr[...] = val0
+        assert_array_equal(arr[...].toarray(), numpy.array(val0))
+
+        val1 = 99
+        arr[()] = val1
+        assert_array_equal(arr[...].toarray(), numpy.array(val1))
+
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
 
