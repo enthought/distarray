@@ -23,29 +23,35 @@ with context.view.sync_imports():
     import numpy
 
 
-# Make an empty distributed array
-def make_empty_da(resolution, dist, dtype):
-    """Create the arr we will build the fractal with."""
+def create_complex_plane(resolution, dist, re_ax, im_ax):
+    ''' Create a DistArray containing points on the complex plane.
 
+    resolution: A 2-tuple with the number of points along Re and Im axes.
+    dist: Distribution for the DistArray.
+    re_ax: A 2-tuple with the (lower, upper) range of the Re axis.
+    im_ax: A 2-tuple with the (lower, upper) range of the Im axis.
+    '''
+
+    @local
+    def fill_complex_plane(arr, re_ax, im_ax, resolution):
+        ''' Fill in points on the complex coordinate plane. '''
+        # Drawing the coordinate plane directly like this is currently much
+        # faster than trying to do it by indexing a distarray.
+        # This may not be the most DistArray-thonic way to do this.
+        re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
+        im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
+        for i in arr.distribution[0].global_iter:
+            for j in arr.distribution[1].global_iter:
+                arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
+                                                 im_ax[0] + im_step*j)
+
+    # Create an empty distributed array.
     distribution = Distribution.from_shape(context,
                                            (resolution[0], resolution[1]),
                                            dist=dist)
-    out = context.empty(distribution, dtype=dtype)
-    return out
-
-
-# Drawing the coordinate plane directly like this is currently much
-# faster than trying to do it by indexing a distarray.
-@local
-def draw_coord(arr, re_ax, im_ax, resolution):
-    """Draw the complex coordinate plane"""
-    re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
-    im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
-    for i in arr.distribution[0].global_iter:
-        for j in arr.distribution[1].global_iter:
-            arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
-                                             im_ax[0] + im_step*j)
-    return arr
+    complex_plane = context.empty(distribution, dtype=complex)
+    fill_complex_plane(complex_plane, re_ax, im_ax, resolution)
+    return complex_plane
 
 
 def local_julia_calc(la, c, z_max, n_max):
@@ -91,9 +97,8 @@ dist = {0: 'b', 1: 'b'}
 
 if __name__ == '__main__':
     # Create a distarray for the points on the complex plane.
-    complex_plane = make_empty_da(dimensions, dist, dtype=complex)
-    complex_plane = draw_coord(complex_plane, re_ax, im_ax, dimensions)
-    # Calculate the number of iterations to escape.
+    complex_plane = create_complex_plane(dimensions, dist, re_ax, im_ax)
+    # Calculate the number of iterations to escape for each point.
     num_iters = distributed_julia_calc(complex_plane,
                                        c,
                                        z_max=z_max,
