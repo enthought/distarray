@@ -216,7 +216,6 @@ class Context(object):
         """Creates LocalArrays with the method named in `local_call`."""
         def create_local(local_call, ddpr, dtype, comm):
             from distarray.local.maps import Distribution
-            local_call = local_call
             if len(ddpr) > 0:
                 dim_data = ddpr[comm.Get_rank()]
             else:
@@ -444,7 +443,7 @@ class Context(object):
         result : DistArray
             A DistArray encapsulating the file loaded.
         """
-        
+
         def _local_load_npy(filename, ddpr, comm):
             from distarray.local import load_npy
             dim_data = ddpr[comm.Get_rank()]
