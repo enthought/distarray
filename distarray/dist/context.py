@@ -216,7 +216,6 @@ class Context(object):
         """Creates LocalArrays with the method named in `local_call`."""
         def create_local(local_call, ddpr, dtype, comm):
             from distarray.local.maps import Distribution
-            local_call = local_call
             dim_data = ddpr[comm.Get_rank()]
             distribution = Distribution(comm=comm, dim_data=dim_data)
             rval = local_call(distribution=distribution, dtype=dtype)
