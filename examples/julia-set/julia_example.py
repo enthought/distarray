@@ -42,8 +42,8 @@ def create_complex_plane(resolution, dist, re_ax, im_ax):
         im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
         for i in arr.distribution[0].global_iter:
             for j in arr.distribution[1].global_iter:
-                arr.global_index[i, j] = complex(re_ax[0] + re_step*i,
-                                                 im_ax[0] + im_step*j)
+                arr.global_index[i, j] = complex(re_ax[0] + re_step * i,
+                                                 im_ax[0] + im_step * j)
 
     # Create an empty distributed array.
     distribution = Distribution.from_shape(context,
@@ -55,27 +55,39 @@ def create_complex_plane(resolution, dist, re_ax, im_ax):
 
 
 def local_julia_calc(la, c, z_max, n_max):
-    ''' Calculate the number of iterations for the point to escape. '''
+    ''' Calculate the number of iterations for the point to escape.
+
+    la: Local array of complex values whose iterations we will count.
+    c: Complex number to add at each iteration.
+    z_max: Magnitude of complex value that we assume goes to infinity.
+    n_max: Maximum number of iterations.
+    '''
 
     @numpy.vectorize
     def julia_calc(z, c, z_max, n_max):
         ''' Use usual numpy.vectorize to apply on all the complex points. '''
         n = 0
         while abs(z) < z_max and n < n_max:
-            z = z*z + c
+            z = z * z + c
             n += 1
         return n
 
     from distarray.local import LocalArray
     a = la.ndarray
-    b = julia_calc(a, c, z_max=z_max, n_max=n_max)
+    b = julia_calc(a, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=b)
     rtn = proxyize(res)
     return rtn
 
 
 def distributed_julia_calc(distarray, c, z_max=10, n_max=100):
-    ''' Calculate the Julia set for an array of points in the complex plane. '''
+    ''' Calculate the Julia set for an array of points in the complex plane.
+
+    distarray: DistArray of complex values whose iterations we will count.
+    c: Complex number to add at each iteration.
+    z_max: Magnitude of complex value that we assume goes to infinity.
+    n_max: Maximum number of iterations.
+    '''
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
                               (distarray.key, c, z_max, n_max))
@@ -94,6 +106,7 @@ n_max = 100
 # Array distribution parameters
 dist = {0: 'c', 1: 'c'}
 dist = {0: 'b', 1: 'b'}
+
 
 if __name__ == '__main__':
     # Create a distarray for the points on the complex plane.
