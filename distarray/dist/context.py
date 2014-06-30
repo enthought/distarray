@@ -696,7 +696,7 @@ class MPIContext(BaseContext):
         if not self._COMM_INITIALIZED:
             initial_comm_setup()
             assert get_rank() == 0
-            self._COMM_INITIALIZED = True
+            self.__class__._COMM_INITIALIZED = True
 
         self.nengines = get_nengines()
 
@@ -736,6 +736,9 @@ class MPIContext(BaseContext):
         """ Delete keys that this context created from all the engines. """
         msg = ('kill',)
         self._send_msg(msg)
+
+    def close(self):
+        pass
 
     def delete_key(*args, **kwargs):
         pass
@@ -824,6 +827,7 @@ class MPIContext(BaseContext):
 
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
+
 
 if is_solo_mpi_process():
     Context = IPythonContext
