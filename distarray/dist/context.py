@@ -773,7 +773,8 @@ class MPIContext(BaseContext):
 
     def _pull(self, k, targets=None):
         msg = ('pull', k)
-        return self._send_msg(msg, targets=targets)
+        self._send_msg(msg, targets=targets)
+        return self._recv_msg(targets=targets)
 
     def _execute0(self, lines):
         return self._execute(lines, targets=self.targets[0])
