@@ -851,6 +851,16 @@ class TestReduceMethods(ContextTestCase):
         darr = self.context.ones(dist)
         darr.var()
 
+    def test_boolean_reduction(self):
+        dist = Distribution.from_shape(self.context, shape=(200,), dist=('b'),
+                                       targets=range(4))
+        darr = self.context.ones(dist)
+        mask = darr < 2
+        self.assertEqual(mask.min().tondarray(), mask.tondarray().min())
+        self.assertEqual(mask.max().tondarray(), mask.tondarray().max())
+        self.assertEqual(mask.mean().tondarray(), mask.tondarray().mean())
+        self.assertEqual(mask.var().tondarray(), mask.tondarray().var())
+        self.assertEqual(mask.sum().tondarray(), mask.tondarray().sum())
 
 class TestFromLocalArrays(ContextTestCase):
 

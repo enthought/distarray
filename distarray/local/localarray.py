@@ -951,6 +951,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
         out_ndarray = None
     else:
         out_ndarray = out.ndarray
+        if out.ndarray.dtype == np.bool:
+            out.ndarray.dtype = np.uint8
     local_reduce = func(*args, **kwargs)
     reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
     return out
@@ -958,6 +960,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
 
 def min_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for min."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.MIN,
                           larr.ndarray.min,
                           (), {'axis': axes}, out)
@@ -965,6 +969,8 @@ def min_reducer(reduce_comm, larr, out, axes, dtype):
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for max."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.MAX,
                           larr.ndarray.max,
                           (), {'axis': axes}, out)
@@ -972,6 +978,8 @@ def max_reducer(reduce_comm, larr, out, axes, dtype):
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for sum."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.SUM,
                           larr.ndarray.sum,
                           (), {'axis': axes, 'dtype': dtype}, out)
