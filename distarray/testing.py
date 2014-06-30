@@ -206,7 +206,7 @@ class ContextTestCase(ClientTestCase):
             cls.context = Context()
             cls.ntargets = len(cls.context.targets)
         else:
-            cls.context = Context(targets=six.moves.range(cls.ntargets))
+            cls.context = Context(targets=list(range(cls.ntargets)))
 
     @classmethod
     def tearDownClass(cls):
