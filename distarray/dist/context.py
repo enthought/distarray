@@ -777,13 +777,13 @@ class MPIContext(BaseContext):
         return self._recv_msg(targets=targets)
 
     def _execute0(self, lines):
-        return self._execute(lines, targets=self.targets[0])
+        return self._execute(lines, targets=[self.targets[0]])
 
     def _push0(self, d):
-        return self._push(d, targets=self.targets[0])
+        return self._push(d, targets=[self.targets[0]])
 
     def _pull0(self, k):
-        return self._pull(k, targets=self.targets[0])
+        return self._pull(k, targets=[self.targets[0]])
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
