@@ -215,10 +215,10 @@ class DistArray(object):
         def set_view(arr, index, value, ddpr, comm):
             from distarray.local.localarray import LocalArray
             from distarray.local.maps import Distribution
-            if len(ddpr) > 0:
-                dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr) == 0:
+                dim_data = ()
             else:
-                dim_data = []
+                dim_data = ddpr[comm.Get_rank()]
             dist = Distribution(comm=comm, dim_data=dim_data)
             if isinstance(value, LocalArray):
                 arr.global_index[index] = value.ndarray
