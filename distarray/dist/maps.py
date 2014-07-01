@@ -253,21 +253,23 @@ class BlockMap(MapBase):
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-
         self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
 
         bounds = glb_dim_dict['bounds']
-        self.bounds = list(zip(bounds[:-1], bounds[1:]))
+        tuple_bounds = list(zip(bounds[:-1], bounds[1:]))
 
-        self.size = bounds[-1]
-        self.grid_size = max(len(bounds) - 1, 1)
+        size = bounds[-1]
+        grid_size = max(len(bounds) - 1, 1)
 
-        self.comm_padding = int(glb_dim_dict.get('comm_padding', 0))
-        self.boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
+        comm_padding = int(glb_dim_dict.get('comm_padding', 0))
+        boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
 
+        self.__init__(size=size, grid_size=grid_size, bounds=tuple_bounds,
+                      comm_padding=comm_padding,
+                      boundary_padding=boundary_padding)
         return self
 
     @classmethod
