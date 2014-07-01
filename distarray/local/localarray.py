@@ -44,15 +44,12 @@ class GlobalIndex(object):
         except IndexError:
             return None
 
-    def global_to_local(self, *global_ind):
-        return self.distribution.local_from_global(*global_ind)
-
-    def local_to_global(self, *local_ind):
-        return self.distribution.global_from_local(*local_ind)
+    def _local_from_global(self, global_ind):
+        return self.distribution.local_from_global(global_ind)
 
     def get_slice(self, global_inds, new_distribution):
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
         view = self.ndarray[local_inds]
@@ -67,7 +64,7 @@ class GlobalIndex(object):
             raise TypeError(msg)
 
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
 
@@ -77,7 +74,7 @@ class GlobalIndex(object):
     def __setitem__(self, global_inds, value):
         _, global_inds = sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
             self.ndarray[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
@@ -268,19 +265,19 @@ class LocalArray(object):
     def rank_from_coords(self, coords):
         return self.distribution.rank_from_coords(coords)
 
-    def local_from_global(self, *global_ind):
-        return self.distribution.local_from_global(*global_ind)
+    def local_from_global(self, global_ind):
+        return self.distribution.local_from_global(global_ind)
 
-    def global_from_local(self, *local_ind):
-        return self.distribution.global_from_local(*local_ind)
+    def global_from_local(self, local_ind):
+        return self.distribution.global_from_local(local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
-        lower_global = self.global_from_local(*lower_local)
+        lower_global = self.global_from_local(lower_local)
         upper_local = [shape - 1 for shape in self.local_shape]
-        upper_global = self.global_from_local(*upper_local)
+        upper_global = self.global_from_local(upper_local)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -852,7 +849,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.global_from_local(*local_inds)
+        global_inds = self.arr.global_from_local(local_inds)
         return global_inds, value
 
 
