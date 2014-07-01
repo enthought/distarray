@@ -1,7 +1,17 @@
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
 """
 Create a fake 3D array that will pretend to be a seismic volume.
 
-We try and make it look interesting.
+The 3D float32 array is written as an HDF5 file, which can be processed by
+the additional example load_volume.py. We try and make it look interesting.
+The volume contains a couple of planes, which are angled. As ones passes
+down past each plane, the data values show a Gaussian peak at the plane
+position, and once past, the final value is larger than when started.
 """
 
 from __future__ import print_function

@@ -1,4 +1,20 @@
-''' Load the fake seismic volume and do stuff with it. '''
+# encoding: utf-8
+#----------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+#----------------------------------------------------------------------------
+
+"""
+Load the seismic volume, created with create_volume.py, and do stuff with it.
+
+The volume, which is stored as an HDF5 file, is loaded in parallel.
+Each trace (a z-slice constant in x and y) has statistics calculated for it.
+Next we apply a couple of filters to each trace.
+Next we extract some slices from the volume and create plots for them.
+We also extract slices from one of the filtered results.
+Finally, we save the 3-point-average filtered volume, both as an HDF5 file,
+and as a set of .dnpy files.
+"""
 
 from __future__ import print_function
 
