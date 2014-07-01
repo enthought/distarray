@@ -44,7 +44,11 @@ class DistArray(object):
         def _local_create(comm, ddpr, dtype):
             from distarray.local import empty
             from distarray.local.maps import Distribution
-            dist = Distribution(comm=comm, dim_data=ddpr[comm.Get_rank()])
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
+            dist = Distribution(comm=comm, dim_data=dim_data)
             return proxyize(empty(dist, dtype))
 
         ctx = distribution.context

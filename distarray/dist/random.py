@@ -162,7 +162,11 @@ class Random(object):
             import distarray.local.random as local_random
             from distarray.local.maps import Distribution
             local_func = getattr(local_random, local_func_name)
-            dist = Distribution(dim_data=ddpr[comm.Get_rank()], comm=comm)
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
+            dist = Distribution(dim_data=dim_data, comm=comm)
             return proxyize(local_func(distribution=dist, **kwargs))
 
         ddpr = distribution.get_dim_data_per_rank()

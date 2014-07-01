@@ -447,7 +447,10 @@ class Context(object):
 
         def _local_load_npy(filename, ddpr, comm):
             from distarray.local import load_npy
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
             return proxyize(load_npy(comm, filename, dim_data))
 
         ddpr = distribution.get_dim_data_per_rank()
@@ -482,7 +485,10 @@ class Context(object):
 
         def _local_load_hdf5(filename, ddpr, comm, key):
             from distarray.local import load_hdf5
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
             return proxyize(load_hdf5(comm, filename, dim_data, key))
 
         ddpr = distribution.get_dim_data_per_rank()
@@ -533,7 +539,11 @@ class Context(object):
         def _local_fromfunction(func, comm, ddpr, kwargs):
             from distarray.local import fromfunction
             from distarray.local.maps import Distribution
-            dist = Distribution(comm, dim_data=ddpr[comm.Get_rank()])
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
+            dist = Distribution(comm, dim_data=dim_data)
             local_arr = fromfunction(func, dist, **kwargs)
             return proxyize(local_arr)
 
