@@ -67,22 +67,22 @@ class TestInit(MpiTestCase):
 
     def test_localarray(self):
         """Can the ndarray be set and get?"""
-        self.larr_2d.get_localarray()
+        self.larr_2d.ndarray
         la = np.random.random(self.larr_2d.local_shape)
         la = np.asarray(la, dtype=self.larr_2d.dtype)
-        self.larr_2d.set_localarray(la)
-        self.larr_2d.get_localarray()
+        self.larr_2d.ndarray = la
+        self.larr_2d.ndarray
 
     def test_bad_localarray(self):
         """ Test that setting a bad local array fails as expected. """
-        self.larr_1d.get_localarray()
+        self.larr_1d.ndarray
         local_shape = self.larr_1d.local_shape
         # Double dimension sizes to make an invalid shape.
         bad_shape = tuple(2 * size for size in local_shape)
         la = np.random.random(bad_shape)
         la = np.asarray(la, dtype=self.larr_1d.dtype)
         with self.assertRaises(ValueError):
-            self.larr_1d.set_localarray(la)
+            self.larr_1d.ndarray = la
 
     def test_cart_coords(self):
         """Test getting the cart_coords attribute"""

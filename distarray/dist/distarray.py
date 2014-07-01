@@ -409,7 +409,7 @@ class DistArray(object):
 
         """
         def get(key):
-            return key.get_localarray()
+            return key.ndarray
         return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localarrays(self):

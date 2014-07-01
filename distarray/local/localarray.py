@@ -109,9 +109,9 @@ class LocalArray(object):
 
         # create the buffer
         if buf is None:
-            self.ndarray = np.empty(self.local_shape, dtype=dtype)
+            self._ndarray = np.empty(self.local_shape, dtype=dtype)
         else:
-            self.ndarray = np.asarray(buf, dtype=dtype)
+            self._ndarray = np.asarray(buf, dtype=dtype)
             if distribution.local_shape != self.ndarray.shape:
                 msg = "distribution shape must equal buf shape."
                 raise RuntimeError(msg)
@@ -250,15 +250,17 @@ class LocalArray(object):
     # Methods related to distributed indexing
     #-------------------------------------------------------------------------
 
-    def get_localarray(self):
-        return self.local_view()
+    def _get_ndarray(self):
+        return self._ndarray
 
-    def set_localarray(self, a):
+    def _set_ndarray(self, a):
         arr = np.asarray(a, dtype=self.dtype, order='C')
         if arr.shape == self.local_shape:
-            self.ndarray = arr
+            self._ndarray = arr
         else:
             raise ValueError("Incompatible local array shape")
+
+    ndarray = property(_get_ndarray, _set_ndarray)
 
     def coords_from_rank(self, rank):
         return self.distribution.coords_from_rank(rank)
