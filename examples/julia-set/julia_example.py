@@ -11,6 +11,7 @@ distarray passed via command line args. Usage:
 """
 
 import sys
+from time import time
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
@@ -23,7 +24,7 @@ with context.view.sync_imports():
     import numpy
 
 
-def create_complex_plane(resolution, dist, re_ax, im_ax):
+def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     ''' Create a DistArray containing points on the complex plane.
 
     resolution: A 2-tuple with the number of points along Re and Im axes.
@@ -95,28 +96,95 @@ def distributed_julia_calc(distarray, c, z_max=10, n_max=100):
     return iters_da
 
 
+def numpy_julia_calc(ndarray, c, z_max=10, n_max=100):
+    ''' Calculate entirely with NumPy for comparison. '''
+
+    @numpy.vectorize
+    def julia_calc(z, c, z_max, n_max):
+        ''' Use usual numpy.vectorize to apply on all the complex points. '''
+        n = 0
+        while abs(z) < z_max and n < n_max:
+            z = z * z + c
+            n += 1
+        return n
+
+    num_iters = julia_calc(ndarray, c, z_max, n_max)
+    return num_iters
+
+
 # Grid parameters
 re_ax = (-1.5, 1.5)
 im_ax = (-1.5, 1.5)
-dimensions = (500, 500)
+dimensions = (256, 256)
+#dimensions = (500, 500)
+#dimensions = (1000, 1000)
 # Julia set parameters, changing these is fun.
 c = complex(float(sys.argv[1]), float(sys.argv[2]))
 z_max = 10
-n_max = 100
+#n_max = 100
+n_max = 1000
+#n_max = 5000
 # Array distribution parameters
-dist = {0: 'c', 1: 'c'}
-dist = {0: 'b', 1: 'b'}
+#dist = {0: 'c', 1: 'c'}
+#dist = {0: 'b', 1: 'b'}
 
 
-if __name__ == '__main__':
+def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot, verbose):
+    # Create dist dictionary.
+    dist = {0: dist_code, 1: dist_code}
     # Create a distarray for the points on the complex plane.
-    complex_plane = create_complex_plane(dimensions, dist, re_ax, im_ax)
+    complex_plane = create_complex_plane(context,
+                                         dimensions,
+                                         dist,
+                                         re_ax,
+                                         im_ax)
     # Calculate the number of iterations to escape for each point.
+    t0 = time()
     num_iters = distributed_julia_calc(complex_plane,
                                        c,
                                        z_max=z_max,
                                        n_max=n_max)
-    # Draw the iteration count.
-    image = num_iters.tondarray()
-    pyplot.matshow(image)
-    pyplot.show()
+    t1 = time()
+    t_distarray = t1 - t0
+    # Now try with numpy.
+    complex_plane_nd = complex_plane.tondarray()
+    t0 = time()
+    num_iters_nd = numpy_julia_calc(complex_plane_nd,
+                                    c,
+                                    z_max=z_max,
+                                    n_max=n_max)
+    t1 = time()
+    t_numpy = t1 - t0
+    # Average iteration count.
+    avg_iters = num_iters.mean().tondarray()
+    if verbose:
+        print 'Distribution:', dist
+        print 'Num engines:', len(context.targets)
+        print 'Average iterations:', avg_iters, 'c:', c
+        print 'Elapsed time:', t_distarray
+        print 'NumPy elapsed time:', t_numpy
+    if plot:
+        # Plot the iteration count.
+        #image = num_iters.tondarray()
+        image = num_iters_nd
+        pyplot.matshow(image)
+        pyplot.show()
+    return avg_iters
+
+
+if __name__ == '__main__':
+    if True:
+        dist_code = 'b'
+        dist_code = 'c'
+        do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot=True, verbose=True)
+    else:
+        dist_code = 'b'
+        dist_code = 'c'
+        # Try many values to find something needs lots of iters.
+        cxs = [-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3]
+        cys = [-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3]
+        for cx in cxs:
+            for cy in cys:
+                c = complex(cx * 5.0, cy * 5.0)
+                avg_iters = do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot=False, verbose=False)
+                print 'Average iterations:', avg_iters, 'c:', c
