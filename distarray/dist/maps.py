@@ -279,15 +279,19 @@ class BlockMap(MapBase):
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
-        self.size = dd['size']
-        self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(axis_dim_dicts):
+
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(axis_dim_dicts), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
-        self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
+        bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
+        boundary_padding, comm_padding = dd.get('padding', (0, 0))
 
+        self.__init__(size=size, grid_size=grid_size, bounds=bounds,
+                      comm_padding=comm_padding,
+                      boundary_padding=boundary_padding)
         return self
 
     def __init__(self, size, grid_size, bounds=None,
