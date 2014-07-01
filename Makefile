@@ -74,7 +74,7 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 .PHONY: test_engines_with_coverage
 
 test_mpi:
-	mpiexec -np 1 make test_client : -np 4 distarray/apps/engine.py
+	mpiexec -np 1 python -m unittest discover -v : -np 4 distarray/apps/engine.py
 .PHONY: test_mpi
 
 test: test_client test_engines
