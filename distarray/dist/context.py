@@ -488,6 +488,7 @@ class IPythonContext(BaseContext):
             self.owns_client = False
 
         self.view = self.client[:]
+        self.nengines = len(self.view)
 
         self.all_targets = sorted(self.view.targets)
         if targets is None:
