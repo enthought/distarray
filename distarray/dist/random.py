@@ -16,8 +16,6 @@ class Random(object):
 
     def __init__(self, context):
         self.context = context
-        self.context._execute('import distarray.local.random',
-                              targets=self.context.targets)
 
     def seed(self, seed=None):
         """
