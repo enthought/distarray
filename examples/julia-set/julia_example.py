@@ -5,9 +5,11 @@
 # ---------------------------------------------------------------------------
 
 """
-Calculate the Julia set for a given z <- z**2 + c with
-distarray passed via command line args. Usage:
-    $ python julia_distarray.py <c real component> <c imaginary component>
+Calculate the Julia set for a given z <- z**2 + c using DistArray.
+
+Usage:
+    $ python julia_example.py <c real component> <c imaginary component>
+Or omit the c parameters to use the default c=(-0.045 + 0.45i).
 """
 
 import sys
@@ -17,11 +19,6 @@ from matplotlib import pyplot
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
 from distarray.dist.decorators import local
-
-
-context = Context()
-with context.view.sync_imports():
-    import numpy
 
 
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
@@ -112,26 +109,11 @@ def numpy_julia_calc(ndarray, c, z_max=10, n_max=100):
     return num_iters
 
 
-# Grid parameters
-re_ax = (-1.5, 1.5)
-im_ax = (-1.5, 1.5)
-dimensions = (256, 256)
-#dimensions = (500, 500)
-#dimensions = (1000, 1000)
-# Julia set parameters, changing these is fun.
-c = complex(float(sys.argv[1]), float(sys.argv[2]))
-z_max = 10
-#n_max = 100
-n_max = 1000
-#n_max = 5000
-# Array distribution parameters
-#dist = {0: 'c', 1: 'c'}
-#dist = {0: 'b', 1: 'b'}
-
-
-def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot, verbose):
+def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, plot):
+    ''' Do the Julia set calculation and print timing results. '''
     # Create dist dictionary.
     dist = {0: dist_code, 1: dist_code}
+    num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
     complex_plane = create_complex_plane(context,
                                          dimensions,
@@ -156,13 +138,12 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot, verbose)
     t1 = time()
     t_numpy = t1 - t0
     # Average iteration count.
-    avg_iters = num_iters.mean().tondarray()
-    if verbose:
-        print 'Distribution:', dist
-        print 'Num engines:', len(context.targets)
-        print 'Average iterations:', avg_iters, 'c:', c
-        print 'Elapsed time:', t_distarray
-        print 'NumPy elapsed time:', t_numpy
+    avg_iters = float(num_iters.mean().tondarray())
+    # Print results.
+    #print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
+    result = '%s, %r, %r, %r, %r, %r' % (
+                 dist_code, num_engines, t_distarray, t_numpy, avg_iters, str(c))
+    print result
     if plot:
         # Plot the iteration count.
         #image = num_iters.tondarray()
@@ -173,10 +154,44 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot, verbose)
 
 
 if __name__ == '__main__':
+
+    context = Context()
+    num_engines = len(context.targets)
+    print num_engines, 'engines available...'
+    
+    with context.view.sync_imports():
+        import numpy
+    # Region of the complex plane.
+    re_ax = (-1.5, 1.5)
+    im_ax = (-1.5, 1.5)
+    # Size of array. Increasing this a lot is probably not important
+    # in trying to illustrate performance.
+    dimensions = (256, 256)
+    # Julia set parameters, changing these is fun.
+    # Default constant, which has a lot of points in the set.
+    c = complex(-0.045, 0.45)
+    if len(sys.argv) == 3:
+        # Get constant from command line instead.
+        c = complex(float(sys.argv[1]), float(sys.argv[2]))
+    # Size of number that we consider as off to infinity.
+    # I think that 2 is sufficient to be sure that the point will escape.
+    z_max = 2
+    # Maximum iteration counts. Points in the set will hit this limit,
+    # so increasing this has a large effect on the run-time.
+    #n_max = 100
+    n_max = 1000
+    #n_max = 5000
+    #n_max = 10000
+    print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
+
     if True:
         dist_code = 'b'
         dist_code = 'c'
-        do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot=True, verbose=True)
+        for i in range(4):
+            for dist_code in ['b', 'c']:
+                for engine_count in [2, 3, 4]:
+                    context_use = Context(targets=range(engine_count))
+                    do_julia_run(context_use, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, plot=False)
     else:
         dist_code = 'b'
         dist_code = 'c'
@@ -186,5 +201,4 @@ if __name__ == '__main__':
         for cx in cxs:
             for cy in cys:
                 c = complex(cx * 5.0, cy * 5.0)
-                avg_iters = do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, plot=False, verbose=False)
-                print 'Average iterations:', avg_iters, 'c:', c
+                avg_iters = do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, plot=False)
