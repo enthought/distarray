@@ -893,6 +893,17 @@ class TestReduceMethods(ContextTestCase):
         darr = self.context.ones(dist)
         darr.var()
 
+    def test_boolean_reduction(self):
+        nparr = numpy.random.randn(200)
+        darr = self.context.fromarray(nparr)
+        mask = darr < 2
+        np_mask = mask.tondarray()
+        assert_array_equal(mask.min().tondarray(), np_mask.min())
+        assert_array_equal(mask.max().tondarray(), np_mask.max())
+        assert_array_equal(mask.sum().tondarray(), np_mask.sum())
+        assert_array_equal(mask.mean().tondarray(), np_mask.mean())
+        assert_allclose(mask.var().tondarray(), np_mask.var())
+        assert_allclose(mask.std().tondarray(), np_mask.std())
 
 class TestFromLocalArrays(ContextTestCase):
 

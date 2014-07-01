@@ -377,6 +377,8 @@ class DistArray(object):
 
     def sum(self, axis=None, dtype=None, out=None):
         """Return the sum of array elements over the given axis."""
+        if dtype is None and self.dtype == np.bool:
+            dtype = np.uint64
         return self._reduce('sum_reducer', axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
