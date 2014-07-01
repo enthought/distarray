@@ -216,6 +216,7 @@ class Context(object):
         """Creates LocalArrays with the method named in `local_call`."""
         def create_local(local_call, ddpr, dtype, comm):
             from distarray.local.maps import Distribution
+            local_call = eval(local_call)
             dim_data = ddpr[comm.Get_rank()]
             distribution = Distribution(comm=comm, dim_data=dim_data)
             rval = local_call(distribution=distribution, dtype=dtype)
@@ -241,7 +242,7 @@ class Context(object):
         DistArray
             A DistArray distributed as specified, with uninitialized values.
         """
-        return self._create_local(local_call=distarray.local.empty,
+        return self._create_local(local_call='distarray.local.empty',
                                   distribution=distribution, dtype=dtype)
 
     def zeros(self, distribution, dtype=float):
@@ -257,7 +258,7 @@ class Context(object):
         DistArray
             A DistArray distributed as specified, filled with zeros.
         """
-        return self._create_local(local_call=distarray.local.zeros,
+        return self._create_local(local_call='distarray.local.zeros',
                                   distribution=distribution, dtype=dtype)
 
     def ones(self, distribution, dtype=float):
@@ -273,7 +274,7 @@ class Context(object):
         DistArray
             A DistArray distributed as specified, filled with ones.
         """
-        return self._create_local(local_call=distarray.local.ones,
+        return self._create_local(local_call='distarray.local.ones',
                                   distribution=distribution, dtype=dtype,)
 
     def save_dnpy(self, name, da):
