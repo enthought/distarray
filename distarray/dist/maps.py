@@ -253,7 +253,6 @@ class BlockMap(MapBase):
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-        self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
@@ -267,14 +266,12 @@ class BlockMap(MapBase):
         comm_padding = int(glb_dim_dict.get('comm_padding', 0))
         boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
 
-        self.__init__(size=size, grid_size=grid_size, bounds=tuple_bounds,
-                      comm_padding=comm_padding,
-                      boundary_padding=boundary_padding)
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=tuple_bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
     @classmethod
     def from_axis_dim_dicts(cls, axis_dim_dicts):
-        self = cls.__new__(cls)
         dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
@@ -289,10 +286,9 @@ class BlockMap(MapBase):
         bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
         boundary_padding, comm_padding = dd.get('padding', (0, 0))
 
-        self.__init__(size=size, grid_size=grid_size, bounds=bounds,
-                      comm_padding=comm_padding,
-                      boundary_padding=boundary_padding)
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
     def __init__(self, size, grid_size, bounds=None,
                  comm_padding=None, boundary_padding=None):
