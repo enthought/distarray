@@ -44,12 +44,12 @@ class GlobalIndex(object):
         except IndexError:
             return None
 
-    def _global_to_local(self, global_ind):
+    def _local_from_global(self, global_ind):
         return self.distribution.local_from_global(global_ind)
 
     def get_slice(self, global_inds, new_distribution):
         try:
-            local_inds = self._global_to_local(global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
         view = self.ndarray[local_inds]
@@ -64,7 +64,7 @@ class GlobalIndex(object):
             raise TypeError(msg)
 
         try:
-            local_inds = self._global_to_local(global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
 
@@ -74,7 +74,7 @@ class GlobalIndex(object):
     def __setitem__(self, global_inds, value):
         _, global_inds = sanitize_indices(global_inds)
         try:
-            local_inds = self._global_to_local(global_inds)
+            local_inds = self._local_from_global(global_inds)
             self.ndarray[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
