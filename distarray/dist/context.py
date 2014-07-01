@@ -305,24 +305,29 @@ class Context(object):
         --------
         load_dnpy : Loading files saved with save_dnpy.
         """
+
+        def _local_save_dnpy(local_arr, fname_base):
+            from distarray.local import save_dnpy
+            fname = "%s_%s.dnpy" % (fname_base, local_arr.comm_rank)
+            save_dnpy(fname, local_arr)
+
+        def _local_save_dnpy_names(local_arr, fnames):
+            from distarray.local import save_dnpy
+            fname = fnames[local_arr.comm_rank]
+            save_dnpy(fname, local_arr)
+
         if isinstance(name, six.string_types):
-            subs = self._key_and_push(name) + (da.key, da.key)
-            self._execute(
-                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs,
-                targets=da.targets
-            )
+            func = _local_save_dnpy
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = self._key_and_push(name) + (da.key, da.key)
-            self._execute(
-                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs,
-                targets=da.targets
-            )
+            func = _local_save_dnpy_names
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
+
+        self.apply(func, (da.key, name), targets=da.targets)
 
 
     def load_dnpy(self, name):
