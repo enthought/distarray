@@ -16,6 +16,7 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 from distarray.error import DistributionError
 from distarray.utils import has_exactly_one
+from distarray.dist.mpionly_utils import push_function
 
 
 class DecoratorBase(object):
@@ -32,7 +33,7 @@ class DecoratorBase(object):
 
     def push_fn(self, context, fn_key, fn):
         """Push function to the engines."""
-        context._push({fn_key: fn}, targets=context.targets)
+        push_function(context, fn_key, fn)
 
     def determine_distribution(self, args, kwargs):
         """ Determine a distribution from a functions arguments."""
@@ -192,7 +193,7 @@ class vectorize(DecoratorBase):
         distribution = self.determine_distribution(args, kwargs)
         context = distribution.context
         # push function
-        self.push_fn(context, self.fn_key, self.fn)
+        push_function(context, self.fn_key, self.fn)
         # vectorize the function
         exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
         context._execute(exec_str, targets=distribution.targets)
