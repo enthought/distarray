@@ -423,12 +423,12 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
             raise ImportError(errmsg)
 
-        subs = (self._key_and_push(filename) + (da.key,) +
-                self._key_and_push(key, mode))
-        self._execute(
-            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs,
-            targets=da.targets
-        )
+        def _local_save_dnpy(filename, local_arr, key, mode):
+            from distarray.local import save_hdf5
+            save_hdf5(filename, local_arr, key, mode)
+
+        self.apply(_local_save_dnpy, (filename, da.key, key, mode),
+                   targets=da.targets)
 
     def load_npy(self, filename, distribution):
         """
@@ -530,23 +530,24 @@ class Context(object):
 
         See numpy.fromfunction for more details.
         """
-        dtype = kwargs.get('dtype', None)
+
+        def _local_fromfunction(func, comm, ddpr, kwargs):
+            from distarray.local import fromfunction
+            from distarray.local.maps import Distribution
+            dist = Distribution(comm, dim_data=ddpr[comm.Get_rank()])
+            local_arr = fromfunction(func, dist, **kwargs)
+            return proxyize(local_arr)
+
         dist = kwargs.get('dist', None)
         grid_shape = kwargs.get('grid_shape', None)
         distribution = Distribution.from_shape(context=self,
                                                shape=shape, dist=dist,
                                                grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
-        function_name, ddpr_name, kwargs_name = \
-            self._key_and_push(function, ddpr, kwargs)
-        da_name = self._generate_key()
-        comm_name = distribution.comm
-        cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
-               'distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]),'
-               '**{kwargs_name})')
-        self._execute(cmd.format(**locals()), targets=distribution.targets)
-        return DistArray.from_localarrays(da_name, distribution=distribution)
+        da_name = self.apply(_local_fromfunction,
+                             (function, distribution.comm, ddpr, kwargs),
+                             targets=distribution.targets)
+        return DistArray.from_localarrays(da_name[0], distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
