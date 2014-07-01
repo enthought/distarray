@@ -223,7 +223,7 @@ class TestGridSizes(ContextTestCase):
         dist = Distribution(self.context, (2, 3, 4), dist=('n', 'b', 'c'))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
-        if len(self.context.view) == 4:
+        if self.context.nengines == 4:
             self.assertEqual(shapes, [(2, 2, 2), (2, 2, 2), (2, 1, 2),
                                       (2, 1, 2)])
 
