@@ -111,8 +111,10 @@ class LocalArray(object):
         if buf is None:
             self._ndarray = np.empty(self.local_shape, dtype=dtype)
         else:
-            mv = memoryview(buf)
-            self._ndarray = np.asarray(mv, dtype=dtype)
+            self._ndarray = np.asarray(buf, dtype=dtype)
+            if distribution.local_shape != self.ndarray.shape:
+                msg = "distribution shape must equal buf shape."
+                raise RuntimeError(msg)
 
         # We pass a view of self.ndarray because we want the
         # GlobalIndex object to be able to change the LocalArray

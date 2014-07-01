@@ -166,15 +166,32 @@ class TestDapLopsided(DapValidatorMixin, MpiTestCase):
     comm_size = 2
 
     def setUp(self):
+        global_size = 50
         if self.comm.Get_rank() == 0:
-            arr = np.arange(20)
+            local_size = 20
+            arr = np.arange(local_size)
+            dim_data = ({
+                'dist_type': 'b',
+                'size': global_size,
+                'proc_grid_size': 2,
+                'proc_grid_rank': 0,
+                'start': 0,
+                'stop': local_size,
+            },)
         elif self.comm.Get_rank() == 1:
-            arr = np.arange(30)
+            local_size = 30
+            arr = np.arange(local_size)
+            dim_data = ({
+                'dist_type': 'b',
+                'size': global_size,
+                'proc_grid_size': 2,
+                'proc_grid_rank': 1,
+                'start': 20,
+                'stop': global_size,
+            },)
 
-        d = Distribution.from_shape(comm=self.comm, shape=(50,),
-                                    dist={0: 'b', 1: 'n'}, grid_shape=(2,))
-
-        self.larr = LocalArray(d, dtype='float64', buf=arr)
+        d = Distribution(comm=self.comm, dim_data=dim_data)
+        self.larr = LocalArray(d, buf=arr)
 
     def test_values(self):
         if self.comm.Get_rank() == 0:
