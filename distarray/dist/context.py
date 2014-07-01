@@ -366,28 +366,32 @@ class Context(object):
         --------
         save_dnpy : Saving files to load with with load_dnpy.
         """
-        da_key = self._generate_key()
+
+        def _local_load_dnpy(comm, fname_base):
+            from distarray.local import load_dnpy
+            fname = "%s_%s.dnpy" % (fname_base, comm.Get_rank())
+            local_arr = load_dnpy(comm, fname)
+            return proxyize(local_arr)
+
+        def _local_load_dnpy_names(comm, fnames):
+            from distarray.local import load_dnpy
+            fname = fnames[comm.Get_rank()]
+            local_arr = load_dnpy(comm, fname)
+            return proxyize(local_arr)
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
-            self._execute(
-                '%s = distarray.local.load_dnpy(%s, %s + "_" + str(%s.Get_rank()) + ".dnpy")' % subs,
-                targets=self.targets
-            )
+            func = _local_load_dnpy
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
-            self._execute(
-                '%s = distarray.local.load_dnpy(%s, %s[%s.Get_rank()])' % subs,
-                targets=self.targets
-            )
+            func = _local_load_dnpy_names
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray.from_localarrays(da_key, context=self)
+        da_key = self.apply(func, (self.comm, name), targets=self.targets)
+        return DistArray.from_localarrays(da_key[0], context=self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
