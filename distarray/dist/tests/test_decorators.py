@@ -103,15 +103,6 @@ class TestLocalDecorator(ContextTestCase):
         return numpy.sin(da)
 
     @local
-    def local_sum(da):
-        return numpy.sum(da.ndarray)
-
-    @local
-    def call_barrier(da):
-        da.comm.Barrier()
-        return da
-
-    @local
     def local_add_nums(da, num1, num2, num3):
         return da + num1 + num2 + num3
 
@@ -250,13 +241,6 @@ class TestLocalDecorator(ContextTestCase):
         do = self.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
         self.assert_allclose(do, expected)
-
-    def test_local_none(self):
-        dp = self.local_none(self.da)
-        self.assertTrue(dp is None)
-
-    def test_barrier(self):
-        self.call_barrier(self.da)
 
     def test_parameterless(self):
         self.assertRaises(TypeError, self.parameterless)
