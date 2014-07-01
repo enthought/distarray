@@ -202,15 +202,6 @@ class Context(object):
     def _pull(self, k, targets):
         return self.view.pull(k, targets=targets, block=True)
 
-    def _execute0(self, lines):
-        return self.view.execute(lines, targets=self.targets[0], block=True)
-
-    def _push0(self, d):
-        return self.view.push(d, targets=self.targets[0], block=True)
-
-    def _pull0(self, k):
-        return self.view.pull(k, targets=self.targets[0], block=True)
-
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         da_key = self._generate_key()
