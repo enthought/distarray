@@ -166,12 +166,12 @@ class TestNpyFileLoad(ContextTestCase):
             return output_path
 
         cls.output_path = cls.context.apply(save_test_file, (cls.expected,),
-                                            targets=[cls.context.targets[0]])
+                                            targets=[cls.context.targets[0]])[0]  # noqa
 
     @classmethod
     def tearDownClass(cls):
         cls.context.apply(cleanup_file, (cls.output_path,),
-                          targets=cls.context.targets[0])
+                          targets=[cls.context.targets[0]])
         super(TestNpyFileLoad, cls).tearDownClass()
 
     def test_load_bn(self):
