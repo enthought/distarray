@@ -106,7 +106,16 @@ class DecoratorBase(object):
                 kwargs[kw] = new_key
 
         # push the keys to the engines
-        context._push(push_keys, targets=context.targets)
+        def push_stuff(d):
+            from importlib import import_module
+            main_mod = import_module('__main__')
+            mod = main_mod
+            for k, v in d.items():
+                for peice in k.split('.')[:-1]:
+                    mod = getattr(mod, peice)
+                setattr(mod, k.split('.')[-1], v)
+                mod = main_mod
+        context.apply(push_stuff, args=(push_keys,), targets=context.targets)
 
         # build arg string
         arg_str = '(' + ', '.join(arg_keys) + ',)'
