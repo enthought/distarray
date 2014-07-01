@@ -40,21 +40,21 @@ class DistArray(object):
 
     def __init__(self, distribution, dtype=float):
         """Creates an empty DistArray according to the `distribution` given."""
-        # FIXME: code duplication with context.py.
+
+        def _local_create(comm, ddpr, dtype):
+            from distarray.local import empty
+            from distarray.local.maps import Distribution
+            dist = Distribution(comm=comm, dim_data=ddpr[comm.Get_rank()])
+            return proxyize(empty(dist, dtype))
+
         ctx = distribution.context
-        # FIXME: this is bad...
-        comm_name = distribution.comm
-        # FIXME: and this is bad...
-        da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
-        ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
-        cmd = ('{da_key} = distarray.local.empty('
-               'distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
-               '{dtype_name})')
-        ctx._execute(cmd.format(**locals()), targets=distribution.targets)
+
+        da_key = ctx.apply(_local_create, (distribution.comm, ddpr, dtype),
+                           targets=distribution.targets)
+
         self.distribution = distribution
-        self.key = da_key
+        self.key = da_key[0]
         self._dtype = dtype
 
     @classmethod
