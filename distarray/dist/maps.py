@@ -288,12 +288,17 @@ class BlockMap(MapBase):
 
         return self
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, bounds=None,
+                 comm_padding=None, boundary_padding=None):
         self.size = size
         self.grid_size = grid_size
-        self.bounds = [_start_stop_block(size, grid_size, grid_rank)
-                       for grid_rank in range(grid_size)]
-        self.boundary_padding = self.comm_padding = 0
+        if bounds is None:
+            self.bounds = [_start_stop_block(size, grid_size, grid_rank)
+                           for grid_rank in range(grid_size)]
+        else:
+            self.bounds = bounds
+        self.comm_padding = comm_padding or 0
+        self.boundary_padding = boundary_padding or 0
 
     def index_owners(self, idx):
         coords = []
