@@ -15,6 +15,27 @@ world_rank = world.rank
 client_rank = 0
 
 
+def push_function(context, key, func):
+    func_code = func.__code__
+    func_globals = func.__globals__  # noqa
+    func_name = func.__name__
+    func_defaults = func.__defaults__
+    func_closure = func.__closure__
+
+    func_data = (func_code, func_name, func_defaults, func_closure)
+
+    def reassemble_and_store_func(key, func_data):
+        import types
+        from importlib import import_module
+        main = import_module('__main__')
+        func = types.FunctionType(func_data[0], main.__dict__, func_data[1],
+                                  func_data[2], func_data[3])
+        setattr(main, key, func)
+
+    context.apply(reassemble_and_store_func, args=(key, func_data),
+                  targets=context.targets)
+
+
 def get_rank():
     return world.rank
 
