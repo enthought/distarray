@@ -16,6 +16,7 @@ import atexit
 
 import numpy
 
+import distarray
 from distarray.dist import cleanup
 from distarray.externals import six
 from distarray.dist.distarray import DistArray
@@ -204,14 +205,21 @@ class Context(object):
 
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
-        da_key = self._generate_key()
-        comm_name = distribution.comm
+        def create_local(local_call, ddpr, dtype, comm):
+            from distarray.local.maps import Distribution
+            if len(ddpr) == 0:
+                dim_data = ()
+            else:
+                dim_data = ddpr[comm.Get_rank()]
+            local_call = eval(local_call)
+            distribution = Distribution(comm=comm, dim_data=dim_data)
+            rval = local_call(distribution=distribution, dtype=dtype)
+            return proxyize(rval)
+
         ddpr = distribution.get_dim_data_per_rank()
-        ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
-        cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
-               'dtype={dtype_name})')
-        self._execute(cmd.format(**locals()), targets=distribution.targets)
+        args = [local_call, ddpr, dtype, distribution.comm]
+        da_key = self.apply(create_local, args=args,
+                            targets=distribution.targets)[0]
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
@@ -436,7 +444,7 @@ class Context(object):
         result : DistArray
             A DistArray encapsulating the file loaded.
         """
-        
+
         def _local_load_npy(filename, ddpr, comm):
             from distarray.local import load_npy
             dim_data = ddpr[comm.Get_rank()]
