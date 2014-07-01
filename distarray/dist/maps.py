@@ -782,3 +782,44 @@ class Distribution(object):
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
+
+
+def distribution(context, shape, dist=None, grid_shape=None, targets=None):
+    """ Create a new Distribution from parameters.
+
+    Parameters
+    ----------
+
+    context: distarray.dist.Context instance.
+
+    shape: sequence of nonnegative integers.
+        The global shape of the data associated with this Distribution object.
+        Also used to determine automatic partioning of targets in process grid
+        when ``grid_shape`` is None.
+
+    dist: sequence or dictionary.  Optional.
+        If ``dist`` is None, defaults to {0: 'b'} -- i.e., block-distributed in
+        the 0th dimension.  If a sequence, must be a sequence of ``dist_type``
+        characters in the set {'b', 'c', 'n', 'u'}, no more than
+        ``len(shape)``.  Any unspecified dimensions are assumed to be ``'n'``.
+        If a dictionary, must be a mapping of axis index to ``dist_type``
+        character.  
+
+    grid_shape: sequence of non-negative integers. Optional.
+        If ``None``, will be determined automatically from ``shape``, ``dist``,
+        and ``targets``, according to some automatic grid creation heuristics.
+        If a sequence of integers, then ``reduce(operator.mul, grid_shape, 1)
+        <= len(targets)``.
+
+    targets: sequence of target IDs.  Optional.
+        If unspecified, defaults to ``context.targets``.  The
+        ``Distribution``'s targets will always be kept in sorted order, and the
+        underlying MPI rank is the index into the targets sequence.
+
+    Returns
+    -------
+
+    New Distribution object.
+
+    """
+    return Distribution.from_shape(context, shape, dist, grid_shape, targets)
