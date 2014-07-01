@@ -109,10 +109,10 @@ class LocalArray(object):
 
         # create the buffer
         if buf is None:
-            self.ndarray = np.empty(self.local_shape, dtype=dtype)
+            self._ndarray = np.empty(self.local_shape, dtype=dtype)
         else:
             mv = memoryview(buf)
-            self.ndarray = np.asarray(mv, dtype=dtype)
+            self._ndarray = np.asarray(mv, dtype=dtype)
 
         # We pass a view of self.ndarray because we want the
         # GlobalIndex object to be able to change the LocalArray
@@ -248,15 +248,17 @@ class LocalArray(object):
     # Methods related to distributed indexing
     #-------------------------------------------------------------------------
 
-    def get_localarray(self):
-        return self.local_view()
+    def _get_ndarray(self):
+        return self._ndarray
 
-    def set_localarray(self, a):
+    def _set_ndarray(self, a):
         arr = np.asarray(a, dtype=self.dtype, order='C')
         if arr.shape == self.local_shape:
-            self.ndarray = arr
+            self._ndarray = arr
         else:
             raise ValueError("Incompatible local array shape")
+
+    ndarray = property(_get_ndarray, _set_ndarray)
 
     def coords_from_rank(self, rank):
         return self.distribution.coords_from_rank(rank)
