@@ -36,11 +36,15 @@ class Random(object):
             it is different from each other engine. Thus, each engine
             will compute a different sequence of random numbers.
         """
-        cmd = 'numpy.random.seed(seed=%r)' % (seed)
-        self.context._execute(cmd, targets=self.context.targets)
-        cmd = 'distarray.local.random.label_state(%s)' % (
-            self.context.comm)
-        self.context._execute(cmd, targets=self.context.targets)
+        def _local_setup_random(seed, comm):
+            from numpy import random
+            from distarray.local.random import label_state
+            random.seed(seed)
+            label_state(comm)
+
+        self.context.apply(_local_setup_random,
+                           (seed, self.context.comm),
+                           targets=self.context.targets)
 
     def rand(self, distribution):
         """Random values over a given distribution.
