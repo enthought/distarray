@@ -6,7 +6,7 @@ seismic volume, which is stored in an HDF5 file.
 
 This will require a parallel-enabled HDF5 library to work correctly.
 
-- ``create_volume.py`` - This script create the simulated seismic
+- ``create_volume.py`` - This script creates the simulated seismic
 volume. The internal structure of the volume includes two 'horizons',
 which are plane surfaces inside the volume. As one moves down in depth,
 approaching and then crossing the horizon, the data values increase
