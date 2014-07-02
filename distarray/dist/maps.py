@@ -549,9 +549,7 @@ class Distribution(object):
                 axis_dim_dicts in axis_dim_dicts_per_axis]
         return cls.from_maps(context=context, maps=maps, targets=targets)
 
-    @classmethod
-    def from_shape(cls, context, shape, dist=None, grid_shape=None,
-                   targets=None):
+    def __new__(cls, context, shape, dist=None, grid_shape=None, targets=None):
         """Create a Distribution from a `shape` and other optional args.
 
         Parameters
