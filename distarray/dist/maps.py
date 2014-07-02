@@ -237,9 +237,7 @@ class NoDistMap(MapBase):
             isection_size = int(np.ceil((isection[1] - isection[0]) / step))
         else:
             isection_size = 0
-
-        return {'dist_type': self.dist,
-                'size': isection_size}
+        return self.__class__(size=isection_size, grid_size=1)
 
     def is_compatible(self, other):
         return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
@@ -355,11 +353,14 @@ class BlockMap(MapBase):
             if isection:
                 isection_size = int(np.ceil((isection[1] - (isection[0])) / step))
                 new_bounds.append(isection_size + new_bounds[-1])
-        if len(new_bounds) == [0]:
+        if new_bounds == [0]:
             new_bounds = []
 
-        return {'dist_type': self.dist,
-                'bounds': new_bounds}
+        size = new_bounds[-1] if len(new_bounds) > 0 else 0
+        grid_size = max(len(new_bounds) - 1, 1)
+        new_bounds = list(zip(new_bounds[:-1], new_bounds[1:]))
+        return self.__class__(size=size, grid_size=grid_size,
+                              bounds=new_bounds)
 
     def is_compatible(self, other):
         if isinstance(other, NoDistMap):
@@ -716,20 +717,20 @@ class Distribution(object):
     def slice(self, index_tuple):
         """Make a new Distribution from a slice."""
         new_targets = self.owning_targets(index_tuple) or [0]
-        global_dim_data = []
+        new_maps = []
         # iterate over the dimensions
         for map_, idx in zip(self.maps, index_tuple):
             if isinstance(idx, Integral):
                 continue  # integral indexing returns reduced dimensionality
             elif isinstance(idx, slice):
-                global_dim_data.append(map_.slice(idx))
+                new_maps.append(map_.slice(idx))
             else:
                 msg = "Index must be a sequence of Integrals and slices."
                 raise TypeError(msg)
 
-        return self.__class__(context=self.context,
-                              global_dim_data=global_dim_data,
-                              targets=new_targets)
+        return self.__class__.from_maps(context=self.context,
+                                        maps=new_maps,
+                                        targets=new_targets)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
