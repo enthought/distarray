@@ -480,6 +480,25 @@ class Distribution(object):
     """
 
     @classmethod
+    def from_maps(cls, context, maps, targets=None):
+        self = cls.__new__(cls)
+        self.context = context
+        self.targets = sorted(targets or context.targets)
+        self.comm = self.context._make_subcomm(self.targets)
+        self.maps = maps
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
+
+        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
+                                               self.dist, len(self.targets))
+
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+        return self
+
+    @classmethod
     def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
         """ Create a Distribution from a sequence of `dim_data` tuples. """
 
