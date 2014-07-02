@@ -44,15 +44,12 @@ class GlobalIndex(object):
         except IndexError:
             return None
 
-    def global_to_local(self, *global_ind):
-        return self.distribution.local_from_global(*global_ind)
-
-    def local_to_global(self, *local_ind):
-        return self.distribution.global_from_local(*local_ind)
+    def _local_from_global(self, global_ind):
+        return self.distribution.local_from_global(global_ind)
 
     def get_slice(self, global_inds, new_distribution):
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
         view = self.ndarray[local_inds]
@@ -67,7 +64,7 @@ class GlobalIndex(object):
             raise TypeError(msg)
 
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
         except KeyError as err:
             raise IndexError(err)
 
@@ -77,7 +74,7 @@ class GlobalIndex(object):
     def __setitem__(self, global_inds, value):
         _, global_inds = sanitize_indices(global_inds)
         try:
-            local_inds = self.global_to_local(*global_inds)
+            local_inds = self._local_from_global(global_inds)
             self.ndarray[local_inds] = value
         except KeyError as err:
             raise IndexError(err)
@@ -109,10 +106,12 @@ class LocalArray(object):
 
         # create the buffer
         if buf is None:
-            self.ndarray = np.empty(self.local_shape, dtype=dtype)
+            self._ndarray = np.empty(self.local_shape, dtype=dtype)
         else:
-            mv = memoryview(buf)
-            self.ndarray = np.asarray(mv, dtype=dtype)
+            self._ndarray = np.asarray(buf, dtype=dtype)
+            if distribution.local_shape != self.ndarray.shape:
+                msg = "distribution shape must equal buf shape."
+                raise RuntimeError(msg)
 
         # We pass a view of self.ndarray because we want the
         # GlobalIndex object to be able to change the LocalArray
@@ -248,15 +247,17 @@ class LocalArray(object):
     # Methods related to distributed indexing
     #-------------------------------------------------------------------------
 
-    def get_localarray(self):
-        return self.local_view()
+    def _get_ndarray(self):
+        return self._ndarray
 
-    def set_localarray(self, a):
+    def _set_ndarray(self, a):
         arr = np.asarray(a, dtype=self.dtype, order='C')
         if arr.shape == self.local_shape:
-            self.ndarray = arr
+            self._ndarray = arr
         else:
             raise ValueError("Incompatible local array shape")
+
+    ndarray = property(_get_ndarray, _set_ndarray)
 
     def coords_from_rank(self, rank):
         return self.distribution.coords_from_rank(rank)
@@ -264,19 +265,19 @@ class LocalArray(object):
     def rank_from_coords(self, coords):
         return self.distribution.rank_from_coords(coords)
 
-    def local_from_global(self, *global_ind):
-        return self.distribution.local_from_global(*global_ind)
+    def local_from_global(self, global_ind):
+        return self.distribution.local_from_global(global_ind)
 
-    def global_from_local(self, *local_ind):
-        return self.distribution.global_from_local(*local_ind)
+    def global_from_local(self, local_ind):
+        return self.distribution.global_from_local(local_ind)
 
     def global_limits(self, dim):
         if dim < 0 or dim >= self.ndim:
             raise InvalidDimensionError("Invalid dimension: %r" % dim)
         lower_local = self.ndim * [0]
-        lower_global = self.global_from_local(*lower_local)
+        lower_global = self.global_from_local(lower_local)
         upper_local = [shape - 1 for shape in self.local_shape]
-        upper_global = self.global_from_local(*upper_local)
+        upper_global = self.global_from_local(upper_local)
         return lower_global[dim], upper_global[dim]
 
     #-------------------------------------------------------------------------
@@ -848,7 +849,7 @@ class GlobalIterator(six.Iterator):
 
     def __next__(self):
         local_inds, value = six.advance_iterator(self.nditerator)
-        global_inds = self.arr.global_from_local(*local_inds)
+        global_inds = self.arr.global_from_local(local_inds)
         return global_inds, value
 
 
@@ -951,6 +952,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
         out_ndarray = None
     else:
         out_ndarray = out.ndarray
+        if out.ndarray.dtype == np.bool:
+            out.ndarray.dtype = np.uint8
     local_reduce = func(*args, **kwargs)
     reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
     return out
@@ -958,6 +961,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
 
 def min_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for min."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.MIN,
                           larr.ndarray.min,
                           (), {'axis': axes}, out)
@@ -965,6 +970,8 @@ def min_reducer(reduce_comm, larr, out, axes, dtype):
 
 def max_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for max."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.MAX,
                           larr.ndarray.max,
                           (), {'axis': axes}, out)
@@ -972,6 +979,8 @@ def max_reducer(reduce_comm, larr, out, axes, dtype):
 
 def sum_reducer(reduce_comm, larr, out, axes, dtype):
     """ Core reduction function for sum."""
+    if larr.ndarray.dtype == np.bool:
+        larr.ndarray.dtype = np.uint8
     return _basic_reducer(reduce_comm, MPI.SUM,
                           larr.ndarray.sum,
                           (), {'axis': axes, 'dtype': dtype}, out)

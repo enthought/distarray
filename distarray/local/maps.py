@@ -144,7 +144,7 @@ class Distribution(object):
     def rank_from_coords(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def local_from_global(self, *global_ind):
+    def local_from_global(self, global_ind):
         """ Given `global_ind` indices, translate into local indices."""
         _, idxs = sanitize_indices(global_ind, self.ndim, self.global_shape)
         local_idxs = []
@@ -157,7 +157,7 @@ class Distribution(object):
                 raise TypeError("Index must be Integral or slice.")
         return tuple(local_idxs)
 
-    def global_from_local(self, *local_ind):
+    def global_from_local(self, local_ind):
         """ Given `local_ind` indices, translate into global indices."""
         global_idxs = []
         for m, idx in zip(self._maps, local_ind):

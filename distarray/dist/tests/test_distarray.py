@@ -105,6 +105,34 @@ class TestDistArray(ContextTestCase):
             dap[i, j] = ndarr[i, j]
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
+    def test__array_interface(self):
+        distribution = Distribution.from_shape(self.context, (7, 9))
+        darr = self.context.ones(distribution)
+        nparr = numpy.array(darr)
+        assert_array_equal(darr.tondarray(), nparr)
+        assert_array_equal(numpy.ones((7, 9)), nparr)
+
+    def test_set_numpy_array_full_slice_with_distarray(self):
+        distribution = Distribution.from_shape(self.context, (7, 9))
+        darr = self.context.ones(distribution)
+        nparr = numpy.zeros_like(darr)
+        nparr[...] = darr
+        assert_array_equal(nparr, darr.toarray())
+
+    def test_set_numpy_array_partial_slice_with_distarray(self):
+        distribution = Distribution.from_shape(self.context, (15, 4))
+        darr = self.context.ones(distribution)
+        nparr = numpy.zeros_like(darr)
+        nparr[3, :] = darr[3, :]
+        assert_array_equal(nparr[3, :], darr[3, :].toarray())
+
+    def test_set_numpy_array_partial_slice_with_distarray_2(self):
+        distribution = Distribution.from_shape(self.context, (13, 17))
+        darr = self.context.ones(distribution)
+        nparr = numpy.zeros((20, 20))
+        nparr[:13, :17] = darr
+        assert_array_equal(nparr[:13, :17], darr.toarray())
+
     def test_global_tolocal_bug(self):
         # gh-issue #154
         distribution = Distribution.from_shape(self.context, (3, 3),
@@ -251,20 +279,24 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[..., ..., ..., ...].toarray(),
                            expected[..., ..., ..., ...])
 
-    @unittest.skip("Waiting on 0d-array support.")
-    def test_0d_ellipsis(self):
-        shape = ()
-        expected = numpy.random.randint(10, size=shape)
-        arr = self.context.fromarray(expected)
-        assert_array_equal(arr[...].toarray(),
-                           expected[...])
-
     def test_resulting_slice(self):
         dist = Distribution.from_shape(self.context, (10, 20))
         da = self.context.ones(dist)
         db = da[:5, :10]
         dc = db * 2
         assert_array_equal(dc.toarray(), numpy.ones(dc.shape) * 2)
+
+    def test_0d_empty_tuple(self):
+        shape = ()
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[()], expected[()])
+
+    def test_0d_ellipsis(self):
+        shape = ()
+        expected = numpy.random.randint(10, size=shape)
+        arr = self.context.fromarray(expected)
+        assert_array_equal(arr[...].toarray(), expected[...])
 
 
 class TestSetItemSlicing(ContextTestCase):
@@ -392,6 +424,18 @@ class TestSetItemSlicing(ContextTestCase):
         da = self.context.ones(dist)
         db = self.context.zeros(dist)
         da[...] = db
+
+    def test_set_0d_slice(self):
+        expected = numpy.array(33)
+        arr = self.context.fromarray(expected)
+
+        val0 = 55
+        arr[...] = val0
+        assert_array_equal(arr[...].toarray(), numpy.array(val0))
+
+        val1 = 99
+        arr[()] = val1
+        assert_array_equal(arr[...].toarray(), numpy.array(val1))
 
 
 class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
@@ -606,15 +650,36 @@ class TestDistArrayCreation(ContextTestCase):
         zero_ndarray = numpy.zeros(shape)
         assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
 
+    def test_zeros_0d(self):
+        shape = ()
+        distribution = Distribution.from_shape(self.context, shape)
+        zero_distarray = self.context.zeros(distribution)
+        zero_ndarray = numpy.zeros(shape)
+        assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
+
     def test_ones(self):
         shape = (16, 16)
         distribution = Distribution.from_shape(self.context, shape)
-        one_distarray = self.context.ones(distribution)
-        one_ndarray = numpy.ones(shape)
-        assert_array_equal(one_distarray.tondarray(), one_ndarray)
+        ones_distarray = self.context.ones(distribution)
+        ones_ndarray = numpy.ones(shape)
+        assert_array_equal(ones_distarray.tondarray(), ones_ndarray)
+
+    def test_ones_0d(self):
+        shape = ()
+        distribution = Distribution.from_shape(self.context, shape)
+        ones_distarray = self.context.ones(distribution)
+        ones_ndarray = numpy.ones(shape)
+        assert_array_equal(ones_distarray.tondarray(), ones_ndarray)
 
     def test_empty(self):
-        distribution = Distribution.from_shape(self.context, (16, 16))
+        shape = (16, 16)
+        distribution = Distribution.from_shape(self.context, shape)
+        empty_distarray = self.context.empty(distribution)
+        self.assertEqual(empty_distarray.shape, distribution.shape)
+
+    def test_empty_0d(self):
+        shape = ()
+        distribution = Distribution.from_shape(self.context, shape)
         empty_distarray = self.context.empty(distribution)
         self.assertEqual(empty_distarray.shape, distribution.shape)
 
@@ -623,6 +688,11 @@ class TestDistArrayCreation(ContextTestCase):
         distarr = self.context.fromndarray(ndarr)
         for (i, j), val in numpy.ndenumerate(ndarr):
             self.assertEqual(distarr[i, j], ndarr[i, j])
+
+    def test_fromndarray_0d(self):
+        ndarr = numpy.array(42)
+        distarr = self.context.fromarray(ndarr)
+        assert_array_equal(ndarr, distarr.toarray())
 
     def test_grid_rank(self):
         # regression test for issue #235
@@ -823,6 +893,17 @@ class TestReduceMethods(ContextTestCase):
         darr = self.context.ones(dist)
         darr.var()
 
+    def test_boolean_reduction(self):
+        nparr = numpy.random.randn(200)
+        darr = self.context.fromarray(nparr)
+        mask = darr < 2
+        np_mask = mask.tondarray()
+        assert_array_equal(mask.min().tondarray(), np_mask.min())
+        assert_array_equal(mask.max().tondarray(), np_mask.max())
+        assert_array_equal(mask.sum().tondarray(), np_mask.sum())
+        assert_array_equal(mask.mean().tondarray(), np_mask.mean())
+        assert_allclose(mask.var().tondarray(), np_mask.var())
+        assert_allclose(mask.std().tondarray(), np_mask.std())
 
 class TestFromLocalArrays(ContextTestCase):
 

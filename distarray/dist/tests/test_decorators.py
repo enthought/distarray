@@ -72,7 +72,7 @@ class TestDecoratorBase(TestCase):
         self.assertEqual(arg_keys2[1: -2].split(', ')[0], da.key)
 
         _key = arg_keys2[1: -2].split(', ')[1]
-        self.assertEqual(context._pull0(_key), 'question')
+        self.assertEqual(context._pull(_key, targets=[0])[0], 'question')
         self.assertTrue("'answer'" in kw_keys2)
 
         self.assertTrue("'foo'" in kw_keys2)
@@ -103,7 +103,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def local_sum(da):
-        return numpy.sum(da.get_localarray())
+        return numpy.sum(da.ndarray)
 
     @local
     def call_barrier(da):
