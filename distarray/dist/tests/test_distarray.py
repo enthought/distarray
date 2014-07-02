@@ -936,6 +936,16 @@ class TestFromLocalArrays(ContextTestCase):
                                        context=self.context,
                                        distribution=self.distribution)
 
+class TestView(ContextTestCase):
+
+    def setUp(self):
+        self.a = numpy.random.randint(10, size=(4, 5))
+        self.da = self.context.fromndarray(self.a)
+
+    def test_plain_view(self):
+        da_view = self.da.view()
+        da_view[3, 4] = 99
+        assert_array_equal(da_view.tondarray(), self.da.tondarray())
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

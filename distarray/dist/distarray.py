@@ -430,6 +430,23 @@ class DistArray(object):
     def localshapes(self):
         return self.distribution.localshapes()
 
+    def view(self, dtype=None):
+        """
+        New view of array with the same data.
+
+        Parameters
+        ----------
+        dtype : numpy dtype, optional
+            Data-type descriptor of the returned view, e.g., float32 or
+            int16. The default, None, results in the view having the same
+            data-type as the original array.
+        """
+        if (dtype is None) or (np.dtype(dtype) == self.dtype):
+            return self[...]
+        else:
+            _raise_nie()
+
+
     # Binary operators
 
     def _binary_op_from_ufunc(self, other, func, rop_str=None, *args, **kwargs):
