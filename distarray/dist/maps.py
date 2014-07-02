@@ -481,7 +481,7 @@ class Distribution(object):
 
     @classmethod
     def from_maps(cls, context, maps, targets=None):
-        self = cls.__new__(cls)
+        self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.targets = sorted(targets or context.targets)
         self.comm = self.context._make_subcomm(self.targets)
@@ -535,7 +535,7 @@ class Distribution(object):
                 # then targets is set correctly
                 pass
 
-        self = cls.__new__(cls)
+        self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.shape = shape
         self.ndim = len(shape)
@@ -569,7 +569,7 @@ class Distribution(object):
                      for args in zip(self.shape, self.dist, self.grid_shape)]
         return self
 
-    def __init__(self, context, global_dim_data, targets=None):
+    def __new__(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
@@ -658,20 +658,9 @@ class Distribution(object):
 
         The global size of the array in this dimension.
         """
-        self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
-        self.shape = tuple(m.size for m in self.maps)
-        self.ndim = len(self.maps)
-        self.dist = tuple(m.dist for m in self.maps)
-        self.grid_shape = tuple(m.grid_size for m in self.maps)
+        maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
-                                               self.dist, len(self.targets))
-
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
     def __getitem__(self, idx):
         return self.maps[idx]
