@@ -253,47 +253,54 @@ class BlockMap(MapBase):
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-
-        self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
 
         bounds = glb_dim_dict['bounds']
-        self.bounds = list(zip(bounds[:-1], bounds[1:]))
+        tuple_bounds = list(zip(bounds[:-1], bounds[1:]))
 
-        self.size = bounds[-1]
-        self.grid_size = max(len(bounds) - 1, 1)
+        size = bounds[-1]
+        grid_size = max(len(bounds) - 1, 1)
 
-        self.comm_padding = int(glb_dim_dict.get('comm_padding', 0))
-        self.boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
+        comm_padding = int(glb_dim_dict.get('comm_padding', 0))
+        boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
 
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=tuple_bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
     @classmethod
     def from_axis_dim_dicts(cls, axis_dim_dicts):
-        self = cls.__new__(cls)
         dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
-        self.size = dd['size']
-        self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(axis_dim_dicts):
+
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(axis_dim_dicts), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
-        self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
+        bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
+        boundary_padding, comm_padding = dd.get('padding', (0, 0))
 
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, bounds=None,
+                 comm_padding=None, boundary_padding=None):
         self.size = size
         self.grid_size = grid_size
-        self.bounds = [_start_stop_block(size, grid_size, grid_rank)
-                       for grid_rank in range(grid_size)]
-        self.boundary_padding = self.comm_padding = 0
+        if bounds is None:
+            self.bounds = [_start_stop_block(size, grid_size, grid_rank)
+                           for grid_rank in range(grid_size)]
+        else:
+            self.bounds = bounds
+        self.comm_padding = comm_padding or 0
+        self.boundary_padding = boundary_padding or 0
 
     def index_owners(self, idx):
         coords = []
