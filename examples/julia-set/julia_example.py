@@ -140,9 +140,12 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, 
     # Average iteration count.
     avg_iters = float(num_iters.mean().tondarray())
     # Print results.
-    #print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
-    result = '%s, %r, %r, %r, %r, %r' % (
-                 dist_code, num_engines, t_distarray, t_numpy, avg_iters, str(c))
+    t_ratio = t_numpy / t_distarray
+    #print 'Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c'
+    result = '%s, %r, %r, %r, %r, %r, %r, %r' % (
+                 dist_code, num_engines, dimensions[0],
+                 t_distarray, t_numpy, t_ratio,
+                 avg_iters, str(c))
     print result
     if plot:
         # Plot the iteration count.
@@ -153,27 +156,54 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, 
     return avg_iters
 
 
+def do_julia_runs(context,
+                  repeat_count,
+                  engine_count_list,
+                  dist_code_list,
+                  resolution_list,
+                  c_list,
+                  re_ax, im_ax, z_max, n_max, plot):
+    ''' Perform a series of Julia set calculations, and print the results. '''
+    # Check that we have enough engines available.
+    max_engine_count = max(engine_count_list)
+    num_engines = len(context.targets)
+    if max_engine_count > num_engines:
+        msg = 'Require %d engines, but only %d are available.' % (
+            max_engine_count, num_engines)
+        raise ValueError(msg)
+    # Loop over everything and time the calculations.
+    print 'Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c'
+    for i in range(repeat_count):
+        for engine_count in engine_count_list:
+            context_use = Context(targets=range(engine_count))
+            for dist_code in dist_code_list:
+                for resolution in resolution_list:
+                    dimensions = (resolution, resolution)
+                    for c in c_list:
+                        do_julia_run(context_use,
+                                     dist_code,
+                                     dimensions,
+                                     c,
+                                     re_ax, im_ax,
+                                     z_max, n_max, plot)
+
+
 if __name__ == '__main__':
 
     context = Context()
     with context.view.sync_imports():
         import numpy
 
+    # Fixed parameters:
+
     # Region of the complex plane.
     re_ax = (-1.5, 1.5)
     im_ax = (-1.5, 1.5)
-    # Size of array. Increasing this a lot is probably not important
-    # in trying to illustrate performance.
-    dimensions = (256, 256)
-    # Julia set parameters, changing these is fun.
-    # Default constant, which has a lot of points in the set.
-    c = complex(-0.045, 0.45)
-    if len(sys.argv) == 3:
-        # Get constant from command line instead.
-        c = complex(float(sys.argv[1]), float(sys.argv[2]))
+
     # Size of number that we consider as off to infinity.
     # I think that 2 is sufficient to be sure that the point will escape.
     z_max = 2
+
     # Maximum iteration counts. Points in the set will hit this limit,
     # so increasing this has a large effect on the run-time.
     n_max = 100
@@ -181,43 +211,53 @@ if __name__ == '__main__':
     #n_max = 5000
     #n_max = 10000
 
+    # Lists of parameters:
+
     # Distribution types to use.
-    #dist_code_list = ['b', 'c']
-    dist_code_list = ['b']
+    dist_code_list = ['b', 'c']
+    #dist_code_list = ['b']
 
     # Constants to use.
-    c_list = [c]
+    c_list = [complex(-0.045, 0.45)]      # This Julia set has many points inside, needing all iterations.
     # Or try lots of values over a grid. 
-    cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
-    cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    #cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    #cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
 
     # Number of engines to use.
     engine_count_list = [4]
     #engine_count_list = [2, 3, 4]
 
+    # Resolution of Julia set.
+    #resolution_list = [256]
+    resolution_list = [16, 32, 64, 128, 256, 512]
+
     # Number of cycles to repeat everything.
-    repeat_count = 1
+    #repeat_count = 1
+    repeat_count = 2
 
-    # Check that we have enough engines available.
-    max_engine_count = max(engine_count_list)
-    num_engines = len(context.targets)
-    print num_engines, 'engines available...', max_engine_count, 'engines required.'
-    if max_engine_count > num_engines:
-        msg = 'Require %d engines, but only %d are available.' % (
-            max_engine_count, num_engines)
-        raise ValueError(msg)
-
-    # Loop over everything and time the calculations.
-    print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
-    for i in range(repeat_count):
-        for engine_count in engine_count_list:
-            context_use = Context(targets=range(engine_count))
-            for dist_code in dist_code_list:
-                for c in c_list:
-                    do_julia_run(context_use,
-                                 dist_code,
-                                 dimensions,
-                                 c,
-                                 re_ax, im_ax,
-                                 z_max, n_max, plot=False)
+    # If we got command line parameters for c, then use these,
+    # and only loop over the resolutions, making plots.
+    # This lets you interactively try values.
+    # Otherwise, we loop over all parameters.
+    if len(sys.argv) == 3:
+        # Get constant from command line instead.
+        c = complex(float(sys.argv[1]), float(sys.argv[2]))
+        c_list = [c]
+        do_julia_runs(context,
+                      repeat_count=1,
+                      engine_count_list=[len(context.targets)],
+                      dist_code_list=['b'],
+                      resolution_list=resolution_list,
+                      c_list=c_list,
+                      re_ax=re_ax, im_ax=im_ax,
+                      z_max=z_max, n_max=n_max, plot=True)
+    else:
+        # Normal case, loop over all parameter lists.
+        do_julia_runs(context,
+                      repeat_count,
+                      engine_count_list,
+                      dist_code_list,
+                      resolution_list,
+                      c_list,
+                      re_ax, im_ax, z_max, n_max, plot=False)
