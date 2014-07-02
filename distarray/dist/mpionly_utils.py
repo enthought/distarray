@@ -24,15 +24,17 @@ def push_function(context, key, func):
 
     func_data = (func_code, func_name, func_defaults, func_closure)
 
-    def reassemble_and_store_func(key, func_data):
+    def reassemble_and_store_func(key_dummy_container, func_data):
         import types
         from importlib import import_module
+        from distarray.utils import set_from_dotted_name
+        key = key_dummy_container[0]
         main = import_module('__main__')
         func = types.FunctionType(func_data[0], main.__dict__, func_data[1],
                                   func_data[2], func_data[3])
-        setattr(main, key, func)
+        set_from_dotted_name(key, func)
 
-    context.apply(reassemble_and_store_func, args=(key, func_data),
+    context.apply(reassemble_and_store_func, args=((key,), func_data),
                   targets=context.targets)
 
 
