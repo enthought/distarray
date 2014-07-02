@@ -596,7 +596,8 @@ class Distribution(object):
         maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
         return cls.from_maps(context=context, maps=maps, targets=targets)
 
-    def __new__(cls, context, global_dim_data, targets=None):
+    @classmethod
+    def from_global_dim_data(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
@@ -720,9 +721,9 @@ class Distribution(object):
                 msg = "Index must be a sequence of Integrals and slices."
                 raise TypeError(msg)
 
-        return self.__class__(context=self.context,
-                              global_dim_data=global_dim_data,
-                              targets=new_targets)
+        return self.__class__.from_global_dim_data(context=self.context,
+                                                   global_dim_data=global_dim_data,
+                                                   targets=new_targets)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
