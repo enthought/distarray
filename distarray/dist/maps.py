@@ -349,7 +349,7 @@ class BlockMap(MapBase):
         for proc_start, proc_stop in self.bounds:
             stop = idx.stop if idx.stop is not None else proc_stop
             isection = tuple_intersection((start, stop, step),
-                                              (proc_start, proc_stop))
+                                          (proc_start, proc_stop))
             if isection:
                 isection_size = int(np.ceil((isection[1] - (isection[0])) / step))
                 new_bounds.append(isection_size + new_bounds[-1])
