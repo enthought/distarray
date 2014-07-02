@@ -202,7 +202,7 @@ class TestHdf5FileSave(MpiTestCase):
         d = Distribution.from_shape(comm=self.comm, shape=(51,))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
-        la.set_localarray(np_arr)
+        la.ndarray = np_arr
         save_hdf5(self.output_path, la, key=self.key, mode='w')
 
         # check saved file
@@ -215,7 +215,7 @@ class TestHdf5FileSave(MpiTestCase):
         d = Distribution.from_shape(comm=self.comm, shape=(11, 15))
         la = LocalArray(d)
         np_arr = numpy.random.random(la.local_shape)
-        la.set_localarray(np_arr)
+        la.ndarray = np_arr
         save_hdf5(self.output_path, la, key=self.key, mode='w')
         with self.h5py.File(self.output_path, 'r', driver='mpio',
                             comm=self.comm) as fp:

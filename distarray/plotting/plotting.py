@@ -22,9 +22,9 @@ def _get_ranks(arr):
     with the elements equal to the rank of the process the element is
     on.
     """
-    out = arr.copy()
-    out.ndarray[:] = arr.comm_rank
-    out.ndarray= out.ndarray.astype(int)
+    from distarray.local import LocalArray
+    out = LocalArray(distribution=arr.distribution, dtype=int)
+    out.fill(arr.comm_rank)
     return out
 
 
@@ -285,7 +285,7 @@ def plot_array_distribution(darray,
         values_array.shape = process_array.shape
 
     # Create discrete colormap.
-    num_processors = process_array.max() + 1
+    num_processors = int(process_array.max()) + 1
     colormap_objects = create_discrete_colormaps(num_processors)
     cmap, norm, text_colors = colormap_objects
 

@@ -182,24 +182,25 @@ def print_array_documentation(context,
         print()
 
     # Examine the array on all the engines.
-    cmd = 'distbuffer = %s.__distarray__()' % (array.key)
-    context._execute(cmd, targets=context.targets)
-    cmd = 'db_keys = list(distbuffer.keys())'
-    context._execute(cmd, targets=context.targets)
-    cmd = 'db_version = distbuffer["__version__"]'
-    context._execute(cmd, targets=context.targets)
-    cmd = 'db_buffer = distbuffer["buffer"]'
-    context._execute(cmd, targets=context.targets)
-    cmd = 'db_dim_data = distbuffer["dim_data"]'
-    context._execute(cmd, targets=context.targets)
-    cmd = 'db_coords = %s.cart_coords' % (array.key)
-    context._execute(cmd, targets=context.targets)
-    # Get data from each engine.
-    db_keys = context._pull('db_keys', targets=context.targets)
-    db_version = context._pull('db_version', targets=context.targets)
-    db_buffer = context._pull('db_buffer', targets=context.targets)
-    db_dim_data = context._pull('db_dim_data', targets=context.targets)
-    db_coords = context._pull('db_coords', targets=context.targets)
+    def _array_attrs(local_arr):
+        distbuffer = local_arr.__distarray__()
+        return dict(
+                db_keys=list(distbuffer.keys()),
+                db_version=distbuffer["__version__"],
+                db_buffer=distbuffer["buffer"],
+                db_dim_data=distbuffer["dim_data"],
+                db_coords=local_arr.cart_coords,
+                )
+
+    attrs = context.apply(_array_attrs, (array.key,),
+                          targets=array.targets)
+
+    db_keys = [a['db_keys'] for a in attrs]
+    db_version = [a['db_version'] for a in attrs]
+    db_buffer = [a['db_buffer'] for a in attrs]
+    db_dim_data = [a['db_dim_data'] for a in attrs]
+    db_coords = [a['db_coords'] for a in attrs]
+                    
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
@@ -335,9 +336,11 @@ def create_distribution_plot_and_documentation(context, params):
     # Get all process grid coordinates.
     # This is duplicating work in print_array_documentation(),
     # but it is needed for the local array plots.
-    cmd = 'process_coords = %s.cart_coords' % (array.key)
-    context._execute(cmd, targets=context.targets)
-    process_coords = context._pull('process_coords', targets=context.targets)
+    def _get_process_coords(local_arr):
+        return local_arr.cart_coords
+    process_coords = context.apply(_get_process_coords,
+                                   (array.key,),
+                                   targets=array.targets)
 
     # Plot title and axis labels.
     plot_title = title + ' ' + shape_text(shape) + '\n'

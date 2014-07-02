@@ -21,7 +21,7 @@ from collections import Sequence
 
 import numpy as np
 
-import distarray
+import distarray.local
 from distarray.metadata_utils import sanitize_indices
 from distarray.dist.maps import Distribution
 from distarray.utils import _raise_nie
@@ -40,21 +40,25 @@ class DistArray(object):
 
     def __init__(self, distribution, dtype=float):
         """Creates an empty DistArray according to the `distribution` given."""
-        # FIXME: code duplication with context.py.
+
+        def _local_create(comm, ddpr, dtype):
+            from distarray.local import empty
+            from distarray.local.maps import Distribution
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
+            dist = Distribution(comm=comm, dim_data=dim_data)
+            return proxyize(empty(dist, dtype))
+
         ctx = distribution.context
-        # FIXME: this is bad...
-        comm_name = distribution.comm
-        # FIXME: and this is bad...
-        da_key = ctx._generate_key()
         ddpr = distribution.get_dim_data_per_rank()
-        ddpr_name, dtype_name = ctx._key_and_push(ddpr, dtype)
-        cmd = ('{da_key} = distarray.local.empty('
-               'distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
-               '{dtype_name})')
-        ctx._execute(cmd.format(**locals()), targets=distribution.targets)
+
+        da_key = ctx.apply(_local_create, (distribution.comm, ddpr, dtype),
+                           targets=distribution.targets)
+
         self.distribution = distribution
-        self.key = da_key
+        self.key = da_key[0]
         self._dtype = dtype
 
     @classmethod
@@ -215,7 +219,10 @@ class DistArray(object):
         def set_view(arr, index, value, ddpr, comm):
             from distarray.local.localarray import LocalArray
             from distarray.local.maps import Distribution
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr) == 0:
+                dim_data = ()
+            else:
+                dim_data = ddpr[comm.Get_rank()]
             dist = Distribution(comm=comm, dim_data=dim_data)
             if isinstance(value, LocalArray):
                 arr.global_index[index] = value.ndarray
@@ -370,6 +377,8 @@ class DistArray(object):
 
     def sum(self, axis=None, dtype=None, out=None):
         """Return the sum of array elements over the given axis."""
+        if dtype is None and self.dtype == np.bool:
+            dtype = np.uint64
         return self._reduce('sum_reducer', axis, dtype, out)
 
     def mean(self, axis=None, dtype=float, out=None):
@@ -402,7 +411,7 @@ class DistArray(object):
 
         """
         def get(key):
-            return key.get_localarray()
+            return key.ndarray
         return self.context.apply(get, args=(self.key,), targets=self.targets)
 
     def get_localarrays(self):

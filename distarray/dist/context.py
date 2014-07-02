@@ -203,21 +203,15 @@ class Context(object):
     def _pull(self, k, targets):
         return self.view.pull(k, targets=targets, block=True)
 
-    def _execute0(self, lines):
-        return self.view.execute(lines, targets=self.targets[0], block=True)
-
-    def _push0(self, d):
-        return self.view.push(d, targets=self.targets[0], block=True)
-
-    def _pull0(self, k):
-        return self.view.pull(k, targets=self.targets[0], block=True)
-
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
         def create_local(local_call, ddpr, dtype, comm):
             from distarray.local.maps import Distribution
+            if len(ddpr) == 0:
+                dim_data = ()
+            else:
+                dim_data = ddpr[comm.Get_rank()]
             local_call = eval(local_call)
-            dim_data = ddpr[comm.Get_rank()]
             distribution = Distribution(comm=comm, dim_data=dim_data)
             rval = local_call(distribution=distribution, dtype=dtype)
             return proxyize(rval)
@@ -310,24 +304,29 @@ class Context(object):
         --------
         load_dnpy : Loading files saved with save_dnpy.
         """
+
+        def _local_save_dnpy(local_arr, fname_base):
+            from distarray.local import save_dnpy
+            fname = "%s_%s.dnpy" % (fname_base, local_arr.comm_rank)
+            save_dnpy(fname, local_arr)
+
+        def _local_save_dnpy_names(local_arr, fnames):
+            from distarray.local import save_dnpy
+            fname = fnames[local_arr.comm_rank]
+            save_dnpy(fname, local_arr)
+
         if isinstance(name, six.string_types):
-            subs = self._key_and_push(name) + (da.key, da.key)
-            self._execute(
-                'distarray.local.save_dnpy(%s + "_" + str(%s.comm_rank) + ".dnpy", %s)' % subs,
-                targets=da.targets
-            )
+            func = _local_save_dnpy
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = self._key_and_push(name) + (da.key, da.key)
-            self._execute(
-                'distarray.local.save_dnpy(%s[%s.comm_rank], %s)' % subs,
-                targets=da.targets
-            )
+            func = _local_save_dnpy_names
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
+
+        self.apply(func, (da.key, name), targets=da.targets)
 
 
     def load_dnpy(self, name):
@@ -366,28 +365,32 @@ class Context(object):
         --------
         save_dnpy : Saving files to load with with load_dnpy.
         """
-        da_key = self._generate_key()
+
+        def _local_load_dnpy(comm, fname_base):
+            from distarray.local import load_dnpy
+            fname = "%s_%s.dnpy" % (fname_base, comm.Get_rank())
+            local_arr = load_dnpy(comm, fname)
+            return proxyize(local_arr)
+
+        def _local_load_dnpy_names(comm, fnames):
+            from distarray.local import load_dnpy
+            fname = fnames[comm.Get_rank()]
+            local_arr = load_dnpy(comm, fname)
+            return proxyize(local_arr)
 
         if isinstance(name, six.string_types):
-            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
-            self._execute(
-                '%s = distarray.local.load_dnpy(%s, %s + "_" + str(%s.Get_rank()) + ".dnpy")' % subs,
-                targets=self.targets
-            )
+            func = _local_load_dnpy
         elif isinstance(name, collections.Sequence):
             if len(name) != len(self.targets):
                 errmsg = "`name` must be the same length as `self.targets`."
                 raise TypeError(errmsg)
-            subs = (da_key,) + (self.comm,) + self._key_and_push(name) + (self.comm,)
-            self._execute(
-                '%s = distarray.local.load_dnpy(%s, %s[%s.Get_rank()])' % subs,
-                targets=self.targets
-            )
+            func = _local_load_dnpy_names
         else:
             errmsg = "`name` must be a string or a list."
             raise TypeError(errmsg)
 
-        return DistArray.from_localarrays(da_key, context=self)
+        da_key = self.apply(func, (self.comm, name), targets=self.targets)
+        return DistArray.from_localarrays(da_key[0], context=self)
 
     def save_hdf5(self, filename, da, key='buffer', mode='a'):
         """
@@ -419,12 +422,12 @@ class Context(object):
             errmsg = "An MPI-enabled h5py must be available to use save_hdf5."
             raise ImportError(errmsg)
 
-        subs = (self._key_and_push(filename) + (da.key,) +
-                self._key_and_push(key, mode))
-        self._execute(
-            'distarray.local.save_hdf5(%s, %s, %s, %s)' % subs,
-            targets=da.targets
-        )
+        def _local_save_dnpy(filename, local_arr, key, mode):
+            from distarray.local import save_hdf5
+            save_hdf5(filename, local_arr, key, mode)
+
+        self.apply(_local_save_dnpy, (filename, da.key, key, mode),
+                   targets=da.targets)
 
     def load_npy(self, filename, distribution):
         """
@@ -441,10 +444,13 @@ class Context(object):
         result : DistArray
             A DistArray encapsulating the file loaded.
         """
-        
+
         def _local_load_npy(filename, ddpr, comm):
             from distarray.local import load_npy
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
             return proxyize(load_npy(comm, filename, dim_data))
 
         ddpr = distribution.get_dim_data_per_rank()
@@ -479,7 +485,10 @@ class Context(object):
 
         def _local_load_hdf5(filename, ddpr, comm, key):
             from distarray.local import load_hdf5
-            dim_data = ddpr[comm.Get_rank()]
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
             return proxyize(load_hdf5(comm, filename, dim_data, key))
 
         ddpr = distribution.get_dim_data_per_rank()
@@ -526,23 +535,28 @@ class Context(object):
 
         See numpy.fromfunction for more details.
         """
-        dtype = kwargs.get('dtype', None)
+
+        def _local_fromfunction(func, comm, ddpr, kwargs):
+            from distarray.local import fromfunction
+            from distarray.local.maps import Distribution
+            if len(ddpr):
+                dim_data = ddpr[comm.Get_rank()]
+            else:
+                dim_data = ()
+            dist = Distribution(comm, dim_data=dim_data)
+            local_arr = fromfunction(func, dist, **kwargs)
+            return proxyize(local_arr)
+
         dist = kwargs.get('dist', None)
         grid_shape = kwargs.get('grid_shape', None)
         distribution = Distribution.from_shape(context=self,
                                                shape=shape, dist=dist,
                                                grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
-        function_name, ddpr_name, kwargs_name = \
-            self._key_and_push(function, ddpr, kwargs)
-        da_name = self._generate_key()
-        comm_name = distribution.comm
-        cmd = ('{da_name} = distarray.local.fromfunction({function_name}, '
-               'distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]),'
-               '**{kwargs_name})')
-        self._execute(cmd.format(**locals()), targets=distribution.targets)
-        return DistArray.from_localarrays(da_name, distribution=distribution)
+        da_name = self.apply(_local_fromfunction,
+                             (function, distribution.comm, ddpr, kwargs),
+                             targets=distribution.targets)
+        return DistArray.from_localarrays(da_name[0], distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
