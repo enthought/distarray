@@ -440,6 +440,12 @@ class DistArray(object):
             Data-type descriptor of the returned view, e.g., float32 or
             int16. The default, None, results in the view having the same
             data-type as the original array.
+
+        Returns
+        -------
+        DistArray
+            A view on the original DistArray, optionally with the underlying
+            memory interpreted as a different dtype.
         """
         if (dtype is None) or (np.dtype(dtype) == self.dtype):
             return self[...]
