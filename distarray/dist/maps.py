@@ -501,28 +501,9 @@ class Distribution(object):
     @classmethod
     def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
         """ Create a Distribution from a sequence of `dim_data` tuples. """
-
-        self = cls.__new__(cls)
-        dd0 = dim_data_per_rank[0]
-        self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
         for dim_data in dim_data_per_rank:
             for dim_dict in dim_data:
                 normalize_dim_dict(dim_dict)
-        self.shape = tuple(dd['size'] for dd in dd0)
-        self.ndim = len(dd0)
-        self.dist = tuple(dd['dist_type'] for dd in dd0)
-        self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
-                                               self.dist, len(self.targets))
-
-        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
-                  dim_data_per_rank]
-
-        self.rank_from_coords = np.empty(self.grid_shape, dtype=np.int32)
-        for (r, c) in enumerate(coords):
-            self.rank_from_coords[c] = r
 
         # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
         # with duplicates removed.  It is a list of `axis_dim_dicts`.
@@ -532,13 +513,13 @@ class Distribution(object):
                                    for axis_dim_dicts in
                                    zip(*dim_data_per_rank)]
 
-        if len(axis_dim_dicts_per_axis) != self.ndim:
+        ndim = len(dim_data_per_rank[0])
+        if len(axis_dim_dicts_per_axis) != ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
-                     axis_dim_dicts in axis_dim_dicts_per_axis]
-
-        return self
+        maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
+                axis_dim_dicts in axis_dim_dicts_per_axis]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
     @classmethod
     def from_shape(cls, context, shape, dist=None, grid_shape=None,
