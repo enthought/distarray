@@ -939,7 +939,7 @@ class TestFromLocalArrays(ContextTestCase):
 class TestView(ContextTestCase):
 
     def setUp(self):
-        self.a = numpy.random.randint(10, size=(4, 5))
+        self.a = numpy.zeros((4, 5), dtype=numpy.int64)
         self.da = self.context.fromndarray(self.a)
 
     def test_plain_view(self):
