@@ -156,11 +156,9 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, 
 if __name__ == '__main__':
 
     context = Context()
-    num_engines = len(context.targets)
-    print num_engines, 'engines available...'
-    
     with context.view.sync_imports():
         import numpy
+
     # Region of the complex plane.
     re_ax = (-1.5, 1.5)
     im_ax = (-1.5, 1.5)
@@ -178,27 +176,48 @@ if __name__ == '__main__':
     z_max = 2
     # Maximum iteration counts. Points in the set will hit this limit,
     # so increasing this has a large effect on the run-time.
-    #n_max = 100
-    n_max = 1000
+    n_max = 100
+    #n_max = 1000
     #n_max = 5000
     #n_max = 10000
-    print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
 
-    if True:
-        dist_code = 'b'
-        dist_code = 'c'
-        for i in range(4):
-            for dist_code in ['b', 'c']:
-                for engine_count in [2, 3, 4]:
-                    context_use = Context(targets=range(engine_count))
-                    do_julia_run(context_use, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, plot=False)
-    else:
-        dist_code = 'b'
-        dist_code = 'c'
-        # Try many values to find something needs lots of iters.
-        cxs = [-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3]
-        cys = [-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3]
-        for cx in cxs:
-            for cy in cys:
-                c = complex(cx * 5.0, cy * 5.0)
-                avg_iters = do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, plot=False)
+    # Distribution types to use.
+    #dist_code_list = ['b', 'c']
+    dist_code_list = ['b']
+
+    # Constants to use.
+    c_list = [c]
+    # Or try lots of values over a grid. 
+    cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
+
+    # Number of engines to use.
+    engine_count_list = [4]
+    #engine_count_list = [2, 3, 4]
+
+    # Number of cycles to repeat everything.
+    repeat_count = 1
+
+    # Check that we have enough engines available.
+    max_engine_count = max(engine_count_list)
+    num_engines = len(context.targets)
+    print num_engines, 'engines available...', max_engine_count, 'engines required.'
+    if max_engine_count > num_engines:
+        msg = 'Require %d engines, but only %d are available.' % (
+            max_engine_count, num_engines)
+        raise ValueError(msg)
+
+    # Loop over everything and time the calculations.
+    print 'Dist, Engines, t_DistArray, t_NumPy, Iters, c'
+    for i in range(repeat_count):
+        for engine_count in engine_count_list:
+            context_use = Context(targets=range(engine_count))
+            for dist_code in dist_code_list:
+                for c in c_list:
+                    do_julia_run(context_use,
+                                 dist_code,
+                                 dimensions,
+                                 c,
+                                 re_ax, im_ax,
+                                 z_max, n_max, plot=False)
