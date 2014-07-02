@@ -693,6 +693,9 @@ class IPythonContext(BaseContext):
         return self.view._really_apply(func_wrapper, args=wrapped_args,
                                        targets=targets, block=True)
 
+    def push_function(self, key, func):
+        self._push({key: func})
+
 
 class MPIContext(BaseContext):
 
@@ -836,6 +839,8 @@ class MPIContext(BaseContext):
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
 
+    def push_function(self, key, func):
+        push_function(self, key, func)
 
 if is_solo_mpi_process():
     Context = IPythonContext

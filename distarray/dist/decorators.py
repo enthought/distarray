@@ -33,7 +33,7 @@ class DecoratorBase(object):
 
     def push_fn(self, context, fn_key, fn):
         """Push function to the engines."""
-        push_function(context, fn_key, fn)
+        context.push_function(fn_key, fn)
 
     def determine_distribution(self, args, kwargs):
         """ Determine a distribution from a functions arguments."""
@@ -202,7 +202,7 @@ class vectorize(DecoratorBase):
         distribution = self.determine_distribution(args, kwargs)
         context = distribution.context
         # push function
-        push_function(context, self.fn_key, self.fn)
+        context.push_function(self.fn_key, self.fn)
         # vectorize the function
         exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
         context._execute(exec_str, targets=distribution.targets)
