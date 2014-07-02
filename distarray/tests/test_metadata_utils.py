@@ -236,7 +236,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 1,
                     'proc_grid_rank': 0}
 
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(42,)])
@@ -249,7 +249,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_rank': 0,
                     'start': 0,
                     'stop': 42}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])
@@ -260,7 +260,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 2,
                     'proc_grid_rank': 0,
                     'start': 0}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(21,), (21,)])
@@ -273,7 +273,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 2,
                     'proc_grid_rank': 0,
                     'start': 0}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])

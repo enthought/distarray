@@ -136,9 +136,12 @@ class TestClientMap(ContextTestCase):
                     'size': size,
                     },
                 )
-        dist_block_cyclic = Distribution(self.context, gdd_block_cyclic)
-        dist_block = Distribution(self.context, gdd_block)
-        dist_cyclic = Distribution(self.context, gdd_cyclic)
+        dist_block_cyclic = Distribution.from_global_dim_data(self.context,
+                                                              gdd_block_cyclic)
+        dist_block = Distribution.from_global_dim_data(self.context,
+                                                       gdd_block)
+        dist_cyclic = Distribution.from_global_dim_data(self.context,
+                                                        gdd_cyclic)
 
         self.assertTrue(dist_block_cyclic.is_compatible(dist_block))
         self.assertTrue(dist_block_cyclic.is_compatible(dist_cyclic))
@@ -178,7 +181,8 @@ class TestClientMap(ContextTestCase):
                     'indices': [range(10)],
                     },
                 )
-        dist_u = Distribution(self.context, gdd_unstructured)
+        dist_u = Distribution.from_global_dim_data(self.context,
+                                                   gdd_unstructured)
 
         self.assertFalse(dist_u.is_compatible(dist_b1))
         self.assertFalse(dist_b1.is_compatible(dist_u))

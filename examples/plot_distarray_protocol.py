@@ -307,7 +307,7 @@ def create_distribution_plot_and_documentation(context, params):
         distribution = Distribution.from_shape(context, shape, dist=dist,
                                                grid_shape=grid_shape)
     elif dimdata is not None:
-        distribution = Distribution(context, dimdata)
+        distribution = Distribution.from_global_dim_data(context, dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
     array = context.empty(distribution)
