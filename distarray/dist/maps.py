@@ -535,39 +535,21 @@ class Distribution(object):
                 # then targets is set correctly
                 pass
 
-        self = super(Distribution, cls).__new__(cls)
-        self.context = context
-        self.shape = shape
-        self.ndim = len(shape)
+        ndim = len(shape)
+        dist = dist or {0: 'b'}
+        dist = normalize_dist(dist, ndim)
 
-        # dist
-        if dist is None:
-            dist = {0: 'b'}
-        self.dist = normalize_dist(dist, self.ndim)
+        targets = sorted(targets or context.targets)
+        grid_shape = grid_shape or make_grid_shape(shape, dist, len(targets))
+        grid_shape = normalize_grid_shape(grid_shape, shape, dist, len(targets))
 
-        # all possible targets
-        all_targets = sorted(targets or context.targets)
-        # grid_shape
-        if grid_shape is None:
-            grid_shape = make_grid_shape(self.shape, self.dist,
-                                         len(all_targets))
-
-        self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
-                                               self.dist, len(all_targets))
-        ntargets = reduce(operator.mul, self.grid_shape, 1)
         # choose targets from grid_shape
-        self.targets = all_targets[:ntargets]
-        self.comm = self.context._make_subcomm(self.targets)
+        ntargets = reduce(operator.mul, grid_shape, 1)
+        targets = targets[:ntargets]
 
-        # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
-        # to how MPI does it.
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
-
-        # List of `ClientMap` objects, one per dimension.
-        self.maps = [map_from_sizes(*args)
-                     for args in zip(self.shape, self.dist, self.grid_shape)]
-        return self
+        # list of `ClientMap` objects, one per dimension.
+        maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
     def __new__(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
