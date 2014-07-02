@@ -5,11 +5,32 @@
 # ---------------------------------------------------------------------------
 
 """
-Calculate the Julia set for a given z <- z**2 + c using DistArray.
+Calculate some Julia sets using DistArray, and measure the performance.
+
+The Julia set, for a given complex number c, is the set of points z,
+such that the repeated iteration z = z**2 + c never escapes to infinity.
+
+This can be plotted by counting how many iterations are required for the
+magnitude of z to exceed a cutoff. (For example, if abs(z) > 2, then it
+it certain that the point will go off to infinity.)
+
+Depending on the value of c, the Julia set may be connected and contain
+a lot of points, or it could be disconnected and contain fewer points.
+The points in the set will require the maximum iteration count, so
+the connected sets will usually take longer to compute.
 
 Usage:
+    $ python julia_example.py
+
+    This will try various parameters, such as the engine count,
+    distribution method, resolution, and c value, and print the
+    timing results from each run to standard output.
+
+    Or,
     $ python julia_example.py <c real component> <c imaginary component>
-Or omit the c parameters to use the default c=(-0.045 + 0.45i).
+
+    This will use the c value specified on the command line,
+    and only vary only the resolution. A plot is shown for each resolution.
 """
 
 import sys
@@ -78,7 +99,7 @@ def local_julia_calc(la, c, z_max, n_max):
     return rtn
 
 
-def distributed_julia_calc(distarray, c, z_max=10, n_max=100):
+def distributed_julia_calc(distarray, c, z_max, n_max):
     ''' Calculate the Julia set for an array of points in the complex plane.
 
     distarray: DistArray of complex values whose iterations we will count.
@@ -93,7 +114,7 @@ def distributed_julia_calc(distarray, c, z_max=10, n_max=100):
     return iters_da
 
 
-def numpy_julia_calc(ndarray, c, z_max=10, n_max=100):
+def numpy_julia_calc(ndarray, c, z_max, n_max):
     ''' Calculate entirely with NumPy for comparison. '''
 
     @numpy.vectorize
