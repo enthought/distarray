@@ -12,5 +12,5 @@ from distarray.dist import Context, Distribution
 
 
 c = Context()
-d = Distribution.from_shape(c, (10, 10, 10), dist=('b', 'n', 'c'))
+d = Distribution(c, (10, 10, 10), dist=('b', 'n', 'c'))
 a = c.zeros(d, dtype='int32')

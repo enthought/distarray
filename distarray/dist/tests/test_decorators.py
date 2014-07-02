@@ -29,7 +29,7 @@ class TestDecoratorBase(TestCase):
     def test_determine_context(self):
         context = Context()
         context2 = Context()  # for cross Context checking
-        distribution = Distribution.from_shape(context, (2, 2))
+        distribution = Distribution(context, (2, 2))
         da = context.ones(distribution)
 
         def dummy_func(*args, **kwargs):
@@ -48,7 +48,7 @@ class TestDecoratorBase(TestCase):
     def test_key_and_push_args(self):
         context = Context()
 
-        distribution = Distribution.from_shape(context, (2, 2))
+        distribution = Distribution(context, (2, 2))
         da = context.ones(distribution)
         db = da*2
 
@@ -147,7 +147,7 @@ class TestLocalDecorator(ContextTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestLocalDecorator, cls).setUpClass()
-        distribution = Distribution.from_shape(cls.context, (5, 5))
+        distribution = Distribution(cls.context, (5, 5))
         cls.da = cls.context.empty(distribution)
         cls.da.fill(2 * numpy.pi)
 
@@ -155,7 +155,7 @@ class TestLocalDecorator(ContextTestCase):
         """Test the @local decorator"""
         context = Context()
 
-        distribution = Distribution.from_shape(context, (4, 4))
+        distribution = Distribution(context, (4, 4))
         da = context.empty(distribution)
         a = numpy.empty((4, 4))
 
@@ -181,8 +181,8 @@ class TestLocalDecorator(ContextTestCase):
 
         ctx1 = Context(targets=range(4))
         ctx2 = Context(targets=range(3))
-        distribution1 = Distribution.from_shape(ctx1, (10,))
-        distribution2 = Distribution.from_shape(ctx2, (10,))
+        distribution1 = Distribution(ctx1, (10,))
+        distribution2 = Distribution(ctx2, (10,))
         da1 = ctx1.ones(distribution1)
         da2 = ctx2.ones(distribution2)
         db1 = self.local_sin(da1)
@@ -219,14 +219,14 @@ class TestLocalDecorator(ContextTestCase):
         self.assert_allclose(df, 2 * numpy.pi + 11 + 12 + 13)
 
     def test_local_add_distarrayproxies(self):
-        distribution = Distribution.from_shape(self.context, (5, 5))
+        distribution = Distribution(self.context, (5, 5))
         dg = self.context.empty(distribution)
         dg.fill(33)
         dh = self.local_add_distarrayproxies(self.da, dg)
         self.assert_allclose(dh, 33 + 2 * numpy.pi)
 
     def test_local_add_mixed(self):
-        distribution = Distribution.from_shape(self.context, (5, 5))
+        distribution = Distribution(self.context, (5, 5))
         di = self.context.empty(distribution)
         di.fill(33)
         dj = self.local_add_mixed(self.da, 11, di, 12)
@@ -245,7 +245,7 @@ class TestLocalDecorator(ContextTestCase):
         self.assert_allclose(dl, 2 * numpy.pi + 11 + 12)
 
     def test_local_add_supermix(self):
-        distribution = Distribution.from_shape(self.context, (5, 5))
+        distribution = Distribution(self.context, (5, 5))
         dm = self.context.empty(distribution)
         dm.fill(22)
         dn = self.context.empty(distribution)
