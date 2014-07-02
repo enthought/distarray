@@ -190,17 +190,6 @@ class TestLocalDecorator(ContextTestCase):
         dc = self.local_add50(self.da)
         self.assert_allclose(dc, 2 * numpy.pi + 50)
 
-    def test_local_sum(self):
-        dd = self.local_sum(self.da)
-        if self.ntargets == 1:
-            dd = [dd]
-        lshapes = self.da.localshapes()
-        expected = []
-        for lshape in lshapes:
-            expected.append(lshape[0] * lshape[1] * (2 * numpy.pi))
-        for (v, e) in zip(dd, expected):
-            self.assertAlmostEqual(v, e, places=5)
-
     def test_local_add_num(self):
         de = self.local_add_num(self.da, 11)
         self.assert_allclose(de, 2 * numpy.pi + 11)
