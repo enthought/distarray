@@ -29,7 +29,7 @@ from distarray.utils import uid, DISTARRAY_BASE_NAME
 # mpi contetx
 from distarray.dist.mpionly_utils import (make_targets_comm, get_nengines,
                                           get_rank, initial_comm_setup,
-                                          is_solo_mpi_process)
+                                          is_solo_mpi_process, push_function)
 
 
 class BaseContext(object):
@@ -448,9 +448,14 @@ class BaseContext(object):
         See numpy.fromfunction for more details.
         """
 
+        # push the function
+        func_key = self._generate_key()
+        push_function(self, func_key, function)
+
         def _local_fromfunction(func, comm, ddpr, kwargs):
             from distarray.local import fromfunction
             from distarray.local.maps import Distribution
+
             if len(ddpr):
                 dim_data = ddpr[comm.Get_rank()]
             else:
@@ -466,9 +471,10 @@ class BaseContext(object):
                                     grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         da_name = self.apply(_local_fromfunction,
-                             (function, distribution.comm, ddpr, kwargs),
+                             (func_key, distribution.comm, ddpr, kwargs),
                              targets=distribution.targets)
-        return DistArray.from_localarrays(da_name[0], distribution=distribution)
+        return DistArray.from_localarrays(da_name[0],
+                                          distribution=distribution)
 
 
 class IPythonContext(BaseContext):
