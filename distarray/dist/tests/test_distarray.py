@@ -947,5 +947,9 @@ class TestView(ContextTestCase):
         da_view[3, 4] = 99
         assert_array_equal(da_view.tondarray(), self.da.tondarray())
 
+        da_view = self.da.view(dtype=self.da.dtype.str)
+        da_view[2, 2] = 33
+        assert_array_equal(da_view.tondarray(), self.da.tondarray())
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
