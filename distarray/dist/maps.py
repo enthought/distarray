@@ -481,6 +481,20 @@ class Distribution(object):
 
     @classmethod
     def from_maps(cls, context, maps, targets=None):
+        """Create a Distribution from a sequence of `Map`s.
+
+        Parameters
+        ----------
+        context : Context object
+        maps : Sequence of Map objects
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
+        # This constructor is called by all the others
         self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.targets = sorted(targets or context.targets)
@@ -500,7 +514,21 @@ class Distribution(object):
 
     @classmethod
     def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
-        """ Create a Distribution from a sequence of `dim_data` tuples. """
+        """Create a Distribution from a sequence of `dim_data` tuples.
+
+        Parameters
+        ----------
+        context : Context object
+        dim_data_per_rank : Sequence of dim_data tuples, one per rank
+            See the "Distributed Array Protocol" for a description of
+            dim_data tuples.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
         for dim_data in dim_data_per_rank:
             for dim_dict in dim_data:
                 normalize_dim_dict(dim_dict)
@@ -524,7 +552,24 @@ class Distribution(object):
     @classmethod
     def from_shape(cls, context, shape, dist=None, grid_shape=None,
                    targets=None):
+        """Create a Distribution from a `shape` and other optional args.
 
+        Parameters
+        ----------
+        context : Context object
+        shape : tuple of int
+            Shape of the resulting Distribution, one integer per dimension.
+        dist : str, list, tuple, or dict, optional
+            Shorthand data structure representing the distribution type for
+            every dimension.  Default: {0: 'b'}, with all other dimensions 'n'.
+        grid_shape : tuple of int
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
         # special case when dist is all 'n's.
         if (dist is not None) and all(d == 'n' for d in dist):
             if (targets is not None) and (len(targets) != 1):
@@ -556,15 +601,16 @@ class Distribution(object):
 
         Parameters
         ----------
+        context : Context object
         global_dim_data : tuple of dict
             A global dimension dictionary per dimension.  See following `Note`
             section.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
 
         Returns
         -------
-        result : Distribution
-            An empty DistArray of the specified size, dimensionality, and
-            distribution.
+        Distribution
 
         Note
         ----
