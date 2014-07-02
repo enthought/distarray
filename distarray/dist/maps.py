@@ -487,30 +487,58 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
-        """ Create a Distribution from a sequence of `dim_data` tuples. """
+    def from_maps(cls, context, maps, targets=None):
+        """Create a Distribution from a sequence of `Map`s.
 
-        self = cls.__new__(cls)
-        dd0 = dim_data_per_rank[0]
+        Parameters
+        ----------
+        context : Context object
+        maps : Sequence of Map objects
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
+        # This constructor is called by all the others
+        self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.targets = sorted(targets or context.targets)
         self.comm = self.context._make_subcomm(self.targets)
-        for dim_data in dim_data_per_rank:
-            for dim_dict in dim_data:
-                normalize_dim_dict(dim_dict)
-        self.shape = tuple(dd['size'] for dd in dd0)
-        self.ndim = len(dd0)
-        self.dist = tuple(dd['dist_type'] for dd in dd0)
-        self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
+        self.maps = maps
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
+
         self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
-        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
-                  dim_data_per_rank]
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+        return self
 
-        self.rank_from_coords = np.empty(self.grid_shape, dtype=np.int32)
-        for (r, c) in enumerate(coords):
-            self.rank_from_coords[c] = r
+    @classmethod
+    def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
+        """Create a Distribution from a sequence of `dim_data` tuples.
+
+        Parameters
+        ----------
+        context : Context object
+        dim_data_per_rank : Sequence of dim_data tuples, one per rank
+            See the "Distributed Array Protocol" for a description of
+            dim_data tuples.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
+        for dim_data in dim_data_per_rank:
+            for dim_dict in dim_data:
+                normalize_dim_dict(dim_dict)
 
         # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
         # with duplicates removed.  It is a list of `axis_dim_dicts`.
@@ -520,18 +548,35 @@ class Distribution(object):
                                    for axis_dim_dicts in
                                    zip(*dim_data_per_rank)]
 
-        if len(axis_dim_dicts_per_axis) != self.ndim:
+        ndim = len(dim_data_per_rank[0])
+        if len(axis_dim_dicts_per_axis) != ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
-                     axis_dim_dicts in axis_dim_dicts_per_axis]
-
-        return self
+        maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
+                axis_dim_dicts in axis_dim_dicts_per_axis]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
     @classmethod
     def from_shape(cls, context, shape, dist=None, grid_shape=None,
                    targets=None):
+        """Create a Distribution from a `shape` and other optional args.
 
+        Parameters
+        ----------
+        context : Context object
+        shape : tuple of int
+            Shape of the resulting Distribution, one integer per dimension.
+        dist : str, list, tuple, or dict, optional
+            Shorthand data structure representing the distribution type for
+            every dimension.  Default: {0: 'b'}, with all other dimensions 'n'.
+        grid_shape : tuple of int
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
         # special case when dist is all 'n's.
         if (dist is not None) and all(d == 'n' for d in dist):
             if (targets is not None) and (len(targets) != 1):
@@ -542,54 +587,37 @@ class Distribution(object):
                 # then targets is set correctly
                 pass
 
-        self = cls.__new__(cls)
-        self.context = context
-        self.shape = shape
-        self.ndim = len(shape)
+        ndim = len(shape)
+        dist = dist or {0: 'b'}
+        dist = normalize_dist(dist, ndim)
 
-        # dist
-        if dist is None:
-            dist = {0: 'b'}
-        self.dist = normalize_dist(dist, self.ndim)
+        targets = sorted(targets or context.targets)
+        grid_shape = grid_shape or make_grid_shape(shape, dist, len(targets))
+        grid_shape = normalize_grid_shape(grid_shape, shape, dist, len(targets))
 
-        # all possible targets
-        all_targets = sorted(targets or context.targets)
-        # grid_shape
-        if grid_shape is None:
-            grid_shape = make_grid_shape(self.shape, self.dist,
-                                         len(all_targets))
-
-        self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
-                                               self.dist, len(all_targets))
-        ntargets = reduce(operator.mul, self.grid_shape, 1)
         # choose targets from grid_shape
-        self.targets = all_targets[:ntargets]
-        self.comm = self.context._make_subcomm(self.targets)
+        ntargets = reduce(operator.mul, grid_shape, 1)
+        targets = targets[:ntargets]
 
-        # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
-        # to how MPI does it.
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+        # list of `ClientMap` objects, one per dimension.
+        maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        # List of `ClientMap` objects, one per dimension.
-        self.maps = [map_from_sizes(*args)
-                     for args in zip(self.shape, self.dist, self.grid_shape)]
-        return self
-
-    def __init__(self, context, global_dim_data, targets=None):
+    def __new__(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
         ----------
+        context : Context object
         global_dim_data : tuple of dict
             A global dimension dictionary per dimension.  See following `Note`
             section.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
 
         Returns
         -------
-        result : Distribution
-            An empty DistArray of the specified size, dimensionality, and
-            distribution.
+        Distribution
 
         Note
         ----
@@ -665,20 +693,9 @@ class Distribution(object):
 
         The global size of the array in this dimension.
         """
-        self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
-        self.shape = tuple(m.size for m in self.maps)
-        self.ndim = len(self.maps)
-        self.dist = tuple(m.dist for m in self.maps)
-        self.grid_shape = tuple(m.grid_size for m in self.maps)
+        maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
-                                               self.dist, len(self.targets))
-
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
     def __getitem__(self, idx):
         return self.maps[idx]
