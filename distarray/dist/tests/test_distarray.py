@@ -936,6 +936,7 @@ class TestFromLocalArrays(ContextTestCase):
                                        context=self.context,
                                        distribution=self.distribution)
 
+
 class TestView(ContextTestCase):
 
     def setUp(self):
@@ -950,6 +951,12 @@ class TestView(ContextTestCase):
         da_view = self.da.view(dtype=self.da.dtype.str)
         da_view[2, 2] = 33
         assert_array_equal(da_view.tondarray(), self.da.tondarray())
+
+    def test_compatible_dtype(self):
+        dtype = numpy.int32
+        da_view = self.da.view(dtype=dtype)
+        assert_array_equal(da_view.tondarray(), self.a.view(dtype))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
