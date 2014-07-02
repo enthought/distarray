@@ -33,6 +33,8 @@ Usage:
     and only vary only the resolution. A plot is shown for each resolution.
 """
 
+from __future__ import print_function
+
 import sys
 from time import time
 from matplotlib import pyplot
@@ -162,16 +164,14 @@ def do_julia_run(context, dist_code, dimensions, c, re_ax, im_ax, z_max, n_max, 
     avg_iters = float(num_iters.mean().tondarray())
     # Print results.
     t_ratio = t_numpy / t_distarray
-    #print 'Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c'
     result = '%s, %r, %r, %r, %r, %r, %r, %r' % (
                  dist_code, num_engines, dimensions[0],
                  t_distarray, t_numpy, t_ratio,
                  avg_iters, str(c))
-    print result
+    print(result)
     if plot:
         # Plot the iteration count.
-        #image = num_iters.tondarray()
-        image = num_iters_nd
+        image = num_iters.tondarray()
         pyplot.matshow(image)
         pyplot.show()
     return avg_iters
@@ -188,12 +188,13 @@ def do_julia_runs(context,
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
     num_engines = len(context.targets)
+    print('%d Engines available' % (num_engines))
     if max_engine_count > num_engines:
         msg = 'Require %d engines, but only %d are available.' % (
             max_engine_count, num_engines)
         raise ValueError(msg)
     # Loop over everything and time the calculations.
-    print 'Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c'
+    print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             context_use = Context(targets=range(engine_count))
