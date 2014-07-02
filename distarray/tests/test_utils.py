@@ -11,6 +11,8 @@ from numpy.testing import assert_array_equal
 
 from distarray import utils
 from distarray.dist.ipython_utils import IPythonClient
+from distarray.dist.mpionly_utils import is_solo_mpi_process
+
 
 class TestMultPartitions(unittest.TestCase):
     """
@@ -78,6 +80,7 @@ class TestHasExactlyOne(unittest.TestCase):
         self.assertFalse(utils.has_exactly_one(iterable))
 
 
+@unittest.skipIf(not is_solo_mpi_process(), "Ipython only test")
 class TestCountRoundTrips(unittest.TestCase):
     def test_count_round_trips(self):
         client = IPythonClient()
