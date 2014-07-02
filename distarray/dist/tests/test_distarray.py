@@ -27,8 +27,7 @@ class TestDistArray(ContextTestCase):
 
     def test_set_and_getitem_block_dist(self):
         size = 10
-        distribution = Distribution.from_shape(self.context, (size,),
-                                               dist={0: 'b'})
+        distribution = Distribution(self.context, (size,), dist={0: 'b'})
         dap = self.context.empty(distribution)
 
         for val in range(size):
@@ -43,8 +42,8 @@ class TestDistArray(ContextTestCase):
 
     def test_set_and_getitem_nd_block_dist(self):
         size = 5
-        distribution = Distribution.from_shape(self.context, (size, size),
-                                               dist={0: 'b', 1: 'b'})
+        distribution = Distribution(self.context, (size, size),
+                                    dist={0: 'b', 1: 'b'})
         dap = self.context.empty(distribution)
 
         for row in range(size):
@@ -60,8 +59,8 @@ class TestDistArray(ContextTestCase):
 
     def test_set_and_getitem_cyclic_dist(self):
         size = 10
-        distribution = Distribution.from_shape(self.context, (size,),
-                                               dist={0: 'c'})
+        distribution = Distribution(self.context, (size,),
+                                    dist={0: 'c'})
         dap = self.context.empty(distribution)
 
         for val in range(size):
@@ -73,7 +72,7 @@ class TestDistArray(ContextTestCase):
             self.assertEqual(dap[-i], i)
 
     def test_get_index_error(self):
-        distribution = Distribution.from_shape(self.context, (10,), dist={0: 'c'})
+        distribution = Distribution(self.context, (10,), dist={0: 'c'})
         dap = self.context.empty(distribution)
         with self.assertRaises(IndexError):
             dap[11]
@@ -81,7 +80,7 @@ class TestDistArray(ContextTestCase):
             dap[-11]
 
     def test_set_index_error(self):
-        distribution = Distribution.from_shape(self.context, (10,), dist={0: 'c'})
+        distribution = Distribution(self.context, (10,), dist={0: 'c'})
         dap = self.context.empty(distribution)
         with self.assertRaises(IndexError):
             dap[11] = 55
@@ -90,15 +89,14 @@ class TestDistArray(ContextTestCase):
 
     def test_iteration(self):
         size = 10
-        distribution = Distribution.from_shape(self.context, (size,),
-                                               dist={0: 'c'})
+        distribution = Distribution(self.context, (size,), dist={0: 'c'})
         dap = self.context.empty(distribution)
         dap.fill(10)
         for val in dap:
             self.assertEqual(val, 10)
 
     def test_tondarray(self):
-        distribution = Distribution.from_shape(self.context, (3, 3))
+        distribution = Distribution(self.context, (3, 3))
         dap = self.context.empty(distribution)
         ndarr = numpy.arange(9).reshape(3, 3)
         for (i, j), val in numpy.ndenumerate(ndarr):
@@ -106,28 +104,28 @@ class TestDistArray(ContextTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
     def test__array_interface(self):
-        distribution = Distribution.from_shape(self.context, (7, 9))
+        distribution = Distribution(self.context, (7, 9))
         darr = self.context.ones(distribution)
         nparr = numpy.array(darr)
         assert_array_equal(darr.tondarray(), nparr)
         assert_array_equal(numpy.ones((7, 9)), nparr)
 
     def test_set_numpy_array_full_slice_with_distarray(self):
-        distribution = Distribution.from_shape(self.context, (7, 9))
+        distribution = Distribution(self.context, (7, 9))
         darr = self.context.ones(distribution)
         nparr = numpy.zeros_like(darr)
         nparr[...] = darr
         assert_array_equal(nparr, darr.toarray())
 
     def test_set_numpy_array_partial_slice_with_distarray(self):
-        distribution = Distribution.from_shape(self.context, (15, 4))
+        distribution = Distribution(self.context, (15, 4))
         darr = self.context.ones(distribution)
         nparr = numpy.zeros_like(darr)
         nparr[3, :] = darr[3, :]
         assert_array_equal(nparr[3, :], darr[3, :].toarray())
 
     def test_set_numpy_array_partial_slice_with_distarray_2(self):
-        distribution = Distribution.from_shape(self.context, (13, 17))
+        distribution = Distribution(self.context, (13, 17))
         darr = self.context.ones(distribution)
         nparr = numpy.zeros((20, 20))
         nparr[:13, :17] = darr
@@ -135,8 +133,7 @@ class TestDistArray(ContextTestCase):
 
     def test_global_tolocal_bug(self):
         # gh-issue #154
-        distribution = Distribution.from_shape(self.context, (3, 3),
-                                               dist=('n', 'b'))
+        distribution = Distribution(self.context, (3, 3), dist=('n', 'b'))
         dap = self.context.zeros(distribution)
         ndarr = numpy.zeros((3, 3))
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
@@ -280,7 +277,7 @@ class TestGetItemSlicing(ContextTestCase):
                            expected[..., ..., ..., ...])
 
     def test_resulting_slice(self):
-        dist = Distribution.from_shape(self.context, (10, 20))
+        dist = Distribution(self.context, (10, 20))
         da = self.context.ones(dist)
         db = da[:5, :10]
         dc = db * 2
@@ -420,7 +417,7 @@ class TestSetItemSlicing(ContextTestCase):
             arr[slc] = new_data
 
     def test_set_DistArray_slice(self):
-        dist = Distribution.from_shape(self.context, (10, 20))
+        dist = Distribution(self.context, (10, 20))
         da = self.context.ones(dist)
         db = self.context.zeros(dist)
         da[...] = db
@@ -636,7 +633,7 @@ class TestDistArrayCreation(ContextTestCase):
 
     def test___init__(self):
         shape = (5, 5)
-        distribution = Distribution.from_shape(self.context, shape, ('b', 'c'))
+        distribution = Distribution(self.context, shape, ('b', 'c'))
         da = DistArray(distribution, dtype=int)
         da.fill(42)
         nda = numpy.empty(shape, dtype=int)
@@ -645,41 +642,41 @@ class TestDistArrayCreation(ContextTestCase):
 
     def test_zeros(self):
         shape = (16, 16)
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         zero_distarray = self.context.zeros(distribution)
         zero_ndarray = numpy.zeros(shape)
         assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
 
     def test_zeros_0d(self):
         shape = ()
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         zero_distarray = self.context.zeros(distribution)
         zero_ndarray = numpy.zeros(shape)
         assert_array_equal(zero_distarray.tondarray(), zero_ndarray)
 
     def test_ones(self):
         shape = (16, 16)
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         ones_distarray = self.context.ones(distribution)
         ones_ndarray = numpy.ones(shape)
         assert_array_equal(ones_distarray.tondarray(), ones_ndarray)
 
     def test_ones_0d(self):
         shape = ()
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         ones_distarray = self.context.ones(distribution)
         ones_ndarray = numpy.ones(shape)
         assert_array_equal(ones_distarray.tondarray(), ones_ndarray)
 
     def test_empty(self):
         shape = (16, 16)
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         empty_distarray = self.context.empty(distribution)
         self.assertEqual(empty_distarray.shape, distribution.shape)
 
     def test_empty_0d(self):
         shape = ()
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         empty_distarray = self.context.empty(distribution)
         self.assertEqual(empty_distarray.shape, distribution.shape)
 
@@ -696,7 +693,7 @@ class TestDistArrayCreation(ContextTestCase):
 
     def test_grid_rank(self):
         # regression test for issue #235
-        d = Distribution.from_shape(self.context, (4, 4, 4),
+        d = Distribution(self.context, (4, 4, 4),
                                     dist=('b', 'n', 'b'),
                                     grid_shape=(1, 1, 4))
         a = self.context.empty(d)
@@ -715,8 +712,8 @@ class TestDistArrayCreationSubSet(ContextTestCase):
     def test_create_target_subset(self):
         shape = (100, 100)
         subtargets = self.context.targets[::2]
-        distribution = Distribution.from_shape(self.context, shape=shape,
-                                               targets=subtargets)
+        distribution = Distribution(self.context, shape=shape,
+                                    targets=subtargets)
         darr = self.context.ones(distribution)
         lss = darr.localshapes()
         self.assertEqual(len(lss), len(subtargets))
@@ -732,8 +729,7 @@ class TestReduceMethods(ContextTestCase):
     def setUpClass(cls):
         super(TestReduceMethods, cls).setUpClass()
         cls.arr = numpy.arange(16).reshape(4, 4)
-        dist = Distribution.from_shape(cls.context,
-                                       cls.arr.shape, ('b', 'b'), (2, 2))
+        dist = Distribution(cls.context, cls.arr.shape, ('b', 'b'), (2, 2))
         cls.darr = cls.context.fromndarray(cls.arr, dist)
 
     def test_sum_last_axis(self):
@@ -876,9 +872,8 @@ class TestReduceMethods(ContextTestCase):
         shape = (10, 20, 30, 40)
         arr = numpy.zeros(shape)
         arr.fill(3)
-        dist = Distribution.from_shape(self.context,
-                                       shape=shape,
-                                       dist=('c', 'c', 'c', 'c'))
+        dist = Distribution(self.context, shape=shape,
+                            dist=('c', 'c', 'c', 'c'))
         darr = self.context.empty(distribution=dist)
         darr.fill(3)
         for axis in range(4):
@@ -888,8 +883,8 @@ class TestReduceMethods(ContextTestCase):
         assert_allclose(darr.sum().tondarray(), arr.sum())
 
     def test_gh_435_regression_with_var(self):
-        dist = Distribution.from_shape(self.context, shape=(14,), dist=('b'),
-                                       targets=range(4))
+        dist = Distribution(self.context, shape=(14,), dist=('b'),
+                            targets=range(4))
         darr = self.context.ones(dist)
         darr.var()
 
@@ -910,7 +905,7 @@ class TestFromLocalArrays(ContextTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestFromLocalArrays, cls).setUpClass()
-        cls.distribution = Distribution.from_shape((4, 4))
+        cls.distribution = Distribution((4, 4))
         cls.distarray = cls.context.ones(cls.distribution, dtype=int)
         cls.expected = numpy.ones((4, 4), dtype=int)
 

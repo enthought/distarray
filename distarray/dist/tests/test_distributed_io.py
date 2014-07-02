@@ -41,8 +41,7 @@ class TestDnpyFileIO(ContextTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestDnpyFileIO, cls).setUpClass()
-        cls.distribution = Distribution.from_shape(cls.context, (100,),
-                                                   dist={0: 'b'})
+        cls.distribution = Distribution(cls.context, (100,), dist={0: 'b'})
         cls.da = cls.context.empty(cls.distribution)
         cls.output_paths = cls.context.apply(engine_temp_path)
 
@@ -242,7 +241,7 @@ class TestHdf5FileSave(ContextTestCase):
         expected = np.random.random(shape)
 
         dist = {0: 'b', 1: 'c', 2: 'n'}
-        distribution = Distribution.from_shape(self.context, shape, dist=dist)
+        distribution = Distribution(self.context, shape, dist=dist)
         da = self.context.fromarray(expected, distribution=distribution)
 
         self.context.save_hdf5(self.output_path, da, mode='w')

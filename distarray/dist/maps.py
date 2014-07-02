@@ -790,11 +790,11 @@ class Distribution(object):
 
         reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
 
-        return Distribution.from_shape(context=self.context,
-                                       shape=reduced_shape,
-                                       dist=reduced_dist,
-                                       grid_shape=reduced_grid_shape,
-                                       targets=reduced_targets)
+        return Distribution(context=self.context,
+                            shape=reduced_shape,
+                            dist=reduced_dist,
+                            grid_shape=reduced_grid_shape,
+                            targets=reduced_targets)
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())

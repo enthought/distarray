@@ -222,8 +222,7 @@ class TestGridSizes(unittest.TestCase):
         cls.context = Context()
 
     def test_dist_sizes(self):
-        dist = Distribution.from_shape(self.context, (2, 3, 4),
-                                       dist=('n', 'b', 'c'))
+        dist = Distribution(self.context, (2, 3, 4), dist=('n', 'b', 'c'))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         if len(self.context.view) == 4:

@@ -102,25 +102,25 @@ class TestPrimeCluster(ContextTestCase):
     ntargets = 3
 
     def test_1D(self):
-        d = Distribution.from_shape(self.context, (3,))
+        d = Distribution(self.context, (3,))
         a = self.context.empty(d)
         self.assertEqual(a.grid_shape, (3,))
 
     def test_2D(self):
-        da = Distribution.from_shape(self.context, (3, 3))
+        da = Distribution(self.context, (3, 3))
         a = self.context.empty(da)
-        db = Distribution.from_shape(self.context, (3, 3), dist=('n', 'b'))
+        db = Distribution(self.context, (3, 3), dist=('n', 'b'))
         b = self.context.empty(db)
         self.assertEqual(a.grid_shape, (3, 1))
         self.assertEqual(b.grid_shape, (1, 3))
 
     def test_3D(self):
-        da = Distribution.from_shape(self.context, (3, 3, 3))
+        da = Distribution(self.context, (3, 3, 3))
         a = self.context.empty(da)
-        db = Distribution.from_shape(self.context, (3, 3, 3),
+        db = Distribution(self.context, (3, 3, 3),
                                      dist=('n', 'b', 'n'))
         b = self.context.empty(db)
-        dc = Distribution.from_shape(self.context, (3, 3, 3),
+        dc = Distribution(self.context, (3, 3, 3),
                                      dist=('n', 'n', 'b'))
         c = self.context.empty(dc)
         self.assertEqual(a.grid_shape, (3, 1, 1))
