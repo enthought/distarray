@@ -27,7 +27,7 @@ random = Random(context)
 @timer
 def calc_pi(n):
     """Estimate pi using distributed NumPy arrays."""
-    distribution = Distribution.from_shape(context=context, shape=(n,))
+    distribution = Distribution(context=context, shape=(n,))
     x = random.rand(distribution)
     y = random.rand(distribution)
     r = hypot(x, y)

@@ -32,7 +32,7 @@ class TestPlotting(ContextTestCase):
         # (because matplotlib isn't installed, probably)
         cls.plt = import_or_skip("distarray.plotting")
         super(TestPlotting, cls).setUpClass()
-        cls.da = Distribution.from_shape(cls.context, (64, 64))
+        cls.da = Distribution(cls.context, (64, 64))
         cls.arr = cls.context.ones(cls.da)
 
     def test_plot_array_distribution(self):

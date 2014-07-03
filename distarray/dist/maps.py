@@ -557,9 +557,7 @@ class Distribution(object):
                 axis_dim_dicts in axis_dim_dicts_per_axis]
         return cls.from_maps(context=context, maps=maps, targets=targets)
 
-    @classmethod
-    def from_shape(cls, context, shape, dist=None, grid_shape=None,
-                   targets=None):
+    def __new__(cls, context, shape, dist=None, grid_shape=None, targets=None):
         """Create a Distribution from a `shape` and other optional args.
 
         Parameters
@@ -604,7 +602,8 @@ class Distribution(object):
         maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
         return cls.from_maps(context=context, maps=maps, targets=targets)
 
-    def __new__(cls, context, global_dim_data, targets=None):
+    @classmethod
+    def from_global_dim_data(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
@@ -799,11 +798,11 @@ class Distribution(object):
 
         reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
 
-        return Distribution.from_shape(context=self.context,
-                                       shape=reduced_shape,
-                                       dist=reduced_dist,
-                                       grid_shape=reduced_grid_shape,
-                                       targets=reduced_targets)
+        return Distribution(context=self.context,
+                            shape=reduced_shape,
+                            dist=reduced_dist,
+                            grid_shape=reduced_grid_shape,
+                            targets=reduced_targets)
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
