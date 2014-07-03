@@ -16,6 +16,8 @@ position, and once past, the final value is larger than when started.
 
 from __future__ import print_function
 
+import sys
+
 from math import sqrt
 
 from numpy import exp
@@ -29,9 +31,10 @@ PHYSICAL_SIZE = (10.0, 10.0, 20.0)
 # Array size of volume.
 #ARRAY_SIZE = (2, 2, 10)
 #ARRAY_SIZE = (4, 4, 25)
-ARRAY_SIZE = (64, 64, 256)
+# ARRAY_SIZE = (64, 64, 256)
+ARRAY_SIZE = (256, 256, 1024)
 #ARRAY_SIZE = (512, 512, 1024)
-#ARRAY_SIZE = (512, 512, 2048)
+# ARRAY_SIZE = (512, 512, 2048)
 
 
 def g(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
@@ -112,13 +115,15 @@ def create_volume():
     for k in xrange(ARRAY_SIZE[2]):
         z[k] = get_z(k)
     for i in xrange(ARRAY_SIZE[0]):
-        print('Index', i, 'of', ARRAY_SIZE[0])
+        print('Index', i+1, 'of', ARRAY_SIZE[0], end='\r')
+        sys.stdout.flush()
         for j in xrange(ARRAY_SIZE[1]):
             for horizon in horizons:
                 horizon_plane, horizon_params = horizon
                 z0 = horizon_plane[i, j]
                 A, B, C, mu = horizon_params
                 vol[i, j, :] += g(z, z0, A=A, B=B, C=C, mu=mu)
+    print()
     # Add constant
     vol[:, :, :] += 2.5
     # Add randomness.
