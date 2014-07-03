@@ -17,7 +17,6 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.utils import _raise_nie
 from distarray.metadata_utils import sanitize_indices
 
 from distarray.local.mpiutils import MPI
