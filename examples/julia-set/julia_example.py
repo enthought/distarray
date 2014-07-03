@@ -224,7 +224,7 @@ if __name__ == '__main__':
     re_ax = (-1.5, 1.5)
     im_ax = (-1.5, 1.5)
 
-    # Size of number that we consider as off to infinity.
+    # Size of number that we consider as going off to infinity.
     # I think that 2 is sufficient to be sure that the point will escape.
     z_max = 2.0
 
