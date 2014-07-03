@@ -27,15 +27,14 @@ if __name__ == '__main__':
     with open(filename, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
         # Swallow header lines.
-        csvreader.next()
-        csvreader.next()
+        a = csvreader.next()
+        notes = csvreader.next()
+        note_text = ','.join(notes)
+        print('note_txt:', note_text)
         # And the field names.
-        csvreader.next()
+        c = csvreader.next()
         # Read the results.
-        eng_b_list = []
-        tdist_b_list = []
-        eng_c_list = []
-        tdist_c_list = []
+        results = {}
         for row in csvreader:
             dist = row[0]
             num_engines = int(row[1])
@@ -45,36 +44,45 @@ if __name__ == '__main__':
             t_ratio = float(row[5])
             iters = float(row[6])
             c = row[7]    # As a string.
-            #print(dist, num_engines, resolution, t_distarray, t_numpy, t_ratio, iters, c)
             # Add some jitter to the engine count for less crowded plots.
             r = random.uniform(-0.125, +0.125)
             num_engines += r
+            # Key for each curve.
+            key = (dist, resolution)
+            if key not in results:
+                results[key] = {
+                    'engines': [],
+                    'times': [],
+                    'legend': "%s %d" % (dist, resolution),
+                }
             # Collect values to plot.
-            if dist == 'b':
-                eng_b_list.append(num_engines)
-                tdist_b_list.append(t_distarray)
-            elif dist == 'c':
-                eng_c_list.append(num_engines)
-                tdist_c_list.append(t_distarray)
+            results[key]['engines'].append(num_engines)
+            results[key]['times'].append(t_distarray)
+    # Sort keys for consistent coloring.
+    keys = results.keys()
+    keys.sort()
     # Get range of data for plot limits.
     eng_list = []
-    eng_list.extend(eng_b_list)
-    eng_list.extend(eng_c_list)
     tdist_list = []
-    tdist_list.extend(tdist_b_list)
-    tdist_list.extend(tdist_c_list)
-    # Extents.
+    for key in keys:
+        engines = results[key]['engines']
+        times = results[key]['times']
+        eng_list.extend(engines)
+        tdist_list.extend(times)
     max_engines = max(eng_list)
     max_time = max(tdist_list)
     # Plot
-    pyplot.plot(eng_b_list, tdist_b_list, 'bo')
-    pyplot.plot(eng_c_list, tdist_c_list, 'ro')
+    for key in keys:
+        engines = results[key]['engines']
+        times = results[key]['times']
+        pyplot.plot(engines, times, 'o')
     pyplot.xlim((0, max_engines + 1))
     pyplot.ylim((0.0, 1.1 * max_time))
-    pyplot.title('Julia Set Performance')
+    pyplot.title('Julia Set Performance\n' + note_text)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('DistArray time')
-    pyplot.legend(("'b' distribution", "'c' distribution"), loc='lower left')
+    legend = [results[key]['legend'] for key in keys]
+    pyplot.legend(legend, loc='lower left')
     filename = 'julia_timing_plot.png'
     pyplot.savefig(filename, dpi=100)
     pyplot.show()

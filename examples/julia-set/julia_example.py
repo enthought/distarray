@@ -253,13 +253,15 @@ if __name__ == '__main__':
     engine_count_list = [1, 2, 3, 4]
 
     # Resolution of Julia set.
-    resolution_list = [256]
+    #resolution_list = [256]
+    #resolution_list = [16, 32, 64, 128, 256]
     #resolution_list = [16, 32, 64, 128, 256, 512]
+    resolution_list = [64, 128, 256, 512, 1024]
 
     # Number of cycles to repeat everything.
     #repeat_count = 1
-    repeat_count = 4
-    #repeat_count = 8
+    #repeat_count = 4
+    repeat_count = 8
 
     # If we got command line parameters for c, then use these,
     # and only loop over the resolutions, making plots.
