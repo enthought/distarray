@@ -17,7 +17,6 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.utils import _raise_nie
 from distarray.metadata_utils import sanitize_indices
 
 from distarray.local.mpiutils import MPI
@@ -310,26 +309,13 @@ class LocalArray(object):
         else:
             return self.ndarray.view(dtype)
 
-    def view(self, dtype=None):
+    def view(self, distribution, dtype):
         """Return a new LocalArray whose underlying `ndarray` is a view on
         `self.ndarray`.
-
-        Note
-        ----
-        Currently unimplemented for ``dtype is not None``.
         """
-        if dtype is None:
-            new_da = self.__class__(distribution=self.distribution,
-                                    dtype=self.dtype,
-                                    buf=self.ndarray)
-        else:
-            _raise_nie()
-            # TODO: to implement this properly, a new dim_data will need to be
-            #  generated that reflects the size and shape of the new dtype.
-            #new_da = self.__class__(distribution=self.distribution
-#                                    dtype=dtype,
-            #                        buf=self.ndarray)
-        return new_da
+        return self.__class__(distribution=distribution,
+                              dtype=dtype,
+                              buf=self.local_view(dtype=dtype))
 
     def __array__(self, dtype=None):
         if dtype is None:
