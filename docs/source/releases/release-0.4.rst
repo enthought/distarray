@@ -26,8 +26,9 @@ This is the third development release.
 
 Noteworthy improvements in 0.4 include:
 
-* slicing fully supported for block-distributed arrays;
-* significant performance enhancements; and
+* basic slicing support;
+* significant performance enhancements;
+* IPython notebook that demos basic functionality; and
 * many bug fixes, API improvements, and refactorings.
 
 DistArray is nearly ready for real-world use.  The project is evolving rapidly
@@ -75,7 +76,7 @@ Near-term features and improvements include:
   supercomputers;
 * array re-distribution capabilities;
 * interoperation with Trilinos [Trilinos]_;
-* tutorials, examples, and other introductory material; and
+* expanded tutorials, examples, and other introductory material; and
 * distributed broadcasting support.
 
 The longer-term roadmap includes:
