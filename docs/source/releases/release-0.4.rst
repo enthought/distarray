@@ -28,6 +28,7 @@ Noteworthy improvements in 0.4 include:
 
 * basic slicing support;
 * significant performance enhancements;
+* reduction methods now support boolean arrays;
 * IPython notebook that demos basic functionality; and
 * many bug fixes, API improvements, and refactorings.
 
