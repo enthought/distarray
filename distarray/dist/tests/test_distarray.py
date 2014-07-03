@@ -722,6 +722,22 @@ class TestDistArrayCreationSubSet(ContextTestCase):
         self.assertEqual(len(ddpr), len(subtargets))
 
 
+class TestReductionRegression(ContextTestCase):
+    ''' Separate class necessary b/c need to run on at least 9 engines to exercise
+    regression.
+
+    '''
+
+    ntargets = 9
+
+    def test_reduction(self):
+        """ Tests that GH issue 403 is fixed """
+        arr = numpy.arange(9 * 9).reshape(9, 9)
+        dist = Distribution(self.context, arr.shape, ('b', 'b'), (9, 1))
+        darr = self.context.fromndarray(arr, dist)
+        assert_allclose(darr.sum().tondarray(), arr.sum())
+
+
 class TestReduceMethods(ContextTestCase):
     """Test reduction methods"""
 

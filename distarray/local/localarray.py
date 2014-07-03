@@ -954,7 +954,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
         out_ndarray = out.ndarray
         if out.ndarray.dtype == np.bool:
             out.ndarray.dtype = np.uint8
-    local_reduce = func(*args, **kwargs)
+    # Use asarray() to coerce np scalars to zero-dimensional arrays.
+    local_reduce = np.asarray(func(*args, **kwargs))
     reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
     return out
 
