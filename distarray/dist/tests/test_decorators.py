@@ -108,8 +108,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def call_barrier(da):
-        from mpi4py import MPI
-        MPI.COMM_WORLD.Barrier()
+        da.comm.Barrier()
         return da
 
     @local

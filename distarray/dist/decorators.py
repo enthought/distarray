@@ -116,7 +116,7 @@ class DecoratorBase(object):
 
         return arg_str, kwarg_str
 
-    def process_return_value(self, context, result_key):
+    def process_return_value(self, context, targets, result_key):
         """Figure out what to return on the Client.
 
         Parameters
@@ -135,7 +135,7 @@ class DecoratorBase(object):
         def get_type_str(key):
             return str(type(key))
         result_type_str = context.apply(get_type_str, args=(result_key,),
-                                        targets=context.targets)
+                                        targets=targets)
 
         def is_NoneType(typestring):
             return (typestring == "<type 'NoneType'>" or
@@ -146,11 +146,11 @@ class DecoratorBase(object):
                                   "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
-            result = DistArray.from_localarrays(result_key, context=context)
+            result = DistArray.from_localarrays(result_key, context=context, targets=targets)
         elif all(is_NoneType(r) for r in result_type_str):
             result = None
         else:
-            result = context._pull(result_key, targets=context.targets)
+            result = context._pull(result_key, targets=targets)
             if has_exactly_one(result):
                 result = next(x for x in result if x is not None)
 
@@ -175,7 +175,7 @@ class local(DecoratorBase):
         exec_str %= (result_key, self.fn_key, args, kwargs)
         context._execute(exec_str, targets=distribution.targets)
 
-        return self.process_return_value(context, result_key)
+        return self.process_return_value(context, distribution.targets, result_key)
 
 
 class vectorize(DecoratorBase):
@@ -212,5 +212,5 @@ class vectorize(DecoratorBase):
                             "%s(*%s, **%s)")
                 exec_str %= (out.key, out.key, self.fn_key, args_str,
                              kwargs_str)
-                context._execute(exec_str, targets=context.targets)
+                context._execute(exec_str, targets=distribution.targets)
                 return out
