@@ -25,7 +25,7 @@ from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 def make_local_slices(local_arr, glb_indices):
     slices = tuple(slice(*inds) for inds in glb_indices)
-    return local_arr.local_from_global(*slices)
+    return local_arr.local_from_global(slices)
 
 def redistribute(comm, plan, la_from, la_to):
     myrank = comm.Get_rank()

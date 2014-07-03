@@ -1017,21 +1017,16 @@ class TestView(ContextTestCase):
 class TestBlockRedistribution(ContextTestCase):
 
     def test_redist_identity(self):
-        source_dist = dest_dist = Distribution.from_shape(self.context,
-                                                          (10, 10), ('b', 'b'), (1, 1),
-                                                          targets=[0])
+        source_dist = dest_dist = Distribution(self.context, (10, 10),
+                                               ('b', 'b'), (1, 1), targets=[0])
         source_da = self.context.empty(source_dist, dtype=numpy.int32)
         source_da.fill(-42)
         dest_da = source_da.distribute_as(dest_dist)
         assert_array_equal(source_da.tondarray(), dest_da.tondarray())
 
     def test_redist_1D(self):
-        dist0 = Distribution.from_shape(self.context,
-                                        (40,), ('b',), (2,),
-                                        targets=[1,3])
-        dist1 = Distribution.from_shape(self.context,
-                                        (40,), ('b',), (2,),
-                                        targets=[0,2])
+        dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
+        dist1 = Distribution(self.context, (40,), ('b',), (2,), targets=[0,2])
         da = self.context.ones(dist0)
         db = da.distribute_as(dist1)
 
@@ -1039,9 +1034,7 @@ class TestBlockRedistribution(ContextTestCase):
         self.assertSequenceEqual(db.localshapes(), da.localshapes())
         assert_array_equal(da.tondarray(), db.tondarray())
 
-        dist2 = Distribution.from_shape(self.context,
-                                        (40,), ('b',), (2,),
-                                        targets=[0,2])
+        dist2 = Distribution(self.context, (40,), ('b',), (2,), targets=[0,2])
 
         da.fill(-42)
         dc = da.distribute_as(dist2)
@@ -1051,9 +1044,8 @@ class TestBlockRedistribution(ContextTestCase):
 
     def test_redist_2D(self):
         nrows, ncols = 7, 13
-        source_dist = Distribution.from_shape(self.context,
-                                              (nrows, ncols), ('b', 'b'), (2, 2),
-                                              targets=range(4))
+        source_dist = Distribution(self.context, (nrows, ncols),
+                                   ('b', 'b'), (2, 2), targets=range(4))
         dest_gdd = (
                 {
                     'dist_type': 'b',
@@ -1064,7 +1056,8 @@ class TestBlockRedistribution(ContextTestCase):
                     'bounds': [0, ncols//3, ncols],
                     }
                 )
-        dest_dist = Distribution(self.context, dest_gdd, targets=range(4))
+        dest_dist = Distribution.from_global_dim_data(self.context,
+                                                      dest_gdd, targets=range(4))
         source_da = self.context.empty(source_dist, dtype=numpy.int32)
         source_da.fill(-42)
 
