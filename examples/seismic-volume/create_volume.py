@@ -7,6 +7,16 @@
 """
 Create a fake 3D array that will pretend to be a seismic volume.
 
+Usage:
+    $ python create_volume.py --size NX NY NZ --file <filename> --key <keyname> --hdf5 --dnpy
+
+The --size argument specifies the size of the 3D volume to create.
+The --file argument specifies the output filename, default 'seismic.hdf5'.
+The --key argument specifies the name of the data block in the HDF5 file, default 'seismic'.
+The --hdf5 argument specifies to create an HDF5 file, default True.
+The --dnpy argument specifies to create .dnpy files, default False.
+Only one of --hdf5 or --dnpy can be specified.
+
 The 3D float32 array is written as an HDF5 file, which can be processed by
 the additional example load_volume.py. We try and make it look interesting.
 The volume contains a couple of planes, which are angled. As ones passes
@@ -16,25 +26,23 @@ position, and once past, the final value is larger than when started.
 
 from __future__ import print_function
 
+import argparse
 import sys
-
 from math import sqrt
 
-from numpy import exp
 import numpy
 import numpy.random
 import h5py
+from numpy import exp
+
 
 # Physical size of volume.
-PHYSICAL_SIZE = (10.0, 10.0, 20.0)
+PHYSICAL_X = 10.0
+PHYSICAL_Y = 10.0
+PHYSICAL_Z = 20.0
 
-# Array size of volume.
-#ARRAY_SIZE = (2, 2, 10)
-#ARRAY_SIZE = (4, 4, 25)
-# ARRAY_SIZE = (64, 64, 256)
-ARRAY_SIZE = (256, 256, 1024)
-#ARRAY_SIZE = (512, 512, 1024)
-# ARRAY_SIZE = (512, 512, 2048)
+# Default array size of volume.
+DEFAULT_ARRAY_SIZE = (256, 256, 1024)
 
 
 def g(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
@@ -65,59 +73,47 @@ def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
     return z0
 
 
-def get_physical(index, dimension):
-    ''' Convert array index into physical value.'''
-    frac_index = float(index) / float(ARRAY_SIZE[dimension])
-    return frac_index * PHYSICAL_SIZE[dimension]
-
-
-def get_x(i):
-    return get_physical(i, 0)
-
-
-def get_y(j):
-    return get_physical(j, 1)
-
-
-def get_z(k):
-    return get_physical(k, 2)
-
-
-def create_horizon(normal=(0.1, -0.2, 1.0), D=10.0):
+def create_horizon(shape, normal=(0.1, -0.2, 1.0), D=10.0):
     '''Get the horizon surface where we will place the peak.'''
-    horizon = numpy.zeros((ARRAY_SIZE[0], ARRAY_SIZE[1]))
-    for i in xrange(ARRAY_SIZE[0]):
-        x = get_x(i)
-        for j in xrange(ARRAY_SIZE[1]):
-            y = get_y(j)
+    if len(shape) != 2:
+        raise ValueError('Horizon shape must be 2D.')
+    horizon = numpy.zeros(shape)
+    for i in xrange(shape[0]):
+        x = PHYSICAL_X * float(i) / float(shape[0])
+        for j in xrange(shape[1]):
+            y = PHYSICAL_Y * float(j) / float(shape[1])
             horizon[i, j] = p(x, y, normal=normal, D=D)
     return horizon
 
 
-def create_horizons():
+def create_horizons(shape):
     '''Create some horizons.'''
-    horizon_1 = create_horizon(normal=(0.1, -0.2, 1.0), D=10.0)
+    horizon_1 = create_horizon(shape, normal=(0.1, -0.2, 1.0), D=10.0)
     params_1 = (100.0, 40.0, 0.0, 0.1)
-    horizon_2 = create_horizon(normal=(0.4, 0.1, 1.0), D=15.0)
+    horizon_2 = create_horizon(shape, normal=(0.4, 0.1, 1.0), D=15.0)
     params_2 = (25.0, 15.0, 0.0, 0.7)
     rtn = [(horizon_1, params_1), (horizon_2, params_2)]
     return rtn
 
 
-def create_volume():
+def create_volume(shape):
     ''' Create a fake seismic volume. We try to make it look interesting. '''
-    print('Creating volume array...')
-    vol = numpy.zeros(ARRAY_SIZE, dtype=numpy.float32)
+    if len(shape) != 3:
+        raise ValueError('Volume shape must be 3D.')
+    print('Creating volume array %d x %d x %d...' % (
+        shape[0], shape[1], shape[2]))
+    vol = numpy.zeros(shape, dtype=numpy.float32)
     print('Creating horizons...')
-    horizons = create_horizons()
+    horizons_shape = (shape[0], shape[1])
+    horizons = create_horizons(horizons_shape)
     print('Filling array...')
-    z = numpy.empty((ARRAY_SIZE[2],))
-    for k in xrange(ARRAY_SIZE[2]):
-        z[k] = get_z(k)
-    for i in xrange(ARRAY_SIZE[0]):
-        print('Index', i+1, 'of', ARRAY_SIZE[0], end='\r')
+    z = numpy.empty((shape[2],))
+    for k in xrange(shape[2]):
+        z[k] = PHYSICAL_Z * float(k) / float(shape[2])
+    for i in xrange(shape[0]):
+        print('Index', i+1, 'of', shape[0], end='\r')
         sys.stdout.flush()
-        for j in xrange(ARRAY_SIZE[1]):
+        for j in xrange(shape[1]):
             for horizon in horizons:
                 horizon_plane, horizon_params = horizon
                 z0 = horizon_plane[i, j]
@@ -127,25 +123,61 @@ def create_volume():
     # Add constant
     vol[:, :, :] += 2.5
     # Add randomness.
-    rnd = numpy.random.randn(*ARRAY_SIZE)
+    rnd = numpy.random.randn(*shape)
     vol[:, :, :] += 2.0 * rnd
     print('Done.')
     return vol
 
 
-def create_file(volume, filename, key):
+def create_hdf5_file(volume, filename, key):
     '''Create an HDF5 file with the seismic volume.'''
     f = h5py.File(filename, 'w')
-    dataset = f.create_dataset(key, ARRAY_SIZE, dtype='f')
+    dataset = f.create_dataset(key, volume.shape, dtype='f')
     dataset[...] = volume
     f.close()
 
 
 def main():
-    filename = 'seismic.hdf5'
-    key = 'seismic'
-    vol = create_volume()
-    create_file(vol, filename=filename, key=key)
+    # Parse arguments:
+    #     --size NX NY NZ
+    #     --file <filename>
+    #     --key <keyname>
+    #     --hdf5
+    #     --dnpy
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size',
+                        nargs=3,
+                        default=DEFAULT_ARRAY_SIZE,
+                        type=int,
+                        metavar=('NX', 'NY', 'NZ'),
+                        help='Size (X, Y, Z) of seismic volume.')
+    parser.add_argument('--file',
+                        default='seismic.hdf5',
+                        help='Name of output file.')
+    parser.add_argument('--key',
+                        default='seismic',
+                        help='Name of HDF5 key for data.')
+    parser.add_argument('--hdf5',
+                        action='store_true',
+                        help='Write output as an HDF5 file.')
+    parser.add_argument('--dnpy',
+                        action='store_true',
+                        help='Write output as .dnpy files.')
+    args = parser.parse_args()
+    # Extract arguments and complain about invalid ones.
+    shape = args.size
+    filename = args.file
+    key = args.key
+    use_hdf5 = args.hdf5
+    use_dnpy = args.dnpy
+    # Pick either HDF5 or .dnpy
+    if (use_hdf5 == False) and (use_dnpy == False):
+        use_hdf5 = True
+    if (use_hdf5 == True) and (use_dnpy == True):
+        raise ValueError('Can only specify one of --hdf5 or --dnpy.')
+    # Create the seismic volume and write it.
+    vol = create_volume(shape)
+    create_hdf5_file(vol, filename=filename, key=key)
 
 
 if __name__ == '__main__':
