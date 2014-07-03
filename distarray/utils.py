@@ -7,10 +7,11 @@
 Utilities.
 """
 
+from functools import reduce
+from importlib import import_module
 from math import sqrt
 import random
 import uuid
-from importlib import import_module
 
 from distarray.externals.six import next
 
@@ -190,7 +191,6 @@ def remove_elements(to_remove, seq):
 
 
 def get_from_dotted_name(dotted_name):
-    from functools import reduce
     main = import_module('__main__')
     thing = reduce(getattr, [main] + dotted_name.split('.'))
     return thing
