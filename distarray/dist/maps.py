@@ -239,6 +239,10 @@ class NoDistMap(MapBase):
             isection_size = 0
         return self.__class__(size=isection_size, grid_size=1)
 
+    def view(self, new_dimsize):
+        """Scale this map for the `view` method."""
+        return self.__class__(size=int(new_dimsize), grid_size=1)
+
     def is_compatible(self, other):
         return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
                 other.grid_size == self.grid_size and 
@@ -360,6 +364,14 @@ class BlockMap(MapBase):
         grid_size = max(len(new_bounds) - 1, 1)
         new_bounds = list(zip(new_bounds[:-1], new_bounds[1:]))
         return self.__class__(size=size, grid_size=grid_size,
+                              bounds=new_bounds)
+
+    def view(self, new_dimsize):
+        """Scale this map for the `view` method."""
+        factor = new_dimsize / self.size
+        new_bounds = [(int(start*factor), int(stop*factor))
+                      for (start, stop) in self.bounds]
+        return self.__class__(size=int(new_dimsize), grid_size=self.grid_size,
                               bounds=new_bounds)
 
     def is_compatible(self, other):
@@ -803,6 +815,14 @@ class Distribution(object):
                             dist=reduced_dist,
                             grid_shape=reduced_grid_shape,
                             targets=reduced_targets)
+
+    def view(self, new_dimsize=None):
+        """Generate a new Distribution for use with DistArray.view."""
+        if new_dimsize is None:
+            return self
+        scaled_map = self.maps[-1].view(new_dimsize)
+        new_maps = self.maps[:-1] + [scaled_map]
+        return self.__class__.from_maps(context=self.context, maps=new_maps)
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())

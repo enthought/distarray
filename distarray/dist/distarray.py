@@ -12,12 +12,11 @@ The Distarray data structure.`DistArray` objects are proxies for collections of
 # Imports
 # ---------------------------------------------------------------------------
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import operator
 from itertools import product
 from functools import reduce
-from collections import Sequence
 
 import numpy as np
 
@@ -446,12 +445,54 @@ class DistArray(object):
         DistArray
             A view on the original DistArray, optionally with the underlying
             memory interpreted as a different dtype.
+
+        Note
+        ----
+        No redistribution is done.  The sizes of the all localarrays must be
+        compatible with the new view.
         """
+        # special case for same dtype
         if (dtype is None) or (np.dtype(dtype) == self.dtype):
             return self[...]
-        else:
-            _raise_nie()
 
+        def local_view(larr, ddpr, dtype):
+            from distarray.local.maps import Distribution
+            if len(ddpr) == 0:
+                dim_data = ()
+            else:
+                dim_data = ddpr[larr.comm_rank]
+            ldist = Distribution(comm=larr.comm, dim_data=dim_data)
+            print("ldist.local_shape:", ldist.local_shape)
+            lview = larr.view(ldist, dtype=dtype)
+            return proxyize(lview)
+
+        old_itemsize = self.dtype.itemsize
+        new_itemsize = np.dtype(dtype).itemsize
+        last_dimsize = self.distribution[-1].size
+        errmsg = "New dtype not compatible with existing DistArray dtype."
+        if old_itemsize == new_itemsize:
+            # no scaling
+            new_dimsize = last_dimsize
+        elif old_itemsize % new_itemsize == 0:
+            # easy case: scale a dimension up
+            new_dimsize = (old_itemsize * last_dimsize) / new_itemsize
+        elif (old_itemsize * last_dimsize) % new_itemsize == 0:
+            # harder case: scale a dimension if local array shapes allow it
+            # check local last-dimension size compatibility:
+            local_lastdim_sizes = np.array([s[-1] for s in self.localshapes()])
+            compat =  (old_itemsize * local_lastdim_sizes) % new_itemsize == 0
+            if np.all(compat):
+                new_dimsize = (old_itemsize * last_dimsize) / new_itemsize
+            else:
+                raise ValueError(errmsg)
+        else:
+            raise ValueError(errmsg)
+
+        new_dist = self.distribution.view(new_dimsize)
+        ddpr = new_dist.get_dim_data_per_rank()
+        new_key = self.context.apply(local_view, (self.key, ddpr, dtype))[0]
+        return DistArray.from_localarrays(key=new_key, distribution=new_dist,
+                                          dtype=dtype)
 
     # Binary operators
 

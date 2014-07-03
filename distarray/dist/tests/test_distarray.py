@@ -900,6 +900,7 @@ class TestReduceMethods(ContextTestCase):
         assert_allclose(mask.var().tondarray(), np_mask.var())
         assert_allclose(mask.std().tondarray(), np_mask.std())
 
+
 class TestFromLocalArrays(ContextTestCase):
 
     @classmethod
@@ -939,23 +940,62 @@ class TestFromLocalArrays(ContextTestCase):
 
 class TestView(ContextTestCase):
 
-    def setUp(self):
-        self.a = numpy.zeros((4, 5), dtype=numpy.int64)
-        self.da = self.context.fromndarray(self.a)
-
     def test_plain_view(self):
-        da_view = self.da.view()
+        a = numpy.zeros((4, 5), dtype=numpy.float32)
+        da = self.context.fromndarray(a)
+
+        da_view = da.view()
         da_view[3, 4] = 99
-        assert_array_equal(da_view.tondarray(), self.da.tondarray())
+        assert_array_equal(da_view.tondarray(), da.tondarray())
 
-        da_view = self.da.view(dtype=self.da.dtype.str)
+        da_view = da.view(dtype=da.dtype.str)
         da_view[2, 2] = 33
-        assert_array_equal(da_view.tondarray(), self.da.tondarray())
+        assert_array_equal(da_view.tondarray(), da.tondarray())
 
-    def test_compatible_dtype(self):
+    def test_smaller_dtype(self):
+        a = numpy.asarray(numpy.arange(20).reshape((4, 5)), dtype=numpy.int32)
+        da = self.context.fromndarray(a)
+
+        dtype = numpy.int16
+        da_view = da.view(dtype=dtype)
+        da_view[3, 4] = -55
+        assert_array_equal(da_view.tondarray(), da.tondarray().view(dtype))
+
+    def test_larger_dtype(self):
+        a = numpy.asarray(numpy.arange(40).reshape((4, 10)), dtype=numpy.int32)
+        da = self.context.fromndarray(a)
+
+        dtype = numpy.int16
+        da_view = da.view(dtype=dtype)
+        da_view[2, 1] = -33
+        assert_array_equal(da_view.tondarray(), da.tondarray().view(dtype))
+
+    def test_harder_distribution(self):
+        a = numpy.asarray(numpy.arange(30), dtype=numpy.int16)
+        gdd = (dict(dist_type='b', bounds=[0, 3, 12, 21, 30]),)
+        dist = Distribution.from_global_dim_data(context=self.context,
+                                                 global_dim_data=gdd)
+        da = self.context.fromndarray(a, distribution=dist)
+
         dtype = numpy.int32
-        da_view = self.da.view(dtype=dtype)
-        assert_array_equal(da_view.tondarray(), self.a.view(dtype))
+        with self.assertRaises(ValueError):
+            da.view(dtype=dtype)
+
+    def test_incompatible_dimsize(self):
+        a = numpy.zeros((4, 5), dtype=numpy.int32)
+        da = self.context.fromndarray(a)
+
+        dtype = numpy.int64
+        with self.assertRaises(ValueError):
+            da.view(dtype=dtype)
+
+    def test_incompatible_dtype(self):
+        a = numpy.zeros((4, 5), dtype=numpy.int32)
+        da = self.context.fromndarray(a)
+
+        dtype = "S7"
+        with self.assertRaises(ValueError):
+            da.view(dtype=dtype)
 
 
 if __name__ == '__main__':
