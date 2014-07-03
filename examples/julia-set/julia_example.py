@@ -67,9 +67,9 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
                                                  im_ax[0] + im_step * j)
 
     # Create an empty distributed array.
-    distribution = Distribution.from_shape(context,
-                                           (resolution[0], resolution[1]),
-                                           dist=dist)
+    distribution = Distribution(context,
+                                (resolution[0], resolution[1]),
+                                dist=dist)
     complex_plane = context.empty(distribution, dtype=complex)
     fill_complex_plane(complex_plane, re_ax, im_ax, resolution)
     return complex_plane
