@@ -109,8 +109,6 @@ class LocalArray(object):
             self._ndarray = np.empty(self.local_shape, dtype=dtype)
         else:
             self._ndarray = np.asarray(buf, dtype=dtype)
-            print("distribution.local_shape:", distribution.local_shape,
-                  "self.ndarray.shape", self.ndarray.shape)
             if distribution.local_shape != self.ndarray.shape:
                 msg = "distribution shape must equal buf shape."
                 raise RuntimeError(msg)

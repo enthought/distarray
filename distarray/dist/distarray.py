@@ -462,7 +462,6 @@ class DistArray(object):
             else:
                 dim_data = ddpr[larr.comm_rank]
             ldist = Distribution(comm=larr.comm, dim_data=dim_data)
-            print("ldist.local_shape:", ldist.local_shape)
             lview = larr.view(ldist, dtype=dtype)
             return proxyize(lview)
 
