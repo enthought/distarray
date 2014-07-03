@@ -188,7 +188,9 @@ def do_julia_runs(context,
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
     num_engines = len(context.targets)
-    print('%d Engines available' % (num_engines))
+    msg = '%d Engines available, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r' % (
+        num_engines, z_max, n_max, re_ax, im_ax)
+    print(msg)
     if max_engine_count > num_engines:
         msg = 'Require %d engines, but only %d are available.' % (
             max_engine_count, num_engines)
@@ -224,20 +226,20 @@ if __name__ == '__main__':
 
     # Size of number that we consider as off to infinity.
     # I think that 2 is sufficient to be sure that the point will escape.
-    z_max = 2
+    z_max = 2.0
 
     # Maximum iteration counts. Points in the set will hit this limit,
     # so increasing this has a large effect on the run-time.
-    n_max = 100
+    #n_max = 10
+    #n_max = 100
     #n_max = 1000
-    #n_max = 5000
+    n_max = 5000
     #n_max = 10000
 
     # Lists of parameters:
 
     # Distribution types to use.
     dist_code_list = ['b', 'c']
-    #dist_code_list = ['b']
 
     # Constants to use.
     c_list = [complex(-0.045, 0.45)]      # This Julia set has many points inside, needing all iterations.
@@ -247,16 +249,17 @@ if __name__ == '__main__':
     #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
 
     # Number of engines to use.
-    engine_count_list = [4]
-    #engine_count_list = [2, 3, 4]
+    #engine_count_list = [4]
+    engine_count_list = [1, 2, 3, 4]
 
     # Resolution of Julia set.
-    #resolution_list = [256]
-    resolution_list = [16, 32, 64, 128, 256, 512]
+    resolution_list = [256]
+    #resolution_list = [16, 32, 64, 128, 256, 512]
 
     # Number of cycles to repeat everything.
     #repeat_count = 1
-    repeat_count = 2
+    repeat_count = 4
+    #repeat_count = 8
 
     # If we got command line parameters for c, then use these,
     # and only loop over the resolutions, making plots.
