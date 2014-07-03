@@ -15,7 +15,8 @@ world_rank = world.rank
 client_rank = 0
 
 
-def push_function(context, key, func):
+def push_function(context, key, func, targets=None):
+    targets = targets or context.targets
     func_code = func.__code__
     func_globals = func.__globals__  # noqa
     func_name = func.__name__
