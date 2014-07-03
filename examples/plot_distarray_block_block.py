@@ -15,7 +15,7 @@ from distarray.dist import Context, Distribution
 
 
 c = Context()
-d = Distribution.from_shape(c, (64, 64), dist=('b', 'b'))
+d = Distribution(c, (64, 64), dist=('b', 'b'))
 a = c.zeros(d, dtype='int32')
 process_coords = [(0, 0), (0, 1), (1, 0), (1, 1)]
 plotting.plot_array_distribution(a, process_coords, cell_label=False,

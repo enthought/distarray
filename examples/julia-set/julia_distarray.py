@@ -26,9 +26,8 @@ with context.view.sync_imports():
 def make_empty_da(resolution, dist):
     """Create the arr we will build the fractal with."""
 
-    distribution = Distribution.from_shape(context,
-                                           (resolution[0], resolution[1]),
-                                           dist=dist)
+    distribution = Distribution(context, (resolution[0], resolution[1]),
+                                dist=dist)
     out = context.empty(distribution, dtype=complex)
     return out
 
