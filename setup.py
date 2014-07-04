@@ -6,6 +6,15 @@
 
 from setuptools import setup, find_packages
 
+
+def parse_readme(filename='README.rst', skiplines=6):
+    """Return file `filename` as a string, skipping some lines."""
+    with open(filename, 'r') as fp:
+        for line in range(skiplines):
+            fp.readline()
+        return fp.read()
+
+
 install_requires = [
     'ipython',
     'numpy',
@@ -23,7 +32,7 @@ metadata = {
     'url': 'https://github.com/enthought/distarray',
     'packages': find_packages(),
     'install_requires': install_requires,
-    'long_description': open('README.rst').read(),
+    'long_description': parse_readme(),
     'platforms': ["Linux", "Mac OS-X"],
     'entry_points': {'console_scripts': ['dacluster = '
                                          'distarray.apps.dacluster:main']},
