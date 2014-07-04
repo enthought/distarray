@@ -501,7 +501,7 @@ class Distribution(object):
 
     @classmethod
     def from_maps(cls, context, maps, targets=None):
-        """Create a Distribution from a sequence of `Map`s.
+        """Create a Distribution from a sequence of `Map`\s.
 
         Parameters
         ----------
