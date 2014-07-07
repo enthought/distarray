@@ -27,6 +27,7 @@ position, and once past, the final value is larger than when started.
 from __future__ import print_function
 
 import argparse
+import os.path
 import sys
 from math import sqrt
 from time import time
@@ -34,7 +35,10 @@ from time import time
 import numpy
 import numpy.random
 import h5py
-from numpy import exp
+from numpy import exp, float32
+
+from distarray.dist import Context, Distribution
+from distarray.dist.distarray import DistArray
 
 
 # Physical size of volume.
@@ -138,6 +142,25 @@ def create_hdf5_file(volume, filename, key):
     f.close()
 
 
+def create_dnpy_files(volume, filename):
+    ''' Create .dnpy files with the seismic volume. '''
+    # Create context.
+    context = Context()
+    # Create a DistArray with the data.
+    dist = ('b', 'b', 'n')
+    array_shape = volume.shape
+    distribution = Distribution(context, array_shape, dist=dist)
+    da = DistArray(distribution, dtype=float32)
+    # Fill the array.
+    da[:, :, :] = volume[:, :, :]
+    # Filename for save_dnpy() needs the full path,
+    # and should strip any extension.
+    filename = os.path.splitext(filename)[0]
+    pathname = os.path.abspath(filename)
+    # Write it.
+    context.save_dnpy(pathname, da)
+
+
 def main():
     # Parse arguments:
     #     --size NX NY NZ
@@ -179,7 +202,12 @@ def main():
     # Create the seismic volume and write it.
     t0 = time()
     vol = create_volume(shape)
-    create_hdf5_file(vol, filename=filename, key=key)
+    if use_hdf5:
+        print('Creating hdf5 file...')
+        create_hdf5_file(vol, filename=filename, key=key)
+    elif use_dnpy:
+        print('Creating dnpy files...')
+        create_dnpy_files(vol, filename=filename)
     t1 = time()
     dt = t1 - t0
     print('Creation time: %.3f sec' % (dt))

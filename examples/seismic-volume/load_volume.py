@@ -47,7 +47,7 @@ def load_hdf5_distarray(context, filename, key, dist):
     array_shape = get_hdf5_dataset_shape(pathname, key)
     # Create distribution.
     print('Creating distribution...')
-    distribution = Distribution.from_shape(context, array_shape, dist=dist)
+    distribution = Distribution(context, array_shape, dist=dist)
     # Load HDF5 file into DistArray.
     print('Loading HDF5 file...')
     distarray = context.load_hdf5(filename=pathname,
