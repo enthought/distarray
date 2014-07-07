@@ -501,7 +501,7 @@ class Distribution(object):
 
     @classmethod
     def from_maps(cls, context, maps, targets=None):
-        """Create a Distribution from a sequence of `Map`s.
+        """Create a Distribution from a sequence of `Map`\s.
 
         Parameters
         ----------
@@ -612,7 +612,17 @@ class Distribution(object):
 
         # list of `ClientMap` objects, one per dimension.
         maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
-        return cls.from_maps(context=context, maps=maps, targets=targets)
+
+        self = cls.from_maps(context=context, maps=maps, targets=targets)
+
+        # TODO: FIXME: this is a workaround.  The reason we slice here is to
+        # return a distribution with no empty local shapes.  The `from_maps()`
+        # classmethod should be fixed to ensure no empty local arrays are
+        # created in the first place.  That will remove the need to slice the
+        # distribution to remove empty localshapes.
+        if all(d in ('n', 'b') for d in self.dist):
+            self = self.slice((slice(None),)*self.ndim)
+        return self
 
     @classmethod
     def from_global_dim_data(cls, context, global_dim_data, targets=None):
