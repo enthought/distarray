@@ -29,6 +29,7 @@ from __future__ import print_function
 import argparse
 import sys
 from math import sqrt
+from time import time
 
 import numpy
 import numpy.random
@@ -111,7 +112,7 @@ def create_volume(shape):
     for k in xrange(shape[2]):
         z[k] = PHYSICAL_Z * float(k) / float(shape[2])
     for i in xrange(shape[0]):
-        print('Index', i+1, 'of', shape[0], end='\r')
+        print('Index', i + 1, 'of', shape[0], end='\r')
         sys.stdout.flush()
         for j in xrange(shape[1]):
             for horizon in horizons:
@@ -176,8 +177,12 @@ def main():
     if (use_hdf5 == True) and (use_dnpy == True):
         raise ValueError('Can only specify one of --hdf5 or --dnpy.')
     # Create the seismic volume and write it.
+    t0 = time()
     vol = create_volume(shape)
     create_hdf5_file(vol, filename=filename, key=key)
+    t1 = time()
+    dt = t1 - t0
+    print('Creation time: %.3f sec' % (dt))
 
 
 if __name__ == '__main__':
