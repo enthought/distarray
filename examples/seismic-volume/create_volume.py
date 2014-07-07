@@ -17,8 +17,9 @@ The --hdf5 argument specifies to create an HDF5 file, default True.
 The --dnpy argument specifies to create .dnpy files, default False.
 Only one of --hdf5 or --dnpy can be specified.
 
-The 3D float32 array is written as an HDF5 file, which can be processed by
-the additional example load_volume.py. We try and make it look interesting.
+The 3D float32 array is written as either an HDF5 file, or a set of .dnpy files,
+which can be processed by the additional example load_volume.py.
+We try and make the volume look interesting.
 The volume contains a couple of planes, which are angled. As ones passes
 down past each plane, the data values show a Gaussian peak at the plane
 position, and once past, the final value is larger than when started.

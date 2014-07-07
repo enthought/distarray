@@ -7,7 +7,17 @@
 """
 Load the seismic volume, created with create_volume.py, and do stuff with it.
 
-The volume, which is stored as an HDF5 file, is loaded in parallel.
+Usage:
+    $ python load_volume.py --file <filename> --key <keyname> --hdf5 --dnpy
+
+The --file argument specifies the input filename, default 'seismic.hdf5'.
+The --key argument specifies the name of the data block in the HDF5 file, default 'seismic'.
+The --hdf5 argument specifies to read from an HDF5 file, default True.
+The --dnpy argument specifies to read from .dnpy files, default False.
+Only one of --hdf5 or --dnpy can be specified.
+
+The volume is loaded in parallel as a DistArray.
+It can be read from either a single HDF5 file or a set of .dnpy files.
 Each trace (a z-slice constant in x and y) has statistics calculated for it.
 Next we apply a couple of filters to each trace.
 Next we extract some slices from the volume and create plots for them.
