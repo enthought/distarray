@@ -21,29 +21,30 @@ from distarray.testing import ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.decorators import DecoratorBase, local, vectorize
-from distarray.error import ContextError
+from distarray.error import DistributionError
 
 
 class TestDecoratorBase(TestCase):
 
-    def test_determine_context(self):
+    def test_determine_distribution(self):
         context = Context()
         context2 = Context()  # for cross Context checking
-        distribution = Distribution(context, (2, 2))
-        da = context.ones(distribution)
+        dist = Distribution(context, (2, 2))
+        dist2 = Distribution(context2, (2, 2))
+        da = context.ones(dist)
 
         def dummy_func(*args, **kwargs):
             fn = lambda x: x
             db = DecoratorBase(fn)
-            return db.determine_context(args, kwargs)
+            return db.determine_distribution(args, kwargs)
 
-        self.assertEqual(dummy_func(6, 7, context), context)
-        self.assertEqual(dummy_func('ab', da), context)
-        self.assertEqual(dummy_func(a=da), context)
-        self.assertEqual(dummy_func(context, a=da), context)
+        self.assertEqual(dummy_func(6, 7, dist), dist)
+        self.assertEqual(dummy_func('ab', da), dist)
+        self.assertEqual(dummy_func(a=da), dist)
+        self.assertEqual(dummy_func(dist, a=da), dist)
 
         self.assertRaises(TypeError, dummy_func, 'foo')
-        self.assertRaises(ContextError, dummy_func, context, context2)
+        self.assertRaises(DistributionError, dummy_func, dist, dist2)
 
     def test_key_and_push_args(self):
         context = Context()
@@ -107,8 +108,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def call_barrier(da):
-        from mpi4py import MPI
-        MPI.COMM_WORLD.Barrier()
+        da.comm.Barrier()
         return da
 
     @local
@@ -219,15 +219,13 @@ class TestLocalDecorator(ContextTestCase):
         self.assert_allclose(df, 2 * numpy.pi + 11 + 12 + 13)
 
     def test_local_add_distarrayproxies(self):
-        distribution = Distribution(self.context, (5, 5))
-        dg = self.context.empty(distribution)
+        dg = self.context.empty(self.da.distribution)
         dg.fill(33)
         dh = self.local_add_distarrayproxies(self.da, dg)
         self.assert_allclose(dh, 33 + 2 * numpy.pi)
 
     def test_local_add_mixed(self):
-        distribution = Distribution(self.context, (5, 5))
-        di = self.context.empty(distribution)
+        di = self.context.empty(self.da.distribution)
         di.fill(33)
         dj = self.local_add_mixed(self.da, 11, di, 12)
         self.assert_allclose(dj, 2 * numpy.pi + 11 + 33 + 12)
@@ -245,10 +243,9 @@ class TestLocalDecorator(ContextTestCase):
         self.assert_allclose(dl, 2 * numpy.pi + 11 + 12)
 
     def test_local_add_supermix(self):
-        distribution = Distribution(self.context, (5, 5))
-        dm = self.context.empty(distribution)
+        dm = self.context.empty(self.da.distribution)
         dm.fill(22)
-        dn = self.context.empty(distribution)
+        dn = self.context.empty(self.da.distribution)
         dn.fill(44)
         do = self.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
