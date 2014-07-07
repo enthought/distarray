@@ -28,7 +28,7 @@ from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
 
 
-# Load the seismic data from the HDF5 file.
+# Load/save of seismic data from HDF5 for .dnpy files.
 
 def get_hdf5_dataset_shape(pathname, key):
     ''' Get the shape of the array in the HDF5 file. '''
@@ -62,6 +62,17 @@ def save_hdf5_distarray(filename, key, distarray):
     pathname = os.path.abspath(filename)
     context = distarray.context
     context.save_hdf5(pathname, distarray, key=key, mode='w')
+
+
+def load_dnpy_distarray(context, filename):
+    ''' Create a distarray from the .dnpy files. '''
+    # Remove extension from filename.
+    filename = os.path.splitext(filename)[0]
+    pathname = os.path.abspath(filename)
+    print('Loading .dnpy files...')
+    distarray = context.load_dnpy(pathname)
+    print('Loaded.')
+    return distarray
 
 
 def save_dnpy_distarray(filename, distarray):
@@ -365,6 +376,8 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
     context = Context()
     # Load HDF5 file as DistArray.
     da = load_hdf5_distarray(context, filename, key, dist)
+#    # Load .dnpy files as DistArray.
+#    da = load_dnpy_distarray(context, filename)
     # Print some stuff about the array.
     if False:
         dump_distarray_info(da)
