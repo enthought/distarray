@@ -505,7 +505,7 @@ class Context(object):
         ----------
         distribution : Distribution object, optional
             If a Distribution object is not provided, one is created with
-            `Distribution.from_shape(arr.shape)`.
+            `Distribution(arr.shape)`.
 
         Returns
         -------
@@ -514,7 +514,7 @@ class Context(object):
             from `arr`.
         """
         if distribution is None:
-            distribution = Distribution.from_shape(self, arr.shape)
+            distribution = Distribution(self, arr.shape)
         out = self.empty(distribution, dtype=arr.dtype)
         try:
             out[...] = arr
@@ -549,9 +549,9 @@ class Context(object):
 
         dist = kwargs.get('dist', None)
         grid_shape = kwargs.get('grid_shape', None)
-        distribution = Distribution.from_shape(context=self,
-                                               shape=shape, dist=dist,
-                                               grid_shape=grid_shape)
+        distribution = Distribution(context=self,
+                                    shape=shape, dist=dist,
+                                    grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         da_name = self.apply(_local_fromfunction,
                              (function, distribution.comm, ddpr, kwargs),

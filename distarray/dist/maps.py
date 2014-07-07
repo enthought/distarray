@@ -237,9 +237,11 @@ class NoDistMap(MapBase):
             isection_size = int(np.ceil((isection[1] - isection[0]) / step))
         else:
             isection_size = 0
+        return self.__class__(size=isection_size, grid_size=1)
 
-        return {'dist_type': self.dist,
-                'size': isection_size}
+    def view(self, new_dimsize):
+        """Scale this map for the `view` method."""
+        return self.__class__(size=int(new_dimsize), grid_size=1)
 
     def is_compatible(self, other):
         return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
@@ -253,47 +255,54 @@ class BlockMap(MapBase):
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-
-        self = cls.__new__(cls)
         if glb_dim_dict['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
 
         bounds = glb_dim_dict['bounds']
-        self.bounds = list(zip(bounds[:-1], bounds[1:]))
+        tuple_bounds = list(zip(bounds[:-1], bounds[1:]))
 
-        self.size = bounds[-1]
-        self.grid_size = max(len(bounds) - 1, 1)
+        size = bounds[-1]
+        grid_size = max(len(bounds) - 1, 1)
 
-        self.comm_padding = int(glb_dim_dict.get('comm_padding', 0))
-        self.boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
+        comm_padding = int(glb_dim_dict.get('comm_padding', 0))
+        boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
 
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=tuple_bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
     @classmethod
     def from_axis_dim_dicts(cls, axis_dim_dicts):
-        self = cls.__new__(cls)
         dd = axis_dim_dicts[0]
         if dd['dist_type'] != 'b':
             msg = "Wrong dist_type (%r) for block map."
             raise ValueError(msg % dd['dist_type'])
-        self.size = dd['size']
-        self.grid_size = dd['proc_grid_size']
-        if self.grid_size != len(axis_dim_dicts):
+
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(axis_dim_dicts):
             msg = ("Number of dimension dictionaries (%r)"
                    "inconsistent with proc_grid_size (%r).")
-            raise ValueError(msg % (len(axis_dim_dicts), self.grid_size))
-        self.bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
-        self.boundary_padding, self.comm_padding = dd.get('padding', (0, 0))
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
+        bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
+        boundary_padding, comm_padding = dd.get('padding', (0, 0))
 
-        return self
+        return cls(size=size, grid_size=grid_size, bounds=bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
 
-    def __init__(self, size, grid_size):
+    def __init__(self, size, grid_size, bounds=None,
+                 comm_padding=None, boundary_padding=None):
         self.size = size
         self.grid_size = grid_size
-        self.bounds = [_start_stop_block(size, grid_size, grid_rank)
-                       for grid_rank in range(grid_size)]
-        self.boundary_padding = self.comm_padding = 0
+        if bounds is None:
+            self.bounds = [_start_stop_block(size, grid_size, grid_rank)
+                           for grid_rank in range(grid_size)]
+        else:
+            self.bounds = bounds
+        self.comm_padding = comm_padding or 0
+        self.boundary_padding = boundary_padding or 0
 
     def index_owners(self, idx):
         coords = []
@@ -344,15 +353,26 @@ class BlockMap(MapBase):
         for proc_start, proc_stop in self.bounds:
             stop = idx.stop if idx.stop is not None else proc_stop
             isection = tuple_intersection((start, stop, step),
-                                              (proc_start, proc_stop))
+                                          (proc_start, proc_stop))
             if isection:
                 isection_size = int(np.ceil((isection[1] - (isection[0])) / step))
                 new_bounds.append(isection_size + new_bounds[-1])
-        if len(new_bounds) == [0]:
+        if new_bounds == [0]:
             new_bounds = []
 
-        return {'dist_type': self.dist,
-                'bounds': new_bounds}
+        size = new_bounds[-1] if len(new_bounds) > 0 else 0
+        grid_size = max(len(new_bounds) - 1, 1)
+        new_bounds = list(zip(new_bounds[:-1], new_bounds[1:]))
+        return self.__class__(size=size, grid_size=grid_size,
+                              bounds=new_bounds)
+
+    def view(self, new_dimsize):
+        """Scale this map for the `view` method."""
+        factor = new_dimsize / self.size
+        new_bounds = [(int(start*factor), int(stop*factor))
+                      for (start, stop) in self.bounds]
+        return self.__class__(size=int(new_dimsize), grid_size=self.grid_size,
+                              bounds=new_bounds)
 
     def is_compatible(self, other):
         if isinstance(other, NoDistMap):
@@ -480,30 +500,58 @@ class Distribution(object):
     """
 
     @classmethod
-    def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
-        """ Create a Distribution from a sequence of `dim_data` tuples. """
+    def from_maps(cls, context, maps, targets=None):
+        """Create a Distribution from a sequence of `Map`s.
 
-        self = cls.__new__(cls)
-        dd0 = dim_data_per_rank[0]
+        Parameters
+        ----------
+        context : Context object
+        maps : Sequence of Map objects
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
+        # This constructor is called by all the others
+        self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.targets = sorted(targets or context.targets)
         self.comm = self.context._make_subcomm(self.targets)
-        for dim_data in dim_data_per_rank:
-            for dim_dict in dim_data:
-                normalize_dim_dict(dim_dict)
-        self.shape = tuple(dd['size'] for dd in dd0)
-        self.ndim = len(dd0)
-        self.dist = tuple(dd['dist_type'] for dd in dd0)
-        self.grid_shape = tuple(dd['proc_grid_size'] for dd in dd0)
+        self.maps = maps
+        self.shape = tuple(m.size for m in self.maps)
+        self.ndim = len(self.maps)
+        self.dist = tuple(m.dist for m in self.maps)
+        self.grid_shape = tuple(m.grid_size for m in self.maps)
+
         self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
                                                self.dist, len(self.targets))
 
-        coords = [tuple(d['proc_grid_rank'] for d in dd) for dd in
-                  dim_data_per_rank]
+        nelts = reduce(operator.mul, self.grid_shape, 1)
+        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+        return self
 
-        self.rank_from_coords = np.empty(self.grid_shape, dtype=np.int32)
-        for (r, c) in enumerate(coords):
-            self.rank_from_coords[c] = r
+    @classmethod
+    def from_dim_data_per_rank(cls, context, dim_data_per_rank, targets=None):
+        """Create a Distribution from a sequence of `dim_data` tuples.
+
+        Parameters
+        ----------
+        context : Context object
+        dim_data_per_rank : Sequence of dim_data tuples, one per rank
+            See the "Distributed Array Protocol" for a description of
+            dim_data tuples.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
+
+        Returns
+        -------
+        Distribution
+        """
+        for dim_data in dim_data_per_rank:
+            for dim_dict in dim_data:
+                normalize_dim_dict(dim_dict)
 
         # `axis_dim_dicts_per_axis` is the zip of `dim_data_per_rank`,
         # with duplicates removed.  It is a list of `axis_dim_dicts`.
@@ -513,18 +561,33 @@ class Distribution(object):
                                    for axis_dim_dicts in
                                    zip(*dim_data_per_rank)]
 
-        if len(axis_dim_dicts_per_axis) != self.ndim:
+        ndim = len(dim_data_per_rank[0])
+        if len(axis_dim_dicts_per_axis) != ndim:
             raise ValueError("Inconsistent dimensions.")
 
-        self.maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
-                     axis_dim_dicts in axis_dim_dicts_per_axis]
+        maps = [_map_from_axis_dim_dicts(axis_dim_dicts) for
+                axis_dim_dicts in axis_dim_dicts_per_axis]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        return self
+    def __new__(cls, context, shape, dist=None, grid_shape=None, targets=None):
+        """Create a Distribution from a `shape` and other optional args.
 
-    @classmethod
-    def from_shape(cls, context, shape, dist=None, grid_shape=None,
-                   targets=None):
+        Parameters
+        ----------
+        context : Context object
+        shape : tuple of int
+            Shape of the resulting Distribution, one integer per dimension.
+        dist : str, list, tuple, or dict, optional
+            Shorthand data structure representing the distribution type for
+            every dimension.  Default: {0: 'b'}, with all other dimensions 'n'.
+        grid_shape : tuple of int
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
 
+        Returns
+        -------
+        Distribution
+        """
         # special case when dist is all 'n's.
         if (dist is not None) and all(d == 'n' for d in dist):
             if (targets is not None) and (len(targets) != 1):
@@ -535,54 +598,38 @@ class Distribution(object):
                 # then targets is set correctly
                 pass
 
-        self = cls.__new__(cls)
-        self.context = context
-        self.shape = shape
-        self.ndim = len(shape)
+        ndim = len(shape)
+        dist = dist or {0: 'b'}
+        dist = normalize_dist(dist, ndim)
 
-        # dist
-        if dist is None:
-            dist = {0: 'b'}
-        self.dist = normalize_dist(dist, self.ndim)
+        targets = sorted(targets or context.targets)
+        grid_shape = grid_shape or make_grid_shape(shape, dist, len(targets))
+        grid_shape = normalize_grid_shape(grid_shape, shape, dist, len(targets))
 
-        # all possible targets
-        all_targets = sorted(targets or context.targets)
-        # grid_shape
-        if grid_shape is None:
-            grid_shape = make_grid_shape(self.shape, self.dist,
-                                         len(all_targets))
-
-        self.grid_shape = normalize_grid_shape(grid_shape, self.shape,
-                                               self.dist, len(all_targets))
-        ntargets = reduce(operator.mul, self.grid_shape, 1)
         # choose targets from grid_shape
-        self.targets = all_targets[:ntargets]
-        self.comm = self.context._make_subcomm(self.targets)
+        ntargets = reduce(operator.mul, grid_shape, 1)
+        targets = targets[:ntargets]
 
-        # TODO: FIXME: assert that self.rank_from_coords is valid and conforms
-        # to how MPI does it.
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
+        # list of `ClientMap` objects, one per dimension.
+        maps = [map_from_sizes(*args) for args in zip(shape, dist, grid_shape)]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        # List of `ClientMap` objects, one per dimension.
-        self.maps = [map_from_sizes(*args)
-                     for args in zip(self.shape, self.dist, self.grid_shape)]
-        return self
-
-    def __init__(self, context, global_dim_data, targets=None):
+    @classmethod
+    def from_global_dim_data(cls, context, global_dim_data, targets=None):
         """Make a Distribution from a global_dim_data structure.
 
         Parameters
         ----------
+        context : Context object
         global_dim_data : tuple of dict
             A global dimension dictionary per dimension.  See following `Note`
             section.
+        targets : Sequence of int, optional
+            Sequence of engine target numbers. Default: all available
 
         Returns
         -------
-        result : Distribution
-            An empty DistArray of the specified size, dimensionality, and
-            distribution.
+        Distribution
 
         Note
         ----
@@ -658,20 +705,9 @@ class Distribution(object):
 
         The global size of the array in this dimension.
         """
-        self.context = context
-        self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
-        self.maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
-        self.shape = tuple(m.size for m in self.maps)
-        self.ndim = len(self.maps)
-        self.dist = tuple(m.dist for m in self.maps)
-        self.grid_shape = tuple(m.grid_size for m in self.maps)
+        maps = [map_from_global_dim_dict(gdd) for gdd in global_dim_data]
+        return cls.from_maps(context=context, maps=maps, targets=targets)
 
-        self.grid_shape = normalize_grid_shape(self.grid_shape, self.shape,
-                                               self.dist, len(self.targets))
-
-        nelts = reduce(operator.mul, self.grid_shape, 1)
-        self.rank_from_coords = np.arange(nelts).reshape(self.grid_shape)
 
     def __getitem__(self, idx):
         return self.maps[idx]
@@ -692,20 +728,20 @@ class Distribution(object):
     def slice(self, index_tuple):
         """Make a new Distribution from a slice."""
         new_targets = self.owning_targets(index_tuple) or [0]
-        global_dim_data = []
+        new_maps = []
         # iterate over the dimensions
         for map_, idx in zip(self.maps, index_tuple):
             if isinstance(idx, Integral):
                 continue  # integral indexing returns reduced dimensionality
             elif isinstance(idx, slice):
-                global_dim_data.append(map_.slice(idx))
+                new_maps.append(map_.slice(idx))
             else:
                 msg = "Index must be a sequence of Integrals and slices."
                 raise TypeError(msg)
 
-        return self.__class__(context=self.context,
-                              global_dim_data=global_dim_data,
-                              targets=new_targets)
+        return self.__class__.from_maps(context=self.context,
+                                        maps=new_maps,
+                                        targets=new_targets)
 
     def owning_ranks(self, idxs):
         """ Returns a list of ranks that may *possibly* own the location in the
@@ -774,11 +810,19 @@ class Distribution(object):
 
         reduced_targets = [self.targets[r] for r in reduced_ranks.flat]
 
-        return Distribution.from_shape(context=self.context,
-                                       shape=reduced_shape,
-                                       dist=reduced_dist,
-                                       grid_shape=reduced_grid_shape,
-                                       targets=reduced_targets)
+        return Distribution(context=self.context,
+                            shape=reduced_shape,
+                            dist=reduced_dist,
+                            grid_shape=reduced_grid_shape,
+                            targets=reduced_targets)
+
+    def view(self, new_dimsize=None):
+        """Generate a new Distribution for use with DistArray.view."""
+        if new_dimsize is None:
+            return self
+        scaled_map = self.maps[-1].view(new_dimsize)
+        new_maps = self.maps[:-1] + [scaled_map]
+        return self.__class__.from_maps(context=self.context, maps=new_maps)
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())

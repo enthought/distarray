@@ -8,6 +8,8 @@ import unittest
 from distarray import metadata_utils
 from distarray.dist import Distribution, Context
 
+from distarray.testing import ContextTestCase
+
 
 class TestMakeGridShape(unittest.TestCase):
 
@@ -215,15 +217,10 @@ class TestTupleIntersection(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-class TestGridSizes(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.context = Context()
+class TestGridSizes(ContextTestCase):
 
     def test_dist_sizes(self):
-        dist = Distribution.from_shape(self.context, (2, 3, 4),
-                                       dist=('n', 'b', 'c'))
+        dist = Distribution(self.context, (2, 3, 4), dist=('n', 'b', 'c'))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         if len(self.context.view) == 4:
@@ -236,7 +233,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 1,
                     'proc_grid_rank': 0}
 
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(42,)])
@@ -249,7 +246,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_rank': 0,
                     'start': 0,
                     'stop': 42}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])
@@ -260,7 +257,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 2,
                     'proc_grid_rank': 0,
                     'start': 0}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(21,), (21,)])
@@ -273,7 +270,7 @@ class TestGridSizes(unittest.TestCase):
                     'proc_grid_size': 2,
                     'proc_grid_rank': 0,
                     'start': 0}
-        dist = Distribution(self.context, (dim_dict,))
+        dist = Distribution.from_global_dim_data(self.context, (dim_dict,))
         ddpr = dist.get_dim_data_per_rank()
         shapes = metadata_utils.shapes_from_dim_data_per_rank(ddpr)
         self.assertEqual(shapes, [(20,), (22,)])

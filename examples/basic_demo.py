@@ -41,7 +41,7 @@ def global_sum(da):
     global_sum = da.distribution.comm.allreduce(local_sum, None, op=MPI.SUM)
 
     new_arr = numpy.array([global_sum])
-    distribution = Distribution.from_shape((1,), comm=da.comm)
+    distribution = Distribution((1,), comm=da.comm)
     new_distarray = LocalArray(distribution, buf=new_arr)
     return new_distarray
 
@@ -52,9 +52,9 @@ if __name__ == '__main__':
 
     print()
     input("Basic creation:")
-    dist_b = Distribution.from_shape(context, (arr_len,), dist={0: 'b'})
+    dist_b = Distribution(context, (arr_len,), dist={0: 'b'})
     dap_b = context.empty(dist_b)
-    dist_c = Distribution.from_shape(context, (arr_len,), dist={0: 'c'})
+    dist_c = Distribution(context, (arr_len,), dist={0: 'c'})
     dap_c = context.empty(dist_c)
     print("dap_b is a ", type(dap_b))
     print("dap_c is a ", type(dap_c))

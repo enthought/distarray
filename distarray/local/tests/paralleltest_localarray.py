@@ -479,15 +479,6 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertEqual(b.dtype, new_dtype)
         self.assertEqual(b.ndarray.dtype, new_dtype)
 
-    def test_view_bn(self):
-        d = Distribution.from_shape(comm=self.comm,
-                             shape=(16, 16), dist=('b', 'n'))
-        a = LocalArray(d, dtype=np.int32)
-        a.fill(11)
-        b = a.view()
-        assert_localarrays_equal(a, b)
-        self.assertEqual(id(a.local_data), id(b.local_data))
-
     def test_asdist_like(self):
         """Test asdist_like for success and failure."""
         d = Distribution.from_shape(comm=self.comm,

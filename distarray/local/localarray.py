@@ -17,7 +17,6 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip
 
-from distarray.utils import _raise_nie
 from distarray.metadata_utils import sanitize_indices
 
 from distarray.local.mpiutils import MPI
@@ -310,26 +309,13 @@ class LocalArray(object):
         else:
             return self.ndarray.view(dtype)
 
-    def view(self, dtype=None):
+    def view(self, distribution, dtype):
         """Return a new LocalArray whose underlying `ndarray` is a view on
         `self.ndarray`.
-
-        Note
-        ----
-        Currently unimplemented for ``dtype is not None``.
         """
-        if dtype is None:
-            new_da = self.__class__(distribution=self.distribution,
-                                    dtype=self.dtype,
-                                    buf=self.ndarray)
-        else:
-            _raise_nie()
-            # TODO: to implement this properly, a new dim_data will need to be
-            #  generated that reflects the size and shape of the new dtype.
-            #new_da = self.__class__(distribution=self.distribution
-#                                    dtype=dtype,
-            #                        buf=self.ndarray)
-        return new_da
+        return self.__class__(distribution=distribution,
+                              dtype=dtype,
+                              buf=self.local_view(dtype=dtype))
 
     def __array__(self, dtype=None):
         if dtype is None:
@@ -954,7 +940,8 @@ def _basic_reducer(reduce_comm, op, func, args, kwargs, out):
         out_ndarray = out.ndarray
         if out.ndarray.dtype == np.bool:
             out.ndarray.dtype = np.uint8
-    local_reduce = func(*args, **kwargs)
+    # Use asarray() to coerce np scalars to zero-dimensional arrays.
+    local_reduce = np.asarray(func(*args, **kwargs))
     reduce_comm.Reduce(local_reduce, out_ndarray, op=op, root=0)
     return out
 

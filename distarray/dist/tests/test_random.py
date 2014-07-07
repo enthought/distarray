@@ -28,37 +28,33 @@ class TestRandom(ContextTestCase):
 
     def test_rand(self):
         shape = (3, 4)
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=shape)
+        distribution = Distribution(context=self.context, shape=shape)
         a = self.random.rand(distribution)
         self.assertEqual(a.shape, shape)
 
     def test_normal(self):
         shape = (3, 4)  # aka shape
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=shape)
+        distribution = Distribution(context=self.context, shape=shape)
         a = self.random.normal(distribution)
         self.assertEqual(a.shape, shape)
 
     def test_randint(self):
         low = 1
         shape = (3, 4)  # aka shape
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=shape)
+        distribution = Distribution(context=self.context, shape=shape)
         a = self.random.randint(distribution, low=low)
         self.assertEqual(a.shape, shape)
 
     def test_randn(self):
         shape = (3, 4)
-        distribution = Distribution.from_shape(context=self.context,
-                                               shape=shape)
+        distribution = Distribution(context=self.context, shape=shape)
         a = self.random.randn(distribution)
         self.assertEqual(a.shape, shape)
 
     def test_seed_same(self):
         """ Test that the same seed generates the same sequence. """
         shape = (8, 6)
-        distribution = Distribution.from_shape(self.context, shape)
+        distribution = Distribution(self.context, shape)
         seed = 0xfeedbeef
         # Seed and get some random numbers.
         self.random.seed(seed)
@@ -76,7 +72,7 @@ class TestRandom(ContextTestCase):
         shape = (8, 6)
         # Seed and get some random numbers.
         self.random.seed(None)
-        d = Distribution.from_shape(self.context, shape)
+        d = Distribution(self.context, shape)
         a = self.random.rand(d)
         aa = a.toarray()
         # Seed again and get more random numbers.
@@ -95,9 +91,8 @@ class TestRandom(ContextTestCase):
             """
             num_engines = len(context.targets)
             shape = (num_engines, num_cols)
-            distribution = Distribution.from_shape(self.context,
-                                                   shape=shape,
-                                                   dist={0: 'b', 1: 'n'})
+            distribution = Distribution(self.context, shape=shape,
+                                        dist={0: 'b', 1: 'n'})
             darr = self.random.rand(distribution)
             return darr
 

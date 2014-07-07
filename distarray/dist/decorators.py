@@ -13,8 +13,8 @@ from __future__ import absolute_import
 import functools
 
 from distarray.dist.distarray import DistArray
-from distarray.dist.context import Context
-from distarray.error import ContextError
+from distarray.dist.maps import Distribution
+from distarray.error import DistributionError
 from distarray.utils import has_exactly_one
 
 
@@ -34,29 +34,30 @@ class DecoratorBase(object):
         """Push function to the engines."""
         context._push({fn_key: fn}, targets=context.targets)
 
-    def determine_context(self, args, kwargs):
-        """ Determine a context from a functions arguments."""
+    def determine_distribution(self, args, kwargs):
+        """ Determine a distribution from a functions arguments."""
 
-        contexts = []
+        dists = []
         # inspect args for a context
         for arg in args + tuple(kwargs.values()):
             if isinstance(arg, DistArray):
-                contexts.append(arg.context)
-            elif isinstance(arg, Context):
-                contexts.append(arg)
+                dists.append(arg.distribution)
+            elif isinstance(arg, Distribution):
+                dists.append(arg)
 
         # check the args had a context
-        if contexts == []:
-            raise TypeError('Function must take DistArray or Context objects.')
+        if dists == []:
+            raise TypeError('Function must take DistArray or Distribution'
+                            ' objects.')
 
         # check that all contexts are equal
-        if not contexts.count(contexts[0]) == len(contexts):
-            msg = ("Arguments must use the same Context (given arguments of "
-                   "type %r)")
-            msg %= (tuple(set(contexts)),)
-            raise ContextError(msg)
+        if not dists.count(dists[0]) == len(dists):
+            msg = ("Arguments must use the same Distribution (given arguments "
+                   "of type %r)")
+            msg %= (tuple(set(dists)),)
+            raise DistributionError(msg)
 
-        return contexts[0]
+        return dists[0]
 
     def key_and_push_args(self, args, kwargs, context=None, da_handler=None):
         """
@@ -76,7 +77,8 @@ class DecoratorBase(object):
         """
 
         if context is None:
-            context = self.determine_context(args, kwargs)
+            distribution = self.determine_distribution(args, kwargs)
+            context = distribution.context
 
         # handle positional arguments
         arg_keys = []
@@ -114,7 +116,7 @@ class DecoratorBase(object):
 
         return arg_str, kwarg_str
 
-    def process_return_value(self, context, result_key):
+    def process_return_value(self, context, targets, result_key):
         """Figure out what to return on the Client.
 
         Parameters
@@ -133,7 +135,7 @@ class DecoratorBase(object):
         def get_type_str(key):
             return str(type(key))
         result_type_str = context.apply(get_type_str, args=(result_key,),
-                                        targets=context.targets)
+                                        targets=targets)
 
         def is_NoneType(typestring):
             return (typestring == "<type 'NoneType'>" or
@@ -144,11 +146,11 @@ class DecoratorBase(object):
                                   "LocalArray'>")
 
         if all(is_LocalArray(r) for r in result_type_str):
-            result = DistArray.from_localarrays(result_key, context=context)
+            result = DistArray.from_localarrays(result_key, context=context, targets=targets)
         elif all(is_NoneType(r) for r in result_type_str):
             result = None
         else:
-            result = context._pull(result_key, targets=context.targets)
+            result = context._pull(result_key, targets=targets)
             if has_exactly_one(result):
                 result = next(x for x in result if x is not None)
 
@@ -160,7 +162,8 @@ class local(DecoratorBase):
 
     def __call__(self, *args, **kwargs):
         # get context from args
-        context = self.determine_context(args, kwargs)
+        distribution = self.determine_distribution(args, kwargs)
+        context = distribution.context
         # push function
         self.push_fn(context, self.fn_key, self.fn)
 
@@ -170,9 +173,9 @@ class local(DecoratorBase):
 
         exec_str = "%s = %s(*%s, **%s)"
         exec_str %= (result_key, self.fn_key, args, kwargs)
-        context._execute(exec_str, targets=context.targets)
+        context._execute(exec_str, targets=distribution.targets)
 
-        return self.process_return_value(context, result_key)
+        return self.process_return_value(context, distribution.targets, result_key)
 
 
 class vectorize(DecoratorBase):
@@ -186,12 +189,13 @@ class vectorize(DecoratorBase):
 
     def __call__(self, *args, **kwargs):
         # get context from args
-        context = self.determine_context(args, kwargs)
+        distribution = self.determine_distribution(args, kwargs)
+        context = distribution.context
         # push function
         self.push_fn(context, self.fn_key, self.fn)
         # vectorize the function
         exec_str = "%s = numpy.vectorize(%s)" % (self.fn_key, self.fn_key)
-        context._execute(exec_str, targets=context.targets)
+        context._execute(exec_str, targets=distribution.targets)
 
         # Find the first distarray, they should all be the same up to the data.
         for arg in args:
@@ -208,5 +212,5 @@ class vectorize(DecoratorBase):
                             "%s(*%s, **%s)")
                 exec_str %= (out.key, out.key, self.fn_key, args_str,
                              kwargs_str)
-                context._execute(exec_str, targets=context.targets)
+                context._execute(exec_str, targets=distribution.targets)
                 return out

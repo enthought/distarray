@@ -200,7 +200,7 @@ def print_array_documentation(context,
     db_buffer = [a['db_buffer'] for a in attrs]
     db_dim_data = [a['db_dim_data'] for a in attrs]
     db_coords = [a['db_coords'] for a in attrs]
-                    
+
     # Get local ndarrays.
     db_ndarrays = array.get_ndarrays()
 
@@ -304,10 +304,10 @@ def create_distribution_plot_and_documentation(context, params):
 
     # Create array, either from dist or dimdata.
     if dist is not None:
-        distribution = Distribution.from_shape(context, shape, dist=dist,
-                                               grid_shape=grid_shape)
+        distribution = Distribution(context, shape, dist=dist,
+                                    grid_shape=grid_shape)
     elif dimdata is not None:
-        distribution = Distribution(context, dimdata)
+        distribution = Distribution.from_global_dim_data(context, dimdata)
     else:
         raise ValueError('Must provide either dist or dimdata.')
     array = context.empty(distribution)
