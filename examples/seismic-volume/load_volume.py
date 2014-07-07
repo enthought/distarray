@@ -18,6 +18,7 @@ and as a set of .dnpy files.
 
 from __future__ import print_function
 
+import argparse
 import os.path
 
 import numpy
@@ -363,24 +364,30 @@ def slice_volume(distarray, base_filename='slice_'):
     plot_slice(k_slice, filename, title, 'i', 'j')
 
 
-# Main processing function.
+# Main processing functions.
 
-def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
-    ''' Load the seismic volume from the specified HDF5 file,
-    and do some DistArray processing with it.
+def load_seismic_volume(filename, key, dist, use_hdf5):
+    ''' Load the seismic volume, from HDF5 or .dnpy files. '''
+    # Create context.
+    context = Context()
+    if use_hdf5:
+        print('Loading from .hdf5 file...')
+        da = load_hdf5_distarray(context, filename, key, dist)
+    else:
+        print('Loading from .dnpy files...')
+        da = load_dnpy_distarray(context, filename)
+    # Print some stuff about the array.
+    if False:
+        dump_distarray_info(da)
+    return da
+
+
+def process_seismic_volume(da, key, compare=True, verbose=False):
+    ''' Do some processsing with the seismic volume as a DistArray.
 
     Also do the same calculations on the global NumPy array,
     to confirm that the distributed methods give the same results.
     '''
-    # Create context.
-    context = Context()
-    # Load HDF5 file as DistArray.
-    da = load_hdf5_distarray(context, filename, key, dist)
-#    # Load .dnpy files as DistArray.
-#    da = load_dnpy_distarray(context, filename)
-    # Print some stuff about the array.
-    if False:
-        dump_distarray_info(da)
     # Slicing.
     print('Slicing...')
     slice_volume(da, base_filename='slice_')
@@ -415,18 +422,45 @@ def process_seismic_volume(filename, key, dist, compare=True, verbose=False):
 
 
 def main():
-    # Filename with data.
-    filename = 'seismic.hdf5'
-    # Name of data block inside file.
-    key = 'seismic'
+    # Parse arguments:
+    #     --file <filename>
+    #     --key <keyname>
+    #     --hdf5
+    #     --dnpy
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file',
+                        default='seismic.hdf5',
+                        help='Name of input file.')
+    parser.add_argument('--key',
+                        default='seismic',
+                        help='Name of HDF5 key for data.')
+    parser.add_argument('--hdf5',
+                        action='store_true',
+                        help='Read input from an HDF5 file.')
+    parser.add_argument('--dnpy',
+                        action='store_true',
+                        help='Read input from .dnpy files.')
+    args = parser.parse_args()
+    # Extract arguments and complain about invalid ones.
+    filename = args.file
+    key = args.key
+    use_hdf5 = args.hdf5
+    use_dnpy = args.dnpy
+    # Pick either HDF5 or .dnpy
+    if (use_hdf5 == False) and (use_dnpy == False):
+        use_hdf5 = True
+    if (use_hdf5 == True) and (use_dnpy == True):
+        raise ValueError('Can only specify one of --hdf5 or --dnpy.')
     # Desired distribution method.
     dist = ('b', 'b', 'n')
     # Processing options.
     compare = True
     verbose = False
-    process_seismic_volume(filename=filename,
+    # Load the seismic volume.
+    da = load_seismic_volume(filename, key, dist, use_hdf5)
+    # Process the seismic volume.
+    process_seismic_volume(da,
                            key=key,
-                           dist=dist,
                            compare=compare,
                            verbose=verbose)
 
