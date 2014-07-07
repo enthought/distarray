@@ -16,7 +16,7 @@ What is DistArray?
 DistArray aims to bring the strengths of NumPy to data-parallel
 high-performance computing. It provides distributed multi-dimensional
 NumPy-like arrays and distributed ufuncs, distributed IO capabilities, and can
-integrate with external distributed libraries, like Trilinos. DistArray works
+integrate with external distributed libraries like Trilinos. DistArray works
 with NumPy and builds on top of it in a flexible and natural way.
 
 0.4 Release
@@ -29,7 +29,7 @@ Noteworthy improvements in 0.4 include:
 * basic slicing support;
 * significant performance enhancements;
 * reduction methods now support boolean arrays;
-* IPython notebook that demos basic functionality; and
+* an IPython notebook that demos basic functionality; and
 * many bug fixes, API improvements, and refactorings.
 
 DistArray is nearly ready for real-world use.  The project is evolving rapidly
@@ -42,17 +42,17 @@ Existing features
 Distarray:
 
 * has a client-engine (or master-worker) process design -- data resides on the
-  worker processes, commands are initiated from master;
+  worker processes, and commands are initiated from master;
 * allows full control over what is executed on the worker processes and
   integrates transparently with the master process;
-* allows direct communication between workers bypassing the master process for
-  scalability;
+* allows direct communication between workers, bypassing the master process
+  for scalability;
 * integrates with IPython.parallel for interactive creation and exploration of
   distributed data;
 * supports distributed ufuncs (currently without broadcasting);
 * builds on and leverages MPI via MPI4Py in a transparent and user-friendly
   way;
-* supports NumPy-like structured multidimensional arrays;
+* supports NumPy-like multidimensional arrays;
 * has basic support for unstructured arrays;
 * supports user-controllable array distributions across workers (block,
   cyclic, block-cyclic, and unstructured) on a per-axis basis;
