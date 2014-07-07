@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     metadata = {
         'name': 'distarray',
-        'version': '0.4.0',
+        'version': '0.5.0-dev',
         'description': 'Distributed Memory Arrays for Python',
         'keywords': 'parallel mpi distributed array',
         'license': 'New BSD',
