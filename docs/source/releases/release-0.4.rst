@@ -39,7 +39,7 @@ helps drive development.
 Existing features
 -----------------
 
-Distarray:
+DistArray:
 
 * has a client-engine (or master-worker) process design -- data resides on the
   worker processes, and commands are initiated from master;
