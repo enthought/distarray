@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
+from distarray.__version__ import __version__
 
 
 def parse_readme(filename='README.rst', sentinel="README"):
@@ -32,7 +33,7 @@ if __name__ == "__main__":
 
     metadata = {
         'name': 'distarray',
-        'version': '0.5.0-dev',
+        'version': __version__,
         'description': 'Distributed Memory Arrays for Python',
         'keywords': 'parallel mpi distributed array',
         'license': 'New BSD',
