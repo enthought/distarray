@@ -31,7 +31,6 @@ class TestMultPartitions(unittest.TestCase):
         self.assertEqual(utils.mult_partitions(6, 3), [(1, 1, 6), (1, 2, 3)])
 
 
-
 class TestSliceIntersection(unittest.TestCase):
 
     def test_containment(self):
