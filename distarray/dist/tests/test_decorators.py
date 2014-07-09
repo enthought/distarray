@@ -46,11 +46,13 @@ class TestDecoratorBase(TestCase):
         self.assertRaises(TypeError, dummy_func, 'foo')
         self.assertRaises(DistributionError, dummy_func, dist, dist2)
 
-    def test_key_and_push_args(self):
-        context = Context()
 
-        distribution = Distribution(context, (2, 2))
-        da = context.ones(distribution)
+class TestKeyAndPushArgs(ContextTestCase):
+
+    def test_key_and_push_args(self):
+
+        distribution = Distribution(self.context, (2, 2))
+        da = self.context.ones(distribution)
         db = da*2
 
         def dummy_func(*args, **kwargs):
@@ -73,7 +75,7 @@ class TestDecoratorBase(TestCase):
         self.assertEqual(arg_keys2[1: -2].split(', ')[0], da.key)
 
         _key = arg_keys2[1: -2].split(', ')[1]
-        self.assertEqual(context._pull(_key, targets=[0])[0], 'question')
+        self.assertEqual(self.context._pull(_key, targets=[0])[0], 'question')
         self.assertTrue("'answer'" in kw_keys2)
 
         self.assertTrue("'foo'" in kw_keys2)
