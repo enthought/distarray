@@ -48,7 +48,8 @@ PHYSICAL_Y = 10.0
 PHYSICAL_Z = 20.0
 
 # Default array size of volume.
-DEFAULT_ARRAY_SIZE = (256, 256, 1024)
+#DEFAULT_ARRAY_SIZE = (256, 256, 1024)
+DEFAULT_ARRAY_SIZE = (32, 48, 256)
 
 
 def g(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
@@ -79,15 +80,15 @@ def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
     return z0
 
 
-def create_horizon(context, shape, normal=(0.1, -0.2, 1.0), D=10.0):
+def create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
     '''Get the horizon surface where we will place the peak.'''
     if len(shape) != 2:
         raise ValueError('Horizon shape must be 2D.')
     horizon = numpy.zeros(shape)
     for i in xrange(shape[0]):
-        x = PHYSICAL_X * float(i) / float(shape[0])
+        x = physical_x[i]
         for j in xrange(shape[1]):
-            y = PHYSICAL_Y * float(j) / float(shape[1])
+            y = physical_y[j]
             horizon[i, j] = p(x, y, normal=normal, D=D)
     # Wrap it as distarray.
     horizon_dist = ('b', 'b')
@@ -98,11 +99,71 @@ def create_horizon(context, shape, normal=(0.1, -0.2, 1.0), D=10.0):
     return horizon, horizon_da
 
 
-def create_horizons(context, shape):
+def local_create_horizon(horizon_la, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
+    '''Get the horizon surface where we will place the peak.'''
+
+    def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
+        '''Get the depth on the plane where we want to put the peak.'''
+        from math import sqrt
+        nx, ny, nz = normal
+        nmag = sqrt(nx * nx + ny * ny + nz * nz)
+        nx, ny, nz = nx / nmag, ny / nmag, nz / nmag
+        # Depth of peak.
+        z0 = (D - nx * x - ny * y) / nz
+        return z0
+
+    def create_horizon(horizon, physical_x, physical_y, normal, D):
+        #if len(horizon_da.shape) != 2:
+        #    raise ValueError('Horizon shape must be 2D.')
+        shape = horizon.shape
+        for i in xrange(shape[0]):
+            for j in xrange(shape[1]):
+                x = physical_x[i, j]
+                y = physical_y[i, j]
+                horizon[i, j] = p(x, y, normal=normal, D=D)
+
+    from distarray.local import LocalArray
+    horizon = horizon_la.ndarray
+    shape = horizon.shape
+    # Get physical x and y values in an array the same shape as the horizon.
+    px = numpy.empty(shape)
+    py = numpy.empty(shape)
+    for i in xrange(shape[0]):
+        for j in xrange(shape[1]):
+            l_i, l_j = horizon_la.global_from_local((i, j))
+            px[i, j] = physical_x[l_i]
+            py[i, j] = physical_y[l_j]
+    create_horizon(horizon, px, py, normal, D)
+    res = LocalArray(horizon_la.distribution, buf=horizon)
+    rtn = proxyize(res)
+    return rtn
+
+
+
+def distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
+    ''' Create a horizon. '''
+    horizon_dist = ('b', 'b')
+    distribution = Distribution(context, shape, dist=horizon_dist)
+    horizon_da = DistArray(distribution, dtype=float32)
+    context.apply(local_create_horizon, (horizon_da.key, physical_x, physical_y, normal, D))
+    return horizon_da
+
+
+def distributed_create_horizons(context, shape, physical_x, physical_y):
     '''Create some horizons.'''
-    horizon_1, horizon_1_da = create_horizon(context, shape, normal=(0.1, -0.2, 1.0), D=10.0)
+    horizon_1_da = distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0)
     params_1 = (100.0, 40.0, 0.0, 0.1)
-    horizon_2, horizon_2_da = create_horizon(context, shape, normal=(0.4, 0.1, 1.0), D=15.0)
+    horizon_2_da = distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.4, 0.1, 1.0), D=15.0)
+    params_2 = (25.0, 15.0, 0.0, 0.7)
+    rtn = [(horizon_1_da, params_1), (horizon_2_da, params_2)]
+    return rtn
+
+
+def create_horizons(context, shape, physical_x, physical_y):
+    '''Create some horizons.'''
+    horizon_1, horizon_1_da = create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0)
+    params_1 = (100.0, 40.0, 0.0, 0.1)
+    horizon_2, horizon_2_da = create_horizon(context, shape, physical_x, physical_y, normal=(0.4, 0.1, 1.0), D=15.0)
     params_2 = (25.0, 15.0, 0.0, 0.7)
     rtn = [(horizon_1, horizon_1_da, params_1), (horizon_2, horizon_2_da, params_2)]
     return rtn
@@ -115,13 +176,20 @@ def create_volume(context, shape):
     print('Creating volume array %d x %d x %d...' % (
         shape[0], shape[1], shape[2]))
     vol = numpy.zeros(shape, dtype=numpy.float32)
-    print('Creating horizons...')
-    horizons_shape = (shape[0], shape[1])
-    horizons = create_horizons(context, horizons_shape)
-    print('Filling array...')
+    print('Physical coords...')
+    x = numpy.empty((shape[0],))
+    for i in xrange(shape[0]):
+        x[i] = PHYSICAL_X * float(i) / float(shape[0])
+    y = numpy.empty((shape[1],))
+    for j in xrange(shape[1]):
+        y[j] = PHYSICAL_Y * float(j) / float(shape[1])
     z = numpy.empty((shape[2],))
     for k in xrange(shape[2]):
         z[k] = PHYSICAL_Z * float(k) / float(shape[2])
+    print('Creating horizons...')
+    horizons_shape = (shape[0], shape[1])
+    horizons = create_horizons(context, horizons_shape, x, y)
+    print('Filling array...')
     for i in xrange(shape[0]):
         print('Index', i + 1, 'of', shape[0], end='\r')
         sys.stdout.flush()
@@ -204,17 +272,28 @@ def distributed_create_volume(context, shape):
     dist = ('b', 'b', 'n')
     distribution = Distribution(context, shape, dist=dist)
     da = context.zeros(distribution, dtype=float32)
-    print('Creating horizons...')
-    horizons_shape = (shape[0], shape[1])
-    horizons = create_horizons(context, horizons_shape)
-    print('Filling array...')
+    print('Physical coords...')
+    x = numpy.empty((shape[0],))
+    for i in xrange(shape[0]):
+        x[i] = PHYSICAL_X * float(i) / float(shape[0])
+    y = numpy.empty((shape[1],))
+    for j in xrange(shape[1]):
+        y[j] = PHYSICAL_Y * float(j) / float(shape[1])
     z = numpy.empty((shape[2],))
     for k in xrange(shape[2]):
         z[k] = PHYSICAL_Z * float(k) / float(shape[2])
+    print('Creating horizons...')
+    horizons_shape = (shape[0], shape[1])
+    horizons = create_horizons(context, horizons_shape, x, y)
+    print('Distributed...')
+    dist_horizons = distributed_create_horizons(context, horizons_shape, x, y)
+    print('Filling array...')
     # Add data for each horizon...
-    for ih, horizon in enumerate(horizons):
+    #for ih, horizon in enumerate(horizons):
+    for ih, horizon in enumerate(dist_horizons):
         print('Horizon %d...' % (ih + 1))
-        horizon_np, horizon_da, horizon_params = horizon
+        #horizon_np, horizon_da, horizon_params = horizon
+        horizon_da, horizon_params = horizon
         context.apply(local_add_horizon, (da.key, horizon_da.key, z, horizon_params))
     # Add global randomness.
     print('Adding randomness...')
