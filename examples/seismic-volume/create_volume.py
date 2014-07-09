@@ -51,33 +51,8 @@ PHYSICAL_Z = 20.0
 #DEFAULT_ARRAY_SIZE = (256, 256, 1024)
 DEFAULT_ARRAY_SIZE = (32, 48, 256)
 
-
-def g(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
-    ''' A hopefully interesting looking function.
-
-    Gaussian, with a step-like function past the gaussian peak.
-    The peak is at depth z=z0.
-    '''
-    u = mu * (z - z0) ** 2
-    v = mu * (z - z0)
-    # Gaussian.
-    g = A * exp(-u) + C
-    # Smooth step.
-    exp_p = exp(v)
-    exp_m = exp(-v)
-    h = B * (exp_p - exp_m) / (exp_p + exp_m)
-    r = g + h
-    return r
-
-
-def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
-    '''Get the depth on the plane where we want to put the peak.'''
-    nx, ny, nz = normal
-    nmag = sqrt(nx * nx + ny * ny + nz * nz)
-    nx, ny, nz = nx / nmag, ny / nmag, nz / nmag
-    # Depth of peak.
-    z0 = (D - nx * x - ny * y) / nz
-    return z0
+# Array distribution for volume.
+ARRAY_DISTRIBUTION = ('b', 'b', 'n')
 
 
 def scaled_points(num_points, total_size):
@@ -86,26 +61,9 @@ def scaled_points(num_points, total_size):
     return p
 
 
-def create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
-    '''Get the horizon surface where we will place the peak.'''
-    if len(shape) != 2:
-        raise ValueError('Horizon shape must be 2D.')
-    horizon = numpy.zeros(shape)
-    for i in xrange(shape[0]):
-        x = physical_x[i]
-        for j in xrange(shape[1]):
-            y = physical_y[j]
-            horizon[i, j] = p(x, y, normal=normal, D=D)
-    # Wrap it as distarray.
-    horizon_dist = ('b', 'b')
-    distribution = Distribution(context, shape, dist=horizon_dist)
-    horizon_da = DistArray(distribution, dtype=float32)
-    # Fill the array.
-    horizon_da[:, :] = horizon[:, :]
-    return horizon, horizon_da
+# Creation of 'horizons', which in this case are plane sections of the volume.
 
-
-def local_create_horizon(horizon_la, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
+def local_create_horizon(horizon_la, physical_x, physical_y, normal, D):
     '''Get the horizon surface where we will place the peak.'''
 
     def plane(x, y, normal, D):
@@ -145,74 +103,37 @@ def local_create_horizon(horizon_la, physical_x, physical_y, normal=(0.1, -0.2, 
     return rtn
 
 
-
-def distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
+def create_horizon(context, shape, physical_x, physical_y, normal, D):
     ''' Create a horizon. '''
-    horizon_dist = ('b', 'b')
+    horizon_dist = (ARRAY_DISTRIBUTION[0], ARRAY_DISTRIBUTION[1])
     distribution = Distribution(context, shape, dist=horizon_dist)
     horizon_da = DistArray(distribution, dtype=float32)
-    context.apply(local_create_horizon, (horizon_da.key, physical_x, physical_y, normal, D))
+    context.apply(local_create_horizon,
+                  (horizon_da.key, physical_x, physical_y, normal, D))
     return horizon_da
 
 
-def distributed_create_horizons(context, shape, physical_x, physical_y):
+def create_horizons(context, shape, physical_x, physical_y):
     '''Create some horizons.'''
-    horizon_1_da = distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0)
+    horizon_1_da = create_horizon(context, shape,
+                                  physical_x, physical_y,
+                                  normal=(0.1, -0.2, 1.0), D=10.0)
     params_1 = (100.0, 40.0, 0.0, 0.1)
-    horizon_2_da = distributed_create_horizon(context, shape, physical_x, physical_y, normal=(0.4, 0.1, 1.0), D=15.0)
+    horizon_2_da = create_horizon(context, shape,
+                                  physical_x, physical_y,
+                                  normal=(0.4, 0.1, 1.0), D=15.0)
     params_2 = (25.0, 15.0, 0.0, 0.7)
     rtn = [(horizon_1_da, params_1), (horizon_2_da, params_2)]
     return rtn
 
 
-def create_horizons(context, shape, physical_x, physical_y):
-    '''Create some horizons.'''
-    horizon_1, horizon_1_da = create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0)
-    params_1 = (100.0, 40.0, 0.0, 0.1)
-    horizon_2, horizon_2_da = create_horizon(context, shape, physical_x, physical_y, normal=(0.4, 0.1, 1.0), D=15.0)
-    params_2 = (25.0, 15.0, 0.0, 0.7)
-    rtn = [(horizon_1, horizon_1_da, params_1), (horizon_2, horizon_2_da, params_2)]
-    return rtn
+# Creation of the full volume.
+# We adjust the data values as we pass through the horizons.
 
+def local_add_horizon(volume_la, horizon_la, z, horizon_params):
+    ''' Update the volume to change as one passes through the horizon. '''
 
-def create_volume(context, shape):
-    ''' Create a fake seismic volume. We try to make it look interesting. '''
-    if len(shape) != 3:
-        raise ValueError('Volume shape must be 3D.')
-    print('Creating volume array %d x %d x %d...' % (
-        shape[0], shape[1], shape[2]))
-    vol = numpy.zeros(shape, dtype=numpy.float32)
-    print('Physical coords...')
-    x = scaled_points(shape[0], PHYSICAL_X)
-    y = scaled_points(shape[1], PHYSICAL_Y)
-    z = scaled_points(shape[2], PHYSICAL_Z)
-    print('Creating horizons...')
-    horizons_shape = (shape[0], shape[1])
-    horizons = create_horizons(context, horizons_shape, x, y)
-    print('Filling array...')
-    for i in xrange(shape[0]):
-        print('Index', i + 1, 'of', shape[0], end='\r')
-        sys.stdout.flush()
-        for j in xrange(shape[1]):
-            for horizon in horizons:
-                horizon_plane, horizon_plane_da, horizon_params = horizon
-                z0 = horizon_plane[i, j]
-                A, B, C, mu = horizon_params
-                vol[i, j, :] += g(z, z0, A=A, B=B, C=C, mu=mu)
-    print()
-    # Add constant
-    vol[:, :, :] += 2.5
-    # Add randomness.
-    rnd = numpy.random.randn(*shape)
-    vol[:, :, :] += 2.0 * rnd
-    print('Done.')
-    return vol
-
-
-def local_add_horizon(la, lh, z, h_params):
-    ''' Filter a local array via 3-point average over z axis. '''
-
-    def g(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
+    def gauss(z, z0, A=100.0, B=40.0, C=2.5, mu=0.1):
         ''' A hopefully interesting looking function.
 
         Gaussian, with a step-like function past the gaussian peak.
@@ -230,46 +151,46 @@ def local_add_horizon(la, lh, z, h_params):
         r = g + h
         return r
 
-    def add_horizon(a, h, z, h_params):
+    def add_horizon(vol, hor, z, horizon_params):
         ''' Add the effect of a horizon to the seismic volume data. '''
-        shape = h.shape
-        A, B, C, mu = h_params
+        shape = hor.shape
+        A, B, C, mu = horizon_params
         for i in xrange(shape[0]):
             for j in xrange(shape[1]):
-                z0 = h[i, j]
-                a[i, j, :] += g(z, z0, A=A, B=B, C=C, mu=mu)
-        return a
+                z0 = hor[i, j]
+                vol[i, j, :] += gauss(z, z0, A=A, B=B, C=C, mu=mu)
+        return vol
 
-    a = la.ndarray
-    h = lh.ndarray
-    add_horizon(a, h, z, h_params)
-    return la
+    vol = volume_la.ndarray
+    hor = horizon_la.ndarray
+    add_horizon(vol, hor, z, horizon_params)
+    return volume_la
 
 
-def local_add_random(la):
+def local_add_random(volume_la):
     ''' Add randomness and a constant to the local array data. '''
 
-    def add_random(a):
+    def add_random(vol, C, R):
         ''' Add randomness and a constant to the volume. '''
         # Add constant
-        a[:, :, :] += 2.5
+        vol[:, :, :] += C
         # Add randomness.
-        shape = a.shape
+        shape = vol.shape
         rnd = numpy.random.randn(*shape)
-        a[:, :, :] += 2.0 * rnd
+        vol[:, :, :] += R * rnd
 
-    a = la.ndarray
-    add_random(a)
-    return la
+    vol = volume_la.ndarray
+    add_random(vol, C=2.5, R=2.0)
+    return volume_la
 
 
-def distributed_create_volume(context, shape):
+def create_volume(context, shape):
     ''' Create a fake seismic volume. We try to make it look interesting. '''
     if len(shape) != 3:
         raise ValueError('Volume shape must be 3D.')
     print('Creating volume array %d x %d x %d...' % (
         shape[0], shape[1], shape[2]))
-    dist = ('b', 'b', 'n')
+    dist = ARRAY_DISTRIBUTION
     distribution = Distribution(context, shape, dist=dist)
     da = context.zeros(distribution, dtype=float32)
     print('Physical coords...')
@@ -279,16 +200,13 @@ def distributed_create_volume(context, shape):
     print('Creating horizons...')
     horizons_shape = (shape[0], shape[1])
     horizons = create_horizons(context, horizons_shape, x, y)
-    print('Distributed...')
-    dist_horizons = distributed_create_horizons(context, horizons_shape, x, y)
     print('Filling array...')
     # Add data for each horizon...
-    #for ih, horizon in enumerate(horizons):
-    for ih, horizon in enumerate(dist_horizons):
-        print('Horizon %d...' % (ih + 1))
-        #horizon_np, horizon_da, horizon_params = horizon
+    for ih, horizon in enumerate(horizons):
+        print('Adding horizon %d...' % (ih + 1))
         horizon_da, horizon_params = horizon
-        context.apply(local_add_horizon, (da.key, horizon_da.key, z, horizon_params))
+        context.apply(local_add_horizon,
+                      (da.key, horizon_da.key, z, horizon_params))
     # Add global randomness.
     print('Adding randomness...')
     context.apply(local_add_random, (da.key,))
@@ -356,15 +274,7 @@ def main():
     context = Context()
     # Create the seismic volume and write it.
     t0 = time()
-    vol = create_volume(context, shape)
-    if False:
-        # Wrap as DistArray.
-        dist = ('b', 'b', 'n')
-        distribution = Distribution(context, shape, dist=dist)
-        da_vol = context.empty(distribution, dtype=float32)
-        da_vol[:, :, :] = vol[:, :, :]
-    else:
-        da_vol = distributed_create_volume(context, shape)
+    da_vol = create_volume(context, shape)
     if use_hdf5:
         print('Creating hdf5 file...')
         create_hdf5_file(da_vol, filename=filename, key=key)
