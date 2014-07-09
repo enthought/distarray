@@ -17,18 +17,18 @@ from unittest import TestCase
 import numpy
 from numpy.testing import assert_array_equal
 
-from distarray.testing import ContextTestCase, check_targets
+from distarray.testing import ClientTestCase, ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.decorators import DecoratorBase, local, vectorize
 from distarray.error import DistributionError
 
 
-class TestDecoratorBase(TestCase):
+class TestDecoratorBase(ClientTestCase):
 
     def test_determine_distribution(self):
-        context = Context()
-        context2 = Context()  # for cross Context checking
+        context = Context(client=self.client)
+        context2 = Context(client=self.client)  # for cross Context checking
         dist = Distribution(context, (2, 2))
         dist2 = Distribution(context2, (2, 2))
         da = context.ones(dist)
