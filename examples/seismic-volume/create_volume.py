@@ -302,31 +302,22 @@ def distributed_create_volume(context, shape):
     return da
 
 
-def create_hdf5_file(volume, filename, key):
+def create_hdf5_file(da_volume, filename, key):
     '''Create an HDF5 file with the seismic volume.'''
     f = h5py.File(filename, 'w')
-    dataset = f.create_dataset(key, volume.shape, dtype='f')
-    dataset[...] = volume
+    dataset = f.create_dataset(key, da_volume.shape, dtype='f')
+    dataset[...] = da_volume.tondarray()
     f.close()
 
 
-def create_dnpy_files(volume, filename):
+def create_dnpy_files(da_volume, filename):
     ''' Create .dnpy files with the seismic volume. '''
-    # Create context.
-    context = Context()
-    # Create a DistArray with the data.
-    dist = ('b', 'b', 'n')
-    array_shape = volume.shape
-    distribution = Distribution(context, array_shape, dist=dist)
-    da = DistArray(distribution, dtype=float32)
-    # Fill the array.
-    da[:, :, :] = volume[:, :, :]
     # Filename for save_dnpy() needs the full path,
     # and should strip any extension.
     filename = os.path.splitext(filename)[0]
     pathname = os.path.abspath(filename)
     # Write it.
-    context.save_dnpy(pathname, da)
+    da_volume.context.save_dnpy(pathname, da_volume)
 
 
 def main():
@@ -372,15 +363,20 @@ def main():
     # Create the seismic volume and write it.
     t0 = time()
     vol = create_volume(context, shape)
-    da_vol = distributed_create_volume(context, shape)
+    if True:
+        # Wrap as DistArray.
+        dist = ('b', 'b', 'n')
+        distribution = Distribution(context, shape, dist=dist)
+        da_vol = context.empty(distribution, dtype=float32)
+        da_vol[:, :, :] = vol[:, :, :]
+    else:
+        da_vol = distributed_create_volume(context, shape)
     if use_hdf5:
         print('Creating hdf5 file...')
-        #create_hdf5_file(vol, filename=filename, key=key)
-        create_hdf5_file(da_vol.tondarray(), filename=filename, key=key)
+        create_hdf5_file(da_vol, filename=filename, key=key)
     elif use_dnpy:
         print('Creating dnpy files...')
-        #create_dnpy_files(vol, filename=filename)
-        create_dnpy_files(da_vol.tondarray(), filename=filename)
+        create_dnpy_files(da_vol, filename=filename)
     t1 = time()
     dt = t1 - t0
     print('Creation time: %.3f sec' % (dt))
