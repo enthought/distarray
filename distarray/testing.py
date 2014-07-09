@@ -177,7 +177,14 @@ class ContextTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = IPythonClient()
+        # skip if there isn't a cluster available
+        try:
+            cls.client = IPythonClient()
+        except FileNotFoundError:
+            msg = "You must have an ipcluster running for this test class."
+            raise unittest.SkipTest(msg)
+
+        # skip if there aren't enough engines
         if cls.ntargets == 'any':
             cls.context = Context(client=cls.client)
             cls.ntargets = len(cls.context.targets)
