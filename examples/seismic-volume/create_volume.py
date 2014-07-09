@@ -108,7 +108,7 @@ def create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.
 def local_create_horizon(horizon_la, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
     '''Get the horizon surface where we will place the peak.'''
 
-    def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
+    def plane(x, y, normal, D):
         '''Get the depth on the plane where we want to put the peak.'''
         from math import sqrt
         nx, ny, nz = normal
@@ -118,28 +118,28 @@ def local_create_horizon(horizon_la, physical_x, physical_y, normal=(0.1, -0.2, 
         z0 = (D - nx * x - ny * y) / nz
         return z0
 
-    def create_horizon(horizon, physical_x, physical_y, normal, D):
-        #if len(horizon_da.shape) != 2:
-        #    raise ValueError('Horizon shape must be 2D.')
+    def create_horizon(horizon, physical_xy, normal, D):
+        ''' Create the horizon plane. '''
         shape = horizon.shape
+        if len(shape) != 2:
+            raise ValueError('Horizon shape must be 2D.')
         for i in xrange(shape[0]):
             for j in xrange(shape[1]):
-                x = physical_x[i, j]
-                y = physical_y[i, j]
-                horizon[i, j] = p(x, y, normal=normal, D=D)
+                x = physical_xy[i, j, 0]
+                y = physical_xy[i, j, 1]
+                horizon[i, j] = plane(x, y, normal=normal, D=D)
 
     from distarray.local import LocalArray
     horizon = horizon_la.ndarray
     shape = horizon.shape
     # Get physical x and y values in an array the same shape as the horizon.
-    px = numpy.empty(shape)
-    py = numpy.empty(shape)
+    physical_xy = numpy.empty((shape[0], shape[1], 2))
     for i in xrange(shape[0]):
         for j in xrange(shape[1]):
-            l_i, l_j = horizon_la.global_from_local((i, j))
-            px[i, j] = physical_x[l_i]
-            py[i, j] = physical_y[l_j]
-    create_horizon(horizon, px, py, normal, D)
+            gi, gj = horizon_la.global_from_local((i, j))
+            physical_xy[i, j, 0] = physical_x[gi]
+            physical_xy[i, j, 1] = physical_y[gj]
+    create_horizon(horizon, physical_xy, normal, D)
     res = LocalArray(horizon_la.distribution, buf=horizon)
     rtn = proxyize(res)
     return rtn
