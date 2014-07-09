@@ -36,7 +36,7 @@ from time import time
 import numpy
 import numpy.random
 import h5py
-from numpy import exp, float32
+from numpy import exp, linspace, float32
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
@@ -78,6 +78,12 @@ def p(x, y, normal=(0.1, -0.2, 1.0), D=10.0):
     # Depth of peak.
     z0 = (D - nx * x - ny * y) / nz
     return z0
+
+
+def scaled_points(num_points, total_size):
+    ''' Get num_points values, ranging from 0.0 to total_size. '''
+    p = linspace(0.0, total_size, num_points)
+    return p
 
 
 def create_horizon(context, shape, physical_x, physical_y, normal=(0.1, -0.2, 1.0), D=10.0):
@@ -177,15 +183,9 @@ def create_volume(context, shape):
         shape[0], shape[1], shape[2]))
     vol = numpy.zeros(shape, dtype=numpy.float32)
     print('Physical coords...')
-    x = numpy.empty((shape[0],))
-    for i in xrange(shape[0]):
-        x[i] = PHYSICAL_X * float(i) / float(shape[0])
-    y = numpy.empty((shape[1],))
-    for j in xrange(shape[1]):
-        y[j] = PHYSICAL_Y * float(j) / float(shape[1])
-    z = numpy.empty((shape[2],))
-    for k in xrange(shape[2]):
-        z[k] = PHYSICAL_Z * float(k) / float(shape[2])
+    x = scaled_points(shape[0], PHYSICAL_X)
+    y = scaled_points(shape[1], PHYSICAL_Y)
+    z = scaled_points(shape[2], PHYSICAL_Z)
     print('Creating horizons...')
     horizons_shape = (shape[0], shape[1])
     horizons = create_horizons(context, horizons_shape, x, y)
@@ -273,15 +273,9 @@ def distributed_create_volume(context, shape):
     distribution = Distribution(context, shape, dist=dist)
     da = context.zeros(distribution, dtype=float32)
     print('Physical coords...')
-    x = numpy.empty((shape[0],))
-    for i in xrange(shape[0]):
-        x[i] = PHYSICAL_X * float(i) / float(shape[0])
-    y = numpy.empty((shape[1],))
-    for j in xrange(shape[1]):
-        y[j] = PHYSICAL_Y * float(j) / float(shape[1])
-    z = numpy.empty((shape[2],))
-    for k in xrange(shape[2]):
-        z[k] = PHYSICAL_Z * float(k) / float(shape[2])
+    x = scaled_points(shape[0], PHYSICAL_X)
+    y = scaled_points(shape[1], PHYSICAL_Y)
+    z = scaled_points(shape[2], PHYSICAL_Z)
     print('Creating horizons...')
     horizons_shape = (shape[0], shape[1])
     horizons = create_horizons(context, horizons_shape, x, y)
@@ -363,7 +357,7 @@ def main():
     # Create the seismic volume and write it.
     t0 = time()
     vol = create_volume(context, shape)
-    if True:
+    if False:
         # Wrap as DistArray.
         dist = ('b', 'b', 'n')
         distribution = Distribution(context, shape, dist=dist)
