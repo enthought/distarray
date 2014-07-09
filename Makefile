@@ -49,11 +49,11 @@ install:
 # ----------------------------------------------------------------------------
 
 test_client:
-	${PYTHON} -m unittest discover
+	${PYTHON} -m unittest discover -c
 .PHONY: test_client
 
 test_client_with_coverage:
-	${COVERAGE} run -pm unittest discover -v
+	${COVERAGE} run -pm unittest discover -cv
 .PHONY: test_client_with_coverage
 
 ${PARALLEL_OUT_DIR} :
