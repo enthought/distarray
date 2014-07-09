@@ -10,7 +10,8 @@ from numpy import arange
 from numpy.testing import assert_array_equal
 
 from distarray import utils
-from distarray.dist.ipython_utils import IPythonClient
+from distarray.testing import ClientTestCase
+
 
 class TestMultPartitions(unittest.TestCase):
     """
@@ -77,12 +78,11 @@ class TestHasExactlyOne(unittest.TestCase):
         self.assertFalse(utils.has_exactly_one(iterable))
 
 
-class TestCountRoundTrips(unittest.TestCase):
+class TestCountRoundTrips(ClientTestCase):
     def test_count_round_trips(self):
-        client = IPythonClient()
-        view = client[:]
+        view = self.client[:]
 
-        with utils.count_round_trips(client) as r:
+        with utils.count_round_trips(self.client) as r:
             view.execute('42')
 
         self.assertEqual(r.count, len(view))
