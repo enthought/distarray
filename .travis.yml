@@ -1,6 +1,6 @@
 language: python
 env:
-    - NENGINES=4
+    - NENGINES=1
     - NENGINES=9
 python:
     - 2.7
