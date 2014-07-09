@@ -156,7 +156,28 @@ class MpiTestCase(unittest.TestCase):
             cls.comm.Free()
 
 
-class ContextTestCase(unittest.TestCase):
+class ClientTestCase(unittest.TestCase):
+
+    """Base test class for test cases that use an IPython.parallel Client."""
+
+    @classmethod
+    def setUpClass(cls):
+        # skip if there isn't a cluster available
+        try:
+            cls.client = IPythonClient()
+        except FileNotFoundError:
+            msg = "You must have an ipcluster running for this test class."
+            raise unittest.SkipTest(msg)
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.client.close()
+        except RuntimeError:
+            pass
+
+
+class ContextTestCase(ClientTestCase):
 
     """Base test class for test cases that use a Context.
 
@@ -177,12 +198,7 @@ class ContextTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # skip if there isn't a cluster available
-        try:
-            cls.client = IPythonClient()
-        except FileNotFoundError:
-            msg = "You must have an ipcluster running for this test class."
-            raise unittest.SkipTest(msg)
+        super(ContextTestCase, cls).setUpClass()
 
         # skip if there aren't enough engines
         if cls.ntargets == 'any':
@@ -202,9 +218,9 @@ class ContextTestCase(unittest.TestCase):
     def tearDownClass(cls):
         try:
             cls.context.close()
-            cls.client.close()
         except RuntimeError:
             pass
+        super(ContextTestCase, cls).tearDownClass()
 
 
 def check_targets(required, available):
