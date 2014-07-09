@@ -270,15 +270,13 @@ class TestLocalDecorator(ContextTestCase):
         self.assertEqual(self.parameterless.__doc__, docstring)
 
 
-class TestVectorizeDecorator(TestCase):
+class TestVectorizeDecorator(ContextTestCase):
 
     def test_vectorize(self):
         """Test the @vectorize decorator for parity with NumPy's"""
 
-        context = Context()
-
         a = numpy.arange(16).reshape(4, 4)
-        da = context.fromndarray(a)
+        da = self.context.fromndarray(a)
 
         @vectorize
         def da_fn(a, b, c):
