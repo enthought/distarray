@@ -29,14 +29,12 @@ from __future__ import print_function
 
 import argparse
 import os.path
-import sys
-from math import sqrt
 from time import time
 
 import numpy
 import numpy.random
 import h5py
-from numpy import exp, linspace, float32
+from numpy import linspace, float32
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
@@ -48,8 +46,7 @@ PHYSICAL_Y = 10.0
 PHYSICAL_Z = 20.0
 
 # Default array size of volume.
-#DEFAULT_ARRAY_SIZE = (256, 256, 1024)
-DEFAULT_ARRAY_SIZE = (32, 48, 256)
+DEFAULT_ARRAY_SIZE = (256, 256, 1024)
 
 # Array distribution for volume.
 ARRAY_DISTRIBUTION = ('b', 'b', 'n')
