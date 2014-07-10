@@ -206,7 +206,12 @@ class ContextTestCase(ClientTestCase):
             cls.context = Context()
             cls.ntargets = len(cls.context.targets)
         else:
-            cls.context = Context(targets=list(range(cls.ntargets)))
+            try:
+                cls.context = Context(targets=list(range(cls.ntargets)))
+            except ValueError:
+                msg = ("Not enough targets available for this test. (%s) "
+                       "required" % (cls.ntargets))
+                raise unittest.SkipTest(msg)
 
     @classmethod
     def tearDownClass(cls):
