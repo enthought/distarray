@@ -10,6 +10,7 @@ from mpi4py import MPI as mpi
 import distarray
 from distarray.utils import uid
 
+
 client_rank = 0
 
 
