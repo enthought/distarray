@@ -103,6 +103,15 @@ class TestLocalDecorator(ContextTestCase):
         return numpy.sin(da)
 
     @local
+    def local_sum(da):
+        return numpy.sum(da)
+
+    @local
+    def call_barrier(da):
+        da.comm.Barrier()
+        return da
+
+    @local
     def local_add_nums(da, num1, num2, num3):
         return da + num1 + num2 + num3
 
@@ -190,6 +199,17 @@ class TestLocalDecorator(ContextTestCase):
         dc = self.local_add50(self.da)
         self.assert_allclose(dc, 2 * numpy.pi + 50)
 
+    def test_local_sum(self):
+        dd = self.local_sum(self.da)
+        if self.ntargets == 1:
+            dd = [dd]
+        lshapes = self.da.localshapes()
+        expected = []
+        for lshape in lshapes:
+            expected.append(lshape[0] * lshape[1] * (2 * numpy.pi))
+        for (v, e) in zip(dd, expected):
+            self.assertAlmostEqual(v, e, places=5)
+
     def test_local_add_num(self):
         de = self.local_add_num(self.da, 11)
         self.assert_allclose(de, 2 * numpy.pi + 11)
@@ -230,6 +250,13 @@ class TestLocalDecorator(ContextTestCase):
         do = self.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
         self.assert_allclose(do, expected)
+
+    def test_local_none(self):
+        dp = self.local_none(self.da)
+        self.assertTrue(dp is None)
+
+    def test_barrier(self):
+        self.call_barrier(self.da)
 
     def test_parameterless(self):
         self.assertRaises(TypeError, self.parameterless)
