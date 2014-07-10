@@ -240,7 +240,6 @@ class BaseContext(object):
 
         self.apply(func, (da.key, name), targets=da.targets)
 
-
     def load_dnpy(self, name):
         """
         Load a distributed array from ``.dnpy`` files.
@@ -740,9 +739,6 @@ class MPIContext(BaseContext):
         self._send_msg(msg)
 
     def close(self):
-        pass
-
-    def delete_key(*args, **kwargs):
         pass
 
     # End of key management routines.
