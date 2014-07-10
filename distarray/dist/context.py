@@ -609,15 +609,6 @@ class IPythonContext(BaseContext):
     def _pull(self, k, targets):
         return self.view.pull(k, targets=targets, block=True)
 
-    def _execute0(self, lines):
-        return self.view.execute(lines, targets=self.targets[0], block=True)
-
-    def _push0(self, d):
-        return self.view.push(d, targets=self.targets[0], block=True)
-
-    def _pull0(self, k):
-        return self.view.pull(k, targets=self.targets[0], block=True)
-
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
         Analogous to IPython.parallel.view.apply_sync
@@ -786,15 +777,6 @@ class MPIContext(BaseContext):
         msg = ('pull', k)
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
-
-    def _execute0(self, lines):
-        return self._execute(lines, targets=[self.targets[0]])
-
-    def _push0(self, d):
-        return self._push(d, targets=[self.targets[0]])
-
-    def _pull0(self, k):
-        return self._pull(k, targets=[self.targets[0]])[0]
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
