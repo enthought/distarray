@@ -1,4 +1,7 @@
 language: python
+env:
+    - NENGINES=1
+    - NENGINES=9
 python:
     - 2.7
     - 3.3
@@ -26,7 +29,7 @@ install:
 before_script:
     - "export DISPLAY=:99.0"  # for plotting.py
     - "sh -e /etc/init.d/xvfb start"  # for plotting.py
-    - (cd $TRAVIS_BUILD_DIR && dacluster start)
+    - (cd $TRAVIS_BUILD_DIR && dacluster start -n$NENGINES)
     - lsof | grep python | wc -l
 script:
     - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
