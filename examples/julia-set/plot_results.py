@@ -16,21 +16,20 @@ import random
 from matplotlib import pyplot
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        usage = 'Usage: python plot_results.py <results filename>'
-        print(usage)
-        exit(1)
-    filename = sys.argv[1]
-    print('filename:', filename)
-    # Read the file.
+# Dictionary keys.
+ENGINES = 'engines'
+TIMES = 'times'
+LEGEND = 'legend'
+
+
+def read_results(filename):
+    ''' Read the Julia Set timing results from the file. '''
     with open(filename, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
         # Swallow header lines.
         a = csvreader.next()
         notes = csvreader.next()
         note_text = ','.join(notes)
-        print('note_txt:', note_text)
         # And the field names.
         c = csvreader.next()
         # Read the results.
@@ -44,45 +43,108 @@ if __name__ == '__main__':
             t_ratio = float(row[5])
             iters = float(row[6])
             c = row[7]    # As a string.
-            # Add some jitter to the engine count for less crowded plots.
-            r = random.uniform(-0.125, +0.125)
-            num_engines += r
             # Key for each curve.
             key = (dist, resolution)
             if key not in results:
                 results[key] = {
-                    'engines': [],
-                    'times': [],
-                    'legend': "%s %d" % (dist, resolution),
+                    ENGINES: [],
+                    TIMES: [],
+                    LEGEND: "%s %d" % (dist, resolution),
                 }
             # Collect values to plot.
-            results[key]['engines'].append(num_engines)
-            results[key]['times'].append(t_distarray)
+            results[key][ENGINES].append(num_engines)
+            results[key][TIMES].append(t_distarray)
+    return results, note_text
+
+
+def jitter_engines(results, amount):
+    ''' Apply some random jitter to the integer engine count,
+    to make less crowded looking plot. '''
+    for key in results:
+        engines = results[key][ENGINES]
+        engines = [engine + random.uniform(-amount, +amount) for engine in engines]
+        results[key][ENGINES] = engines
+
+
+def trim_results(results):
+    ''' Select only the smallest time, consistent with timeit. '''
+    for key in results:
+        engines = results[key][ENGINES]
+        times = results[key][TIMES]
+        trim = {}
+        for engine, time in zip(engines, times):
+            if engine not in trim:
+                trim[engine] = []
+            trim[engine].append(time)
+        for engine in trim:
+            times = trim[engine]
+            min_time = min(times)
+            trim[engine] = min_time
+        trimmed_engines = []
+        trimmed_times = []
+        for engine in trim:
+            trimmed_engines.append(engine)
+            trimmed_times.append(trim[engine])
+        # Sort by engine count for better line plot,
+        # and sort times to match.
+        sorted_engines, sorted_times = zip(*sorted(zip(trimmed_engines,
+                                                       trimmed_times)))
+        results[key][ENGINES] = sorted_engines
+        results[key][TIMES] = sorted_times
+
+
+def get_results_range(results):
+    ''' Get the range of the data (for plot limits). '''
+    all_engines = []
+    all_times = []
+    for key in results:
+        engines = results[key][ENGINES]
+        times = results[key][TIMES]
+        all_engines.extend(engines)
+        all_times.extend(times)
+    max_engine = max(all_engines)
+    max_time = max(all_times)
+    return max_engine, max_time
+
+
+def plot_results(filename, results, subtitle, x_min, x_max, y_min, y_max):
+    ''' Plot the timing results. '''
     # Sort keys for consistent coloring.
     keys = results.keys()
     keys.sort()
-    # Get range of data for plot limits.
-    eng_list = []
-    tdist_list = []
     for key in keys:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        eng_list.extend(engines)
-        tdist_list.extend(times)
-    max_engines = max(eng_list)
-    max_time = max(tdist_list)
-    # Plot
-    for key in keys:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        pyplot.plot(engines, times, 'o')
-    pyplot.xlim((0, max_engines + 1))
-    pyplot.ylim((0.0, 1.1 * max_time))
-    pyplot.title('Julia Set Performance\n' + note_text)
+        engines = results[key][ENGINES]
+        times = results[key][TIMES]
+        pyplot.plot(engines, times, 'o-')
+    pyplot.xlim((x_min, x_max))
+    pyplot.ylim((y_min, y_max))
+    pyplot.title('Julia Set Performance\n' + subtitle)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('DistArray time')
-    legend = [results[key]['legend'] for key in keys]
+    legend = [results[key][LEGEND] for key in keys]
     pyplot.legend(legend, loc='lower left')
-    filename = 'julia_timing_plot.png'
     pyplot.savefig(filename, dpi=100)
     pyplot.show()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        usage = 'Usage: python plot_results.py <results filename>'
+        print(usage)
+        exit(1)
+    filename = sys.argv[1]
+    # Read and parse timing results.
+    results, note_text = read_results(filename)
+    # Either pick just the minimum time, or add jitter to the engine count.
+    if True:
+        trim_results(results)
+    else:
+        jitter_engines(results, 0.125)
+    # Get range of data for plot limits.
+    max_engines, max_time = get_results_range(results)
+    # Plot
+    filename = 'julia_timing_plot.png'
+    subtitle = note_text
+    x_min, x_max = 0, max_engines + 1
+    y_min, y_max = 0.0, 1.1 * max_time
+    plot_results(filename, results, subtitle, x_min, x_max, y_min, y_max)
