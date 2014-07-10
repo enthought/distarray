@@ -10,9 +10,15 @@ from mpi4py import MPI as mpi
 import distarray
 from distarray.utils import uid
 
-world = mpi.COMM_WORLD
-world_rank = world.rank
 client_rank = 0
+
+
+def get_comm_world():
+    return mpi.COMM_WORLD
+
+
+def get_world_rank():
+    return get_comm_world().rank
 
 
 def push_function(context, key, func, targets=None):
@@ -39,15 +45,11 @@ def push_function(context, key, func, targets=None):
                   targets=context.targets)
 
 
-def get_rank():
-    return world.rank
-
-
 def get_nengines():
     """Get the number of engines which must be COMM_WORLD.size - 1 (for the
     client)
     """
-    return world.size - 1
+    return get_comm_world().size - 1
 
 
 def _set_on_main(name, obj):
@@ -59,6 +61,8 @@ def _set_on_main(name, obj):
 
 
 def make_intercomm(targets=None):
+    world = get_comm_world()
+    world_rank = world.rank
     # create a comm that is split into client and engines.
     targets = targets or list(range(world.size - 1))
 
@@ -80,7 +84,8 @@ def make_base_comm():
     Creates an intracomm consisting of all the engines. Then sets:
         `__main__._base_comm = comm_name`
     """
-    if world_rank == 0:
+    world = get_comm_world()
+    if world.rank == 0:
         comm_name = uid()
     else:
         comm_name = ''
@@ -93,7 +98,9 @@ def make_base_comm():
 
 
 def make_targets_comm(targets):
-    """ This is incorrect we need a mapping from the targets to world"""
+    world = get_comm_world()
+    world_rank = world.rank
+
     if len(targets) > world.size:
         raise ValueError("The number of engines (%s) is less than the number"
                          " of targets you want (%s)." % (world.size - 1,
@@ -123,6 +130,8 @@ def make_targets_comm(targets):
 
 def setup_engine_comm(targets=None):
     # create a comm that is split into client and engines.
+    world = get_comm_world()
+    world_rank = world.rank
     targets = range(world.size - 1) if targets is None else targets
     name = uid()
     if world_rank == client_rank:
@@ -136,6 +145,8 @@ def setup_engine_comm(targets=None):
 
 def initial_comm_setup(targets=None):
     """Setup client and engine intracomm, and intercomm."""
+    world = get_comm_world()
+    world_rank = world.rank
     # choose a name for _base_comm
     if world_rank == 0:
         comm_name = uid()
@@ -165,7 +176,7 @@ def initial_comm_setup(targets=None):
 
 
 def is_solo_mpi_process():
-    if world.size == 1:
+    if get_comm_world().size == 1:
         return True
     else:
         return False

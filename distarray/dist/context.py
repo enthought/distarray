@@ -27,9 +27,9 @@ from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME
 
 # mpi contetx
-from distarray.dist.mpionly_utils import (make_targets_comm, get_nengines,
-                                          get_rank, initial_comm_setup,
-                                          is_solo_mpi_process, push_function)
+from distarray.mpionly_utils import (make_targets_comm, get_nengines,
+                                     get_world_rank, initial_comm_setup,
+                                     is_solo_mpi_process, push_function)
 
 
 class BaseContext(object):
@@ -697,7 +697,7 @@ class MPIContext(BaseContext):
 
         if not self._COMM_INITIALIZED:
             initial_comm_setup()
-            assert get_rank() == 0
+            assert get_world_rank() == 0
             self.__class__._COMM_INITIALIZED = True
 
         self.nengines = get_nengines()

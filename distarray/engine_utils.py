@@ -5,16 +5,14 @@ from functools import reduce
 from importlib import import_module
 import types
 
-from mpi4py import MPI as mpi
-
-
 import distarray
 from distarray.utils import DISTARRAY_BASE_NAME as prefix
 
-from distarray.dist.mpionly_utils import initial_comm_setup, make_targets_comm
+from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
+                                     get_comm_world)
 
 
-world = mpi.COMM_WORLD
+world = get_comm_world()
 world_ranks = list(range(world.size))
 
 # make engine and client comm
@@ -130,7 +128,7 @@ def builtin_call(msg):
 def engine_loop():
     # make engines intracomm (Context._base_comm):
     initial_comm_setup()
-    assert mpi.COMM_WORLD.rank != 0
+    assert world.rank != 0
     while True:
         msg = distarray.INTERCOMM.recv(source=0)
         val = parse_msg(msg)

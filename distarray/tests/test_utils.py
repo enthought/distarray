@@ -12,7 +12,7 @@ from numpy.testing import assert_array_equal
 from distarray import utils
 from distarray.testing import ClientTestCase
 from distarray.dist.ipython_utils import IPythonClient
-from distarray.dist.mpionly_utils import is_solo_mpi_process
+from distarray.mpionly_utils import is_solo_mpi_process
 
 
 class TestMultPartitions(unittest.TestCase):

@@ -20,8 +20,7 @@ import numpy
 from distarray.testing import ClientTestCase, ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
-from distarray.dist.mpionly_utils import is_solo_mpi_process, get_nengines
-# from distarray.dist.ipython_utils import IPythonClient
+from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
 from distarray.local import LocalArray
 
 

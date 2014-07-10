@@ -16,7 +16,6 @@ from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 from distarray.error import DistributionError
 from distarray.utils import has_exactly_one
-from distarray.dist.mpionly_utils import push_function
 
 
 class DecoratorBase(object):
