@@ -94,7 +94,10 @@ def make_base_comm():
 
 def make_targets_comm(targets):
     """ This is incorrect we need a mapping from the targets to world"""
-
+    if len(targets) > world.size:
+        raise ValueError("The number of engines (%s) is less than the number"
+                         " of targets you want (%s)." % (world.size - 1,
+                                                         len(targets)))
     targets = targets or list(range(world.size - 1))
     # get a universal name for the out comm
     if world_rank == 0:

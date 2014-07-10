@@ -760,6 +760,11 @@ class MPIContext(BaseContext):
         return res
 
     def _make_subcomm(self, targets):
+        if len(targets) > self.nengines:
+            msg = ("The number of engines (%s) is less than the number of "
+                   "targets you want (%s)." % (self.nengines, len(targets)))
+            raise ValueError(msg)
+
         msg = ('make_targets_comm', targets)
         self._send_msg(msg, targets=self.all_targets)
         comm_name = make_targets_comm(targets)
