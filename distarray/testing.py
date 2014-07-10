@@ -165,7 +165,8 @@ class ClientTestCase(unittest.TestCase):
         # skip if there isn't a cluster available
         try:
             cls.client = IPythonClient()
-        except FileNotFoundError:
+        except EnvironmentError:
+            # IOError on Python2, FileNotFoundError on Python3
             msg = "You must have an ipcluster running for this test class."
             raise unittest.SkipTest(msg)
 
