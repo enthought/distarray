@@ -12,7 +12,6 @@ it throughout this module.
 """
 
 import unittest
-from unittest import TestCase
 
 import numpy
 from numpy.testing import assert_array_equal
