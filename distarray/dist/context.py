@@ -689,15 +689,16 @@ class IPythonContext(BaseContext):
 
 
 class MPIContext(BaseContext):
-
-    _COMM_INITIALIZED = False
+    _BASE_COMM = None
+    _INTERCOMM = None
 
     def __init__(self, targets=None):
 
-        if not self._COMM_INITIALIZED:
-            initial_comm_setup()
+        if self.__class__._BASE_COMM is None:
+            base_comm, intercomm = initial_comm_setup()
+            self.__class__._BASE_COMM = base_comm
+            self.__class__._INTERCOMM = intercomm
             assert get_world_rank() == 0
-            self.__class__._COMM_INITIALIZED = True
 
         self.nengines = get_nengines()
 
@@ -708,8 +709,8 @@ class MPIContext(BaseContext):
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
-        self.intercomm = distarray.INTERCOMM
-        self._base_comm = distarray._BASE_COMM
+        self.intercomm = self.__class__._INTERCOMM
+        self._base_comm = self.__class__._BASE_COMM
         self.comm = self._make_subcomm(self.targets)
 
         if Context._CLEANUP is None:

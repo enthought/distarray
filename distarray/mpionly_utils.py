@@ -148,6 +148,7 @@ def initial_comm_setup(targets=None):
     """Setup client and engine intracomm, and intercomm."""
     world = get_comm_world()
     world_rank = world.rank
+
     # choose a name for _base_comm
     if world_rank == 0:
         comm_name = uid()
@@ -163,8 +164,6 @@ def initial_comm_setup(targets=None):
 
     # attach the comm to __main__, name it comm_name
     _set_on_main(comm_name, split_world)
-    # make the comm_name available at distarray._BASE_COMM
-    setattr(distarray, '_BASE_COMM', comm_name)
 
     # create the intercomm
     if world_rank == client_rank:
@@ -172,8 +171,7 @@ def initial_comm_setup(targets=None):
     else:
         intercomm = split_world.Create_intercomm(0, world, 0)
 
-    # make interomm available at distarray.INTERCOMM
-    setattr(distarray, 'INTERCOMM', intercomm)
+    return comm_name, intercomm
 
 
 def is_solo_mpi_process():
