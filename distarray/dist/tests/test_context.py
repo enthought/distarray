@@ -20,6 +20,7 @@ import numpy
 from distarray.testing import ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
+from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
@@ -42,7 +43,9 @@ class TestContext(ContextTestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(unittest.TestCase):
+@unittest.skipIf(not is_solo_mpi_process(),  # not in ipython mode
+                 "Cannot test IPythonContext in MPI mode")
+class TestIPythonContextCreation(unittest.TestCase):
     """Test Context Creation"""
 
     @classmethod
@@ -89,6 +92,37 @@ class TestContextCreation(unittest.TestCase):
     def test_create_delete_key(self):
         """ Check that a key can be created and then destroyed. """
         dac = Context(self.client)
+        # Create and push a key/value.
+        key, value = dac._generate_key(), 'test'
+        dac._push({key: value}, targets=dac.targets)
+        # Delete the key.
+        dac.delete_key(key)
+        dac.close()
+
+
+@unittest.skipIf(is_solo_mpi_process(),  # not in MPI mode
+                 "Cannot test MPIContext in IPython mode")
+class TestMPIContextCreation(unittest.TestCase):
+    """Test Context Creation"""
+
+    def test_create_context(self):
+        Context()
+
+    def test_create_Context_with_targets(self):
+        """Can we create a context with a subset of engines?"""
+        check_targets(required=2, available=get_nengines())
+        Context(targets=[0, 1])
+
+    def test_create_Context_with_targets_ranks(self):
+        """Check that the target <=> rank mapping is consistent."""
+        check_targets(required=4, available=get_nengines())
+        targets = [3, 2]
+        dac = Context(targets=targets)
+        self.assertEqual(set(dac.targets), set(targets))
+
+    def test_create_delete_key(self):
+        """ Check that a key can be created and then destroyed. """
+        dac = Context()
         # Create and push a key/value.
         key, value = dac._generate_key(), 'test'
         dac._push({key: value}, targets=dac.targets)

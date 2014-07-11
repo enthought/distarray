@@ -104,7 +104,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def local_sum(da):
-        return numpy.sum(da.ndarray)
+        return numpy.sum(da)
 
     @local
     def call_barrier(da):

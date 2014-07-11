@@ -73,10 +73,18 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 	@${MPI_EXEC_CMD}
 .PHONY: test_engines_with_coverage
 
-test: test_client test_engines
+test_mpi:
+	mpiexec -np 1 python -m unittest discover -c : -np 4 distarray/apps/engine.py
+.PHONY: test_mpi
+
+test_mpi_with_coverage:
+	mpiexec -np 1 ${COVERAGE} run -m unittest discover -c : -np 4 ${COVERAGE} run distarray/apps/engine.py
+.PHONY: test_mpi_with_coverage
+
+test: test_client test_engines test_mpi
 .PHONY: test
 
-test_with_coverage: test_client_with_coverage test_engines_with_coverage
+test_with_coverage: test_client_with_coverage test_engines_with_coverage test_mpi_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
