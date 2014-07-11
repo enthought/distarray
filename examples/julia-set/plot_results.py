@@ -27,11 +27,16 @@ def read_results(filename):
     with open(filename, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
         # Swallow header lines.
-        a = csvreader.next()
+        # Discard 'importing numpy on engines'
+        csvreader.next()
+        # Title
+        title_fields = csvreader.next()
+        title = title_fields[0]
+        # Subtitle/notes
         notes = csvreader.next()
         note_text = ','.join(notes)
-        # And the field names.
-        c = csvreader.next()
+        # Field names.
+        csvreader.next()
         # Read the results.
         results = {}
         for row in csvreader:
@@ -54,7 +59,7 @@ def read_results(filename):
             # Collect values to plot.
             results[key][ENGINES].append(num_engines)
             results[key][TIMES].append(t_distarray)
-    return results, note_text
+    return results, title, note_text
 
 
 def jitter_engines(results, amount):
@@ -107,7 +112,7 @@ def get_results_range(results):
     return max_engine, max_time
 
 
-def plot_results(filename, results, subtitle, x_min, x_max, y_min, y_max):
+def plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max):
     ''' Plot the timing results. '''
     # Sort keys for consistent coloring.
     keys = results.keys()
@@ -118,7 +123,8 @@ def plot_results(filename, results, subtitle, x_min, x_max, y_min, y_max):
         pyplot.plot(engines, times, 'o-')
     pyplot.xlim((x_min, x_max))
     pyplot.ylim((y_min, y_max))
-    pyplot.title('Julia Set Performance\n' + subtitle)
+    full_title = title + '\n' + subtitle
+    pyplot.title(full_title)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('DistArray time')
     legend = [results[key][LEGEND] for key in keys]
@@ -134,7 +140,7 @@ if __name__ == '__main__':
         exit(1)
     filename = sys.argv[1]
     # Read and parse timing results.
-    results, note_text = read_results(filename)
+    results, title, note_text = read_results(filename)
     # Either pick just the minimum time, or add jitter to the engine count.
     if True:
         trim_results(results)
@@ -147,4 +153,4 @@ if __name__ == '__main__':
     subtitle = note_text
     x_min, x_max = 0, max_engines + 1
     y_min, y_max = 0.0, 1.1 * max_time
-    plot_results(filename, results, subtitle, x_min, x_max, y_min, y_max)
+    plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
