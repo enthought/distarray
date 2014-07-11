@@ -52,7 +52,7 @@ class TestKeyAndPushArgs(ContextTestCase):
 
         distribution = Distribution(self.context, (2, 2))
         da = self.context.ones(distribution)
-        db = da*2
+        db = da * 2
 
         def dummy_func(*args, **kwargs):
             fn = lambda x: x
