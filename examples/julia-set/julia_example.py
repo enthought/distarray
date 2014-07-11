@@ -180,14 +180,14 @@ def do_julia_run(context, dist, mode_julia, dimensions, c, re_ax, im_ax, z_max, 
                                        n_max=n_max)
     t1 = time()
     t_distarray = t1 - t0
-    # Now try with numpy.
+    # Now try with numpy so we can compare times.
     complex_plane_nd = complex_plane.tondarray()
     t0 = time()
-    num_iters_nd = numpy_julia_calc(complex_plane_nd,
-                                    mode_julia,
-                                    c,
-                                    z_max=z_max,
-                                    n_max=n_max)
+    numpy_julia_calc(complex_plane_nd,
+                     mode_julia,
+                     c,
+                     z_max=z_max,
+                     n_max=n_max)
     t1 = time()
     t_numpy = t1 - t0
     # Average iteration count.
@@ -266,8 +266,8 @@ if __name__ == '__main__':
     # Fixed parameters:
 
     # Select Julia set (True) or Mandelbrot set (False) calculation.
-    mode_julia = True
-    #mode_julia = False
+    #mode_julia = True
+    mode_julia = False
 
     # Region of the complex plane.
     if mode_julia:
@@ -302,6 +302,9 @@ if __name__ == '__main__':
     #cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
+    if not mode_julia:
+        # c does not make sense for Mandelbrot set.
+        c_list = [complex(0)]
 
     # Number of engines to use.
     #engine_count_list = [4]

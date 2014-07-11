@@ -67,7 +67,8 @@ def jitter_engines(results, amount):
     to make less crowded looking plot. '''
     for key in results:
         engines = results[key][ENGINES]
-        engines = [engine + random.uniform(-amount, +amount) for engine in engines]
+        engines = [engine + random.uniform(-amount, +amount)
+                   for engine in engines]
         results[key][ENGINES] = engines
 
 
