@@ -12,125 +12,121 @@ from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
                                      get_comm_world)
 
 
-world = get_comm_world()
-world_ranks = list(range(world.size))
+class Engine(object):
+    _BASE_COMM = None
+    _INTERCOMM = None
 
-# make engine and client comm
-client_rank = 0
-engine_ranks = [i for i in world_ranks if i != client_rank]
+    def __init__(self):
+        self.world = get_comm_world()
+        self.world_ranks = list(range(self.world.size))
 
+        # make engine and client comm
+        self.client_rank = 0
+        self.engine_ranks = [i for i in self.world_ranks if i !=
+                             self.client_rank]
 
-def arg_kwarg_proxy_converter(args, kwargs):
-    module = import_module('__main__')
-    # convert args
-    args = list(args)
-    for i, a in enumerate(args):
-        if (isinstance(a, str) and a.startswith(prefix)):
-            args[i] = reduce(getattr, [module] + a.split('.'))
-    args = tuple(args)
+        # make engines intracomm (Context._base_comm):
+        base_comm, intercomm = initial_comm_setup()
+        self.__class__._BASE_COMM = base_comm
+        self.__class__._INTERCOMM = intercomm
+        assert self.world.rank != 0
+        while True:
+            msg = self._INTERCOMM.recv(source=0)
+            val = self.parse_msg(msg)
+            if val == 'kill':
+                break
 
-    # convert kwargs
-    for k in kwargs.keys():
-        val = kwargs[k]
-        if (isinstance(val, str) and val.startswith(prefix)):
-            kwargs[k] = module.reduce(getattr, [module] + val.split('.'))
+    def arg_kwarg_proxy_converter(self, args, kwargs):
+        module = import_module('__main__')
+        # convert args
+        args = list(args)
+        for i, a in enumerate(args):
+            if (isinstance(a, str) and a.startswith(prefix)):
+                args[i] = reduce(getattr, [module] + a.split('.'))
+        args = tuple(args)
 
-    return args, kwargs
+        # convert kwargs
+        for k in kwargs.keys():
+            val = kwargs[k]
+            if (isinstance(val, str) and val.startswith(prefix)):
+                kwargs[k] = module.reduce(getattr, [module] + val.split('.'))
 
+        return args, kwargs
 
-def is_engine():
-    if world.rank != client_rank:
-        return True
-    else:
-        return False
+    def is_engine(self):
+        if self.world.rank != self.client_rank:
+            return True
+        else:
+            return False
 
+    def parse_msg(self, msg):
+        to_do = msg[0]
+        what = {'func_call': self.func_call,
+                'execute': self.execute,
+                'push': self.push,
+                'pull': self.pull,
+                'kill': self.kill,
+                'make_targets_comm': self.engine_make_targets_comm,
+                'builtin_call': self.builtin_call}
+        func = what[to_do]
+        ret = func(msg)
+        return ret
 
-def parse_msg(msg):
-    to_do = msg[0]
-    what = {'func_call': func_call,
-            'execute': execute,
-            'push': push,
-            'pull': pull,
-            'kill': kill,
-            'make_targets_comm': engine_make_targets_comm,
-            'builtin_call': builtin_call}
-    func = what[to_do]
-    ret = func(msg)
-    return ret
+    def func_call(self, msg):
 
+        func_data = msg[1]
+        args = msg[2]
+        kwargs = msg[3]
+        nonce, context_key = msg[4]
 
-def func_call(msg):
+        module = import_module('__main__')
+        module.proxyize.set_state(nonce)
 
-    func_data = msg[1]
-    args = msg[2]
-    kwargs = msg[3]
-    nonce, context_key = msg[4]
+        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
 
-    module = import_module('__main__')
-    module.proxyize.set_state(nonce)
+        new_func_globals = module.__dict__  # add proper proxyize, context_key
+        new_func_globals.update({'proxyize': module.proxyize,
+                                'context_key': context_key})
 
-    args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
+        new_func = types.FunctionType(func_data[0], new_func_globals,
+                                      func_data[1], func_data[2], func_data[3])
 
-    new_func_globals = module.__dict__  # add proper proxyize, context_key
-    new_func_globals.update({'proxyize': module.proxyize,
-                             'context_key': context_key})
+        res = new_func(*args, **kwargs)
+        self._INTERCOMM.send(res, dest=self.client_rank)
 
-    new_func = types.FunctionType(func_data[0], new_func_globals, func_data[1],
-                                  func_data[2], func_data[3])
+    def execute(self, msg):
+        main = import_module('__main__')
+        code = msg[1]
+        exec(code, main.__dict__)
 
-    res = new_func(*args, **kwargs)
-    distarray.INTERCOMM.send(res, dest=client_rank)
+    def push(self, msg):
+        d = msg[1]
+        module = import_module('__main__')
+        for k, v in d.items():
+            pieces = k.split('.')
+            place = reduce(getattr, [module] + pieces[:-1])
+            setattr(place, pieces[-1], v)
 
+    def pull(self, msg):
+        name = msg[1]
+        module = import_module('__main__')
+        res = reduce(getattr, [module] + name.split('.'))
+        self._INTERCOMM.send(res, dest=self.client_rank)
 
-def execute(msg):
-    main = import_module('__main__')
-    code = msg[1]
-    exec(code, main.__dict__)
+    def kill(self, msg):
+        """Break out of the engine loop."""
+        return 'kill'
 
+    def engine_make_targets_comm(self, msg):
+        targets = msg[1]
+        make_targets_comm(targets)
 
-def push(msg):
-    d = msg[1]
-    module = import_module('__main__')
-    for k, v in d.items():
-        pieces = k.split('.')
-        place = reduce(getattr, [module] + pieces[:-1])
-        setattr(place, pieces[-1], v)
+    def builtin_call(self, msg):
+        func = msg[1]
+        args = msg[2]
+        kwargs = msg[3]
 
+        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
 
-def pull(msg):
-    name = msg[1]
-    module = import_module('__main__')
-    res = reduce(getattr, [module] + name.split('.'))
-    distarray.INTERCOMM.send(res, dest=client_rank)
-
-
-def kill(msg):
-    """Break out of the engine loop."""
-    return 'kill'
-
-
-def engine_make_targets_comm(msg):
-    targets = msg[1]
-    make_targets_comm(targets)
-
-
-def builtin_call(msg):
-    func = msg[1]
-    args = msg[2]
-    kwargs = msg[3]
-
-    args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
-
-    res = func(*args, **kwargs)
-    distarray.INTERCOMM.send(res, dest=client_rank)
-
-
-def engine_loop():
-    # make engines intracomm (Context._base_comm):
-    initial_comm_setup()
-    assert world.rank != 0
-    while True:
-        msg = distarray.INTERCOMM.recv(source=0)
-        val = parse_msg(msg)
-        if val == 'kill':
-            break
+        res = func(*args, **kwargs)
+        self._INTERCOMM.send(res, dest=self.client_rank)
