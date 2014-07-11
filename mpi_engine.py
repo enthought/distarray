@@ -5,7 +5,6 @@ from functools import reduce
 from importlib import import_module
 import types
 
-import distarray
 from distarray.utils import DISTARRAY_BASE_NAME as prefix
 
 from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
