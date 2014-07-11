@@ -8,9 +8,6 @@ python:
     - 3.4
 before_install:
     - sudo apt-get update
-    - sudo apt-get install libopenmpi-dev
-    - sudo apt-get install openmpi-bin
-    - sudo apt-get install libhdf5-openmpi-dev
     - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
           # This saves us some downloading for this version
           wget http://repo.continuum.io/miniconda/Miniconda-3.4.2-Linux-x86_64.sh -O miniconda.sh;
@@ -24,7 +21,7 @@ before_install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pyzmq ipython matplotlib cython h5py sphinx sphinxcontrib-napoleon coverage coveralls
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pyzmq ipython matplotlib cython h5py sphinx sphinxcontrib-napoleon coverage coveralls openmpi
     - source activate test-environment
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
 install:
