@@ -167,7 +167,7 @@ class ClientTestCase(unittest.TestCase):
             cls.client = IPythonClient()
         except EnvironmentError:
             # IOError on Python2, FileNotFoundError on Python3
-            msg = "You must have an ipcluster running for this test class."
+            msg = "You must have an ipcluster running to run this test case."
             raise unittest.SkipTest(msg)
 
     @classmethod
