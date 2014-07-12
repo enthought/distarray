@@ -8,21 +8,22 @@ python:
     - 3.4
 before_install:
     - sudo apt-get update
-    - sudo apt-get install libopenmpi-dev
-    - sudo apt-get install openmpi-bin
-    - sudo apt-get install libhdf5-openmpi-dev
-    - pip install numpy
-    - pip install pyzmq --install-option="--zmq=bundled"
-    - pip install ipython
-    - pip install matplotlib  # for plotting.py
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+          # This saves us some downloading for this version
+          wget http://repo.continuum.io/miniconda/Miniconda-3.4.2-Linux-x86_64.sh -O miniconda.sh;
+      else
+          wget http://repo.continuum.io/miniconda/Miniconda3-3.4.2-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    # Useful for debugging any issues with conda
+    - conda info -a
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pyzmq ipython matplotlib cython h5py sphinx sphinxcontrib-napoleon coverage coveralls openmpi
+    - source activate test-environment
     - pip install mpi4py --allow-all-external --allow-unverified mpi4py
-    - pip install cython
-    - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
-    - pip install sphinx
-    - pip install sphinxcontrib-napoleon
-    - pip install coverage
-    - pip install coveralls
-    - pip freeze
 install:
     - python setup.py install
     - (cd $TRAVIS_BUILD_DIR && cd docs && make html)
