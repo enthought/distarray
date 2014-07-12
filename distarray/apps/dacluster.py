@@ -21,7 +21,9 @@ from distarray.externals import six
 from distarray.dist.cleanup import clear_all
 
 
-if six.PY2:
+is_anaconda = "Anaconda" in sys.version or "Continuum" in sys.version
+
+if six.PY2 or is_anaconda:
     ipcluster_cmd = 'ipcluster'
 elif six.PY3:
     ipcluster_cmd = 'ipcluster3'
