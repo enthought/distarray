@@ -12,10 +12,8 @@ from matplotlib import pyplot, colors, cm
 from numpy import arange, concatenate, empty, linspace, resize
 
 from distarray.externals.six.moves import range
-from distarray.dist.decorators import local
 
 
-@local
 def _get_ranks(arr):
     """
     Given a distarray arr, return a distarray with the same shape, but
@@ -273,7 +271,9 @@ def plot_array_distribution(darray,
     #   http://matplotlib.org/examples/api/colorbar_only.html
 
     # Process per element.
-    process_darray = _get_ranks(darray)
+    ctx = darray.context
+    ctx.register(_get_ranks)
+    process_darray = ctx._get_ranks(darray)
     process_array = process_darray.toarray()
 
     # Values per element.

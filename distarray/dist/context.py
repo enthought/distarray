@@ -14,16 +14,18 @@ from __future__ import absolute_import
 import collections
 import atexit
 
+from functools import wraps
+
 import numpy
 
-import distarray
 from distarray.dist import cleanup
 from distarray.externals import six
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME
+from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
+from distarray.local.proxyize import Proxy
 
 
 class Context(object):
@@ -75,13 +77,14 @@ class Context(object):
                           "import distarray.local.mpiutils; "
                           "import distarray.utils; "
                           "import distarray.local.proxyize as proxyize; "
+                          "from distarray.local.proxyize import Proxy; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
 
         # setup proxyize which is used by context.apply in the rest of the
         # setup.
-        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
+        cmd = "proxyize = proxyize.Proxyize()"
         self.view.execute(cmd)
 
         self._base_comm = self._make_base_comm()
@@ -165,14 +168,17 @@ class Context(object):
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, uid())
+        key = "%s_%s" % (self.context_key, uid())
         return key
 
     def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
         targets = kwargs.get('targets', self.targets)
-        self._push(dict(zip(keys, values)), targets=targets)
-        return tuple(keys)
+        def local_key_and_push(kvs):
+            from distarray.local.proxyize import Proxy
+            return [Proxy(key, val, '__main__') for key, val in kvs]
+        result = self.apply(local_key_and_push, (zip(keys, values), ), targets=targets)
+        return tuple(result[0])
 
     def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
@@ -558,7 +564,71 @@ class Context(object):
                              targets=distribution.targets)
         return DistArray.from_localarrays(da_name[0], distribution=distribution)
 
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def register(self, func):
+        self._push({func.__name__: func}, targets=self.targets)
+
+        @wraps(func)
+        def _wrapper(ctx, *args, **kwargs):
+            dist = ctx._determine_distribution(list(args) + list(kwargs.values()))
+            targets = dist.targets
+            args = [a.key if isinstance(a, DistArray) else a for a in args]
+            kwargs = {k: (v.key if isinstance(v, DistArray) else v) for k, v in kwargs.items()}
+            results = ctx.apply(func, args=args, kwargs=kwargs, targets=targets, autoproxyize=True)
+            return ctx._process_local_results(results, targets)
+
+        setattr(self.__class__, _wrapper.__name__, _wrapper)
+
+    def _determine_distribution(self, objs):
+        dists = []
+        for o in objs:
+            if isinstance(o, DistArray):
+                dists.append(o.distribution)
+        for d in dists[1:]:
+            if not dists[0].is_compatible(d):
+                raise ValueError()
+        if not dists:
+            raise TypeError()
+        return dists[0]
+
+    # Functions for @local decorator tests. These are here so we can
+    # guarantee they are pushed to the engines before we try to use them.
+    def _process_local_results(self, results, targets):
+        """Figure out what to return on the Client.
+
+        Parameters
+        ----------
+        key : string
+            Key corresponding to wrapped function's return value.
+
+        Returns
+        -------
+        Varied
+            A DistArray (if locally all values are DistArray), a None (if
+            locally all values are None), or else, pull the result back to the
+            client and return it.  If all but one of the pulled values is None,
+            return that non-None value only.
+        """
+        def is_NoneType(pxy):
+            return (pxy.type_str == "<type 'NoneType'>" or
+                    pxy.type_str == "<class 'NoneType'>")
+
+        def is_LocalArray(pxy):
+            return (isinstance(pxy, Proxy) and 
+                    pxy.type_str == "<class 'distarray.local.localarray.LocalArray'>")
+
+        if all(is_LocalArray(r) for r in results):
+            result = DistArray.from_localarrays(results[0], context=self, targets=targets)
+        elif all(r is None for r in results):
+            result = None
+        else:
+            if has_exactly_one(results):
+                result = next(x for x in result if x is not None)
+            else:
+                result = results
+
+        return result
+
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -577,7 +647,7 @@ class Context(object):
             return a list of the results on the each engine.
         """
 
-        def func_wrapper(func, apply_nonce, context_key, args, kwargs):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs, autoproxyize):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -585,9 +655,9 @@ class Context(object):
             """
             from importlib import import_module
             import types
+            from distarray.local import LocalArray
 
             main = import_module('__main__')
-            prefix = main.distarray.utils.DISTARRAY_BASE_NAME
             main.proxyize.set_state(apply_nonce)
 
             # Modify func to change the namespace it executes in.
@@ -595,7 +665,6 @@ class Context(object):
             if not isinstance(func, types.BuiltinFunctionType):
                 # get func's building  blocks first
                 func_code = func.__code__
-                func_globals = func.__globals__  # noqa we don't need these.
                 func_name = func.__name__
                 func_defaults = func.__defaults__
                 func_closure = func.__closure__
@@ -610,23 +679,28 @@ class Context(object):
             # convert args
             args = list(args)
             for i, a in enumerate(args):
-                if (isinstance(a, str) and a.startswith(prefix)):
-                    args[i] = main.reduce(getattr, [main] + a.split('.'))
+                if isinstance(a, main.Proxy):
+                    args[i] = a.dereference()
             args = tuple(args)
 
             # convert kwargs
             for k in kwargs.keys():
                 val = kwargs[k]
-                if (isinstance(val, str) and val.startswith(prefix)):
-                    kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
+                if isinstance(val, main.Proxy):
+                    kwargs[k] = val.dereference()
 
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+
+            if autoproxyize and isinstance(result, LocalArray):
+                return main.proxyize(result)
+            else:
+                return result
 
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         apply_nonce = uid()[13:]
-        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs)
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize)
 
         targets = self.targets if targets is None else targets
 
