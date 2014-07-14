@@ -622,7 +622,7 @@ class Context(object):
             result = None
         else:
             if has_exactly_one(results):
-                result = next(x for x in result if x is not None)
+                result = next(x for x in results if x is not None)
             else:
                 result = results
 
