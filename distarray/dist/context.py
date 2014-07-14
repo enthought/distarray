@@ -16,7 +16,6 @@ import atexit
 
 import numpy
 
-import distarray
 from distarray.dist import cleanup
 from distarray.externals import six
 from distarray.dist.distarray import DistArray
@@ -45,7 +44,9 @@ class Context(object):
 
         if not Context._CLEANUP:
             Context._CLEANUP = (atexit.register(cleanup.clear_all),
-                                atexit.register(cleanup.cleanup_all, '__main__', DISTARRAY_BASE_NAME))
+                                atexit.register(cleanup.cleanup_all,
+                                                '__main__',
+                                                DISTARRAY_BASE_NAME))
 
         if client is None:
             self.client = IPythonClient()
@@ -63,7 +64,8 @@ class Context(object):
             self.targets = []
             for target in targets:
                 if target not in all_targets:
-                    raise ValueError("Engine with id %r not registered" % target)
+                    msg = "Engine with id %r not registered" % target
+                    raise ValueError(msg)
                 else:
                     self.targets.append(target)
         self.targets = sorted(self.targets)
@@ -85,7 +87,7 @@ class Context(object):
         self.view.execute(cmd)
 
         self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
         self.comm = self._make_subcomm(self.targets)
 
     def _setup_context_key(self):
@@ -139,7 +141,7 @@ class Context(object):
 
         # get a mapping of IPython engine ID to MPI rank
         rank_from_target = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_from_target[target] for target in self.view.targets ]
+        ranks = [rank_from_target[target] for target in self.view.targets]
 
         comm_size = self.view.apply_async(get_size).get()[0]
         if set(rank_from_target.values()) != set(range(comm_size)):
@@ -183,7 +185,8 @@ class Context(object):
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self.context_key)
+        cleanup.cleanup(view=self.view, module_name='__main__',
+                        prefix=self.context_key)
 
     def close(self):
         self.cleanup()
@@ -455,7 +458,8 @@ class Context(object):
 
         ddpr = distribution.get_dim_data_per_rank()
 
-        da_key = self.apply(_local_load_npy, (filename, ddpr, distribution.comm),
+        da_key = self.apply(_local_load_npy,
+                            (filename, ddpr, distribution.comm),
                             targets=distribution.targets)
         return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
@@ -493,8 +497,9 @@ class Context(object):
 
         ddpr = distribution.get_dim_data_per_rank()
 
-        da_key = self.apply(_local_load_hdf5, (filename, ddpr, distribution.comm, key),
-                   targets=distribution.targets)
+        da_key = self.apply(_local_load_hdf5,
+                            (filename, ddpr, distribution.comm, key),
+                            targets=distribution.targets)
 
         return DistArray.from_localarrays(da_key[0], distribution=distribution)
 
@@ -556,7 +561,8 @@ class Context(object):
         da_name = self.apply(_local_fromfunction,
                              (function, distribution.comm, ddpr, kwargs),
                              targets=distribution.targets)
-        return DistArray.from_localarrays(da_name[0], distribution=distribution)
+        return DistArray.from_localarrays(da_name[0],
+                                          distribution=distribution)
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
