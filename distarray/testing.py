@@ -20,6 +20,7 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals import protocol_validator
 from distarray.dist import Context
+from distarray.dist.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
 
