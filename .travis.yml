@@ -37,5 +37,5 @@ after_script:
     - lsof | grep python | wc -l
     - (cd $TRAVIS_BUILD_DIR && dacluster stop)
 after_success:
-    - coverage combine
-    - coveralls
+    - if [[ $TRAVIS_PYTHON_VERSION == "3.4" && $NENGINES -eq 9 ]] ; then echo "coverage combine"; coverage combine; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == "3.4" && $NENGINES -eq 9 ]] ; then echo "coveralls"; coveralls; fi
