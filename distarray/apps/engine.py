@@ -1,3 +1,3 @@
 #!/usr/bin/env python
-from distarray.engine_utils import Engine
+from distarray.mpi_engine import Engine
 Engine()
