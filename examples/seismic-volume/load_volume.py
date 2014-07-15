@@ -338,7 +338,7 @@ def plot_slice(distarray_slice, filename, title, x_label, y_label):
     # Transpose to make depth look like depth.
     slice_nd = slice_nd.transpose()
     # Plot.
-    cmap = 'jet'
+    cmap = 'RdBu'
     pyplot.matshow(slice_nd, cmap=cmap)
     if False:
         # This looks bad without more effort.
