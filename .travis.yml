@@ -1,9 +1,9 @@
 language: python
 env:
-    - PYVERSION="2.7" NENGINES=1
-    - PYVERSION="2.7" NENGINES=9
-    - PYVERSION="3.3" NENGINES=9
-    - PYVERSION="3.4" NENGINES=9
+    - PYVERSION="2.7"   NENGINES=1
+    - PYVERSION="2.7"   NENGINES=9
+    - PYVERSION="3.3"   NENGINES=9
+    - PYVERSION="3.4"   NENGINES=9
 before_install:
     - sudo add-apt-repository -y ppa:andrikos/ppa
     - sudo apt-get update
