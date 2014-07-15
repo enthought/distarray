@@ -17,10 +17,9 @@ from random import shuffle
 
 import numpy
 
-from distarray.testing import ContextTestCase, check_targets
+from distarray.testing import ClientTestCase, ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
-from distarray.dist.ipython_utils import IPythonClient
 from distarray.local import LocalArray
 
 
@@ -42,16 +41,8 @@ class TestContext(ContextTestCase):
         self.assertIsInstance(ndarrs[0], numpy.ndarray)
 
 
-class TestContextCreation(unittest.TestCase):
+class TestContextCreation(ClientTestCase):
     """Test Context Creation"""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.client = IPythonClient()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.close()
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
