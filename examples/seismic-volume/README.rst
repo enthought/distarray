@@ -2,9 +2,14 @@ Processing a Seismic Volume
 ===========================
 
 This example shows some processing, using distarray, on a simulated
-seismic volume, which is stored in an HDF5 file.
+seismic volume. The volume can be stored either as an HDF5 file,
+or as a set of .dnpy files.
 
-This will require a parallel-enabled HDF5 library to work correctly.
+If you have an MPI-enabled HDF5 library, you can use that for loading
+and saving these files. Otherwise you can use our .dnpy flat file format
+with no external dependencies. By default, the HDF5 file format is used,
+but you can pass ``--dnpy`` as a command line argument to both scripts
+to use the flat file format instead.
 
 - ``create_volume.py`` - This script creates the simulated seismic
 volume. The internal structure of the volume includes two 'horizons',
@@ -13,11 +18,13 @@ approaching and then crossing the horizon, the data values increase
 with a Gaussian peak at the horizon, and then settle down to a larger
 value than above the horizon.
 
-One can adjust the ARRAY_SIZE in the script to change the number of
-elements in the array, and other values can be changed to modify the
-contents of the volume array.
+If you would like array dimensions other than the default, you can pass
+``--size NX NY NZ`` as command line arguments to get a volume with shape
+(NX, NY, NZ). Other values in the script can also be modified to change
+the values in the volume array.
 
-The seismic volume is written to an HDF5 named seismic.hdf5.
+The seismic volume is written either to an HDF5 named seismic.hdf5, or
+a set of .dnpy files named seismic_0.dnpy, seismic_1.dnpy, and so on.
 
 - ``load_volume.py`` - This script loads the volume, and performs several
 processing steps on it. First, the seismic volume is loaded in parallel
