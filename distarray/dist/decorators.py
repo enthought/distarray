@@ -110,8 +110,8 @@ class DecoratorBase(object):
             main_mod = import_module('__main__')
             mod = main_mod
             for k, v in d.items():
-                for peice in k.split('.')[:-1]:
-                    mod = getattr(mod, peice)
+                for piece in k.split('.')[:-1]:
+                    mod = getattr(mod, piece)
                 setattr(mod, k.split('.')[-1], v)
                 mod = main_mod
         context.apply(push_stuff, args=(push_keys,), targets=context.targets)
