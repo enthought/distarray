@@ -67,16 +67,16 @@ class BaseContext(object):
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
 
+    def _generate_key(self):
+        """ Generate a unique key name for this context. """
+        key = "%s.%s" % (self.context_key, uid())
+        return key
+
     def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
         targets = kwargs.get('targets', self.targets)
         self._push(dict(zip(keys, values)), targets=targets)
         return tuple(keys)
-
-    def _generate_key(self):
-        """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, uid())
-        return key
 
     def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
