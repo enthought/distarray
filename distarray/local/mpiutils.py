@@ -13,13 +13,15 @@ from mpi4py import MPI
 from distarray.error import InvalidCommSizeError, InvalidRankError
 
 
-COMM_PRIVATE = MPI.COMM_WORLD.Clone()
+def get_comm_private():
+    return MPI.COMM_WORLD.Clone()
 
 
 def create_comm_of_size(size=4):
     """
     Create a subcommunicator of COMM_PRIVATE of given size.
     """
+    COMM_PRIVATE = get_comm_private()
     group = COMM_PRIVATE.Get_group()
     comm_size = COMM_PRIVATE.Get_size()
     if size > comm_size:
@@ -37,7 +39,7 @@ def create_comm_with_list(nodes, base_comm=None):
     If base_comm is not specified, defaults to COMM_PRIVATE.
 
     """
-    base_comm = base_comm or COMM_PRIVATE
+    base_comm = base_comm or get_comm_private()
     group = base_comm.Get_group()
     comm_size = base_comm.Get_size()
     size = len(nodes)
