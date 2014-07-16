@@ -19,8 +19,8 @@ The one-dimensional ClientMap classes keep track of which process owns which
 index in that dimension.  This class has several subclasses for specific
 distribution types, including `BlockMap`, `CyclicMap`, `NoDistMap`, and
 `UnstructuredMap`.
-
 """
+
 from __future__ import division, absolute_import
 
 import operator
@@ -133,7 +133,8 @@ def map_from_sizes(size, dist_type, grid_size):
 
 @add_metaclass(ABCMeta)
 class MapBase(object):
-    """ Base class for one-dimensional client-side maps.
+
+    """Base class for one-dimensional client-side maps.
 
     Maps keep track of the relevant distribution information for a single
     dimension of a distributed array.  Maps allow distributed arrays to keep
