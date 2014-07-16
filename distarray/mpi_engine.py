@@ -1,6 +1,12 @@
+# encoding: utf-8
+# ---------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+# ---------------------------------------------------------------------------
 """
 The engine_loop function and utilities necessary for it.
 """
+
 from functools import reduce
 from importlib import import_module
 import types
