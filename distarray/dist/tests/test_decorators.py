@@ -26,8 +26,8 @@ from distarray.error import DistributionError
 class TestDecoratorBase(ClientTestCase):
 
     def test_determine_distribution(self):
-        context = Context(client=self.client)
-        context2 = Context(client=self.client)  # for cross Context checking
+        context = Context()
+        context2 = Context()  # for cross Context checking
         dist = Distribution(context, (2, 2))
         dist2 = Distribution(context2, (2, 2))
         da = context.ones(dist)
@@ -105,7 +105,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def local_sum(da):
-        return numpy.sum(da.ndarray)
+        return numpy.sum(da)
 
     @local
     def call_barrier(da):

@@ -12,15 +12,15 @@ import importlib
 import tempfile
 import os
 import types
-
 from uuid import uuid4
 from functools import wraps
+
 import numpy as np
+
 from distarray.externals import six
 from distarray.externals import protocol_validator
-from distarray.dist.ipython_utils import IPythonClient
-
 from distarray.dist import Context
+from distarray.dist.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
 
@@ -202,18 +202,17 @@ class ContextTestCase(ClientTestCase):
         super(ContextTestCase, cls).setUpClass()
 
         # skip if there aren't enough engines
+
         if cls.ntargets == 'any':
-            cls.context = Context(client=cls.client)
+            cls.context = Context()
             cls.ntargets = len(cls.context.targets)
-        elif len(cls.client) < cls.ntargets:
-            msg = ("{}: "
-                   "This test class requires at least {} engines to run; "
-                   "only {} available.")
-            msg = msg.format(cls, cls.ntargets, len(cls.client))
-            raise unittest.SkipTest(msg)
         else:
-            cls.context = Context(client=cls.client,
-                                  targets=six.moves.range(cls.ntargets))
+            try:
+                cls.context = Context(targets=list(range(cls.ntargets)))
+            except ValueError:
+                msg = ("Not enough targets available for this test. (%s) "
+                       "required" % (cls.ntargets))
+                raise unittest.SkipTest(msg)
 
     @classmethod
     def tearDownClass(cls):
