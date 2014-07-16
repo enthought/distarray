@@ -12,7 +12,6 @@ from importlib import import_module
 
 from mpi4py import MPI as mpi
 
-import distarray
 from distarray.utils import uid
 
 
