@@ -53,6 +53,34 @@ class BaseContext(object):
         raise TypeError("The base context class is not meant to be "
                         "instantiated on its own.")
 
+    @abstractmethod
+    def cleanup(self):
+        pass
+
+    @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
+    def _execute(self, lines, targets):
+        pass
+
+    @abstractmethod
+    def _push(self, d, targets):
+        pass
+
+    @abstractmethod
+    def _pull(self, k, targets):
+        pass
+
+    @abstractmethod
+    def apply(self, func, args=None, kwargs=None, targets=None):
+        pass
+
+    @abstractmethod
+    def push_function(self, key, func):
+        pass
+
     def _setup_context_key(self):
         """
         Create a dict on the engines which will hold everything from
