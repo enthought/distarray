@@ -26,7 +26,7 @@ from distarray.dist.maps import Distribution
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME
 
-# mpi contetx
+# mpi context
 from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      get_world_rank, initial_comm_setup,
                                      is_solo_mpi_process, push_function)
