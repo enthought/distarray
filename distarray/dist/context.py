@@ -766,7 +766,8 @@ class MPIContext(BaseContext):
 
         Returns
         -------
-            return a list of the results on the each engine.
+        list
+            result from each engine.
         """
         # default arguments
         args = () if args is None else args
