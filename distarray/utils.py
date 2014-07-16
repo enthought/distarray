@@ -7,6 +7,8 @@
 Utilities.
 """
 
+from functools import reduce
+from importlib import import_module
 from math import sqrt
 import random
 import uuid
@@ -189,8 +191,13 @@ def remove_elements(to_remove, seq):
 
 
 def get_from_dotted_name(dotted_name):
-    from functools import reduce
-    from importlib import import_module
     main = import_module('__main__')
     thing = reduce(getattr, [main] + dotted_name.split('.'))
     return thing
+
+
+def set_from_dotted_name(name, val):
+    main = import_module('__main__')
+    peices = name.split('.')
+    place = reduce(getattr, [main] + peices[:-1])
+    setattr(place, peices[-1], val)

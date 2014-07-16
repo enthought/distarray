@@ -700,7 +700,8 @@ class TestDistArrayCreation(ContextTestCase):
         self.assertEqual(a.grid_shape, (1, 1, 4))
 
     def test_fromfunction(self):
-        fn = lambda i, j: i + j
+        def fn(i, j):
+            return i + j
         shape = (7, 9)
         expected = numpy.fromfunction(fn, shape, dtype=int)
         result = self.context.fromfunction(fn, shape, dtype=int)

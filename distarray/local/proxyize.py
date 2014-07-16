@@ -23,6 +23,11 @@ class Proxy(object):
         namespace = import_module(self.module_name)
         return getattr(namespace, self.name)
 
+    def cleanup(self):
+        namespace = import_module(self.module_name)
+        delattr(namespace, self.name)
+        self.name = self.module_name = self.type_str = None
+
 
 class Proxyize(object):
 
