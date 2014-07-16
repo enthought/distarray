@@ -26,7 +26,7 @@ from distarray.dist.maps import Distribution
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME
 
-# mpi contetx
+# mpi context
 from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      get_world_rank, initial_comm_setup,
                                      is_solo_mpi_process, push_function)
@@ -62,51 +62,21 @@ class BaseContext(object):
         self._execute(cmd, self.all_targets)
         return context_key
 
-    def _create_local(self, local_call, distribution, dtype):
-        """Creates LocalArrays with the method named in `local_call`."""
-        da_key = self._generate_key()
-        comm_name = distribution.comm
-        ddpr = distribution.get_dim_data_per_rank()
-        ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
-        cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
-               'dtype={dtype_name})')
-        self._execute(cmd.format(**locals()), targets=distribution.targets)
-        return DistArray.from_localarrays(da_key, distribution=distribution,
-                                          dtype=dtype)
-
-    def _create_local(self, local_call, distribution, dtype):
-        """Creates LocalArrays with the method named in `local_call`."""
-        def create_local(local_call, ddpr, dtype, comm):
-            from distarray.local.maps import Distribution
-            local_call = eval(local_call)
-            dim_data = ddpr[comm.Get_rank()]
-            distribution = Distribution(comm=comm, dim_data=dim_data)
-            rval = local_call(distribution=distribution, dtype=dtype)
-            return proxyize(rval)
-
-        ddpr = distribution.get_dim_data_per_rank()
-        args = [local_call, ddpr, dtype, distribution.comm]
-        da_key = self.apply(create_local, args=args,
-                            targets=distribution.targets)[0]
-        return DistArray.from_localarrays(da_key, distribution=distribution,
-                                          dtype=dtype)
-
     @staticmethod
     def _key_prefix():
         """ Get the base name for all keys. """
         return DISTARRAY_BASE_NAME
+
+    def _generate_key(self):
+        """ Generate a unique key name for this context. """
+        key = "%s.%s" % (self.context_key, uid())
+        return key
 
     def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
         targets = kwargs.get('targets', self.targets)
         self._push(dict(zip(keys, values)), targets=targets)
         return tuple(keys)
-
-    def _generate_key(self):
-        """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, uid())
-        return key
 
     def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
@@ -524,7 +494,7 @@ class IPythonContext(BaseContext):
         self.view.execute(cmd)
 
         self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
         self.comm = self._make_subcomm(self.targets)
 
     def _make_subcomm(self, new_targets):
@@ -680,8 +650,8 @@ class IPythonContext(BaseContext):
 
         targets = self.targets if targets is None else targets
 
-        return self.view._really_apply(func_wrapper, args=wrapped_args,
-                                       targets=targets, block=True)
+        with self.view.temp_flags(targets=targets):
+            return self.view.apply_sync(func_wrapper, *wrapped_args)
 
     def push_function(self, key, func, targets=None):
         targets = targets or self.targets
@@ -703,7 +673,7 @@ class MPIContext(BaseContext):
         self.nengines = get_nengines()
 
         self.all_targets = list(range(self.nengines))
-        targets = list(range(self.nengines)) if targets is None else targets
+        targets = self.all_targets if targets is None else targets
         self.targets = targets
         self.ntargets = len(self.targets)
 
@@ -790,13 +760,14 @@ class MPIContext(BaseContext):
         args : tuple
             positional arguments to func
         kwargs : dict
-            key word arguments to func
+            keyword arguments to func
         targets : sequence of integers
             engines func is to be run on.
 
         Returns
         -------
-            return a list of the results on the each engine.
+        list
+            result from each engine.
         """
         # default arguments
         args = () if args is None else args
@@ -826,6 +797,7 @@ class MPIContext(BaseContext):
 
     def push_function(self, key, func, targets=None):
         push_function(self, key, func, targets=targets)
+
 
 if is_solo_mpi_process():
     Context = IPythonContext

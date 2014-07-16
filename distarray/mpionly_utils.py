@@ -1,3 +1,8 @@
+# encoding: utf-8
+# ---------------------------------------------------------------------------
+#  Copyright (C) 2008-2014, IPython Development Team and Enthought, Inc.
+#  Distributed under the terms of the BSD License.  See COPYING.rst.
+# ---------------------------------------------------------------------------
 """
 Utilities for running Distarray in MPI mode.
 """
@@ -7,7 +12,6 @@ from importlib import import_module
 
 from mpi4py import MPI as mpi
 
-import distarray
 from distarray.utils import uid
 
 
