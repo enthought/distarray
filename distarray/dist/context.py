@@ -62,36 +62,6 @@ class BaseContext(object):
         self._execute(cmd, self.all_targets)
         return context_key
 
-    def _create_local(self, local_call, distribution, dtype):
-        """Creates LocalArrays with the method named in `local_call`."""
-        da_key = self._generate_key()
-        comm_name = distribution.comm
-        ddpr = distribution.get_dim_data_per_rank()
-        ddpr_name, dtype_name =  self._key_and_push(ddpr, dtype)
-        cmd = ('{da_key} = {local_call}(distarray.local.maps.Distribution('
-               'comm={comm_name}, dim_data={ddpr_name}[{comm_name}.Get_rank()]), '
-               'dtype={dtype_name})')
-        self._execute(cmd.format(**locals()), targets=distribution.targets)
-        return DistArray.from_localarrays(da_key, distribution=distribution,
-                                          dtype=dtype)
-
-    def _create_local(self, local_call, distribution, dtype):
-        """Creates LocalArrays with the method named in `local_call`."""
-        def create_local(local_call, ddpr, dtype, comm):
-            from distarray.local.maps import Distribution
-            local_call = eval(local_call)
-            dim_data = ddpr[comm.Get_rank()]
-            distribution = Distribution(comm=comm, dim_data=dim_data)
-            rval = local_call(distribution=distribution, dtype=dtype)
-            return proxyize(rval)
-
-        ddpr = distribution.get_dim_data_per_rank()
-        args = [local_call, ddpr, dtype, distribution.comm]
-        da_key = self.apply(create_local, args=args,
-                            targets=distribution.targets)[0]
-        return DistArray.from_localarrays(da_key, distribution=distribution,
-                                          dtype=dtype)
-
     @staticmethod
     def _key_prefix():
         """ Get the base name for all keys. """
