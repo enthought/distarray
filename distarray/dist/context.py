@@ -650,8 +650,8 @@ class IPythonContext(BaseContext):
 
         targets = self.targets if targets is None else targets
 
-        return self.view._really_apply(func_wrapper, args=wrapped_args,
-                                       targets=targets, block=True)
+        with self.view.temp_flags(targets=targets):
+            return self.view.apply_sync(func_wrapper, *wrapped_args)
 
     def push_function(self, key, func, targets=None):
         targets = targets or self.targets
