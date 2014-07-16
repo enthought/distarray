@@ -206,15 +206,8 @@ def create_volume(context, shape):
 
 def create_hdf5_file(da_volume, filename, key):
     '''Create an HDF5 file with the seismic volume.'''
-    if False:
-        # Explicit HDF5 usage to create file, faster but not DistArray.
-        f = h5py.File(filename, 'w')
-        dataset = f.create_dataset(key, da_volume.shape, dtype='f')
-        dataset[...] = da_volume.tondarray()
-        f.close()
-    else:
-        pathname = os.path.abspath(filename)
-        da_volume.context.save_hdf5(pathname, da_volume, key=key, mode='w')
+    pathname = os.path.abspath(filename)
+    da_volume.context.save_hdf5(pathname, da_volume, key=key, mode='w')
 
 
 def create_dnpy_files(da_volume, filename):
