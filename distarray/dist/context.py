@@ -673,7 +673,7 @@ class MPIContext(BaseContext):
         self.nengines = get_nengines()
 
         self.all_targets = list(range(self.nengines))
-        targets = list(range(self.nengines)) if targets is None else targets
+        targets = self.all_targets if targets is None else targets
         self.targets = targets
         self.ntargets = len(self.targets)
 
