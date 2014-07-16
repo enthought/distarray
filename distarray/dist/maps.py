@@ -145,6 +145,23 @@ class MapBase(object):
 
     """
 
+    @classmethod
+    @abstractmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        """Make a Map from a global dimension dictionary."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        """Make a Map from a sequence of dim_dicts, one-per-process."""
+        pass
+
+    @abstractmethod
+    def __init__(self):
+        """Create a new Map.  Parameters may vary for different subtypes."""
+        pass
+
     @abstractmethod
     def index_owners(self, idx):
         """ Returns a list of process IDs in this dimension that might possibly
@@ -154,6 +171,11 @@ class MapBase(object):
 
         """
         raise IndexError()
+
+    @abstractmethod
+    def get_dimdicts(self):
+        """Return a dim_dict per process in this dimension."""
+        pass
 
     def _is_compatible_degenerate(self, map):
         right_types = all(isinstance(m, (NoDistMap, BlockMap, BlockCyclicMap))
