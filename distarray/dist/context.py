@@ -14,6 +14,7 @@ from __future__ import absolute_import
 import atexit
 import collections
 import types
+from abc import ABCMeta, abstractmethod
 
 import numpy
 
@@ -31,6 +32,7 @@ from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      is_solo_mpi_process, push_function)
 
 
+@six.add_metaclass(ABCMeta)
 class BaseContext(object):
     """
     Context objects manage the setup and communication of the worker processes
@@ -45,6 +47,7 @@ class BaseContext(object):
 
     _CLEANUP = None
 
+    @abstractmethod
     def __init__(self):
         raise TypeError("The base context class is not meant to be "
                         "instantiated on its own.")
