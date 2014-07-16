@@ -797,6 +797,7 @@ class MPIContext(BaseContext):
     def push_function(self, key, func, targets=None):
         push_function(self, key, func, targets=targets)
 
+
 if is_solo_mpi_process():
     Context = IPythonContext
 else:
