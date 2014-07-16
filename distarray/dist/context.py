@@ -760,7 +760,7 @@ class MPIContext(BaseContext):
         args : tuple
             positional arguments to func
         kwargs : dict
-            key word arguments to func
+            keyword arguments to func
         targets : sequence of integers
             engines func is to be run on.
 
