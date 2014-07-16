@@ -34,6 +34,7 @@ from distarray.mpionly_utils import (make_targets_comm, get_nengines,
 
 @six.add_metaclass(ABCMeta)
 class BaseContext(object):
+
     """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
@@ -449,6 +450,17 @@ class BaseContext(object):
 
 
 class IPythonContext(BaseContext):
+
+    """
+    Context class that uses IPython.parallel.
+
+    See the docstring for  `BaseContext` for more information about Contexts.
+
+    See also
+    --------
+    BaseContext
+    """
+
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
@@ -661,6 +673,17 @@ class IPythonContext(BaseContext):
 
 
 class MPIContext(BaseContext):
+
+    """
+    Context class that uses MPI only (no IPython.parallel).
+
+    See the docstring for  `BaseContext` for more information about Contexts.
+
+    See also
+    --------
+    BaseContext
+    """
+
     _BASE_COMM = None
     _INTERCOMM = None
 
