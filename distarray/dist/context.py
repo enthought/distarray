@@ -17,7 +17,6 @@ import types
 
 import numpy
 
-import distarray
 from distarray.dist import cleanup
 from distarray.externals import six
 from distarray.dist.distarray import DistArray
