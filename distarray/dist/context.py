@@ -658,9 +658,6 @@ class IPythonContext(BaseContext):
     def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def _pull(self, k, targets):
-        return self.view.pull(k, targets=targets, block=True)
-
     def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         """
         Analogous to IPython.parallel.view.apply_sync
@@ -750,7 +747,9 @@ class MPIContext(BaseContext):
     _INTERCOMM = None
 
     def delete_key(self, key, targets=None):
-        pass
+        msg = ('delete', key)
+        targets = targets or self.targets
+        self._send_msg(msg, targets=targets)
 
     def __init__(self, targets=None):
 
@@ -834,11 +833,6 @@ class MPIContext(BaseContext):
     def _push(self, d, targets=None):
         msg = ('push', d)
         return self._send_msg(msg, targets=targets)
-
-    def _pull(self, k, targets=None):
-        msg = ('pull', k)
-        self._send_msg(msg, targets=targets)
-        return self._recv_msg(targets=targets)
 
     def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         """

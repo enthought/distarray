@@ -12,6 +12,7 @@ from importlib import import_module
 import types
 
 from distarray.local import LocalArray
+from distarray.local.proxyize import Proxy
 
 from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
                                      get_comm_world)
@@ -71,11 +72,24 @@ class Engine(object):
                 'push': self.push,
                 'pull': self.pull,
                 'kill': self.kill,
+                'delete': self.delete,
                 'make_targets_comm': self.engine_make_targets_comm,
                 'builtin_call': self.builtin_call}
         func = what[to_do]
         ret = func(msg)
         return ret
+
+    def delete(self, msg):
+        obj = msg[1]
+        if isinstance(obj, Proxy):
+            obj.cleanup()
+        else:
+            name = obj
+            try:
+                module = import_module('__main__')
+                delattr(module, name)
+            except AttributeError:
+                pass
 
     def func_call(self, msg):
 
