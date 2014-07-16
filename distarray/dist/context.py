@@ -494,7 +494,7 @@ class IPythonContext(BaseContext):
         self.view.execute(cmd)
 
         self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
         self.comm = self._make_subcomm(self.targets)
 
     def _make_subcomm(self, new_targets):
