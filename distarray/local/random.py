@@ -4,6 +4,12 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+""" Pseudo-random number generation routines for local arrays.
+
+This module provides a number of routines for generating random numbers,
+from a variety of probability distributions.
+"""
+
 from hashlib import sha256
 import numpy as np
 
