@@ -53,6 +53,7 @@ def check_grid_shape_preconditions(shape, dist, comm_size):
 
 
 def check_grid_shape_postconditions(grid_shape, shape, dist, comm_size):
+    """ Check grid_shape for reasonableness after creating it. """
     if not (len(grid_shape) == len(shape) == len(dist)):
         raise ValueError("len(gird_shape) == len(shape) == len(dist) not "
                          "satisfied, len(grid_shape) = %s and len(shape) = %s "
