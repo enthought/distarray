@@ -436,22 +436,25 @@ def normalize_reduction_axes(axes, ndim):
     return axes
 
 
-# functions for getting a size from a dim_data for each dist_type
+# Functions for getting a size from a dim_data for each dist_type.
 # n
 def non_dist_size(dim_data):
+    """ Get a size from a nondistributed dim_data. """
     return dim_data['size']
 
 
 # b
 def block_size(dim_data):
+    """ Get a size from a block distributed dim_data. """
     stop = dim_data['stop']
     start = dim_data['start']
     return stop - start
 
 
-# choose cyclic or block cyclic based on blocks size. This is necessary
-# becuse they have the same dist type character.
+# Choose cyclic or block cyclic based on block size. This is necessary
+# because they have the same dist type character.
 def c_or_bc_chooser(dim_data):
+    """ Get a size from a cyclic or block-cyclic dim_data. """
     block_size = dim_data.get('block_size', 1)
     if block_size == 1:
         return cyclic_size(dim_data)
@@ -463,6 +466,7 @@ def c_or_bc_chooser(dim_data):
 
 # c
 def cyclic_size(dim_data):
+    """ Get a size from a cyclic dim_data. """
     global_size = dim_data['size']
     grid_rank = dim_data.get('proc_grid_rank', 0)
     grid_size = dim_data.get('proc_grid_size', 1)
@@ -471,6 +475,7 @@ def cyclic_size(dim_data):
 
 # c
 def block_cyclic_size(dim_data):
+    """ Get a size from a block-cyclic dim_data. """
     global_size = dim_data['size']
     block_size = dim_data.get('block_size', 1)
     grid_size = dim_data.get('proc_grid_size', 1)
@@ -484,6 +489,7 @@ def block_cyclic_size(dim_data):
 
 # u
 def unstructured_size(dim_data):
+    """ Get a size from an unstructured dim_data. """
     return len(dim_data.get('indices', None))
 
 
