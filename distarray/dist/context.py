@@ -640,6 +640,7 @@ class IPythonContext(BaseContext):
     # Key management routines:
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
+        # TODO: FIXME: cleanup needs updating to work with proxy objects.
         cleanup.cleanup(view=self.view, module_name='__main__',
                         prefix=self.context_key)
 
@@ -743,13 +744,15 @@ class IPythonContext(BaseContext):
 
 
 class MPIContext(BaseContext):
+
     _BASE_COMM = None
     _INTERCOMM = None
 
     def delete_key(self, key, targets=None):
         msg = ('delete', key)
         targets = targets or self.targets
-        self._send_msg(msg, targets=targets)
+        if self.intercomm:
+            self._send_msg(msg, targets=targets)
 
     def __init__(self, targets=None):
 
@@ -773,7 +776,7 @@ class MPIContext(BaseContext):
         self.comm = self._make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
-            Context._CLEANUP = atexit.register(self.cleanup)
+            Context._CLEANUP = atexit.register(self._shutdown)
 
         # local imports
         self._execute("from functools import reduce; "
@@ -793,10 +796,17 @@ class MPIContext(BaseContext):
 
     # Key management routines:
 
-    def cleanup(self):
-        """ Delete keys that this context created from all the engines. """
+    def _shutdown(self):
         msg = ('kill',)
         self._send_msg(msg)
+        self.__class__._BASE_COMM = self._base_comm = None
+        self.__class__._INTERCOMM = self.intercomm = None
+        self.comm = None
+
+    def cleanup(self):
+        """ Delete keys that this context created from all the engines. """
+        # TODO: implement cleanup.
+        pass
 
     def close(self):
         pass
