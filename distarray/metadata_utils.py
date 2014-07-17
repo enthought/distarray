@@ -25,10 +25,12 @@ Integral.register(numpy.unsignedinteger)
 
 
 class InvalidGridShapeError(Exception):
+    """ Exception class when the grid shape is incompatible with the distribution or communicator. """
     pass
 
 
 class GridShapeError(Exception):
+    """ Exception class when it is not possible to distribute the processes over the number of dimensions. """
     pass
 
 
@@ -162,7 +164,7 @@ def make_grid_shape(shape, dist, comm_size):
         # the ratios among the dimensions in `shape`.
         rs_ratio = _compute_grid_ratios(reduced_shape)
         f_ratios = [_compute_grid_ratios(f) for f in factors]
-        distances = [rs_ratio-f_ratio for f_ratio in f_ratios]
+        distances = [rs_ratio - f_ratio for f_ratio in f_ratios]
         norms = numpy.array([numpy.linalg.norm(d, 2) for d in distances])
         index = norms.argmin()
         # we now have the grid shape for the distributed dimensions.
@@ -281,6 +283,7 @@ def _positivify(index, size):
     elif index < 0:
         return size + index
 
+
 def _check_bounds(index, size):
     """Check if an index is in bounds.
 
@@ -315,7 +318,7 @@ def tuple_intersection(t0, t1):
     start1, stop1 = t1
     if start0 < start1:
         n = int(numpy.ceil((start1 - start0) / step0))
-        start2 = start0 + n*step0
+        start2 = start0 + n * step0
     else:
         start2 = start0
 
@@ -324,7 +327,7 @@ def tuple_intersection(t0, t1):
         n = ((max_stop - start2) // step0) - 1
     else:
         n = (max_stop - start2) // step0
-    stop2 = (start2 + n*step0) + 1
+    stop2 = (start2 + n * step0) + 1
     return (start2, stop2, step0) if stop2 > start2 else None
 
 
@@ -398,7 +401,7 @@ def sanitize_indices(indices, ndim=None, shape=None):
         diff = ndim - (len(sanitized) - 1)
         filler = (slice(None),) * diff
         epos = sanitized.index(Ellipsis)
-        sanitized = sanitized[:epos] + filler + sanitized[epos+1:]
+        sanitized = sanitized[:epos] + filler + sanitized[epos + 1:]
 
         # remaining Ellipsis objects are just converted to slices
         def replace_ellipsis(idx):
