@@ -20,17 +20,20 @@ DISTARRAY_RANDOM = random.Random()
 
 
 def distarray_random_setstate(state):
+    """ Set the state of the global random number generator. """
     global DISTARRAY_RANDOM
     DISTARRAY_RANDOM.setstate(state)
 
 
 def distarray_random_getstate():
+    """ Get the state of the global random number generator. """
     global DISTARRAY_RANDOM
     return DISTARRAY_RANDOM.getstate()
 
 
 def uid():
-    suffix = uuid.UUID(int=DISTARRAY_RANDOM.getrandbits(8*16)).hex[:16]
+    """ Get a unique name for a distarray object. """
+    suffix = uuid.UUID(int=DISTARRAY_RANDOM.getrandbits(8 * 16)).hex[:16]
     return DISTARRAY_BASE_NAME + suffix
 
 
@@ -45,14 +48,15 @@ def multi_for(iterables):
 
 def divisors_minmax(n, dmin, dmax):
     """Find the divisors of n in the interval (dmin,dmax]."""
-    i = dmin+1
-    while i<=dmax:
+    i = dmin + 1
+    while i <= dmax:
         if n % i == 0:
             yield i
         i += 1
 
 
 def list_or_tuple(seq):
+    """ Is the object either a list or a tuple? """
     return isinstance(seq, (list, tuple))
 
 
@@ -83,7 +87,7 @@ def mult_partitions_recurs(n, s, pd=0):
     divs = divisors_minmax(n, pd, int(sqrt(n)))
     fs = []
     for d in divs:
-        fs.extend([(d,f) for f in mult_partitions_recurs(n/d, s-1, pd)])
+        fs.extend([(d, f) for f in mult_partitions_recurs(n / d, s - 1, pd)])
         pd = d
     return fs
 
@@ -100,7 +104,7 @@ def mirror_sort(seq, ref_seq):
     shift = list(zip(range(len(ref_seq)), ref_seq))
     shift.sort(key=lambda x: x[1])
     shift = [s[0] for s in shift]
-    newseq = len(ref_seq)*[0]
+    newseq = len(ref_seq) * [0]
     for s_index in range(len(shift)):
         newseq[shift[s_index]] = seq[s_index]
     return newseq
@@ -187,6 +191,19 @@ class count_round_trips(object):
 
 
 def remove_elements(to_remove, seq):
+    """ Return a list, with the elements with specified indices removed.
+
+    Parameters
+    ----------
+    to_remove: iterable
+        Indices of elements in list to remove
+    seq: iterable
+        Elements in the list.
+
+    Returns
+    -------
+    List with the specified indices removed.
+    """
     return [x for (idx, x) in enumerate(seq) if idx not in to_remove]
 
 
