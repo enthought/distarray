@@ -34,11 +34,6 @@ class InvalidRankError(MPIDistArrayError):
     pass
 
 
-class MPICommError(MPIDistArrayError):
-    # This seems to be unused.
-    pass
-
-
 class DistributionError(DistArrayError):
     """ Exception class when inconsistent distributions are used. """
     pass

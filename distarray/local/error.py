@@ -12,16 +12,6 @@ class InvalidBaseCommError(DistArrayError):
     pass
 
 
-class DistError(DistArrayError):
-    # Seems to be unused.
-    pass
-
-
-class DistMatrixError(DistArrayError):
-    # Seems to be unused.
-    pass
-
-
 class IncompatibleArrayError(DistArrayError):
     """ Exception class when arrays are incompatible. """
     pass
@@ -29,11 +19,6 @@ class IncompatibleArrayError(DistArrayError):
 
 class NullCommError(DistArrayError):
     """ Exception class when an MPI communicator is NULL. """
-    pass
-
-
-class InvalidMapCodeError(DistArrayError):
-    # Seems to be unused.
     pass
 
 
