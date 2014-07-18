@@ -12,19 +12,18 @@ it throughout this module.
 """
 
 import unittest
-from unittest import TestCase
 
 import numpy
 from numpy.testing import assert_array_equal
 
-from distarray.testing import ContextTestCase, check_targets
+from distarray.testing import ClientTestCase, ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.dist.decorators import DecoratorBase, local, vectorize
 from distarray.error import DistributionError
 
 
-class TestDecoratorBase(TestCase):
+class TestDecoratorBase(ClientTestCase):
 
     def test_determine_distribution(self):
         context = Context()
@@ -46,12 +45,14 @@ class TestDecoratorBase(TestCase):
         self.assertRaises(TypeError, dummy_func, 'foo')
         self.assertRaises(DistributionError, dummy_func, dist, dist2)
 
-    def test_key_and_push_args(self):
-        context = Context()
 
-        distribution = Distribution(context, (2, 2))
-        da = context.ones(distribution)
-        db = da*2
+class TestKeyAndPushArgs(ContextTestCase):
+
+    def test_key_and_push_args(self):
+
+        distribution = Distribution(self.context, (2, 2))
+        da = self.context.ones(distribution)
+        db = da * 2
 
         def dummy_func(*args, **kwargs):
             fn = lambda x: x
@@ -73,7 +74,7 @@ class TestDecoratorBase(TestCase):
         self.assertEqual(arg_keys2[1: -2].split(', ')[0], da.key)
 
         _key = arg_keys2[1: -2].split(', ')[1]
-        self.assertEqual(context._pull(_key, targets=[0])[0], 'question')
+        self.assertEqual(self.context._pull(_key, targets=[0])[0], 'question')
         self.assertTrue("'answer'" in kw_keys2)
 
         self.assertTrue("'foo'" in kw_keys2)
@@ -104,7 +105,7 @@ class TestLocalDecorator(ContextTestCase):
 
     @local
     def local_sum(da):
-        return numpy.sum(da.ndarray)
+        return numpy.sum(da)
 
     @local
     def call_barrier(da):
@@ -268,15 +269,13 @@ class TestLocalDecorator(ContextTestCase):
         self.assertEqual(self.parameterless.__doc__, docstring)
 
 
-class TestVectorizeDecorator(TestCase):
+class TestVectorizeDecorator(ContextTestCase):
 
     def test_vectorize(self):
         """Test the @vectorize decorator for parity with NumPy's"""
 
-        context = Context()
-
         a = numpy.arange(16).reshape(4, 4)
-        da = context.fromndarray(a)
+        da = self.context.fromndarray(a)
 
         @vectorize
         def da_fn(a, b, c):

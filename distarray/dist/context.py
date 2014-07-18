@@ -11,8 +11,9 @@ communicate with `LocalArray`\s.
 
 from __future__ import absolute_import
 
-import collections
 import atexit
+import collections
+import types
 
 import numpy
 
@@ -25,9 +26,13 @@ from distarray.dist.maps import Distribution
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME
 
+# mpi context
+from distarray.mpionly_utils import (make_targets_comm, get_nengines,
+                                     get_world_rank, initial_comm_setup,
+                                     is_solo_mpi_process, push_function)
 
-class Context(object):
 
+class BaseContext(object):
     """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
@@ -41,52 +46,9 @@ class Context(object):
 
     _CLEANUP = None
 
-    def __init__(self, client=None, targets=None):
-
-        if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(cleanup.clear_all),
-                                atexit.register(cleanup.cleanup_all, '__main__', DISTARRAY_BASE_NAME))
-
-        if client is None:
-            self.client = IPythonClient()
-            self.owns_client = True
-        else:
-            self.client = client
-            self.owns_client = False
-
-        self.view = self.client[:]
-
-        all_targets = sorted(self.view.targets)
-        if targets is None:
-            self.targets = all_targets
-        else:
-            self.targets = []
-            for target in targets:
-                if target not in all_targets:
-                    raise ValueError("Engine with id %r not registered" % target)
-                else:
-                    self.targets.append(target)
-        self.targets = sorted(self.targets)
-
-        # local imports
-        self.view.execute("from functools import reduce; "
-                          "from importlib import import_module; "
-                          "import distarray.local; "
-                          "import distarray.local.mpiutils; "
-                          "import distarray.utils; "
-                          "import distarray.local.proxyize as proxyize; "
-                          "import numpy")
-
-        self.context_key = self._setup_context_key()
-
-        # setup proxyize which is used by context.apply in the rest of the
-        # setup.
-        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
-        self.view.execute(cmd)
-
-        self._base_comm = self._make_base_comm()
-        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}  # noqa
-        self.comm = self._make_subcomm(self.targets)
+    def __init__(self):
+        raise TypeError("The base context class is not meant to be "
+                        "instantiated on its own.")
 
     def _setup_context_key(self):
         """
@@ -97,67 +59,9 @@ class Context(object):
         cmd = ("import types, sys;"
                "%s = types.ModuleType('%s');")
         cmd %= (context_key, context_key)
-        self._execute(cmd, targets=range(len(self.view)))
+        self._execute(cmd, self.all_targets)
         return context_key
 
-    def _make_subcomm(self, new_targets):
-
-        if new_targets != sorted(new_targets):
-            raise ValueError("targets must be in sorted order.")
-
-        try:
-            return self._comm_from_targets[tuple(new_targets)]
-        except KeyError:
-            pass
-
-        def _make_new_comm(rank_list, base_comm):
-            import distarray.local.mpiutils as mpiutils
-            res = mpiutils.create_comm_with_list(rank_list, base_comm)
-            return proxyize(res)  # noqa
-
-        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm),
-                              targets=self.view.targets)[0]
-
-        self._comm_from_targets[tuple(new_targets)] = new_comm
-        return new_comm
-
-    def _make_base_comm(self):
-        """
-        Returns a proxy for an MPI communicator that encompasses all targets in
-        self.view.targets (not self.targets, which can be a subset).
-        """
-
-        def get_rank():
-            from distarray.local.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_rank()
-
-        # self.view's engines must encompass all ranks in the MPI communicator,
-        # i.e., everything in rank_map.values().
-        def get_size():
-            from distarray.local.mpiutils import COMM_PRIVATE
-            return COMM_PRIVATE.Get_size()
-
-        # get a mapping of IPython engine ID to MPI rank
-        rank_from_target = self.view.apply_async(get_rank).get_dict()
-        ranks = [ rank_from_target[target] for target in self.view.targets ]
-
-        comm_size = self.view.apply_async(get_size).get()[0]
-        if set(rank_from_target.values()) != set(range(comm_size)):
-            raise ValueError('Engines in view must encompass all MPI ranks.')
-
-        # create a new communicator with the subset of ranks. Note that
-        # create_comm_with_list() must be called on all engines, not just those
-        # involved in the new communicator.  This is because
-        # create_comm_with_list() issues a collective MPI operation.
-        def _make_new_comm(rank_list):
-            import distarray.local.mpiutils as mpiutils
-            new_comm = mpiutils.create_comm_with_list(rank_list)
-            return proxyize(new_comm)  # noqa
-
-        return self.apply(_make_new_comm, args=(ranks,),
-                          targets=self.view.targets)[0]
-
-    # Key management routines:
     @staticmethod
     def _key_prefix():
         """ Get the base name for all keys. """
@@ -180,28 +84,6 @@ class Context(object):
                'except NameError: pass') % key
         targets = targets or self.targets
         self._execute(cmd, targets=targets)
-
-    def cleanup(self):
-        """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, module_name='__main__', prefix=self.context_key)
-
-    def close(self):
-        self.cleanup()
-        if self.owns_client:
-            self.client.close()
-        self._base_comm = None
-        self.comm = None
-
-    # End of key management routines.
-
-    def _execute(self, lines, targets):
-        return self.view.execute(lines, targets=targets, block=True)
-
-    def _push(self, d, targets):
-        return self.view.push(d, targets=targets, block=True)
-
-    def _pull(self, k, targets):
-        return self.view.pull(k, targets=targets, block=True)
 
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
@@ -327,7 +209,6 @@ class Context(object):
             raise TypeError(errmsg)
 
         self.apply(func, (da.key, name), targets=da.targets)
-
 
     def load_dnpy(self, name):
         """
@@ -536,9 +417,14 @@ class Context(object):
         See numpy.fromfunction for more details.
         """
 
+        # push the function
+        func_key = self._generate_key()
+        push_function(self, func_key, function)
+
         def _local_fromfunction(func, comm, ddpr, kwargs):
             from distarray.local import fromfunction
             from distarray.local.maps import Distribution
+
             if len(ddpr):
                 dim_data = ddpr[comm.Get_rank()]
             else:
@@ -554,9 +440,143 @@ class Context(object):
                                     grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         da_name = self.apply(_local_fromfunction,
-                             (function, distribution.comm, ddpr, kwargs),
+                             (func_key, distribution.comm, ddpr, kwargs),
                              targets=distribution.targets)
-        return DistArray.from_localarrays(da_name[0], distribution=distribution)
+        return DistArray.from_localarrays(da_name[0],
+                                          distribution=distribution)
+
+
+class IPythonContext(BaseContext):
+    def __init__(self, client=None, targets=None):
+
+        if not Context._CLEANUP:
+            Context._CLEANUP = (atexit.register(cleanup.clear_all),
+                                atexit.register(cleanup.cleanup_all,
+                                                '__main__',
+                                                DISTARRAY_BASE_NAME))
+
+        if client is None:
+            self.client = IPythonClient()
+            self.owns_client = True
+        else:
+            self.client = client
+            self.owns_client = False
+
+        self.view = self.client[:]
+        self.nengines = len(self.view)
+
+        self.all_targets = sorted(self.view.targets)
+        if targets is None:
+            self.targets = self.all_targets
+        else:
+            self.targets = []
+            for target in targets:
+                if target not in self.all_targets:
+                    raise ValueError("Target %r not registered" % target)
+                else:
+                    self.targets.append(target)
+        self.targets = sorted(self.targets)
+
+        # local imports
+        self.view.execute("from functools import reduce; "
+                          "from importlib import import_module; "
+                          "import distarray.local; "
+                          "import distarray.local.mpiutils; "
+                          "import distarray.utils; "
+                          "import distarray.local.proxyize as proxyize; "
+                          "import numpy")
+
+        self.context_key = self._setup_context_key()
+
+        # setup proxyize which is used by context.apply in the rest of the
+        # setup.
+        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
+        self.view.execute(cmd)
+
+        self._base_comm = self._make_base_comm()
+        self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
+        self.comm = self._make_subcomm(self.targets)
+
+    def _make_subcomm(self, new_targets):
+
+        if new_targets != sorted(new_targets):
+            raise ValueError("targets must be in sorted order.")
+
+        try:
+            return self._comm_from_targets[tuple(new_targets)]
+        except KeyError:
+            pass
+
+        def _make_new_comm(rank_list, base_comm):
+            import distarray.local.mpiutils as mpiutils
+            res = mpiutils.create_comm_with_list(rank_list, base_comm)
+            return proxyize(res)  # noqa
+
+        new_comm = self.apply(_make_new_comm, (new_targets, self._base_comm),
+                              targets=self.view.targets)[0]
+
+        self._comm_from_targets[tuple(new_targets)] = new_comm
+        return new_comm
+
+    def _make_base_comm(self):
+        """
+        Returns a proxy for an MPI communicator that encompasses all targets in
+        self.view.targets (not self.targets, which can be a subset).
+        """
+
+        def get_rank():
+            from distarray.local.mpiutils import get_comm_private
+            return get_comm_private().Get_rank()
+
+        # self.view's engines must encompass all ranks in the MPI communicator,
+        # i.e., everything in rank_map.values().
+        def get_size():
+            from distarray.local.mpiutils import get_comm_private
+            return get_comm_private().Get_size()
+
+        # get a mapping of IPython engine ID to MPI rank
+        rank_from_target = self.view.apply_async(get_rank).get_dict()
+        ranks = [ rank_from_target[target] for target in self.view.targets ]
+
+        comm_size = self.view.apply_async(get_size).get()[0]
+        if set(rank_from_target.values()) != set(range(comm_size)):
+            raise ValueError('Engines in view must encompass all MPI ranks.')
+
+        # create a new communicator with the subset of ranks. Note that
+        # create_comm_with_list() must be called on all engines, not just those
+        # involved in the new communicator.  This is because
+        # create_comm_with_list() issues a collective MPI operation.
+        def _make_new_comm(rank_list):
+            import distarray.local.mpiutils as mpiutils
+            new_comm = mpiutils.create_comm_with_list(rank_list)
+            return proxyize(new_comm)  # noqa
+
+        return self.apply(_make_new_comm, args=(ranks,),
+                          targets=self.view.targets)[0]
+
+    # Key management routines:
+    def cleanup(self):
+        """ Delete keys that this context created from all the engines. """
+        cleanup.cleanup(view=self.view, module_name='__main__',
+                        prefix=self.context_key)
+
+    def close(self):
+        self.cleanup()
+        if self.owns_client:
+            self.client.close()
+        self._base_comm = None
+        self.comm = None
+
+    # End of key management routines.
+
+    def _execute(self, lines, targets):
+        return self.view.execute(lines, targets=targets, block=True)
+
+    def _push(self, d, targets):
+        return self.view.push(d, targets=targets, block=True)
+
+    def _pull(self, k, targets):
+        return self.view.pull(k, targets=targets, block=True)
 
     def apply(self, func, args=None, kwargs=None, targets=None):
         """
@@ -630,5 +650,156 @@ class Context(object):
 
         targets = self.targets if targets is None else targets
 
-        return self.view._really_apply(func_wrapper, args=wrapped_args,
-                                       targets=targets, block=True)
+        with self.view.temp_flags(targets=targets):
+            return self.view.apply_sync(func_wrapper, *wrapped_args)
+
+    def push_function(self, key, func, targets=None):
+        targets = targets or self.targets
+        self._push({key: func}, targets=targets)
+
+
+class MPIContext(BaseContext):
+    _BASE_COMM = None
+    _INTERCOMM = None
+
+    def __init__(self, targets=None):
+
+        if self.__class__._BASE_COMM is None:
+            base_comm, intercomm = initial_comm_setup()
+            self.__class__._BASE_COMM = base_comm
+            self.__class__._INTERCOMM = intercomm
+            assert get_world_rank() == 0
+
+        self.nengines = get_nengines()
+
+        self.all_targets = list(range(self.nengines))
+        targets = self.all_targets if targets is None else targets
+        self.targets = targets
+        self.ntargets = len(self.targets)
+
+        # make/get comms
+        # this is the object we want to use with push, pull, etc'
+        self.intercomm = self.__class__._INTERCOMM
+        self._base_comm = self.__class__._BASE_COMM
+        self.comm = self._make_subcomm(self.targets)
+
+        if Context._CLEANUP is None:
+            Context._CLEANUP = atexit.register(self.cleanup)
+
+        # local imports
+        self._execute("from functools import reduce; "
+                      "from importlib import import_module; "
+                      "import distarray.local; "
+                      "import distarray.local.mpiutils; "
+                      "import distarray.utils; "
+                      "from distarray.local.proxyize import Proxyize; "
+                      "import numpy")
+
+        self.context_key = self._setup_context_key()
+
+        # setup proxyize which is used by context.apply in the rest of the
+        # setup.
+        cmd = "proxyize = Proxyize('%s')" % (self.context_key,)
+        self._execute(cmd)
+
+    # Key management routines:
+
+    def cleanup(self):
+        """ Delete keys that this context created from all the engines. """
+        msg = ('kill',)
+        self._send_msg(msg)
+
+    def close(self):
+        pass
+
+    # End of key management routines.
+
+    def _send_msg(self, msg, targets=None):
+        targets = self.targets if targets is None else targets
+        for t in targets:
+            self.intercomm.send(msg, dest=t)
+
+    def _recv_msg(self, targets=None):
+        res = []
+        targets = self.targets if targets is None else targets
+        for t in targets:
+            res.append(self.intercomm.recv(source=t))
+        return res
+
+    def _make_subcomm(self, targets):
+        if len(targets) > self.nengines:
+            msg = ("The number of engines (%s) is less than the number of "
+                   "targets you want (%s)." % (self.nengines, len(targets)))
+            raise ValueError(msg)
+
+        msg = ('make_targets_comm', targets)
+        self._send_msg(msg, targets=self.all_targets)
+        comm_name = make_targets_comm(targets)
+        return comm_name
+
+    def _execute(self, lines, targets=None):
+        msg = ('execute', lines)
+        return self._send_msg(msg, targets=targets)
+
+    def _push(self, d, targets=None):
+        msg = ('push', d)
+        return self._send_msg(msg, targets=targets)
+
+    def _pull(self, k, targets=None):
+        msg = ('pull', k)
+        self._send_msg(msg, targets=targets)
+        return self._recv_msg(targets=targets)
+
+    def apply(self, func, args=None, kwargs=None, targets=None):
+        """
+        Analogous to IPython.parallel.view.apply_sync
+
+        Parameters
+        ----------
+        func : function
+        args : tuple
+            positional arguments to func
+        kwargs : dict
+            keyword arguments to func
+        targets : sequence of integers
+            engines func is to be run on.
+
+        Returns
+        -------
+        list
+            result from each engine.
+        """
+        # default arguments
+        args = () if args is None else args
+        kwargs = {} if kwargs is None else kwargs
+        targets = self.targets if targets is None else targets
+
+        apply_nonce = uid()[13:]
+        apply_metadata = (apply_nonce, self.context_key)
+
+        if not isinstance(func, types.BuiltinFunctionType):
+            # break up the function
+            func_code = func.__code__
+            func_globals = func.__globals__  # noqa we don't need these.
+            func_name = func.__name__
+            func_defaults = func.__defaults__
+            func_closure = func.__closure__
+
+            func_data = (func_code, func_name, func_defaults, func_closure)
+
+            msg = ('func_call', func_data, args, kwargs, apply_metadata)
+
+        else:
+            msg = ('builtin_call', func, args, kwargs)
+
+        self._send_msg(msg, targets=targets)
+        return self._recv_msg(targets=targets)
+
+    def push_function(self, key, func, targets=None):
+        push_function(self, key, func, targets=targets)
+
+
+if is_solo_mpi_process():
+    Context = IPythonContext
+else:
+    Context = MPIContext

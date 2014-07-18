@@ -4,9 +4,5 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-from __future__ import absolute_import
-
-from distarray.dist.distarray import DistArray
-from distarray.dist.context import Context, MPIContext
-from distarray.dist.maps import Distribution
-from distarray.dist.functions import *
+__short_version__ = "0.5"
+__version__ = "0.5.0-dev"

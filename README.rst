@@ -1,8 +1,13 @@
+.. Travis badge
 .. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
    :target: https://travis-ci.org/enthought/distarray
 
+.. Coveralls badge
 .. image:: https://coveralls.io/repos/enthought/distarray/badge.png?branch=master
    :target: https://coveralls.io/r/enthought/distarray?branch=master
+   
+.. All content before the next comment will be stripped off for release.
+.. *** begin README content ***
 
 DistArray
 =========
@@ -32,7 +37,10 @@ DistArray is targeting users who
 
 .. _NumPy: http://www.numpy.org
 
-Please see our documentation at `readthedocs`_ (or in the `docs` directory)
-for more.  Pull requests gladly accepted.
+Please see our documentation at `readthedocs`_ (or in the `docs` directory) for
+more, join our `mailing list`_, or chat with us on #distarray on freenode.
+Pull requests gladly accepted.
+
 
 .. _readthedocs: http://distarray.readthedocs.org
+.. _mailing list: https://groups.google.com/forum/#!forum/distarray

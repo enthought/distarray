@@ -448,7 +448,7 @@ class DistArray(object):
 
         Note
         ----
-        No redistribution is done.  The sizes of the all localarrays must be
+        No redistribution is done.  The sizes of all `LocalArray`\s must be
         compatible with the new view.
         """
         # special case for same dtype

@@ -300,5 +300,23 @@ class TestDistributionCreation(ContextTestCase):
         self.context.ones(distribution)
 
 
+class TestNoEmptyLocals(ContextTestCase):
+
+    def test_no_empty_local_arrays_4_targets(self):
+        for n in range(1, 20):
+            dist = Distribution(self.context, shape=(n,),
+                                dist=('b',),
+                                targets=self.context.targets[:4])
+            for ls in dist.localshapes():
+                self.assertNotIn(0, ls)
+
+    def test_no_empty_local_arrays_3_targets(self):
+        for n in range(1, 20):
+            dist = Distribution(self.context, shape=(n,),
+                                dist=('b',),
+                                targets=self.context.targets[:3])
+            for ls in dist.localshapes():
+                self.assertNotIn(0, ls)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

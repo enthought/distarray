@@ -20,7 +20,16 @@ PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
 
 MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
-MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n ${NPROCS}
+
+# see if we're using MPICH2, else assume OpenMPI
+ifneq (,$(findstring MPICH2,$(shell mpicc -v 2>&1)))
+    MPIEXEC_ARGS := --outfile-pattern ${MPI_OUT_PREFIX}.%r.stdout \
+                    --errfile-pattern ${MPI_OUT_PREFIX}.%r.stderr \
+                    -n ${NPROCS}
+else
+    MPIEXEC_ARGS := --output-filename ${MPI_OUT_PREFIX} -n ${NPROCS}
+endif
+
 
 # Inside MPI_EXEC_CMD, PARALLEL_TEST is meant to be substituted with either
 # PARALLEL_TEST_REGULAR or PARALLEL_TEST_COVERAGE from above.  See the
@@ -49,11 +58,11 @@ install:
 # ----------------------------------------------------------------------------
 
 test_client:
-	${PYTHON} -m unittest discover
+	${PYTHON} -m unittest discover -c
 .PHONY: test_client
 
 test_client_with_coverage:
-	${COVERAGE} run -pm unittest discover -v
+	${COVERAGE} run -pm unittest discover -cv
 .PHONY: test_client_with_coverage
 
 ${PARALLEL_OUT_DIR} :
@@ -73,10 +82,18 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 	@${MPI_EXEC_CMD}
 .PHONY: test_engines_with_coverage
 
-test: test_client test_engines
+test_mpi:
+	mpiexec -np 1 python -m unittest discover -c : -np 4 distarray/apps/engine.py
+.PHONY: test_mpi
+
+test_mpi_with_coverage:
+	mpiexec -np 1 ${COVERAGE} run -m unittest discover -c : -np 4 ${COVERAGE} run distarray/apps/engine.py
+.PHONY: test_mpi_with_coverage
+
+test: test_client test_engines test_mpi
 .PHONY: test
 
-test_with_coverage: test_client_with_coverage test_engines_with_coverage
+test_with_coverage: test_client_with_coverage test_engines_with_coverage test_mpi_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
