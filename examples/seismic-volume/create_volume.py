@@ -136,16 +136,12 @@ def local_add_horizon(volume_la, horizon_la, z, horizon_params):
         Gaussian, with a step-like function past the gaussian peak.
         The peak is at depth z=z0.
         '''
-        from numpy import exp
+        from numpy import exp, tanh
         u = mu * (z - z0) ** 2
         v = mu * (z - z0)
-        # Gaussian.
-        g = A * exp(-u) + C
-        # Smooth step.
-        exp_p = exp(v)
-        exp_m = exp(-v)
-        h = B * (exp_p - exp_m) / (exp_p + exp_m)
-        r = g + h
+        # Combine Gaussian, hyperbolic tangent, and constant.
+        # The hyperbolic tangent serves as a smooth step.
+        r = A * exp(-u) + B * tanh(v) + C
         return r
 
     def add_horizon(vol, hor, z, horizon_params):
@@ -165,19 +161,16 @@ def local_add_horizon(volume_la, horizon_la, z, horizon_params):
 
 
 def local_add_random(volume_la):
-    ''' Add randomness and a constant to the local array data. '''
+    ''' Add randomness to the local array data. '''
 
-    def add_random(vol, C, R):
-        ''' Add randomness and a constant to the volume. '''
-        # Add constant
-        vol[:, :, :] += C
-        # Add randomness.
+    def add_random(vol, R):
+        ''' Add randomness to the volume. '''
         shape = vol.shape
         rnd = numpy.random.randn(*shape)
         vol[:, :, :] += R * rnd
 
     vol = volume_la.ndarray
-    add_random(vol, C=2.5, R=2.0)
+    add_random(vol, R=2.0)
     return volume_la
 
 
@@ -213,15 +206,8 @@ def create_volume(context, shape):
 
 def create_hdf5_file(da_volume, filename, key):
     '''Create an HDF5 file with the seismic volume.'''
-    if False:
-        # Explicit HDF5 usage to create file, faster but not DistArray.
-        f = h5py.File(filename, 'w')
-        dataset = f.create_dataset(key, da_volume.shape, dtype='f')
-        dataset[...] = da_volume.tondarray()
-        f.close()
-    else:
-        pathname = os.path.abspath(filename)
-        da_volume.context.save_hdf5(pathname, da_volume, key=key, mode='w')
+    pathname = os.path.abspath(filename)
+    da_volume.context.save_hdf5(pathname, da_volume, key=key, mode='w')
 
 
 def create_dnpy_files(da_volume, filename):
