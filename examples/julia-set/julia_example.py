@@ -266,8 +266,8 @@ if __name__ == '__main__':
     # Fixed parameters:
 
     # Select Julia set (True) or Mandelbrot set (False) calculation.
-    #mode_julia = True
-    mode_julia = False
+    mode_julia = True
+    #mode_julia = False
 
     # Region of the complex plane.
     if mode_julia:
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     # Constants to use.
     c_list = [complex(-0.045, 0.45)]      # This Julia set has many points inside, needing all iterations.
-    # Or try lots of values over a grid. 
+    # Or try lots of values over a grid.
     #cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
@@ -321,9 +321,33 @@ if __name__ == '__main__':
     #resolution_list = [64, 128, 256, 512, 1024]
 
     # Number of cycles to repeat everything.
-    #repeat_count = 1
-    repeat_count = 4
+    repeat_count = 1
+    #repeat_count = 4
     #repeat_count = 8
+
+    # Some standard sets of parameters
+    #params = 'fast'    # Quick run for testing.
+    #params = 'full'    # Extended run for real results.
+    params = None      # Use manually set values.
+
+    if params == None:
+        # Leave values from above as-is, so one can tweak however you like.
+        pass
+    elif params == 'fast':
+        # Params for quick runs, useful for testing the script.
+        mode_julia = True
+        n_max = 100
+        resolution_list = [128]
+        repeat_count = 1
+    elif params == 'full':
+        # Params for a full test, useful for real results.
+        mode_julia = True
+        n_max = 5000
+        resolution_list = [64, 128, 256, 512, 1024]
+        repeat_count = 16
+    else:
+        msg = 'Invalid params set: %s' % (params)
+        raise ValueError(msg)
 
     # If we got command line parameters for c, then use these,
     # and only loop over the resolutions, making plots.
