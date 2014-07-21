@@ -14,7 +14,7 @@ Usage:
     $ python bench_dist.py
 """
 
-from __future__ import division
+from __future__ import division, print_function
 
 import sys
 from timeit import default_timer as clock
@@ -84,7 +84,7 @@ def plot_results(dist_data, dists, engines, line_styles):
     pyplot.show()
 
 
-def main(resolution=(480, 480), nreps=1):
+def main(resolution=(480, 480), nreps=3):
     """Take the min of `nreps`."""
     # Grid parameters
     re_ax = (-1., 1.)
@@ -96,8 +96,7 @@ def main(resolution=(480, 480), nreps=1):
 
     # benchmark parameters
     # number of engines
-    #engines = range(1, 20, 1)
-    engines = range(1, 3)
+    engines = range(1, 20, 1)
 
     # array distributions
     dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
