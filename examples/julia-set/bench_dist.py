@@ -80,7 +80,7 @@ n_max = 100
 
 # benchmark parameters
 # number of engines
-engines = range(4, 21, 2)
+engines = range(1, 20, 1)
 
 # array distributions
 dists = [{0: 'c', 1: 'b'}, {0: 'c', 1: 'c'}, {0: 'b'}, {0: 'c'},
