@@ -73,13 +73,17 @@ def test_distarray(dist, context, resolution, c, re_ax, im_ax, z_max, n_max):
 
 def plot_results(dist_data, dists, engines):
     """Plot the computed timings."""
+    from itertools import cycle
+    linestyles = ["-", "--", "-.", ":"]
+    cycler = cycle(linestyles)
     try:  # nicer plotting defaults
-        import seaborn
+        import seaborn as sns
+        sns.set_style("whitegrid")
     except ImportError:
         pass
 
-    for i, data in enumerate(dist_data):
-        pyplot.plot(list(engines), data, label=dists[i].__repr__(), lw=2)
+    for data, label in zip(dist_data, dists):
+        pyplot.plot(list(engines), data, next(cycler), label=label)
 
     pyplot.title('Julia Set Benchmark')
     pyplot.xticks(list(engines), list(engines))
