@@ -83,8 +83,7 @@ n_max = 100
 engines = range(1, 20, 1)
 
 # array distributions
-dists = [{0: 'c', 1: 'b'}, {0: 'c', 1: 'c'}, {0: 'b'}, {0: 'c'},
-         {0: 'b', 1: 'b'}, {0: 'b', 1: 'c'}]
+dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
 
 dist_data = [[] for i in range(len(dists))]
 engine_data = []
