@@ -6,8 +6,10 @@
 
 """
 Benchmark calculating the Julia set with Distarray for various array
-distributions and number of engines. Usage:
-    $ ipcluster start --n=20 --engines=MPI
+distributions and number of engines.
+
+Usage:
+    $ dacluster start -n20
     ...
     $ python bench_dist.py
 """
