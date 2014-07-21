@@ -742,6 +742,11 @@ class IPythonContext(BaseContext):
         targets = targets or self.targets
         self._push({key: func}, targets=targets)
 
+def _shutdown(intercomm, targets):
+    msg = ('kill',)
+    for t in targets:
+        intercomm.send(msg, dest=t)
+    intercomm.Free()
 
 class MPIContext(BaseContext):
 
@@ -776,7 +781,9 @@ class MPIContext(BaseContext):
         self.comm = self._make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
-            Context._CLEANUP = atexit.register(self._shutdown)
+            Context._CLEANUP = atexit.register(_shutdown,
+                                               MPIContext._INTERCOMM,
+                                                tuple(self.all_targets))
 
         # local imports
         self._execute("from functools import reduce; "
@@ -795,13 +802,6 @@ class MPIContext(BaseContext):
         self._execute(cmd)
 
     # Key management routines:
-
-    def _shutdown(self):
-        msg = ('kill',)
-        self._send_msg(msg)
-        self.__class__._BASE_COMM = self._base_comm = None
-        self.__class__._INTERCOMM = self.intercomm = None
-        self.comm = None
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
