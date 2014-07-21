@@ -14,8 +14,10 @@ Usage:
     $ python bench_dist.py
 """
 
+import sys
 from timeit import default_timer as clock
 
+import numpy as np
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
@@ -77,11 +79,10 @@ def plot_results(dist_data, dists, engines):
     for i, data in enumerate(dist_data):
         pyplot.plot(list(engines), data, label=dists[i].__repr__(), lw=2)
 
-    pyplot.title('Julia set benchmark - array distribution type vs number of '
-                 'engines')
+    pyplot.title('Julia Set Benchmark')
     pyplot.xticks(list(engines), list(engines))
-    pyplot.xlabel('number of engines')
-    pyplot.ylabel('time (s)')
+    pyplot.xlabel('nengines')
+    pyplot.ylabel('npoints / s')
     pyplot.legend(loc='upper right')
     pyplot.savefig("julia_timing.png", dpi=100)
     pyplot.show()
@@ -110,14 +111,19 @@ def main():
     for num_engines in engines:
         targets = list(range(num_engines))
         context = Context(targets=targets)
-        print(num_engines)
+        print("nengines:", num_engines)
+        print("dist:", end=" ")
         for i, dist in enumerate(dists):
-            print(dist)
+            print(dist, end=" ")
+            sys.stdout.flush()
             time = test_distarray(dist, context, resolution,
                                   c, re_ax, im_ax, z_max, n_max)
             dist_data[i].append(time)
+        print()
 
-    plot_results(dist_data, dists, engines)
+    npoints = np.array(resolution).prod()
+    data =  npoints / np.array(dist_data)
+    plot_results(data, dists, engines)
 
 
 if __name__ == '__main__':
