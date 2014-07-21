@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 """
-Benchmark calculating the Julia set with Distarray for various array
+Benchmark calculating the Julia set with DistArray for various array
 distributions and number of engines.
 
 Usage:
@@ -34,7 +34,7 @@ def make_empty_da(resolution, dist, context):
 
 
 # Drawing the coordinate plane directly like this is currently much
-# faster than trying to do it by indexing a distarray.
+# faster than trying to do it by indexing a DistArray.
 def draw_coord(arr, re_ax, im_ax, resolution):
     """Draw the complex coordinate plane."""
     re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
@@ -47,7 +47,7 @@ def draw_coord(arr, re_ax, im_ax, resolution):
 
 
 # This is exactly the same function as the one in julia_numpy.py, but here
-# we use distarray's vectorize decorator.
+# we use DistArray's vectorize decorator.
 def julia(z, c, z_max, n_max):
     n = 0
     fn = lambda z, c: z**2 + c
