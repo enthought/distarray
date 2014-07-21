@@ -154,7 +154,10 @@ class MapBase(object):
     @classmethod
     @abstractmethod
     def from_axis_dim_dicts(cls, axis_dim_dicts):
-        """Make a Map from a sequence of dim_dicts, one-per-process."""
+        """Make a Map from a sequence of process-local dimension dictionaries.
+
+        There should be one such dimension dictionary per process.
+        """
         pass
 
     @abstractmethod
