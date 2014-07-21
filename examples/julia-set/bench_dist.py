@@ -16,7 +16,6 @@ Usage:
 
 from timeit import default_timer as clock
 
-from IPython.parallel import Client
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
@@ -56,9 +55,7 @@ def julia(z, c, z_max, n_max):
     return n
 
 
-def test_distarray(dist, context):
-    global draw_coord
-    global julia
+def test_distarray(dist, context, resolution, c, re_ax, im_ax, z_max, n_max):
     local_draw_coord = local(draw_coord)
     vect_julia = vectorize(julia)
     darr = make_empty_da(resolution, dist, context)
@@ -69,43 +66,57 @@ def test_distarray(dist, context):
     return stop - start
 
 
-# Grid parameters
-re_ax = (-1., 1.)
-im_ax = (-1., 1.)
-resolution = (480, 480)
-# Julia set parameters, changing these is fun.
-c = complex(0., .75)
-z_max = 20
-n_max = 100
+def plot_results(dist_data, dists, engines):
+    try:  # nicer plotting defaults
+        import seaborn
+    except ImportError:
+        pass
 
-# benchmark parameters
-# number of engines
-engines = range(1, 20, 1)
+    for i, data in enumerate(dist_data):
+        pyplot.plot(list(engines), data, label=dists[i].__repr__(), lw=2)
 
-# array distributions
-dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
+    pyplot.title('Julia set benchmark - array distribution type vs number of '
+                 'engines')
+    pyplot.xticks(list(engines), list(engines))
+    pyplot.xlabel('number of engines')
+    pyplot.ylabel('time (s)')
+    pyplot.legend(loc='upper right')
+    pyplot.savefig("julia_timing.png", dpi=100)
+    pyplot.show()
 
-dist_data = [[] for i in range(len(dists))]
-engine_data = []
-client = Client()
 
-for num_engines in engines:
-    targets = list(range(num_engines))
-    context = Context(client, targets=targets)
-    print(num_engines)
-    for i, dist in enumerate(dists):
-        print(dist)
-        time = test_distarray(dist, context)
-        dist_data[i].append(time)
+def main():
+    # Grid parameters
+    re_ax = (-1., 1.)
+    im_ax = (-1., 1.)
+    resolution = (480, 480)
+    # Julia set parameters, changing these is fun.
+    c = complex(0., .75)
+    z_max = 20
+    n_max = 100
 
-for i, data in enumerate(dist_data):
-    pyplot.plot(list(engines), data, label=dists[i].__repr__(), lw=2)
+    # benchmark parameters
+    # number of engines
+    #engines = range(1, 20, 1)
+    engines = range(1, 3)
 
-pyplot.title('Julia set benchmark - array distribution type vs number of '
-             'engines')
-pyplot.xticks(list(engines), list(engines))
-pyplot.xlabel('number of engines')
-pyplot.ylabel('time (s)')
-pyplot.legend(loc='upper right')
-pyplot.savefig("julia_timing.png", dpi=100)
-pyplot.show()
+    # array distributions
+    dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
+
+    dist_data = [[] for i in range(len(dists))]
+
+    for num_engines in engines:
+        targets = list(range(num_engines))
+        context = Context(targets=targets)
+        print(num_engines)
+        for i, dist in enumerate(dists):
+            print(dist)
+            time = test_distarray(dist, context, resolution,
+                                  c, re_ax, im_ax, z_max, n_max)
+            dist_data[i].append(time)
+
+    plot_results(dist_data, dists, engines)
+
+
+if __name__ == '__main__':
+    main()
