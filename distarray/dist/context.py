@@ -14,13 +14,14 @@ from __future__ import absolute_import
 import atexit
 import collections
 import types
+from abc import ABCMeta, abstractmethod
 
 from functools import wraps
 
 import numpy
 
-from distarray.dist import cleanup
 from distarray.externals import six
+from distarray.dist import cleanup
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
@@ -34,7 +35,9 @@ from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      is_solo_mpi_process, push_function)
 
 
+@six.add_metaclass(ABCMeta)
 class BaseContext(object):
+
     """
     Context objects manage the setup and communication of the worker processes
     for DistArray objects.  A DistArray object has a context, and contexts have
@@ -48,9 +51,26 @@ class BaseContext(object):
 
     _CLEANUP = None
 
+    @abstractmethod
     def __init__(self):
         raise TypeError("The base context class is not meant to be "
                         "instantiated on its own.")
+
+    @abstractmethod
+    def cleanup(self):
+        pass
+
+    @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
+    def apply(self, func, args=None, kwargs=None, targets=None):
+        pass
+
+    @abstractmethod
+    def push_function(self, key, func):
+        pass
 
     def _setup_context_key(self):
         """
@@ -529,6 +549,16 @@ class BaseContext(object):
 
 class IPythonContext(BaseContext):
 
+    """
+    Context class that uses IPython.parallel.
+
+    See the docstring for  `BaseContext` for more information about Contexts.
+
+    See also
+    --------
+    BaseContext
+    """
+
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
@@ -749,6 +779,16 @@ def _shutdown(intercomm, targets):
     intercomm.Free()
 
 class MPIContext(BaseContext):
+
+    """
+    Context class that uses MPI only (no IPython.parallel).
+
+    See the docstring for  `BaseContext` for more information about Contexts.
+
+    See also
+    --------
+    BaseContext
+    """
 
     _BASE_COMM = None
     _INTERCOMM = None
