@@ -34,7 +34,7 @@ def make_empty_da(resolution, dist, context):
 # Drawing the coordinate plane directly like this is currently much
 # faster than trying to do it by indexing a distarray.
 def draw_coord(arr, re_ax, im_ax, resolution):
-    """Draw the complex coordinate plane"""
+    """Draw the complex coordinate plane."""
     re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
     im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
     for i in arr.distribution[0].global_iter:
@@ -44,7 +44,7 @@ def draw_coord(arr, re_ax, im_ax, resolution):
     return arr
 
 
-# This exactly the same function as the one in julia_numpy.py, but here
+# This is exactly the same function as the one in julia_numpy.py, but here
 # we use distarray's vectorize decorator.
 def julia(z, c, z_max, n_max):
     n = 0
@@ -56,6 +56,7 @@ def julia(z, c, z_max, n_max):
 
 
 def test_distarray(dist, context, resolution, c, re_ax, im_ax, z_max, n_max):
+    """Time a function call."""
     local_draw_coord = local(draw_coord)
     vect_julia = vectorize(julia)
     darr = make_empty_da(resolution, dist, context)
@@ -67,6 +68,7 @@ def test_distarray(dist, context, resolution, c, re_ax, im_ax, z_max, n_max):
 
 
 def plot_results(dist_data, dists, engines):
+    """Plot the computed timings."""
     try:  # nicer plotting defaults
         import seaborn
     except ImportError:
