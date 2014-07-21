@@ -15,6 +15,8 @@ import csv
 import random
 from matplotlib import pyplot
 
+from distarray.externals.six import next
+
 
 # Dictionary keys.
 ENGINES = 'engines'
@@ -24,19 +26,19 @@ LEGEND = 'legend'
 
 def read_results(filename):
     ''' Read the Julia Set timing results from the file. '''
-    with open(filename, 'rb') as csvfile:
+    with open(filename, 'rt') as csvfile:
         csvreader = csv.reader(csvfile)
         # Swallow header lines.
         # Discard 'importing numpy on engines'
-        csvreader.next()
+        next(csvreader)
         # Title
-        title_fields = csvreader.next()
+        title_fields = next(csvreader)
         title = title_fields[0]
         # Subtitle/notes
-        notes = csvreader.next()
+        notes = next(csvreader)
         note_text = ','.join(notes)
         # Field names.
-        csvreader.next()
+        next(csvreader)
         # Read the results.
         results = {}
         for row in csvreader:
@@ -117,7 +119,7 @@ def plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
     ''' Plot the timing results. '''
     # Sort keys for consistent coloring.
     keys = results.keys()
-    keys.sort()
+    keys = sorted(keys)
     for key in keys:
         engines = results[key][ENGINES]
         times = results[key][TIMES]
