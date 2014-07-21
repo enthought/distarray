@@ -31,7 +31,7 @@ def _run_shell_command(specific_cmd):
     while True:
         char = proc.stdout.read(1).decode()
         if not char:
-            break
+            return proc.wait()
         else:
             print(char, end="")
             sys.stdout.flush()
@@ -40,8 +40,8 @@ def _run_shell_command(specific_cmd):
 def test():
     """Run all DistArray tests."""
     cmd = "make test"
-    _run_shell_command(cmd)
+    return _run_shell_command(cmd)
 
 
 if __name__ == "__main__":
-    test()
+    sys.exit(test())
