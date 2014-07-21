@@ -113,6 +113,7 @@ def main():
     dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
 
     dist_data = [[] for i in range(len(dists))]
+    nreps = 3
 
     for num_engines in engines:
         targets = list(range(num_engines))
@@ -122,9 +123,12 @@ def main():
         for i, dist in enumerate(dists):
             print(dist, end=" ")
             sys.stdout.flush()
-            time = test_distarray(dist, context, resolution,
-                                  c, re_ax, im_ax, z_max, n_max)
-            dist_data[i].append(time)
+            times = []
+            for j in range(nreps):
+                time = test_distarray(dist, context, resolution,
+                                      c, re_ax, im_ax, z_max, n_max)
+                times.append(time)
+            dist_data[i].append(min(times))
         print()
 
     kpoints = np.array(resolution).prod() / 1000
