@@ -14,6 +14,8 @@ Usage:
     $ python bench_dist.py
 """
 
+from __future__ import division
+
 import sys
 from timeit import default_timer as clock
 
@@ -82,7 +84,7 @@ def plot_results(dist_data, dists, engines):
     pyplot.title('Julia Set Benchmark')
     pyplot.xticks(list(engines), list(engines))
     pyplot.xlabel('nengines')
-    pyplot.ylabel('npoints / s')
+    pyplot.ylabel('1k points / s')
     pyplot.legend(loc='upper right')
     pyplot.savefig("julia_timing.png", dpi=100)
     pyplot.show()
@@ -121,8 +123,8 @@ def main():
             dist_data[i].append(time)
         print()
 
-    npoints = np.array(resolution).prod()
-    data =  npoints / np.array(dist_data)
+    kpoints = np.array(resolution).prod() / 1000
+    data =  kpoints / np.array(dist_data)
     plot_results(data, dists, engines)
 
 
