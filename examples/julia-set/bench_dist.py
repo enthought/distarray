@@ -71,19 +71,9 @@ def test_distarray(dist, context, resolution, c, re_ax, im_ax, z_max, n_max):
     return stop - start
 
 
-def plot_results(dist_data, dists, engines):
-    """Plot the computed timings."""
-    from itertools import cycle
-    linestyles = ["-", "--", "-.", ":"]
-    cycler = cycle(linestyles)
-    try:  # nicer plotting defaults
-        import seaborn as sns
-        sns.set_style("whitegrid")
-    except ImportError:
-        pass
-
-    for data, label in zip(dist_data, dists):
-        pyplot.plot(list(engines), data, next(cycler), label=label)
+def plot_results(dist_data, dists, engines, line_styles):
+    for data, label, style in zip(dist_data, dists, line_styles):
+        pyplot.plot(list(engines), data, style, label=label)
 
     pyplot.title('Julia Set Benchmark')
     pyplot.xticks(list(engines), list(engines))
@@ -94,11 +84,11 @@ def plot_results(dist_data, dists, engines):
     pyplot.show()
 
 
-def main():
+def main(resolution=(480, 480), nreps=1):
+    """Take the min of `nreps`."""
     # Grid parameters
     re_ax = (-1., 1.)
     im_ax = (-1., 1.)
-    resolution = (480, 480)
     # Julia set parameters, changing these is fun.
     c = complex(0., .75)
     z_max = 20
@@ -111,9 +101,9 @@ def main():
 
     # array distributions
     dists = ['bn', 'cn', 'bc', 'cb', 'bb', 'cc']
+    linestyles = ['-', '+-', '^-', 'v-', 'x-', 'o-']
 
     dist_data = [[] for i in range(len(dists))]
-    nreps = 3
 
     for num_engines in engines:
         targets = list(range(num_engines))
@@ -133,7 +123,7 @@ def main():
 
     kpoints = np.array(resolution).prod() / 1000
     data =  kpoints / np.array(dist_data)
-    plot_results(data, dists, engines)
+    plot_results(data, dists, engines, linestyles)
 
 
 if __name__ == '__main__':
