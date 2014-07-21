@@ -69,7 +69,7 @@ def test_distarray(dist, context):
     return stop - start
 
 
-# Grid parameteres
+# Grid parameters
 re_ax = (-1., 1.)
 im_ax = (-1., 1.)
 resolution = (480, 480)
