@@ -62,18 +62,6 @@ class BaseContext(object):
         pass
 
     @abstractmethod
-    def _execute(self, lines, targets):
-        pass
-
-    @abstractmethod
-    def _push(self, d, targets):
-        pass
-
-    @abstractmethod
-    def _pull(self, k, targets):
-        pass
-
-    @abstractmethod
     def apply(self, func, args=None, kwargs=None, targets=None):
         pass
 
