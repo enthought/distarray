@@ -353,7 +353,9 @@ if __name__ == '__main__':
     # and only loop over the resolutions, making plots.
     # This lets you interactively try values.
     # Otherwise, we loop over all parameters.
-    if len(sys.argv) == 3:
+    if sys.argv[1] in {'-h', '--help'}:
+        print(__doc__)
+    elif len(sys.argv) == 3:
         # Get constant from command line instead.
         c = complex(float(sys.argv[1]), float(sys.argv[2]))
         c_list = [c]
