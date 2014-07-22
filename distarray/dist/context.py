@@ -97,10 +97,10 @@ class BaseContext(object):
     def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
         targets = kwargs.get('targets', self.targets)
-        def local_key_and_push(kvs):
+        def _local_key_and_push(kvs):
             from distarray.local.proxyize import Proxy
             return [Proxy(key, val, '__main__') for key, val in kvs]
-        result = self.apply(local_key_and_push, (zip(keys, values), ), targets=targets)
+        result = self.apply(_local_key_and_push, (zip(keys, values), ), targets=targets)
         return tuple(result[0])
 
     def delete_key(self, key, targets=None):
