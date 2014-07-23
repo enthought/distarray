@@ -4,9 +4,9 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-'''
+"""
 Plot the results of the Julia set timings.
-'''
+"""
 
 from __future__ import print_function
 
@@ -25,7 +25,7 @@ LEGEND = 'legend'
 
 
 def read_results(filename):
-    ''' Read the Julia Set timing results from the file. '''
+    """Read the Julia Set timing results from the file."""
     with open(filename, 'rt') as csvfile:
         csvreader = csv.reader(csvfile)
         # Swallow header lines.
@@ -65,8 +65,9 @@ def read_results(filename):
 
 
 def jitter_engines(results, amount):
-    ''' Apply some random jitter to the integer engine count,
-    to make less crowded looking plot. '''
+    """Apply some random jitter to the integer engine count,
+    to make less crowded looking plot.
+    """
     for key in results:
         engines = results[key][ENGINES]
         engines = [engine + random.uniform(-amount, +amount)
@@ -75,7 +76,7 @@ def jitter_engines(results, amount):
 
 
 def trim_results(results):
-    ''' Select only the smallest time, consistent with timeit. '''
+    """Select only the smallest time, consistent with timeit."""
     for key in results:
         engines = results[key][ENGINES]
         times = results[key][TIMES]
@@ -102,7 +103,7 @@ def trim_results(results):
 
 
 def get_results_range(results):
-    ''' Get the range of the data (for plot limits). '''
+    """Get the range of the data (for plot limits)."""
     all_engines = []
     all_times = []
     for key in results:
@@ -115,8 +116,9 @@ def get_results_range(results):
     return max_engine, max_time
 
 
-def plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max):
-    ''' Plot the timing results. '''
+def plot_results(filename, results, title, subtitle,
+                 x_min, x_max, y_min, y_max):
+    """Plot the timing results."""
     # Sort keys for consistent coloring.
     keys = results.keys()
     keys = sorted(keys)
