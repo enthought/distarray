@@ -30,7 +30,7 @@ Usage:
 from __future__ import print_function
 
 from time import time
-import numpy
+import numpy as np
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
@@ -38,19 +38,34 @@ from distarray.dist.distarray import DistArray
 
 
 def numpy_julia_calc(ndarray, c, z_max, n_max):
-    """Calculate entirely with NumPy for comparison."""
+    """Calculate entirely with NumPy for comparison.
 
-    @numpy.vectorize
-    def julia_calc(z, c, z_max, n_max):
-        """Use usual numpy.vectorize to apply on all the complex points."""
-        n = 0
-        while abs(z) < z_max and n < n_max:
-            z = z * z + c
-            n += 1
-        return n
+    Parameters
+    ----------
+    ndarray : NumPy array
+        array of complex values whose iterations we will count.
+    c : complex
+        Complex number to add at each iteration.
+    z_max : float
+        Magnitude of complex value that we assume goes to infinity.
+    n_max : int
+        Maximum number of iterations.
+    """
 
-    num_iters = julia_calc(ndarray, c, z_max, n_max)
-    return num_iters
+    z = ndarray
+    counts = np.zeros_like(z, dtype=np.int32)
+    hits = np.zeros_like(z, dtype=np.bool)
+    mask = np.zeros_like(z, dtype=np.bool)
+    n = 0
+
+    while not np.all(hits) and n < n_max:
+        z = z * z + c
+        mask = (abs(z) > z_max) & (~hits)
+        counts[mask] = n
+        hits |= mask
+        n += 1
+    counts[~hits] = n_max
+    return counts
 
 
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
