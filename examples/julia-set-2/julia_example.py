@@ -81,8 +81,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
                                                  im_ax[0] + im_step * j)
 
     # Create an empty distributed array.
-    distribution = Distribution(context,
-                                (resolution[0], resolution[1]),
+    distribution = Distribution(context, (resolution[0], resolution[1]),
                                 dist=dist)
     complex_plane = context.empty(distribution, dtype=complex)
     context.apply(fill_complex_plane,
@@ -152,17 +151,12 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     """Do the Julia set calculation and print timing results."""
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
-    complex_plane = create_complex_plane(context,
-                                         dimensions,
-                                         dist,
-                                         re_ax,
-                                         im_ax)
+    complex_plane = create_complex_plane(context, dimensions, dist,
+                                         re_ax, im_ax)
     # Calculate the number of iterations to escape for each point.
     t0 = time()
-    num_iters = distributed_julia_calc(complex_plane,
-                                       c,
-                                       z_max=z_max,
-                                       n_max=n_max)
+    num_iters = distributed_julia_calc(complex_plane, c,
+                                       z_max=z_max, n_max=n_max)
     t1 = time()
     t_distarray = t1 - t0
     # Now try with numpy so we can compare times.
@@ -292,7 +286,8 @@ def main(cmd):
     dist_code_list = ['b', 'c', 'bb', 'cc']
 
     # Constants to use.
-    c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside, needing all iterations.
+    c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
+                                      # needing all iterations.
 
     # Number of engines to use.
     engine_count_list = list(range(1, 5))
