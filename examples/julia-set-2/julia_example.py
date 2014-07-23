@@ -63,7 +63,7 @@ def numpy_julia_calc(ndarray, c, z_max, n_max):
         mask = (abs(z) > z_max) & (~hits)
         counts[mask] = n
         hits |= mask
-        z[hits] = 0+0j
+        z[hits] = 0
         n += 1
     counts[~hits] = n_max
     return counts
@@ -135,7 +135,7 @@ def local_julia_calc(la, c, z_max, n_max):
         mask = (abs(z) > z_max) & (~hits)
         counts[mask] = n
         hits |= mask
-        z[hits] = 0+0j
+        z[hits] = 0
         n += 1
     counts[~hits] = n_max
 
@@ -220,8 +220,9 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
 
     if numpy:
         result = '%s, %r, %r, %r, %r, %r, %r, %r' % (dist_text, num_engines,
-                                                     dimensions[0], t_distarray,
-                                                     t_numpy, t_ratio, avg_iters,
+                                                     dimensions[0],
+                                                     t_distarray, t_numpy,
+                                                     t_ratio, avg_iters,
                                                      str(c))
     else:
         result = '%s, %r, %r, %r, %r, %r' % (dist_text, num_engines,
