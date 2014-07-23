@@ -148,7 +148,30 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
 
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
                  plot):
-    """Do the Julia set calculation and print timing results."""
+    """Do the Julia set calculation and print timing results.
+
+    Parameters
+    ----------
+    context : DistArray Context
+    dist : sequence
+        Distribution type to test.  Example: 'bc'
+    dimensions : 2-tuple of int
+        Dimensions of complex plane to use.
+    c_list : complex
+        Constant to use to compute Julia set.  Example: complex(-0.045, 0.45)
+    re_ax : 2-tuple of float
+        Min and max for real axis.
+    im_ax : 2-tuple of float
+        Min and max for imaginary axis.
+    z_max : float
+        Size of number that we consider as going off to infinity.  I think that
+        2.0 is sufficient to be sure that the point will escape.
+    n_max : int
+        Maximum iteration counts. Points in the set will hit this limit, so
+        increasing this has a large effect on the run-time.
+    plot : bool
+        Make plots of the computed Julia sets.
+    """
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
     complex_plane = create_complex_plane(context, dimensions, dist,
