@@ -130,22 +130,6 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
     return iters_da
 
 
-def numpy_julia_calc(ndarray, c, z_max, n_max):
-    """Calculate entirely with NumPy for comparison."""
-
-    @numpy.vectorize
-    def julia_calc(z, c, z_max, n_max):
-        """Use usual numpy.vectorize to apply on all the complex points."""
-        n = 0
-        while abs(z) < z_max and n < n_max:
-            z = z * z + c
-            n += 1
-        return n
-
-    num_iters = julia_calc(ndarray, c, z_max, n_max)
-    return num_iters
-
-
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
                  plot):
     """Do the Julia set calculation and print timing results."""
