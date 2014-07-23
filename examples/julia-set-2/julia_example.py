@@ -160,7 +160,8 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
                               (distarray.key, c, z_max, n_max))
-    iters_da = DistArray.from_localarrays(iters_key[0], context=context)
+    iters_da = DistArray.from_localarrays(iters_key[0], context=context,
+                                          dtype=np.int32)
     return iters_da
 
 
