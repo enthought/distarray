@@ -61,7 +61,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     context : DistArray Context
     resolution : 2-tuple
         The number of points along Re and Im axes.
-    dist : sequence or dict
+    dist : 2-element sequence or dict
         dist_type for of the DistArray Distribution.
     re_ax : 2-tuple
         The (lower, upper) range of the Re axis.
@@ -154,7 +154,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     Parameters
     ----------
     context : DistArray Context
-    dist : sequence
+    dist : 2-element sequence
         Distribution type to test.  Example: 'bc'
     dimensions : 2-tuple of int
         Dimensions of complex plane to use.
@@ -207,7 +207,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     return avg_iters
 
 
-def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
+def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot):
     """Perform a series of Julia set calculations, and print the results.
 
@@ -221,8 +221,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
         the average or minimum of these values to reduce noise in the output.
     engine_count_list : list of int
         List of engine ids to use.  Example: list(range(1, 5))
-    dist_code_list : list of sequences
-        List of distribution types to test.  Example: ['b', 'c', 'bb', 'cc']
+    dist_list : list of 2-element sequences
+        List of distribution types to test.  Example: ['bn', 'cn', 'bb', 'cc']
     resolution_list = list of int
         List of resolutions of Julia set to test.
     c_list : list of complex
@@ -259,13 +259,14 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
     print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
-            context_use = Context(targets=range(engine_count))
-            for dist_code in dist_code_list:
+            for dist in dist_list:
                 for resolution in resolution_list:
                     dimensions = (resolution, resolution)
                     for c in c_list:
-                        do_julia_run(context_use, dist_code, dimensions, c,
+                        context_use = Context(targets=range(engine_count))
+                        do_julia_run(context_use, dist, dimensions, c,
                                      re_ax, im_ax, z_max, n_max, plot)
+                        context_use.close()
 
 
 def cli(cmd):
@@ -288,7 +289,7 @@ def cli(cmd):
     # Default parameters
     repeat_count = 3
     engine_count_list = list(range(1, 5))
-    dist_code_list = ['bn', 'cn', 'bb', 'cc']
+    dist_list = ['bn', 'cn', 'bb', 'cc']
     resolution_list = [128]
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
@@ -297,7 +298,7 @@ def cli(cmd):
     z_max = 2.0
     n_max = 100
 
-    do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
+    do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max,
                   plot=False)
 
