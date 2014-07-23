@@ -286,39 +286,18 @@ def cli(cmd):
     with context.view.sync_imports():
         import numpy
 
-    # Fixed parameters:
-
-    # Nice region for the Julia set.
-    re_ax = (-1.5, 1.5)
-    im_ax = (-1.5, 1.5)
-
-    # Size of number that we consider as going off to infinity.
-    # I think that 2.0 is sufficient to be sure that the point will escape.
-    z_max = 2.0
-
-    # Maximum iteration counts. Points in the set will hit this limit,
-    # so increasing this has a large effect on the run-time.
-    n_max = 100
-
-    # Lists of parameters:
-
-    # Distribution types to use.
+    # Default parameters
+    repeat_count = 3
+    engine_count_list = list(range(1, 5))
     dist_code_list = ['b', 'c', 'bb', 'cc']
-
-    # Constants to use.
+    resolution_list = [128]
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
+    re_ax = (-1.5, 1.5)
+    im_ax = (-1.5, 1.5)
+    z_max = 2.0
+    n_max = 100
 
-    # Number of engines to use.
-    engine_count_list = list(range(1, 5))
-
-    # Resolution of Julia set.
-    resolution_list = [128]
-
-    # Number of cycles to repeat everything.
-    repeat_count = 3
-
-    # Loop over all parameter lists.
     do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max,
                   plot=False)
