@@ -257,7 +257,7 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
                                      z_max, n_max, plot)
 
 
-def main(cmd):
+def cli(cmd):
     if len(cmd) == 2 and cmd[1] in {'-h', '--help'}:
         print(__doc__)
         return
@@ -298,7 +298,7 @@ def main(cmd):
     # Number of cycles to repeat everything.
     repeat_count = 3
 
-    # Normal case, loop over all parameter lists.
+    # Loop over all parameter lists.
     do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max,
                   plot=False)
@@ -306,4 +306,4 @@ def main(cmd):
 
 if __name__ == '__main__':
     import sys
-    main(sys.argv)
+    cli(sys.argv)
