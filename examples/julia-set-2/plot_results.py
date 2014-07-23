@@ -197,14 +197,14 @@ def plot_points(filename, results, title, subtitle, ideal_dist=None):
     pyplot.show()
 
 
-def main(filename, plot='npoints'):
+def main(filename, plot='npoints', jitter=False):
     # Read and parse timing results.
     results, title, note_text = read_results(filename)
     # Either pick just the minimum time, or add jitter to the engine count.
-    if True:
-        trim_results(results)
-    else:
+    if jitter:
         jitter_engines(results, 0.125)
+    else:
+        trim_results(results)
     # Get range of data for plot limits.
     max_engines, max_time = get_results_range(results)
     # Plot
