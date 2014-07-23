@@ -30,10 +30,27 @@ Usage:
 from __future__ import print_function
 
 from time import time
+import numpy
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
+
+
+def numpy_julia_calc(ndarray, c, z_max, n_max):
+    """Calculate entirely with NumPy for comparison."""
+
+    @numpy.vectorize
+    def julia_calc(z, c, z_max, n_max):
+        """Use usual numpy.vectorize to apply on all the complex points."""
+        n = 0
+        while abs(z) < z_max and n < n_max:
+            z = z * z + c
+            n += 1
+        return n
+
+    num_iters = julia_calc(ndarray, c, z_max, n_max)
+    return num_iters
 
 
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
