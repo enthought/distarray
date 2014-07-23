@@ -21,19 +21,20 @@ from matplotlib import pyplot
 from distarray.externals.six import next
 
 
-CBcdict={
-    'Bl':(0,0,0),
-    'Or':(.9,.6,0),
-    'SB':(.35,.7,.9),
-    'bG':(0,.6,.5),
-    'Ye':(.95,.9,.25),
-    'Bu':(0,.45,.7),
-    'Ve':(.8,.4,0),
-    'rP':(.8,.6,.7),
+CBcdict = {
+    'Bl': (0, 0, 0),
+    'Or': (.9, .6, 0),
+    'SB': (.35, .7, .9),
+    'bG': (0, .6, .5),
+    'Ye': (.95, .9, .25),
+    'Bu': (0, .45, .7),
+    'Ve': (.8, .4, 0),
+    'rP': (.8, .6, .7),
 }
 
-#Change default color cycle
-matplotlib.rcParams['axes.color_cycle'] = [CBcdict[c] for c in sorted(CBcdict.keys())]
+# Change default color cycle
+matplotlib.rcParams['axes.color_cycle'] = [CBcdict[c] for c in
+                                           sorted(CBcdict.keys())]
 
 
 # Dictionary keys.
@@ -44,6 +45,7 @@ RESOLUTION = 'resolution'
 
 
 STYLES = ('o-', 'x-', 'v-', '*-', 's-', 'd-')
+
 
 def read_results(filename):
     """Read the Julia Set timing results from the file."""
@@ -70,7 +72,7 @@ def read_results(filename):
             t_numpy = float(row[4])
             t_ratio = float(row[5])
             iters = float(row[6])
-            c = row[7]    # As a string.
+            c = row[7]  # As a string.
             # Key for each curve.
             key = (dist, resolution)
             if key not in results:
@@ -138,7 +140,8 @@ def get_results_range(results):
     return max_engine, max_time
 
 
-def plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max):
+def plot_results(filename, results, title, subtitle,
+                 x_min, x_max, y_min, y_max):
     """Plot the timing results."""
     # Sort keys for consistent coloring.
     keys = results.keys()
