@@ -5,9 +5,9 @@
 # ---------------------------------------------------------------------------
 
 """
-Calculate some Julia sets using DistArray, and measure the performance.
+Calculate some Julia sets using DistArray and measure the performance.
 
-The Julia set, for a given complex number c, is the set of points z,
+The Julia set, for a given complex number c, is the set of points z
 such that the repeated iteration z = z**2 + c never escapes to infinity.
 
 This can be plotted by counting how many iterations are required for the
@@ -25,12 +25,6 @@ Usage:
     This will try various parameters, such as the engine count,
     distribution method, resolution, and c value, and print the
     timing results from each run to standard output.
-
-    Or,
-    $ python julia_example.py <c real component> <c imaginary component>
-
-    This will use the c value specified on the command line,
-    and only vary only the resolution. A plot is shown for each resolution.
 """
 
 from __future__ import print_function
@@ -45,10 +39,16 @@ from distarray.dist.distarray import DistArray
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     """Create a DistArray containing points on the complex plane.
 
-    resolution: A 2-tuple with the number of points along Re and Im axes.
-    dist: Distribution for the DistArray.
-    re_ax: A 2-tuple with the (lower, upper) range of the Re axis.
-    im_ax: A 2-tuple with the (lower, upper) range of the Im axis.
+    Parameters
+    ----------
+    resolution : 2-tuple
+        The number of points along Re and Im axes.
+    dist : Distribution
+        Distribution of the DistArray.
+    re_ax : 2-tuple
+        The (lower, upper) range of the Re axis.
+    im_ax : 2-tuple
+        The (lower, upper) range of the Im axis.
     """
 
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
@@ -68,17 +68,24 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
                                 (resolution[0], resolution[1]),
                                 dist=dist)
     complex_plane = context.empty(distribution, dtype=complex)
-    context.apply(fill_complex_plane, (complex_plane.key, re_ax, im_ax, resolution))
+    context.apply(fill_complex_plane,
+                  (complex_plane.key, re_ax, im_ax, resolution))
     return complex_plane
 
 
 def local_julia_calc(la, c, z_max, n_max):
     """Calculate the number of iterations for the point to escape.
 
-    la: Local array of complex values whose iterations we will count.
-    c: Complex number to add at each iteration.
-    z_max: Magnitude of complex value that we assume goes to infinity.
-    n_max: Maximum number of iterations.
+    Parameters
+    ----------
+    la : LocalArray
+        LocalArray of complex values whose iterations we will count.
+    c : complex
+        Complex number to add at each iteration.
+    z_max : float
+        Magnitude of complex value that we assume goes to infinity.
+    n_max : int
+        Maximum number of iterations.
     """
 
     import numpy as np
@@ -105,10 +112,16 @@ def local_julia_calc(la, c, z_max, n_max):
 def distributed_julia_calc(distarray, c, z_max, n_max):
     """Calculate the Julia set for an array of points in the complex plane.
 
-    distarray: DistArray of complex values whose iterations we will count.
-    c: Complex number to add at each iteration.
-    z_max: Magnitude of complex value that we assume goes to infinity.
-    n_max: Maximum number of iterations.
+    Parameters
+    ----------
+    distarray : DistArray
+        DistArray of complex values whose iterations we will count.
+    c : complex
+        Complex number to add at each iteration.
+    z_max : float
+        Magnitude of complex value that we assume goes to infinity.
+    n_max : int
+        Maximum number of iterations.
     """
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
@@ -133,7 +146,8 @@ def numpy_julia_calc(ndarray, c, z_max, n_max):
     return num_iters
 
 
-def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max, plot):
+def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
+                 plot):
     """Do the Julia set calculation and print timing results."""
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
@@ -177,13 +191,8 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max, plot)
     return avg_iters
 
 
-def do_julia_runs(context,
-                  repeat_count,
-                  engine_count_list,
-                  dist_code_list,
-                  resolution_list,
-                  c_list,
-                  re_ax, im_ax, z_max, n_max, plot):
+def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
+                  resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot):
     """Perform a series of Julia set calculations, and print the results."""
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
@@ -221,7 +230,11 @@ def do_julia_runs(context,
                                      z_max, n_max, plot)
 
 
-def main():
+def main(cmd):
+    if len(cmd) == 2 and cmd[1] in {'-h', '--help'}:
+        print(__doc__)
+        return
+
     context = Context()
     with context.view.sync_imports():
         import numpy
@@ -264,4 +277,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv)
