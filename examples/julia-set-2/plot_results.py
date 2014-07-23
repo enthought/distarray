@@ -196,7 +196,7 @@ def plot_points(filename, results, title, subtitle, ideal_dist=None):
     pyplot.show()
 
 
-def main(filename):
+def main(filename, plot='npoints'):
     # Read and parse timing results.
     results, title, note_text = read_results(filename)
     # Either pick just the minimum time, or add jitter to the engine count.
@@ -210,9 +210,11 @@ def main(filename):
     filename = 'julia_timing_plot.png'
     subtitle = note_text
     x_min, x_max = 0, max_engines + 1
-    y_min, y_max = 0.0, 1.1 * max_time
-    #plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
-    plot_points(filename, results, title, subtitle)
+
+    if plot == 'npoints':
+        plot_points(filename, results, title, subtitle)
+    elif plot == 'time':
+        plot_results(filename, results, title, subtitle)
 
 
 if __name__ == '__main__':
@@ -221,4 +223,4 @@ if __name__ == '__main__':
         print(usage)
         exit(1)
     filename = sys.argv[1]
-    main(filename)
+    main(filename, plot='npoints')
