@@ -58,6 +58,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
 
     Parameters
     ----------
+    context : DistArray Context
     resolution : 2-tuple
         The number of points along Re and Im axes.
     dist : Distribution
