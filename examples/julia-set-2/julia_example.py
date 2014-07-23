@@ -37,12 +37,12 @@ from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
 
 
-def numpy_julia_calc(ndarray, c, z_max, n_max):
+def numpy_julia_calc(z, c, z_max, n_max):
     """Calculate entirely with NumPy for comparison.
 
     Parameters
     ----------
-    ndarray : NumPy array
+    z : NumPy array
         array of complex values whose iterations we will count.
     c : complex
         Complex number to add at each iteration.
@@ -51,8 +51,6 @@ def numpy_julia_calc(ndarray, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
-
-    z = ndarray
     counts = np.zeros_like(z, dtype=np.int32)
     hits = np.zeros_like(z, dtype=np.bool)
     mask = np.zeros_like(z, dtype=np.bool)
@@ -120,25 +118,8 @@ def local_julia_calc(la, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
-
-    import numpy as np
     from distarray.local import LocalArray
-
-    z = la.ndarray
-    counts = np.zeros_like(la.ndarray, dtype=np.int32)
-    hits = np.zeros_like(la.ndarray, dtype=np.bool)
-    mask = np.zeros_like(la.ndarray, dtype=np.bool)
-    n = 0
-
-    while not np.all(hits) and n < n_max:
-        z = z * z + c
-        mask = (abs(z) > z_max) & (~hits)
-        counts[mask] = n
-        hits |= mask
-        z[hits] = 0
-        n += 1
-    counts[~hits] = n_max
-
+    counts = numpy_julia_calc(la.ndarray, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)
 
@@ -293,6 +274,7 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                     dimensions = (resolution, resolution)
                     for c in c_list:
                         context_use = Context(targets=range(engine_count))
+                        context_use.register(numpy_julia_calc)
                         do_julia_run(context_use, dist, dimensions, c,
                                      re_ax, im_ax, z_max, n_max,
                                      plot, benchmark_numpy)
