@@ -95,6 +95,11 @@ def clear(**kwargs):
 
 
 def main():
+    """ Main function for dacluster utility.
+
+    Either start, stop, restart, or clear is called depending on the
+    command line arguments.
+    """
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
     all the commands IPython's `ipcluster` can, and a few extras that are
@@ -154,6 +159,7 @@ def main():
     # run it
     args = parser.parse_args()
     args.func(**vars(args))
+
 
 if __name__ == '__main__':
     main()

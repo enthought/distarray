@@ -4,6 +4,12 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+""" Pseudo-random number generation routines for local arrays.
+
+This module provides a number of routines for generating random numbers,
+from a variety of probability distributions.
+"""
+
 from hashlib import sha256
 import numpy as np
 
@@ -11,7 +17,11 @@ from distarray.local.localarray import LocalArray
 
 
 def label_state(comm):
-    """ Label/personalize the random generator state for the local rank."""
+    """ Label/personalize the random generator state for the local rank.
+
+    This ensures that each separate engine, when using the same global seed,
+    will generate a different sequence of pseudo-random numbers.
+    """
 
     def get_mask(rank):
         """ Get a uint32 mask array to use to xor the random generator state.
@@ -48,6 +58,22 @@ def label_state(comm):
 
 
 def beta(a, b, distribution=None):
+    """ Return an array with random numbers from the beta probability distribution.
+
+    Parameters
+    ----------
+    a: float
+        Parameter that describes the beta probability distribution.
+    b: float
+        Parameter that describes the beta probability distribution.
+    distribution: The desired distribution of the array.
+        If None, then a normal NumPy array is returned.
+        Otherwise, a LocalArray with this distribution is returned.
+
+    Returns
+    -------
+    An array with random numbers.
+    """
     if distribution is None:
         return np.random.beta(a, b)
     else:
@@ -58,6 +84,22 @@ def beta(a, b, distribution=None):
 
 
 def normal(loc=0.0, scale=1.0, distribution=None):
+    """ Return an array with random numbers from a normal (Gaussian) probability distribution.
+
+    Parameters
+    ----------
+    loc: float
+        The mean (or center) of the probability distribution.
+    scale: float
+        The standard deviation (or width) of the probability distribution.
+    distribution: The desired distribution of the array.
+        If None, then a normal NumPy array is returned.
+        Otherwise, a LocalArray with this distribution is returned.
+
+    Returns
+    -------
+    An array with random numbers.
+    """
     if distribution is None:
         return np.random.normal(loc, scale)
     else:
@@ -68,6 +110,18 @@ def normal(loc=0.0, scale=1.0, distribution=None):
 
 
 def rand(distribution=None):
+    """ Return an array with random numbers distributed over the interval [0, 1).
+
+    Parameters
+    ----------
+    distribution: The desired distribution of the array.
+        If None, then a normal NumPy array is returned.
+        Otherwise, a LocalArray with this distribution is returned.
+
+    Returns
+    -------
+    An array with random numbers.
+    """
     if distribution is None:
         return np.random.rand()
     else:
@@ -78,6 +132,25 @@ def rand(distribution=None):
 
 
 def randint(low, high=None, distribution=None):
+    """ Return random integers from low (inclusive) to high (exclusive).
+
+    Return random integers from the “discrete uniform” distribution in the “half-open” interval [low, high).
+    If high is None (the default), then results are from [0, low).
+
+    Parameters
+    ----------
+    low : int
+        Lowest (signed) integer to be drawn from the distribution (unless high=None, in which case this parameter is the highest such integer).
+    high : int, optional
+        If provided, one above the largest (signed) integer to be drawn from the distribution (see above for behavior if high=None).
+    distribution: The desired distribution of the array.
+        If None, then a normal NumPy array is returned.
+        Otherwise, a LocalArray with this distribution is returned.
+
+    Returns
+    -------
+    An array with random numbers.
+    """
     if distribution is None:
         return np.random.randint(low, high)
     else:
@@ -88,6 +161,18 @@ def randint(low, high=None, distribution=None):
 
 
 def randn(distribution=None):
+    """ Return a sample (or samples) from the “standard normal” distribution.
+
+    Parameters
+    ----------
+    distribution: The desired distribution of the array.
+        If None, then a normal NumPy array is returned.
+        Otherwise, a LocalArray with this distribution is returned.
+
+    Returns
+    -------
+    An array with random numbers.
+    """
     if distribution is None:
         return np.random.randn()
     else:
