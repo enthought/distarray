@@ -291,7 +291,7 @@ def cli(cmd):
     cmd : list of str
         sys.argv
     """
-    if len(cmd) == 2 and cmd[1] in {'-h', '--help'}:
+    if len(cmd) == 1 or (len(cmd) == 2 and cmd[1] in {'-h', '--help'}):
         print(__doc__)
         return
 
@@ -303,7 +303,7 @@ def cli(cmd):
     #resolution_list = [128]
 
     # Default parameters
-    repeat_count = 1
+    repeat_count = 3
     engine_count_list = list(range(1, 5))
     dist_list = ['bn', 'cn', 'bb', 'cc']
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
