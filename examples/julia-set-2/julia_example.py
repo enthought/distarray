@@ -166,7 +166,7 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
 
 
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
-                 plot, numpy=False):
+                 plot, benchmark_numpy=False):
     """Do the Julia set calculation and print timing results.
 
     Parameters
@@ -190,7 +190,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         increasing this has a large effect on the run-time.
     plot : bool
         Make plots of the computed Julia sets.
-    numpy : bool
+    benchmark_numpy : bool
         Compare with the NumPy calculation?
     """
     num_engines = len(context.targets)
@@ -204,7 +204,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     t1 = time()
     t_distarray = t1 - t0
 
-    if numpy:
+    if benchmark_numpy:
         # Now try with numpy so we can compare times.
         complex_plane_nd = complex_plane.tondarray()
         t0 = time()
@@ -212,22 +212,18 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         t1 = time()
         t_numpy = t1 - t0
         t_ratio = t_numpy / t_distarray
+    else:
+        t_numpy = None
+        t_ratio = None
 
     # Average iteration count.
     avg_iters = float(num_iters.mean().tondarray())
     # Print results.
     dist_text = '%s-%s' % (dist[0], dist[1])
 
-    if numpy:
-        result = '%s, %r, %r, %r, %r, %r, %r, %r' % (dist_text, num_engines,
-                                                     dimensions[0],
-                                                     t_distarray, t_numpy,
-                                                     t_ratio, avg_iters,
-                                                     str(c))
-    else:
-        result = '%s, %r, %r, %r, %r, %r' % (dist_text, num_engines,
-                                             dimensions[0], t_distarray,
-                                             avg_iters, str(c))
+    fmt = '%s, %r, %r, %r, %r, %r, %r, %r'
+    result = fmt % (dist_text, num_engines, dimensions[0],
+                    t_distarray, t_numpy, t_ratio, avg_iters, str(c))
     print(result)
     if plot:
         # Plot the iteration count.
