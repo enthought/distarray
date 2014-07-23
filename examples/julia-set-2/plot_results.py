@@ -39,6 +39,7 @@ ENGINES = 'engines'
 TIMES = 'times'
 LEGEND = 'legend'
 
+STYLES = ('o-', 'x-', 'v-', '*-', 's-', 'd-')
 
 def read_results(filename):
     """Read the Julia Set timing results from the file."""
@@ -138,10 +139,11 @@ def plot_results(filename, results, title, subtitle,
     # Sort keys for consistent coloring.
     keys = results.keys()
     keys = sorted(keys)
+    styles = iter(STYLES)
     for key in keys:
         engines = results[key][ENGINES]
         times = results[key][TIMES]
-        pyplot.plot(engines, times, 'o-')
+        pyplot.plot(engines, times, next(styles))
     pyplot.xlim((x_min, x_max))
     pyplot.ylim((y_min, y_max))
     full_title = title + '\n' + subtitle
