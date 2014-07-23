@@ -8,11 +8,11 @@ Utilities for running Distarray in MPI mode.
 """
 
 from __future__ import absolute_import
-from importlib import import_module
 
 from mpi4py import MPI as mpi
 
 from distarray.utils import uid
+from distarray.local.proxyize import Proxy
 
 
 client_rank = 0
@@ -61,8 +61,7 @@ def _set_on_main(name, obj):
     """Add obj as an attribute to the __main__ module with alias `name` like:
         __main__.name = obj
     """
-    main = import_module('__main__')
-    setattr(main, name, obj)
+    return Proxy(name, obj, '__main__')
 
 
 def make_intercomm(targets=None):
@@ -98,8 +97,7 @@ def make_base_comm():
 
     engines = world.group.Excl([client_rank])
     engine_comm = world.Create(engines)
-    _set_on_main(comm_name, engine_comm)
-    return comm_name
+    return _set_on_main(comm_name, engine_comm)
 
 
 def make_targets_comm(targets):
@@ -129,8 +127,7 @@ def make_targets_comm(targets):
     # create the targets comm
     targets_group = world.group.Incl(mapped_targets)
     targets_comm = world.Create(targets_group)
-    _set_on_main(comm_name, targets_comm)
-    return comm_name
+    return _set_on_main(comm_name, targets_comm)
 
 
 def setup_engine_comm(targets=None):
@@ -167,7 +164,7 @@ def initial_comm_setup(targets=None):
         split_world = world.Split(1, world_rank)
 
     # attach the comm to __main__, name it comm_name
-    _set_on_main(comm_name, split_world)
+    comm_proxy = _set_on_main(comm_name, split_world)
 
     # create the intercomm
     if world_rank == client_rank:
@@ -175,7 +172,7 @@ def initial_comm_setup(targets=None):
     else:
         intercomm = split_world.Create_intercomm(0, world, 0)
 
-    return comm_name, intercomm
+    return comm_proxy, intercomm
 
 
 def is_solo_mpi_process():
