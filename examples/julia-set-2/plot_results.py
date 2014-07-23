@@ -8,11 +8,13 @@
 Plot the results of the Julia set timings.
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import sys
 import csv
 import random
+import numpy
+
 import matplotlib
 from matplotlib import pyplot
 
@@ -38,6 +40,8 @@ matplotlib.rcParams['axes.color_cycle'] = [CBcdict[c] for c in sorted(CBcdict.ke
 ENGINES = 'engines'
 TIMES = 'times'
 LEGEND = 'legend'
+RESOLUTION = 'resolution'
+
 
 STYLES = ('o-', 'x-', 'v-', '*-', 's-', 'd-')
 
@@ -73,6 +77,7 @@ def read_results(filename):
                 results[key] = {
                     ENGINES: [],
                     TIMES: [],
+                    RESOLUTION: resolution,
                     LEGEND: "%s %d" % (dist, resolution),
                 }
             # Collect values to plot.
@@ -133,8 +138,7 @@ def get_results_range(results):
     return max_engine, max_time
 
 
-def plot_results(filename, results, title, subtitle,
-                 x_min, x_max, y_min, y_max):
+def plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max):
     """Plot the timing results."""
     # Sort keys for consistent coloring.
     keys = results.keys()
@@ -152,6 +156,34 @@ def plot_results(filename, results, title, subtitle,
     pyplot.ylabel('DistArray time')
     legend = [results[key][LEGEND] for key in keys]
     pyplot.legend(legend, loc='lower left')
+    pyplot.savefig(filename, dpi=100)
+    pyplot.show()
+
+
+def plot_points(filename, results, title, subtitle, ideal_dist=('b-b', 512)):
+    """Plot the timing results."""
+    # Sort keys for consistent coloring.
+    keys = results.keys()
+    keys = sorted(keys)
+    styles = iter(STYLES)
+    for key in keys:
+        engines = results[key][ENGINES]
+        times = results[key][TIMES]
+        npoints = (results[key][RESOLUTION] ** 2) / numpy.array(times)
+        pyplot.plot(engines, npoints / 1000, next(styles), markersize=10)
+
+    # plot idealized scaling
+    ideal_line_base = (results[ideal_dist][RESOLUTION]**2) / results[ideal_dist][TIMES][0]
+    ideal_line = ideal_line_base * numpy.array(results[ideal_dist][ENGINES])
+    pyplot.plot(engines, ideal_line / 1000, '--')
+
+    pyplot.xlim((min(engines)-1, max(engines)+1))
+    full_title = title + '\n' + subtitle
+    pyplot.title(full_title)
+    pyplot.xlabel('Engine Count')
+    pyplot.ylabel('kpoints / s')
+    legend = [results[key][LEGEND] for key in keys]
+    pyplot.legend(legend, loc='lower right')
     pyplot.savefig(filename, dpi=100)
     pyplot.show()
 
@@ -176,4 +208,5 @@ if __name__ == '__main__':
     subtitle = note_text
     x_min, x_max = 0, max_engines + 1
     y_min, y_max = 0.0, 1.1 * max_time
-    plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
+    #plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
+    plot_points(filename, results, title, subtitle)
