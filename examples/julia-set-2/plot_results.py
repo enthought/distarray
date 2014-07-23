@@ -140,8 +140,7 @@ def get_results_range(results):
     return max_engine, max_time
 
 
-def plot_results(filename, results, title, subtitle,
-                 x_min, x_max, y_min, y_max):
+def plot_results(filename, results, title, subtitle):
     """Plot the timing results."""
     # Sort keys for consistent coloring.
     keys = results.keys()
@@ -151,8 +150,7 @@ def plot_results(filename, results, title, subtitle,
         engines = results[key][ENGINES]
         times = results[key][TIMES]
         pyplot.plot(engines, times, next(styles))
-    pyplot.xlim((x_min, x_max))
-    pyplot.ylim((y_min, y_max))
+    pyplot.xlim((min(engines)-1, max(engines)+1))
     full_title = title + '\n' + subtitle
     pyplot.title(full_title)
     pyplot.xlabel('Engine Count')
@@ -163,8 +161,11 @@ def plot_results(filename, results, title, subtitle,
     pyplot.show()
 
 
-def plot_points(filename, results, title, subtitle, ideal_dist=('b-b', 512)):
+def plot_points(filename, results, title, subtitle, ideal_dist=None):
     """Plot the timing results."""
+    if ideal_dist is None:
+        ideal_dist = next(k for k in results.keys() if k[0] == 'b-b')
+
     # Sort keys for consistent coloring.
     keys = results.keys()
     keys = sorted(keys)
@@ -176,7 +177,8 @@ def plot_points(filename, results, title, subtitle, ideal_dist=('b-b', 512)):
         pyplot.plot(engines, npoints / 1000, next(styles), markersize=10)
 
     # plot idealized scaling
-    ideal_line_base = (results[ideal_dist][RESOLUTION]**2) / results[ideal_dist][TIMES][0]
+    ideal_line_base = ((results[ideal_dist][RESOLUTION]**2) /
+                       results[ideal_dist][TIMES][0])
     ideal_line = ideal_line_base * numpy.array(results[ideal_dist][ENGINES])
     pyplot.plot(engines, ideal_line / 1000, '--')
 
