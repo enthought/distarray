@@ -13,9 +13,25 @@ from __future__ import print_function
 import sys
 import csv
 import random
+import matplotlib
 from matplotlib import pyplot
 
 from distarray.externals.six import next
+
+
+CBcdict={
+    'Bl':(0,0,0),
+    'Or':(.9,.6,0),
+    'SB':(.35,.7,.9),
+    'bG':(0,.6,.5),
+    'Ye':(.95,.9,.25),
+    'Bu':(0,.45,.7),
+    'Ve':(.8,.4,0),
+    'rP':(.8,.6,.7),
+}
+
+#Change default color cycle
+matplotlib.rcParams['axes.color_cycle'] = [CBcdict[c] for c in sorted(CBcdict.keys())]
 
 
 # Dictionary keys.
