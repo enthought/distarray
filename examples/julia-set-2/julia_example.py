@@ -278,6 +278,14 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
 
 
 def cli(cmd):
+    """
+    Process command line arguments, set default params, and do_julia_runs.
+
+    Parameters
+    ----------
+    cmd: list of str
+        sys.argv
+    """
     if len(cmd) == 2 and cmd[1] in {'-h', '--help'}:
         print(__doc__)
         return
