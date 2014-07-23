@@ -69,8 +69,8 @@ def read_results(filename):
             num_engines = int(row[1])
             resolution = int(row[2])
             t_distarray = float(row[3])
-            t_numpy = float(row[4])
-            t_ratio = float(row[5])
+            t_numpy = None if row[4] == ' None' else float(row[4])
+            t_ratio = None if row[5] == ' None' else float(row[5])
             iters = float(row[6])
             c = row[7]  # As a string.
             # Key for each curve.
