@@ -41,7 +41,6 @@ from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
-from distarray.dist.decorators import local
 
 
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
@@ -53,7 +52,6 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     im_ax: A 2-tuple with the (lower, upper) range of the Im axis.
     '''
 
-    @local
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
         ''' Fill in points on the complex coordinate plane. '''
         # Drawing the coordinate plane directly like this is currently much
@@ -71,69 +69,56 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
                                 (resolution[0], resolution[1]),
                                 dist=dist)
     complex_plane = context.empty(distribution, dtype=complex)
-    fill_complex_plane(complex_plane, re_ax, im_ax, resolution)
+    context.apply(fill_complex_plane, (complex_plane.key, re_ax, im_ax, resolution))
     return complex_plane
 
 
-def local_julia_calc(la, mode_julia, c, z_max, n_max):
+def local_julia_calc(la, c, z_max, n_max):
     ''' Calculate the number of iterations for the point to escape.
 
     la: Local array of complex values whose iterations we will count.
-    mode_julia: If True, then the Julia set is calculated for c.
-        Else the Mandelbrot set is calculated.
     c: Complex number to add at each iteration.
     z_max: Magnitude of complex value that we assume goes to infinity.
     n_max: Maximum number of iterations.
     '''
 
-    @numpy.vectorize
-    def julia_calc(z, c, z_max, n_max):
-        ''' Use usual numpy.vectorize to apply on all the complex points. '''
-        n = 0
-        while abs(z) < z_max and n < n_max:
-            z = z * z + c
-            n += 1
-        return n
-
-    @numpy.vectorize
-    def mandel_calc(c, z0, z_max, n_max):
-        ''' Calculate the Mandelbrot set instead of the Julia set. '''
-        n = 0
-        z = z0
-        while abs(z) < z_max and n < n_max:
-            z = z * z + c
-            n += 1
-        return n
-
+    import numpy as np
     from distarray.local import LocalArray
-    a = la.ndarray
-    if mode_julia:
-        b = julia_calc(a, c, z_max, n_max)
-    else:
-        b = mandel_calc(a, complex(0), z_max, n_max)
-    res = LocalArray(la.distribution, buf=b)
-    rtn = proxyize(res)
-    return rtn
+
+    z = la.ndarray
+    counts = np.zeros_like(la.ndarray, dtype=np.int32)
+    hits = np.zeros_like(la.ndarray, dtype=np.bool)
+    mask = np.zeros_like(la.ndarray, dtype=np.bool)
+    n = 0
+
+    while not np.all(hits) and n < n_max:
+        z = z * z + c
+        mask = (abs(z) > z_max) & (~hits)
+        counts[mask] = n
+        hits |= mask
+        n += 1
+    counts[~hits] = n_max
+
+    res = LocalArray(la.distribution, buf=counts)
+    return proxyize(res)
 
 
-def distributed_julia_calc(distarray, mode_julia, c, z_max, n_max):
+def distributed_julia_calc(distarray, c, z_max, n_max):
     ''' Calculate the Julia set for an array of points in the complex plane.
 
     distarray: DistArray of complex values whose iterations we will count.
-    mode_julia: If True, then the Julia set is calculated for c.
-        Else, the Mandelbrot set is calculated.
     c: Complex number to add at each iteration.
     z_max: Magnitude of complex value that we assume goes to infinity.
     n_max: Maximum number of iterations.
     '''
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
-                              (distarray.key, mode_julia, c, z_max, n_max))
+                              (distarray.key, c, z_max, n_max))
     iters_da = DistArray.from_localarrays(iters_key[0], context=context)
     return iters_da
 
 
-def numpy_julia_calc(ndarray, mode_julia, c, z_max, n_max):
+def numpy_julia_calc(ndarray, c, z_max, n_max):
     ''' Calculate entirely with NumPy for comparison. '''
 
     @numpy.vectorize
@@ -145,24 +130,11 @@ def numpy_julia_calc(ndarray, mode_julia, c, z_max, n_max):
             n += 1
         return n
 
-    @numpy.vectorize
-    def mandel_calc(c, z0, z_max, n_max):
-        ''' Calculate the Mandelbrot set instead of the Julia set. '''
-        n = 0
-        z = z0
-        while abs(z) < z_max and n < n_max:
-            z = z * z + c
-            n += 1
-        return n
-
-    if mode_julia:
-        num_iters = julia_calc(ndarray, c, z_max, n_max)
-    else:
-        num_iters = mandel_calc(ndarray, complex(0), z_max, n_max)
+    num_iters = julia_calc(ndarray, c, z_max, n_max)
     return num_iters
 
 
-def do_julia_run(context, dist, mode_julia, dimensions, c, re_ax, im_ax, z_max, n_max, plot):
+def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max, plot):
     ''' Do the Julia set calculation and print timing results. '''
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
@@ -174,7 +146,6 @@ def do_julia_run(context, dist, mode_julia, dimensions, c, re_ax, im_ax, z_max, 
     # Calculate the number of iterations to escape for each point.
     t0 = time()
     num_iters = distributed_julia_calc(complex_plane,
-                                       mode_julia,
                                        c,
                                        z_max=z_max,
                                        n_max=n_max)
@@ -184,7 +155,6 @@ def do_julia_run(context, dist, mode_julia, dimensions, c, re_ax, im_ax, z_max, 
     complex_plane_nd = complex_plane.tondarray()
     t0 = time()
     numpy_julia_calc(complex_plane_nd,
-                     mode_julia,
                      c,
                      z_max=z_max,
                      n_max=n_max)
@@ -209,7 +179,6 @@ def do_julia_run(context, dist, mode_julia, dimensions, c, re_ax, im_ax, z_max, 
 
 
 def do_julia_runs(context,
-                  mode_julia,
                   repeat_count,
                   engine_count_list,
                   dist_code_list,
@@ -220,10 +189,7 @@ def do_julia_runs(context,
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
     num_engines = len(context.targets)
-    if mode_julia:
-        title = 'Julia Set Performance'
-    else:
-        title = 'Mandelbrot Set Performance'
+    title = 'Julia Set Performance'
     print(title)
     msg = '%d Engines available, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r' % (
         num_engines, z_max, n_max, re_ax, im_ax)
@@ -250,7 +216,6 @@ def do_julia_runs(context,
                     for c in c_list:
                         do_julia_run(context_use,
                                      dist,
-                                     mode_julia,
                                      dimensions,
                                      c,
                                      re_ax, im_ax,
@@ -265,19 +230,9 @@ if __name__ == '__main__':
 
     # Fixed parameters:
 
-    # Select Julia set (True) or Mandelbrot set (False) calculation.
-    mode_julia = True
-    #mode_julia = False
-
-    # Region of the complex plane.
-    if mode_julia:
-        # Nice region for the Julia set.
-        re_ax = (-1.5, 1.5)
-        im_ax = (-1.5, 1.5)
-    else:
-        # Values for Mandelbrot set.
-        re_ax = (-2.25, 0.75)
-        im_ax = (-1.5, 1.5)
+    # Nice region for the Julia set.
+    re_ax = (-1.5, 1.5)
+    im_ax = (-1.5, 1.5)
 
     # Size of number that we consider as going off to infinity.
     # I think that 2.0 is sufficient to be sure that the point will escape.
@@ -302,9 +257,6 @@ if __name__ == '__main__':
     #cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
     #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
-    if not mode_julia:
-        # c does not make sense for Mandelbrot set.
-        c_list = [complex(0)]
 
     # Number of engines to use.
     #engine_count_list = [4]
@@ -335,13 +287,11 @@ if __name__ == '__main__':
         pass
     elif params == 'fast':
         # Params for quick runs, useful for testing the script.
-        mode_julia = True
         n_max = 100
         resolution_list = [128]
         repeat_count = 1
     elif params == 'full':
         # Params for a full test, useful for real results.
-        mode_julia = True
         n_max = 5000
         resolution_list = [64, 128, 256, 512, 1024]
         repeat_count = 16
@@ -360,7 +310,6 @@ if __name__ == '__main__':
         c = complex(float(sys.argv[1]), float(sys.argv[2]))
         c_list = [c]
         do_julia_runs(context,
-                      mode_julia=mode_julia,
                       repeat_count=1,
                       engine_count_list=[len(context.targets)],
                       dist_code_list=['b'],
@@ -371,7 +320,6 @@ if __name__ == '__main__':
     else:
         # Normal case, loop over all parameter lists.
         do_julia_runs(context,
-                      mode_julia,
                       repeat_count,
                       engine_count_list,
                       dist_code_list,
