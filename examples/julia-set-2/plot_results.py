@@ -21,6 +21,8 @@ from matplotlib import pyplot
 from distarray.externals.six import next
 
 
+# tweak plot styling
+
 CBcdict = {
     'Bl': (0, 0, 0),
     'Or': (.9, .6, 0),
@@ -32,16 +34,13 @@ CBcdict = {
     'rP': (.8, .6, .7),
 }
 
-# Change default color cycle
 matplotlib.rcParams['axes.color_cycle'] = [CBcdict[c] for c in
                                            sorted(CBcdict.keys())]
-
-
-# Dictionary keys.
-ENGINES = 'engines'
-TIMES = 'times'
-LEGEND = 'legend'
-RESOLUTION = 'resolution'
+matplotlib.rcParams['lines.linewidth'] = 2
+matplotlib.rcParams['lines.linewidth'] = 2
+matplotlib.rcParams['lines.markersize'] = 13
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['grid.alpha'] = 0.5
 
 
 STYLES = ('o-', 'x-', 'v-', '*-', 's-', 'd-')
@@ -77,14 +76,14 @@ def read_results(filename):
             key = (dist, resolution)
             if key not in results:
                 results[key] = {
-                    ENGINES: [],
-                    TIMES: [],
-                    RESOLUTION: resolution,
-                    LEGEND: "%s %d" % (dist, resolution),
+                    'engines': [],
+                    'times': [],
+                    'resolution': resolution,
+                    'legend': "%s %d" % (dist, resolution),
                 }
             # Collect values to plot.
-            results[key][ENGINES].append(num_engines)
-            results[key][TIMES].append(t_distarray)
+            results[key]['engines'].append(num_engines)
+            results[key]['times'].append(t_distarray)
     return results, title, note_text
 
 
@@ -93,17 +92,17 @@ def jitter_engines(results, amount):
     to make less crowded looking plot.
     """
     for key in results:
-        engines = results[key][ENGINES]
+        engines = results[key]['engines']
         engines = [engine + random.uniform(-amount, +amount)
                    for engine in engines]
-        results[key][ENGINES] = engines
+        results[key]['engines'] = engines
 
 
 def trim_results(results):
     """Select only the smallest time, consistent with timeit."""
     for key in results:
-        engines = results[key][ENGINES]
-        times = results[key][TIMES]
+        engines = results[key]['engines']
+        times = results[key]['times']
         trim = {}
         for engine, time in zip(engines, times):
             if engine not in trim:
@@ -122,8 +121,8 @@ def trim_results(results):
         # and sort times to match.
         sorted_engines, sorted_times = zip(*sorted(zip(trimmed_engines,
                                                        trimmed_times)))
-        results[key][ENGINES] = sorted_engines
-        results[key][TIMES] = sorted_times
+        results[key]['engines'] = sorted_engines
+        results[key]['times'] = sorted_times
 
 
 def get_results_range(results):
@@ -131,8 +130,8 @@ def get_results_range(results):
     all_engines = []
     all_times = []
     for key in results:
-        engines = results[key][ENGINES]
-        times = results[key][TIMES]
+        engines = results[key]['engines']
+        times = results[key]['times']
         all_engines.extend(engines)
         all_times.extend(times)
     max_engine = max(all_engines)
@@ -147,16 +146,17 @@ def plot_results(filename, results, title, subtitle):
     keys = sorted(keys)
     styles = iter(STYLES)
     for key in keys:
-        engines = results[key][ENGINES]
-        times = results[key][TIMES]
+        engines = results[key]['engines']
+        times = results[key]['times']
         pyplot.plot(engines, times, next(styles))
     pyplot.xlim((min(engines)-1, max(engines)+1))
     full_title = title + '\n' + subtitle
     pyplot.title(full_title)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('DistArray time')
-    legend = [results[key][LEGEND] for key in keys]
-    pyplot.legend(legend, loc='lower left')
+    legend = [results[key]['legend'] for key in keys]
+    pyplot.legend(legend, loc='upper left')
+    pyplot.grid(axis='y')
     pyplot.savefig(filename, dpi=100)
     pyplot.show()
 
@@ -174,15 +174,15 @@ def plot_points(filename, results, title, subtitle, ideal_dist=None):
     keys = sorted(keys)
     styles = iter(STYLES)
     for key in keys:
-        engines = results[key][ENGINES]
-        times = results[key][TIMES]
-        npoints = (results[key][RESOLUTION] ** 2) / numpy.array(times)
-        pyplot.plot(engines, npoints / 1000, next(styles), markersize=10)
+        engines = results[key]['engines']
+        times = results[key]['times']
+        npoints = (results[key]['resolution'] ** 2) / numpy.array(times)
+        pyplot.plot(engines, npoints / 1000, next(styles))
 
     # plot idealized scaling
-    ideal_line_base = ((results[ideal_dist][RESOLUTION]**2) /
-                       results[ideal_dist][TIMES][0])
-    ideal_line = ideal_line_base * numpy.array(results[ideal_dist][ENGINES])
+    ideal_line_base = ((results[ideal_dist]['resolution']**2) /
+                       results[ideal_dist]['times'][0])
+    ideal_line = ideal_line_base * numpy.array(results[ideal_dist]['engines'])
     pyplot.plot(engines, ideal_line / 1000, '--')
 
     pyplot.xlim((min(engines)-1, max(engines)+1))
@@ -190,8 +190,9 @@ def plot_points(filename, results, title, subtitle, ideal_dist=None):
     pyplot.title(full_title)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('kpoints / s')
-    legend = [results[key][LEGEND] for key in keys]
-    pyplot.legend(legend, loc='lower right')
+    legend = [results[key]['legend'] for key in keys]
+    pyplot.legend(legend, loc='upper left')
+    pyplot.grid(axis='y')
     pyplot.savefig(filename, dpi=100)
     pyplot.show()
 
