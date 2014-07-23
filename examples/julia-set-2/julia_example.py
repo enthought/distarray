@@ -166,7 +166,7 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
 
 
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
-                 plot):
+                 plot, numpy=False):
     """Do the Julia set calculation and print timing results.
 
     Parameters
@@ -190,6 +190,8 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         increasing this has a large effect on the run-time.
     plot : bool
         Make plots of the computed Julia sets.
+    numpy : bool
+        Compare with the NumPy calculation?
     """
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
@@ -201,21 +203,30 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
                                        z_max=z_max, n_max=n_max)
     t1 = time()
     t_distarray = t1 - t0
-    # Now try with numpy so we can compare times.
-    complex_plane_nd = complex_plane.tondarray()
-    t0 = time()
-    numpy_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
-    t1 = time()
-    t_numpy = t1 - t0
+
+    if numpy:
+        # Now try with numpy so we can compare times.
+        complex_plane_nd = complex_plane.tondarray()
+        t0 = time()
+        numpy_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
+        t1 = time()
+        t_numpy = t1 - t0
+        t_ratio = t_numpy / t_distarray
+
     # Average iteration count.
     avg_iters = float(num_iters.mean().tondarray())
     # Print results.
-    t_ratio = t_numpy / t_distarray
     dist_text = '%s-%s' % (dist[0], dist[1])
-    result = '%s, %r, %r, %r, %r, %r, %r, %r' % (dist_text, num_engines,
-                                                 dimensions[0], t_distarray,
-                                                 t_numpy, t_ratio, avg_iters,
-                                                 str(c))
+
+    if numpy:
+        result = '%s, %r, %r, %r, %r, %r, %r, %r' % (dist_text, num_engines,
+                                                     dimensions[0], t_distarray,
+                                                     t_numpy, t_ratio, avg_iters,
+                                                     str(c))
+    else:
+        result = '%s, %r, %r, %r, %r, %r' % (dist_text, num_engines,
+                                             dimensions[0], t_distarray,
+                                             avg_iters, str(c))
     print(result)
     if plot:
         # Plot the iteration count.
@@ -226,7 +237,8 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
 
 
 def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
-                  resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot):
+                  resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot,
+                  numpy=False):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -258,6 +270,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         increasing this has a large effect on the run-time.
     plot : bool
         Make plots of the computed Julia sets.
+    numpy : bool
+        Compare with the NumPy calculation?
     """
 
     # Check that we have enough engines available.
@@ -274,7 +288,10 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
+    if numpy:
+        print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
+    else:
+        print('Dist, Engines, Resolution, t_DistArray, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             for dist in dist_list:
@@ -308,7 +325,7 @@ def cli(cmd):
     repeat_count = 3
     engine_count_list = list(range(1, 5))
     dist_list = ['bn', 'cn', 'bb', 'cc']
-    resolution_list = [128]
+    resolution_list = [512]
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
     re_ax = (-1.5, 1.5)
