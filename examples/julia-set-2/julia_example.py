@@ -35,7 +35,6 @@ Usage:
 
 from __future__ import print_function
 
-import sys
 from time import time
 from matplotlib import pyplot
 
@@ -222,8 +221,7 @@ def do_julia_runs(context,
                                      z_max, n_max, plot)
 
 
-if __name__ == '__main__':
-
+def main():
     context = Context()
     with context.view.sync_imports():
         import numpy
@@ -240,89 +238,30 @@ if __name__ == '__main__':
 
     # Maximum iteration counts. Points in the set will hit this limit,
     # so increasing this has a large effect on the run-time.
-    #n_max = 10
     n_max = 100
-    #n_max = 1000
-    #n_max = 5000
-    #n_max = 10000
 
     # Lists of parameters:
 
     # Distribution types to use.
-    dist_code_list = ['b', 'c', 'bc', 'cb']
+    dist_code_list = ['b', 'c', 'bb', 'cc']
 
     # Constants to use.
-    c_list = [complex(-0.045, 0.45)]      # This Julia set has many points inside, needing all iterations.
-    # Or try lots of values over a grid.
-    #cx_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
-    #cy_list = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
-    #c_list = [complex(cx, cy) for cx in cx_list for cy in cy_list]
+    c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside, needing all iterations.
 
     # Number of engines to use.
-    #engine_count_list = [4]
-    engine_count_list = [1, 2, 3, 4]
+    engine_count_list = list(range(1, 5))
 
     # Resolution of Julia set.
-    #resolution_list = [256]
-    #resolution_list = [1024]
-    #resolution_list = [16, 32, 64, 128, 256]
-    #resolution_list = [64, 128, 256]
     resolution_list = [128]
-    #resolution_list = [128, 256]
-    #resolution_list = [16, 32, 64, 128, 256, 512]
-    #resolution_list = [64, 128, 256, 512, 1024]
 
     # Number of cycles to repeat everything.
-    repeat_count = 1
-    #repeat_count = 4
-    #repeat_count = 8
+    repeat_count = 3
 
-    # Some standard sets of parameters
-    #params = 'fast'    # Quick run for testing.
-    #params = 'full'    # Extended run for real results.
-    params = None      # Use manually set values.
+    # Normal case, loop over all parameter lists.
+    do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
+                  resolution_list, c_list, re_ax, im_ax, z_max, n_max,
+                  plot=False)
 
-    if params == None:
-        # Leave values from above as-is, so one can tweak however you like.
-        pass
-    elif params == 'fast':
-        # Params for quick runs, useful for testing the script.
-        n_max = 100
-        resolution_list = [128]
-        repeat_count = 1
-    elif params == 'full':
-        # Params for a full test, useful for real results.
-        n_max = 5000
-        resolution_list = [64, 128, 256, 512, 1024]
-        repeat_count = 16
-    else:
-        msg = 'Invalid params set: %s' % (params)
-        raise ValueError(msg)
 
-    # If we got command line parameters for c, then use these,
-    # and only loop over the resolutions, making plots.
-    # This lets you interactively try values.
-    # Otherwise, we loop over all parameters.
-    if sys.argv[1] in {'-h', '--help'}:
-        print(__doc__)
-    elif len(sys.argv) == 3:
-        # Get constant from command line instead.
-        c = complex(float(sys.argv[1]), float(sys.argv[2]))
-        c_list = [c]
-        do_julia_runs(context,
-                      repeat_count=1,
-                      engine_count_list=[len(context.targets)],
-                      dist_code_list=['b'],
-                      resolution_list=resolution_list,
-                      c_list=c_list,
-                      re_ax=re_ax, im_ax=im_ax,
-                      z_max=z_max, n_max=n_max, plot=True)
-    else:
-        # Normal case, loop over all parameter lists.
-        do_julia_runs(context,
-                      repeat_count,
-                      engine_count_list,
-                      dist_code_list,
-                      resolution_list,
-                      c_list,
-                      re_ax, im_ax, z_max, n_max, plot=False)
+if __name__ == '__main__':
+    main()
