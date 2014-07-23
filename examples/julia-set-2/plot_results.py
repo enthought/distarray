@@ -191,12 +191,7 @@ def plot_points(filename, results, title, subtitle, ideal_dist=('b-b', 512)):
     pyplot.show()
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        usage = 'Usage: python plot_results.py <results filename>'
-        print(usage)
-        exit(1)
-    filename = sys.argv[1]
+def main(filename):
     # Read and parse timing results.
     results, title, note_text = read_results(filename)
     # Either pick just the minimum time, or add jitter to the engine count.
@@ -213,3 +208,12 @@ if __name__ == '__main__':
     y_min, y_max = 0.0, 1.1 * max_time
     #plot_results(filename, results, title, subtitle, x_min, x_max, y_min, y_max)
     plot_points(filename, results, title, subtitle)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        usage = 'Usage: python plot_results.py <results filename>'
+        print(usage)
+        exit(1)
+    filename = sys.argv[1]
+    main(filename)
