@@ -162,7 +162,10 @@ def plot_results(filename, results, title, subtitle):
 
 
 def plot_points(filename, results, title, subtitle, ideal_dist=None):
-    """Plot the timing results."""
+    """Plot the timing results.
+
+    Plot an ideal scaling line from the origin through the first 'b-b' point.
+    """
     if ideal_dist is None:
         ideal_dist = next(k for k in results.keys() if k[0] == 'b-b')
 
