@@ -43,16 +43,16 @@ from distarray.dist.distarray import DistArray
 
 
 def create_complex_plane(context, resolution, dist, re_ax, im_ax):
-    ''' Create a DistArray containing points on the complex plane.
+    """Create a DistArray containing points on the complex plane.
 
     resolution: A 2-tuple with the number of points along Re and Im axes.
     dist: Distribution for the DistArray.
     re_ax: A 2-tuple with the (lower, upper) range of the Re axis.
     im_ax: A 2-tuple with the (lower, upper) range of the Im axis.
-    '''
+    """
 
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
-        ''' Fill in points on the complex coordinate plane. '''
+        """Fill in points on the complex coordinate plane."""
         # Drawing the coordinate plane directly like this is currently much
         # faster than trying to do it by indexing a distarray.
         # This may not be the most DistArray-thonic way to do this.
@@ -73,13 +73,13 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
 
 
 def local_julia_calc(la, c, z_max, n_max):
-    ''' Calculate the number of iterations for the point to escape.
+    """Calculate the number of iterations for the point to escape.
 
     la: Local array of complex values whose iterations we will count.
     c: Complex number to add at each iteration.
     z_max: Magnitude of complex value that we assume goes to infinity.
     n_max: Maximum number of iterations.
-    '''
+    """
 
     import numpy as np
     from distarray.local import LocalArray
@@ -103,13 +103,13 @@ def local_julia_calc(la, c, z_max, n_max):
 
 
 def distributed_julia_calc(distarray, c, z_max, n_max):
-    ''' Calculate the Julia set for an array of points in the complex plane.
+    """Calculate the Julia set for an array of points in the complex plane.
 
     distarray: DistArray of complex values whose iterations we will count.
     c: Complex number to add at each iteration.
     z_max: Magnitude of complex value that we assume goes to infinity.
     n_max: Maximum number of iterations.
-    '''
+    """
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
                               (distarray.key, c, z_max, n_max))
@@ -118,11 +118,11 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
 
 
 def numpy_julia_calc(ndarray, c, z_max, n_max):
-    ''' Calculate entirely with NumPy for comparison. '''
+    """Calculate entirely with NumPy for comparison."""
 
     @numpy.vectorize
     def julia_calc(z, c, z_max, n_max):
-        ''' Use usual numpy.vectorize to apply on all the complex points. '''
+        """Use usual numpy.vectorize to apply on all the complex points."""
         n = 0
         while abs(z) < z_max and n < n_max:
             z = z * z + c
@@ -134,7 +134,7 @@ def numpy_julia_calc(ndarray, c, z_max, n_max):
 
 
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max, plot):
-    ''' Do the Julia set calculation and print timing results. '''
+    """Do the Julia set calculation and print timing results."""
     num_engines = len(context.targets)
     # Create a distarray for the points on the complex plane.
     complex_plane = create_complex_plane(context,
@@ -184,7 +184,7 @@ def do_julia_runs(context,
                   resolution_list,
                   c_list,
                   re_ax, im_ax, z_max, n_max, plot):
-    ''' Perform a series of Julia set calculations, and print the results. '''
+    """Perform a series of Julia set calculations, and print the results."""
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
     num_engines = len(context.targets)
