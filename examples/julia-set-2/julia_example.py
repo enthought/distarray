@@ -196,10 +196,10 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     # Print results.
     t_ratio = t_numpy / t_distarray
     dist_text = '%s-%s' % (dist[0], dist[1])
-    result = '%s, %r, %r, %r, %r, %r, %r, %r' % (
-                 dist_text, num_engines, dimensions[0],
-                 t_distarray, t_numpy, t_ratio,
-                 avg_iters, str(c))
+    result = '%s, %r, %r, %r, %r, %r, %r, %r' % (dist_text, num_engines,
+                                                 dimensions[0], t_distarray,
+                                                 t_numpy, t_ratio, avg_iters,
+                                                 str(c))
     print(result)
     if plot:
         # Plot the iteration count.
@@ -272,12 +272,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
                 for resolution in resolution_list:
                     dimensions = (resolution, resolution)
                     for c in c_list:
-                        do_julia_run(context_use,
-                                     dist,
-                                     dimensions,
-                                     c,
-                                     re_ax, im_ax,
-                                     z_max, n_max, plot)
+                        do_julia_run(context_use, dist, dimensions, c, re_ax,
+                                     im_ax, z_max, n_max, plot)
 
 
 def cli(cmd):
