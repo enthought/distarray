@@ -177,7 +177,39 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
 
 def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot):
-    """Perform a series of Julia set calculations, and print the results."""
+    """Perform a series of Julia set calculations, and print the results.
+
+    Loop over all parameter lists.
+
+    Parameters
+    ----------
+    context : DistArray Context
+    repeat_count : int
+        Number of times to repeat each unique parameter set.  Later we can take
+        the average or minimum of these values to reduce noise in the output.
+    engine_count_list : list of int
+        List of engine ids to use.  Example: list(range(1, 5))
+    dist_code_list : list of sequences
+        List of distribution types to test.  Example: ['b', 'c', 'bb', 'cc']
+    resolution_list = list of int
+        List of resolutions of Julia set to test.
+    c_list : list of complex
+        Constants to use to compute Julia set.
+        Example: [complex(-0.045, 0.45)]
+    re_ax : 2-tuple of float
+        Min and max for real axis.
+    im_ax : 2-tuple of float
+        Min and max for imaginary axis.
+    z_max : float
+        Size of number that we consider as going off to infinity.  I think that
+        2.0 is sufficient to be sure that the point will escape.
+    n_max : int
+        Maximum iteration counts. Points in the set will hit this limit, so
+        increasing this has a large effect on the run-time.
+    plot : bool
+        Make plots of the computed Julia sets.
+    """
+
     # Check that we have enough engines available.
     max_engine_count = max(engine_count_list)
     num_engines = len(context.targets)
