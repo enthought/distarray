@@ -234,8 +234,8 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
 
 
 def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
-                  resolution_list, c_list, re_ax, im_ax, z_max, n_max, plot,
-                  numpy=False):
+                  resolution_list, c_list, re_ax, im_ax, z_max, n_max,
+                  plot, benchmark_numpy=False):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -267,8 +267,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         increasing this has a large effect on the run-time.
     plot : bool
         Make plots of the computed Julia sets.
-    numpy : bool
-        Compare with the NumPy calculation?
+    benchmark_numpy : bool
+        Compare with NumPy?
     """
 
     # Check that we have enough engines available.
@@ -285,10 +285,7 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    if numpy:
-        print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
-    else:
-        print('Dist, Engines, Resolution, t_DistArray, Iters, c')
+    print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             for dist in dist_list:
@@ -297,7 +294,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                     for c in c_list:
                         context_use = Context(targets=range(engine_count))
                         do_julia_run(context_use, dist, dimensions, c,
-                                     re_ax, im_ax, z_max, n_max, plot)
+                                     re_ax, im_ax, z_max, n_max,
+                                     plot, benchmark_numpy)
                         context_use.close()
 
 
@@ -318,11 +316,13 @@ def cli(cmd):
     with context.view.sync_imports():
         import numpy
 
+    resolution_list = list(map(int, cmd[1:]))
+    #resolution_list = [128]
+
     # Default parameters
-    repeat_count = 3
+    repeat_count = 1
     engine_count_list = list(range(1, 5))
     dist_list = ['bn', 'cn', 'bb', 'cc']
-    resolution_list = [512]
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
     re_ax = (-1.5, 1.5)
