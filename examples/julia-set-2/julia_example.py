@@ -30,7 +30,8 @@ Usage:
 from __future__ import print_function
 
 from time import time
-import numpy as np
+
+import numpy
 from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
@@ -51,12 +52,12 @@ def numpy_julia_calc(z, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
-    counts = np.zeros_like(z, dtype=np.int32)
-    hits = np.zeros_like(z, dtype=np.bool)
-    mask = np.zeros_like(z, dtype=np.bool)
+    counts = numpy.zeros_like(z, dtype=numpy.int32)
+    hits = numpy.zeros_like(z, dtype=numpy.bool)
+    mask = numpy.zeros_like(z, dtype=numpy.bool)
     n = 0
 
-    while not np.all(hits) and n < n_max:
+    while not numpy.all(hits) and n < n_max:
         z = z * z + c
         mask = (abs(z) > z_max) & (~hits)
         counts[mask] = n
@@ -142,7 +143,7 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
     iters_key = context.apply(local_julia_calc,
                               (distarray.key, c, z_max, n_max))
     iters_da = DistArray.from_localarrays(iters_key[0], context=context,
-                                          dtype=np.int32)
+                                          dtype=numpy.int32)
     return iters_da
 
 
