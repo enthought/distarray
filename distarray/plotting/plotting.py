@@ -14,7 +14,7 @@ from numpy import arange, concatenate, empty, linspace, resize
 from distarray.externals.six.moves import range
 
 
-def _get_ranks(arr):
+def get_ranks(arr):
     """
     Given a distarray arr, return a distarray with the same shape, but
     with the elements equal to the rank of the process the element is
@@ -272,8 +272,8 @@ def plot_array_distribution(darray,
 
     # Process per element.
     ctx = darray.context
-    ctx.register(_get_ranks)
-    process_darray = ctx._get_ranks(darray)
+    ctx.register(get_ranks)
+    process_darray = ctx.get_ranks(darray)
     process_array = process_darray.toarray()
 
     # Values per element.

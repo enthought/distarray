@@ -487,7 +487,7 @@ class BaseContext(object):
         as ``context.func(...)``.  Doing so will call the function locally on
         target processes determined from the arguments passed in using
         ``Context.apply(...)``.  The function can take non-proxied Python
-        objects, distarrays, or other proxied objects as arguments.
+        objects, DistArrays, or other proxied objects as arguments.
         Non-proxied Python objects will be broadcasted to all local processes;
         proxied objects will be dereferenced before calling the function on the
         local process.
@@ -497,7 +497,11 @@ class BaseContext(object):
                              delete_key empty zeros ones save_dnpy load_dnpy
                              save_hdf5 load_npy load_hdf5 fromndarray
                              fromarray fromfunction register""".split()):
-            raise ValueError("Function name %s clashes with existing function.")
+            msg = "Function name %s clashes with existing function."
+            raise ValueError(msg % func.__name__)
+        if func.__name__.startswith("_"):
+            msg = "Function name %r starts with underscore."
+            raise ValueError(msg % func.__name__)
 
         self.push_function(func.__name__, func, targets=self.targets)
 
@@ -919,6 +923,8 @@ class MPIContext(BaseContext):
             keyword arguments to func
         targets : sequence of integers
             engines func is to be run on.
+        autoproxyize: bool, default False
+            If True, implicitly return a Proxy object from the function.
 
         Returns
         -------
