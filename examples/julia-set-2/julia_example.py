@@ -20,7 +20,7 @@ The points in the set will require the maximum iteration count, so
 the connected sets will usually take longer to compute.
 
 Usage:
-    $ python julia_example.py
+    $ python julia_example.py <resolution_list>
 
     This will try various parameters, such as the engine count,
     distribution method, resolution, and c value, and print the
