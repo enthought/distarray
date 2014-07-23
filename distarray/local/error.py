@@ -8,28 +8,20 @@ from distarray.error import DistArrayError
 
 
 class InvalidBaseCommError(DistArrayError):
-    pass
-
-
-class DistError(DistArrayError):
-    pass
-
-
-class DistMatrixError(DistArrayError):
+    """ Exception class when an object expected to be an MPI.Comm object is not one. """
     pass
 
 
 class IncompatibleArrayError(DistArrayError):
+    """ Exception class when arrays are incompatible. """
     pass
 
 
 class NullCommError(DistArrayError):
-    pass
-
-
-class InvalidMapCodeError(DistArrayError):
+    """ Exception class when an MPI communicator is NULL. """
     pass
 
 
 class InvalidDimensionError(DistArrayError):
+    """ Exception class when a specified dimension is invalid. """
     pass

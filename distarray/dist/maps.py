@@ -19,8 +19,8 @@ The one-dimensional ClientMap classes keep track of which process owns which
 index in that dimension.  This class has several subclasses for specific
 distribution types, including `BlockMap`, `CyclicMap`, `NoDistMap`, and
 `UnstructuredMap`.
-
 """
+
 from __future__ import division, absolute_import
 
 import operator
@@ -133,7 +133,8 @@ def map_from_sizes(size, dist_type, grid_size):
 
 @add_metaclass(ABCMeta)
 class MapBase(object):
-    """ Base class for one-dimensional client-side maps.
+
+    """Base class for one-dimensional client-side maps.
 
     Maps keep track of the relevant distribution information for a single
     dimension of a distributed array.  Maps allow distributed arrays to keep
@@ -144,6 +145,26 @@ class MapBase(object):
 
     """
 
+    @classmethod
+    @abstractmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        """Make a Map from a global dimension dictionary."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        """Make a Map from a sequence of process-local dimension dictionaries.
+
+        There should be one such dimension dictionary per process.
+        """
+        pass
+
+    @abstractmethod
+    def __init__(self):
+        """Create a new Map.  Parameters may vary for different subtypes."""
+        pass
+
     @abstractmethod
     def index_owners(self, idx):
         """ Returns a list of process IDs in this dimension that might possibly
@@ -153,6 +174,11 @@ class MapBase(object):
 
         """
         raise IndexError()
+
+    @abstractmethod
+    def get_dimdicts(self):
+        """Return a dim_dict per process in this dimension."""
+        pass
 
     def _is_compatible_degenerate(self, map):
         right_types = all(isinstance(m, (NoDistMap, BlockMap, BlockCyclicMap))

@@ -11,7 +11,8 @@ from functools import reduce
 from importlib import import_module
 import types
 
-from distarray.utils import DISTARRAY_BASE_NAME as prefix
+from distarray.local import LocalArray
+from distarray.local.proxyize import Proxy
 
 from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
                                      get_comm_world)
@@ -46,15 +47,15 @@ class Engine(object):
         # convert args
         args = list(args)
         for i, a in enumerate(args):
-            if (isinstance(a, str) and a.startswith(prefix)):
-                args[i] = reduce(getattr, [module] + a.split('.'))
+            if isinstance(a, module.Proxy):
+                args[i] = a.dereference()
         args = tuple(args)
 
         # convert kwargs
         for k in kwargs.keys():
             val = kwargs[k]
-            if (isinstance(val, str) and val.startswith(prefix)):
-                kwargs[k] = module.reduce(getattr, [module] + val.split('.'))
+            if isinstance(val, module.Proxy):
+                kwargs[k] = val.dereference()
 
         return args, kwargs
 
@@ -71,11 +72,24 @@ class Engine(object):
                 'push': self.push,
                 'pull': self.pull,
                 'kill': self.kill,
+                'delete': self.delete,
                 'make_targets_comm': self.engine_make_targets_comm,
                 'builtin_call': self.builtin_call}
         func = what[to_do]
         ret = func(msg)
         return ret
+
+    def delete(self, msg):
+        obj = msg[1]
+        if isinstance(obj, Proxy):
+            obj.cleanup()
+        else:
+            name = obj
+            try:
+                module = import_module('__main__')
+                delattr(module, name)
+            except AttributeError:
+                pass
 
     def func_call(self, msg):
 
@@ -83,6 +97,7 @@ class Engine(object):
         args = msg[2]
         kwargs = msg[3]
         nonce, context_key = msg[4]
+        autoproxyize = msg[5]
 
         module = import_module('__main__')
         module.proxyize.set_state(nonce)
@@ -97,6 +112,8 @@ class Engine(object):
                                       func_data[1], func_data[2], func_data[3])
 
         res = new_func(*args, **kwargs)
+        if autoproxyize and isinstance(res, LocalArray):
+            res = module.proxyize(res)
         self._INTERCOMM.send(res, dest=self.client_rank)
 
     def execute(self, msg):
