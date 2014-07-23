@@ -113,20 +113,6 @@ class TestRegister(ContextTestCase):
         dj = self.context.local_add_mixed(self.da, 11, di, 12)
         assert_allclose(dj.tondarray(), 2 * numpy.pi + 11 + 33 + 12)
 
-    @unittest.skip('Locally adding ndarrays not supported.')
-    def test_local_add_ndarray(self):
-
-        def local_add_ndarray(da, num, ndarr):
-            from distarray.local import LocalArray
-            return LocalArray(da.distribution, buf=(da.ndarray + num + ndarr))
-        self.context.register(local_add_ndarray)
-
-        shp = self.da.localshapes()[0]
-        ndarr = numpy.empty(shp)
-        ndarr.fill(33)
-        dk = self.context.local_add_ndarray(self.da, 11, ndarr)
-        assert_allclose(dk.tondarray(), 2 * numpy.pi + 11 + 33)
-
     def test_local_add_kwargs(self):
 
         def local_add_kwargs(da, num1, num2=55):

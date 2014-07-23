@@ -4,7 +4,6 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # -----------------------------------------------------------------------------
 
-# from six.moves import reduce
 from importlib import import_module
 
 from distarray.utils import DISTARRAY_BASE_NAME

@@ -480,6 +480,25 @@ class BaseContext(object):
                                           distribution=distribution)
 
     def register(self, func):
+        """Associate a function with this Context.  Allows access to the local
+        process and local data associated with each DistArray.
+
+        After registering a function with a context, the function can be called
+        as ``context.func(...)``.  Doing so will call the function locally on
+        target processes determined from the arguments passed in using
+        ``Context.apply(...)``.  The function can take non-proxied Python
+        objects, distarrays, or other proxied objects as arguments.
+        Non-proxied Python objects will be broadcasted to all local processes;
+        proxied objects will be dereferenced before calling the function on the
+        local process.
+        """
+
+        if func.__name__ in ("""__init__ cleanup close apply push_function
+                             delete_key empty zeros ones save_dnpy load_dnpy
+                             save_hdf5 load_npy load_hdf5 fromndarray
+                             fromarray fromfunction register""".split()):
+            raise ValueError("Function name %s clashes with existing function.")
+
         self.push_function(func.__name__, func, targets=self.targets)
 
         @wraps(func)
@@ -505,9 +524,10 @@ class BaseContext(object):
                 dists.append(o.distribution)
         for d in dists[1:]:
             if not dists[0].is_compatible(d):
-                raise ValueError()
+                msg = "Distrbution %r is not compatible with %r"
+                raise ValueError(msg % (dists[0], d))
         if not dists:
-            raise TypeError()
+            raise TypeError("Cannot determine a Distribution.")
         return dists[0]
 
     def _process_local_results(self, results, targets):
@@ -521,14 +541,13 @@ class BaseContext(object):
         Returns
         -------
         Varied
-            A DistArray (if locally all values are DistArray), a None (if
+            A DistArray (if locally all values are LocalArray), a None (if
             locally all values are None), or else, pull the result back to the
             client and return it.  If all but one of the pulled values is None,
             return that non-None value only.
         """
         def is_NoneType(pxy):
-            return (pxy.type_str == "<type 'NoneType'>" or
-                    pxy.type_str == "<class 'NoneType'>")
+            return pxy.type_str == str(type(None))
 
         def is_LocalArray(pxy):
             return (isinstance(pxy, Proxy) and 
@@ -702,6 +721,8 @@ class IPythonContext(BaseContext):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
+        autoproxyize: bool, default False
+            If True, implicitly return a Proxy object from the function.
 
         Returns
         -------
@@ -771,6 +792,7 @@ class IPythonContext(BaseContext):
     def push_function(self, key, func, targets=None):
         targets = targets or self.targets
         self._push({key: func}, targets=targets)
+
 
 def _shutdown(intercomm, targets):
     msg = ('kill',)
