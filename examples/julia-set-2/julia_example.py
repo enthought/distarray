@@ -61,8 +61,8 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     context : DistArray Context
     resolution : 2-tuple
         The number of points along Re and Im axes.
-    dist : Distribution
-        Distribution of the DistArray.
+    dist : sequence or dict
+        dist_type for of the DistArray Distribution.
     re_ax : 2-tuple
         The (lower, upper) range of the Re axis.
     im_ax : 2-tuple
@@ -186,10 +186,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     # Now try with numpy so we can compare times.
     complex_plane_nd = complex_plane.tondarray()
     t0 = time()
-    numpy_julia_calc(complex_plane_nd,
-                     c,
-                     z_max=z_max,
-                     n_max=n_max)
+    numpy_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
     t1 = time()
     t_numpy = t1 - t0
     # Average iteration count.
@@ -257,24 +254,18 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_code_list,
         msg = 'Require %d engines, but only %d are available.' % (
             max_engine_count, num_engines)
         raise ValueError(msg)
+
     # Loop over everything and time the calculations.
     print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             context_use = Context(targets=range(engine_count))
             for dist_code in dist_code_list:
-                # Create dist dictionary.
-                if len(dist_code) == 1:
-                    dist = {0: dist_code, 1: dist_code}
-                elif len(dist_code) == 2:
-                    dist = {0: dist_code[0], 1: dist_code[1]}
-                else:
-                    raise ValueError('Distribution code must be 1 or 2 chars.')
                 for resolution in resolution_list:
                     dimensions = (resolution, resolution)
                     for c in c_list:
-                        do_julia_run(context_use, dist, dimensions, c, re_ax,
-                                     im_ax, z_max, n_max, plot)
+                        do_julia_run(context_use, dist_code, dimensions, c,
+                                     re_ax, im_ax, z_max, n_max, plot)
 
 
 def cli(cmd):
@@ -283,7 +274,7 @@ def cli(cmd):
 
     Parameters
     ----------
-    cmd: list of str
+    cmd : list of str
         sys.argv
     """
     if len(cmd) == 2 and cmd[1] in {'-h', '--help'}:
@@ -297,7 +288,7 @@ def cli(cmd):
     # Default parameters
     repeat_count = 3
     engine_count_list = list(range(1, 5))
-    dist_code_list = ['b', 'c', 'bb', 'cc']
+    dist_code_list = ['bn', 'cn', 'bb', 'cc']
     resolution_list = [128]
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
