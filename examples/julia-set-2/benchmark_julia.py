@@ -18,17 +18,11 @@ Depending on the value of c, the Julia set may be connected and contain
 a lot of points, or it could be disconnected and contain fewer points.
 The points in the set will require the maximum iteration count, so
 the connected sets will usually take longer to compute.
-
-Usage:
-    $ python julia_example.py <resolution_list>
-
-    This will try various parameters, such as the engine count,
-    distribution method, resolution, and c value, and print the
-    timing results from each run to standard output.
 """
 
 from __future__ import print_function
 
+import argparse
 from time import time
 
 import numpy
@@ -292,18 +286,20 @@ def cli(cmd):
     cmd : list of str
         sys.argv
     """
-    if len(cmd) == 1 or (len(cmd) == 2 and cmd[1] in {'-h', '--help'}):
-        print(__doc__)
-        return
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('resolution_list',  metavar='N', type=int, nargs='+',
+                        help="resolutions of the Julia set to benchmark (NxN)")
+    parser.add_argument("-r", "--repeat", type=int, dest='repeat_count',
+                        default=3,
+                        help=("number of repetitions of each unique parameter "
+                              "set, default: 3"))
+    args = parser.parse_args()
 
     context = Context()
 
-    resolution_list = list(map(int, cmd[1:]))
-    #resolution_list = [128]
-
-    # Default parameters
-    repeat_count = 6
-    engine_count_list = list(range(1, 13))
+    ## Default parameters
+    # use all available targets
+    engine_count_list = list(range(1, len(context.targets)+1))
     dist_list = ['bn', 'cn', 'bb', 'cc']
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
@@ -312,8 +308,8 @@ def cli(cmd):
     z_max = 2.0
     n_max = 100
 
-    do_julia_runs(context, repeat_count, engine_count_list, dist_list,
-                  resolution_list, c_list, re_ax, im_ax, z_max, n_max,
+    do_julia_runs(context, args.repeat_count, engine_count_list, dist_list,
+                  args.resolution_list, c_list, re_ax, im_ax, z_max, n_max,
                   plot=False, benchmark_numpy=False)
 
 
