@@ -21,7 +21,7 @@ from functools import wraps
 import numpy
 
 from distarray.externals import six
-from distarray.dist import cleanup
+from distarray.dist import ipython_cleanup
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
@@ -62,6 +62,10 @@ class BaseContext(object):
 
     @abstractmethod
     def close(self):
+        pass
+
+    @abstractmethod
+    def make_subcomm(self, new_targets):
         pass
 
     @abstractmethod
@@ -585,8 +589,8 @@ class IPythonContext(BaseContext):
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(cleanup.clear_all),
-                                atexit.register(cleanup.cleanup_all,
+            Context._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
+                                atexit.register(ipython_cleanup.cleanup_all,
                                                 '__main__',
                                                 DISTARRAY_BASE_NAME))
 
@@ -631,9 +635,9 @@ class IPythonContext(BaseContext):
 
         self._base_comm = self._make_base_comm()
         self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
-        self.comm = self._make_subcomm(self.targets)
+        self.comm = self.make_subcomm(self.targets)
 
-    def _make_subcomm(self, new_targets):
+    def make_subcomm(self, new_targets):
 
         if new_targets != sorted(new_targets):
             raise ValueError("targets must be in sorted order.")
@@ -694,11 +698,15 @@ class IPythonContext(BaseContext):
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
         # TODO: FIXME: cleanup needs updating to work with proxy objects.
-        cleanup.cleanup(view=self.view, module_name='__main__',
-                        prefix=self.context_key)
+        ipython_cleanup.cleanup(view=self.view, module_name='__main__',
+                                prefix=self.context_key)
 
     def close(self):
         self.cleanup()
+        def free_subcomm(subcomm):
+            subcomm.Free()
+        for targets, subcomm in self._comm_from_targets.items():
+            self.apply(free_subcomm, (subcomm,), targets=targets)
         if self.owns_client:
             self.client.close()
         self._base_comm = None
@@ -836,15 +844,14 @@ class MPIContext(BaseContext):
         self.nengines = get_nengines()
 
         self.all_targets = list(range(self.nengines))
-        targets = self.all_targets if targets is None else targets
-        self.targets = targets
-        self.ntargets = len(self.targets)
+        self.targets = self.all_targets if targets is None else sorted(targets)
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
         self.intercomm = self.__class__._INTERCOMM
         self._base_comm = self.__class__._BASE_COMM
-        self.comm = self._make_subcomm(self.targets)
+        self._comm_from_targets = {tuple(sorted(self.all_targets)): self._base_comm}
+        self.comm = self.make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
             Context._CLEANUP = atexit.register(_shutdown,
@@ -875,7 +882,10 @@ class MPIContext(BaseContext):
         pass
 
     def close(self):
-        pass
+        for targets, subcomm in self._comm_from_targets.items():
+            if subcomm in (MPIContext._BASE_COMM, MPIContext._INTERCOMM):
+                continue
+            self._send_msg(('free_comm', subcomm), targets=targets)
 
     # End of key management routines.
 
@@ -891,16 +901,25 @@ class MPIContext(BaseContext):
             res.append(self.intercomm.recv(source=t))
         return res
 
-    def _make_subcomm(self, targets):
+    def make_subcomm(self, targets):
         if len(targets) > self.nengines:
             msg = ("The number of engines (%s) is less than the number of "
                    "targets you want (%s)." % (self.nengines, len(targets)))
             raise ValueError(msg)
 
+        if targets != sorted(targets):
+            raise ValueError("targets must be in sorted order.")
+
+        try:
+            return self._comm_from_targets[tuple(targets)]
+        except KeyError:
+            pass
+
         msg = ('make_targets_comm', targets)
         self._send_msg(msg, targets=self.all_targets)
-        comm_name = make_targets_comm(targets)
-        return comm_name
+        new_comm = make_targets_comm(targets)
+        self._comm_from_targets[tuple(targets)] = new_comm
+        return new_comm
 
     def _execute(self, lines, targets=None):
         msg = ('execute', lines)
@@ -960,7 +979,10 @@ class MPIContext(BaseContext):
         push_function(self, key, func, targets=targets)
 
 
-if is_solo_mpi_process():
+if is_solo_mpi_process() and IPythonClient is not None:
     Context = IPythonContext
-else:
+elif not is_solo_mpi_process():
     Context = MPIContext
+else:
+    raise ImportError("Cannot create Context class."
+                      "Must have an IPython cluster running or run in MPI-only mode.")

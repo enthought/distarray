@@ -145,7 +145,7 @@ def setup_engine_comm(targets=None):
         world.Split(2, world_rank)
 
 
-def initial_comm_setup(targets=None):
+def initial_comm_setup():
     """Setup client and engine intracomm, and intercomm."""
     world = get_comm_world()
     world_rank = world.rank

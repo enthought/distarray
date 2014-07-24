@@ -19,7 +19,7 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals import protocol_validator
-from distarray.dist import Context
+from distarray.dist.context import Context, IPythonContext
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
@@ -163,19 +163,21 @@ class ClientTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # skip if there isn't a cluster available
-        try:
-            cls.client = IPythonClient()
-        except EnvironmentError:
-            # IOError on Python2, FileNotFoundError on Python3
-            msg = "You must have an ipcluster running to run this test case."
-            raise unittest.SkipTest(msg)
+        if Context is IPythonContext:
+            try:
+                cls.client = IPythonClient()
+            except EnvironmentError:
+                # IOError on Python2, FileNotFoundError on Python3
+                msg = "You must have an ipcluster running to run this test case."
+                raise unittest.SkipTest(msg)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.client.close()
-        except RuntimeError:
-            pass
+        if Context is IPythonContext:
+            try:
+                cls.client.close()
+            except RuntimeError:
+                pass
 
 
 class ContextTestCase(ClientTestCase):
