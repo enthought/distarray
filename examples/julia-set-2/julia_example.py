@@ -259,8 +259,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
     title = 'Julia Set Performance'
     print(title)
     print("Benchmark started: %s" % time())
-    fmt = '%d Engines available, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r, repeat_count=%r'
-    msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, repeat_count)
+    fmt = 'num_engines=%d, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r, resolution_list=%r, repeat_count=%r'
+    msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, resolution_list, repeat_count)
     print(msg)
     if max_engine_count > num_engines:
         msg = 'Require %d engines, but only %d are available.' % (
