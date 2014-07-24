@@ -910,8 +910,6 @@ class MPIContext(BaseContext):
         if targets != sorted(targets):
             raise ValueError("targets must be in sorted order.")
 
-        # if tuple(targets) not in self._comm_from_targets:
-            # import ipdb; ipdb.set_trace()
         try:
             return self._comm_from_targets[tuple(targets)]
         except KeyError:
@@ -920,8 +918,6 @@ class MPIContext(BaseContext):
         msg = ('make_targets_comm', targets)
         self._send_msg(msg, targets=self.all_targets)
         new_comm = make_targets_comm(targets)
-        # if tuple(targets) not in self._comm_from_targets:
-            # import ipdb; ipdb.set_trace()
         self._comm_from_targets[tuple(targets)] = new_comm
         return new_comm
 
