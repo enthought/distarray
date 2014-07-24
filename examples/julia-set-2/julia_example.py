@@ -203,8 +203,8 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     # Print results.
     dist_text = '%s-%s' % (dist[0], dist[1])
 
-    fmt = '%s, %r, %r, %r, %r, %r, %r, %r'
-    result = fmt % (dist_text, num_engines, dimensions[0],
+    fmt = '%s, %s, %r, %r, %r, %r, %r, %r, %r'
+    result = fmt % (time(), dist_text, num_engines, dimensions[0],
                     t_distarray, t_numpy, t_ratio, avg_iters, str(c))
     print(result)
     if plot:
@@ -258,8 +258,9 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
     num_engines = len(context.targets)
     title = 'Julia Set Performance'
     print(title)
-    msg = '%d Engines available, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r' % (
-        num_engines, z_max, n_max, re_ax, im_ax)
+    print("Benchmark started: %s" % time())
+    fmt = '%d Engines available, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r, repeat_count=%r'
+    msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, repeat_count)
     print(msg)
     if max_engine_count > num_engines:
         msg = 'Require %d engines, but only %d are available.' % (
@@ -267,7 +268,7 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    print('Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
+    print('Timestamp, Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             for dist in dist_list:
@@ -296,15 +297,13 @@ def cli(cmd):
         return
 
     context = Context()
-    with context.view.sync_imports():
-        import numpy
 
     resolution_list = list(map(int, cmd[1:]))
     #resolution_list = [128]
 
     # Default parameters
-    repeat_count = 3
-    engine_count_list = list(range(1, 5))
+    repeat_count = 6
+    engine_count_list = list(range(1, 13))
     dist_list = ['bn', 'cn', 'bb', 'cc']
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
@@ -315,7 +314,7 @@ def cli(cmd):
 
     do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                   resolution_list, c_list, re_ax, im_ax, z_max, n_max,
-                  plot=False)
+                  plot=False, benchmark_numpy=False)
 
 
 if __name__ == '__main__':
