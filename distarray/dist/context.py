@@ -21,7 +21,7 @@ from functools import wraps
 import numpy
 
 from distarray.externals import six
-from distarray.dist import cleanup
+from distarray.dist import ipython_cleanup
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
@@ -585,8 +585,8 @@ class IPythonContext(BaseContext):
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(cleanup.clear_all),
-                                atexit.register(cleanup.cleanup_all,
+            Context._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
+                                atexit.register(ipython_cleanup.cleanup_all,
                                                 '__main__',
                                                 DISTARRAY_BASE_NAME))
 
@@ -694,8 +694,8 @@ class IPythonContext(BaseContext):
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
         # TODO: FIXME: cleanup needs updating to work with proxy objects.
-        cleanup.cleanup(view=self.view, module_name='__main__',
-                        prefix=self.context_key)
+        ipython_cleanup.cleanup(view=self.view, module_name='__main__',
+                                prefix=self.context_key)
 
     def close(self):
         self.cleanup()

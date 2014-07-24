@@ -18,7 +18,7 @@ from time import sleep
 from subprocess import Popen, PIPE
 
 from distarray.externals import six
-from distarray.dist.cleanup import clear_all
+from distarray.dist.ipython_cleanup import clear_all
 
 
 is_anaconda = "Anaconda" in sys.version or "Continuum" in sys.version

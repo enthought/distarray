@@ -8,6 +8,7 @@
 The single IPython entry point.
 """
 
-from IPython.parallel import Client
-
-IPythonClient = Client
+try:
+    from IPython.parallel import Client as IPythonClient
+except (ImportError, IOError):
+    IPythonClient = None

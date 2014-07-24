@@ -23,9 +23,8 @@ def cleanup(view, module_name, prefix):
 
 def cleanup_all(module_name, prefix):
     """ Connects to all engines and runs ``cleanup()`` on them. """
-    try:
-        c = IPythonClient()
-    except IOError:  # If we can't create a client, return silently.
+    c = IPythonClient()
+    if c is None:
         return
     try:
         v = c[:]
@@ -65,9 +64,8 @@ def clear(view):
     return view.apply_async(clear_engine).get_dict()
 
 def clear_all():
-    try:
-        c = IPythonClient()
-    except IOError:  # If we can't create a client, return silently.
+    c = IPythonClient()
+    if c is None:
         return
     try:
         v = c[:]
