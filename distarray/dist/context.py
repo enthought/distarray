@@ -703,6 +703,10 @@ class IPythonContext(BaseContext):
 
     def close(self):
         self.cleanup()
+        def free_subcomm(subcomm):
+            subcomm.Free()
+        for targets, subcomm in self._comm_from_targets.items():
+            self.apply(free_subcomm, (subcomm,), targets=targets)
         if self.owns_client:
             self.client.close()
         self._base_comm = None
@@ -878,7 +882,10 @@ class MPIContext(BaseContext):
         pass
 
     def close(self):
-        pass
+        for targets, subcomm in self._comm_from_targets.items():
+            if subcomm in (MPIContext._BASE_COMM, MPIContext._INTERCOMM):
+                continue
+            self._send_msg(('free_comm', subcomm), targets=targets)
 
     # End of key management routines.
 
