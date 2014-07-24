@@ -960,7 +960,10 @@ class MPIContext(BaseContext):
         push_function(self, key, func, targets=targets)
 
 
-if is_solo_mpi_process():
+if is_solo_mpi_process() and IPythonClient is not None:
     Context = IPythonContext
-else:
+elif not is_solo_mpi_process():
     Context = MPIContext
+else:
+    raise ImportError("Cannot create Context class."
+                      "Must have an IPython cluster running or run in MPI-only mode.")
