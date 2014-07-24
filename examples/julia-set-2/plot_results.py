@@ -11,10 +11,10 @@ Plot the results of the Julia set timings.
 from __future__ import print_function, division
 
 import sys
-import csv
 import random
-import numpy
 
+import numpy
+import pandas as pd
 import matplotlib
 from matplotlib import pyplot
 
@@ -47,175 +47,60 @@ STYLES = ('o-', 'x-', 'v-', '*-', 's-', 'd-')
 
 
 def read_results(filename):
-    """Read the Julia Set timing results from the file."""
-    with open(filename, 'rt') as csvfile:
-        csvreader = csv.reader(csvfile)
-        # Swallow header lines.
-        # Discard 'importing numpy on engines'
-        next(csvreader)
-        # Title
-        title_fields = next(csvreader)
-        title = title_fields[0]
-        # Subtitle/notes
-        notes = next(csvreader)
-        note_text = ','.join(notes)
-        # Field names.
-        next(csvreader)
-        # Read the results.
-        results = {}
-        for row in csvreader:
-            dist = row[0]
-            num_engines = int(row[1])
-            resolution = int(row[2])
-            t_distarray = float(row[3])
-            t_numpy = None if row[4] == ' None' else float(row[4])
-            t_ratio = None if row[5] == ' None' else float(row[5])
-            iters = float(row[6])
-            c = row[7]  # As a string.
-            # Key for each curve.
-            key = (dist, resolution)
-            if key not in results:
-                results[key] = {
-                    'engines': [],
-                    'times': [],
-                    'resolution': resolution,
-                    'legend': "%s %d" % (dist, resolution),
-                }
-            # Collect values to plot.
-            results[key]['engines'].append(num_engines)
-            results[key]['times'].append(t_distarray)
-    return results, title, note_text
+    """Read the Julia Set timing results from the file.
 
-
-def jitter_engines(results, amount):
-    """Apply some random jitter to the integer engine count,
-    to make less crowded looking plot.
+    Parse into a pandas dataframe.
     """
-    for key in results:
-        engines = results[key]['engines']
-        engines = [engine + random.uniform(-amount, +amount)
-                   for engine in engines]
-        results[key]['engines'] = engines
+    with open(filename, 'rt') as csvfile:
+        note_text = [csvfile.readline() for _ in range(3)]
+        def date_parser(c):
+            return pd.to_datetime(c, unit='s')
+        df = pd.read_csv(csvfile, index_col='Timestamp', skipinitialspace=True,
+                         date_parser=date_parser)
+    return df, note_text
 
 
-def trim_results(results):
-    """Select only the smallest time, consistent with timeit."""
-    for key in results:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        trim = {}
-        for engine, time in zip(engines, times):
-            if engine not in trim:
-                trim[engine] = []
-            trim[engine].append(time)
-        for engine in trim:
-            times = trim[engine]
-            min_time = min(times)
-            trim[engine] = min_time
-        trimmed_engines = []
-        trimmed_times = []
-        for engine in trim:
-            trimmed_engines.append(engine)
-            trimmed_times.append(trim[engine])
-        # Sort by engine count for better line plot,
-        # and sort times to match.
-        sorted_engines, sorted_times = zip(*sorted(zip(trimmed_engines,
-                                                       trimmed_times)))
-        results[key]['engines'] = sorted_engines
-        results[key]['times'] = sorted_times
+def process_data(df, ideal_dist='b-n', aggfunc=numpy.min):
+    """Process the timing results.
+
+    Add an ideal scaling line from the origin through the first 'b-b' point.
+    """
+    pdf = df.pivot_table(index='Engines', columns='Dist', values='t_DistArray',
+                         aggfunc=aggfunc)
+    resolution = df.Resolution.iloc[0]
+    kpoints_df = (resolution**2 / pdf) / 1000
+    kpoints_df['ideal ' + ideal_dist] = kpoints_df[ideal_dist].iloc[0] * kpoints_df.index.values
+
+    return kpoints_df
 
 
-def get_results_range(results):
-    """Get the range of the data (for plot limits)."""
-    all_engines = []
-    all_times = []
-    for key in results:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        all_engines.extend(engines)
-        all_times.extend(times)
-    max_engine = max(all_engines)
-    max_time = max(all_times)
-    return max_engine, max_time
-
-
-def plot_results(filename, results, title, subtitle):
-    """Plot the timing results."""
-    # Sort keys for consistent coloring.
-    keys = results.keys()
-    keys = sorted(keys)
-    styles = iter(STYLES)
-    for key in keys:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        pyplot.plot(engines, times, next(styles))
-    pyplot.xlim((min(engines)-1, max(engines)+1))
-    full_title = title + '\n' + subtitle
-    pyplot.title(full_title)
-    pyplot.xlabel('Engine Count')
-    pyplot.ylabel('DistArray time')
-    legend = [results[key]['legend'] for key in keys]
-    pyplot.legend(legend, loc='upper left')
-    pyplot.grid(axis='y')
-    pyplot.savefig(filename, dpi=100)
-    pyplot.show()
-
-
-def plot_points(filename, results, title, subtitle, ideal_dist=None):
+def plot_points(df, note, ideal_dist='b-n', aggfunc=numpy.min):
     """Plot the timing results.
 
     Plot an ideal scaling line from the origin through the first 'b-b' point.
     """
-    if ideal_dist is None:
-        ideal_dist = next(k for k in results.keys() if k[0] == 'b-b')
-
-    # Sort keys for consistent coloring.
-    keys = results.keys()
-    keys = sorted(keys)
     styles = iter(STYLES)
-    for key in keys:
-        engines = results[key]['engines']
-        times = results[key]['times']
-        npoints = (results[key]['resolution'] ** 2) / numpy.array(times)
-        pyplot.plot(engines, npoints / 1000, next(styles))
+    for col in df.columns:
+        if col.startswith("ideal"):
+            continue
+        else:
+            pyplot.plot(df.index, df[col], next(styles))
+    pyplot.plot(df.index, df['ideal ' + ideal_dist], '--')
 
-    # plot idealized scaling
-    ideal_line_base = ((results[ideal_dist]['resolution']**2) /
-                       results[ideal_dist]['times'][0])
-    ideal_line = ideal_line_base * numpy.array(results[ideal_dist]['engines'])
-    pyplot.plot(engines, ideal_line / 1000, '--')
-
-    pyplot.xlim((min(engines)-1, max(engines)+1))
-    full_title = title + '\n' + subtitle
-    pyplot.title(full_title)
+    pyplot.suptitle(note[0])
+    pyplot.title(note[2], fontsize=12)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('kpoints / s')
-    legend = [results[key]['legend'] for key in keys]
-    pyplot.legend(legend, loc='upper left')
+    pyplot.legend(df.columns, loc='upper left')
     pyplot.grid(axis='y')
-    pyplot.savefig(filename, dpi=100)
     pyplot.show()
 
 
-def main(filename, plot='npoints', jitter=False):
+def main(filename):
     # Read and parse timing results.
-    results, title, note_text = read_results(filename)
-    # Either pick just the minimum time, or add jitter to the engine count.
-    if jitter:
-        jitter_engines(results, 0.125)
-    else:
-        trim_results(results)
-    # Get range of data for plot limits.
-    max_engines, max_time = get_results_range(results)
-    # Plot
-    filename = 'julia_timing_plot.png'
-    subtitle = note_text
-    x_min, x_max = 0, max_engines + 1
-
-    if plot == 'npoints':
-        plot_points(filename, results, title, subtitle)
-    elif plot == 'time':
-        plot_results(filename, results, title, subtitle)
+    df, note = read_results(filename)
+    pdf = process_data(df)
+    plot_points(pdf, note)
 
 
 if __name__ == '__main__':
@@ -224,4 +109,4 @@ if __name__ == '__main__':
         print(usage)
         exit(1)
     filename = sys.argv[1]
-    main(filename, plot='npoints')
+    main(filename)
