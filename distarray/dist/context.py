@@ -65,6 +65,10 @@ class BaseContext(object):
         pass
 
     @abstractmethod
+    def make_subcomm(self, new_targets):
+        pass
+
+    @abstractmethod
     def apply(self, func, args=None, kwargs=None, targets=None):
         pass
 
@@ -631,9 +635,9 @@ class IPythonContext(BaseContext):
 
         self._base_comm = self._make_base_comm()
         self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
-        self.comm = self._make_subcomm(self.targets)
+        self.comm = self.make_subcomm(self.targets)
 
-    def _make_subcomm(self, new_targets):
+    def make_subcomm(self, new_targets):
 
         if new_targets != sorted(new_targets):
             raise ValueError("targets must be in sorted order.")
@@ -836,15 +840,14 @@ class MPIContext(BaseContext):
         self.nengines = get_nengines()
 
         self.all_targets = list(range(self.nengines))
-        targets = self.all_targets if targets is None else targets
-        self.targets = targets
-        self.ntargets = len(self.targets)
+        self.targets = self.all_targets if targets is None else sorted(targets)
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
         self.intercomm = self.__class__._INTERCOMM
         self._base_comm = self.__class__._BASE_COMM
-        self.comm = self._make_subcomm(self.targets)
+        self._comm_from_targets = {tuple(sorted(self.all_targets)): self._base_comm}
+        self.comm = self.make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
             Context._CLEANUP = atexit.register(_shutdown,
@@ -891,16 +894,29 @@ class MPIContext(BaseContext):
             res.append(self.intercomm.recv(source=t))
         return res
 
-    def _make_subcomm(self, targets):
+    def make_subcomm(self, targets):
         if len(targets) > self.nengines:
             msg = ("The number of engines (%s) is less than the number of "
                    "targets you want (%s)." % (self.nengines, len(targets)))
             raise ValueError(msg)
 
+        if targets != sorted(targets):
+            raise ValueError("targets must be in sorted order.")
+
+        # if tuple(targets) not in self._comm_from_targets:
+            # import ipdb; ipdb.set_trace()
+        try:
+            return self._comm_from_targets[tuple(targets)]
+        except KeyError:
+            pass
+
         msg = ('make_targets_comm', targets)
         self._send_msg(msg, targets=self.all_targets)
-        comm_name = make_targets_comm(targets)
-        return comm_name
+        new_comm = make_targets_comm(targets)
+        # if tuple(targets) not in self._comm_from_targets:
+            # import ipdb; ipdb.set_trace()
+        self._comm_from_targets[tuple(targets)] = new_comm
+        return new_comm
 
     def _execute(self, lines, targets=None):
         msg = ('execute', lines)
