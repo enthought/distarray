@@ -544,7 +544,7 @@ class Distribution(object):
         self = super(Distribution, cls).__new__(cls)
         self.context = context
         self.targets = sorted(targets or context.targets)
-        self.comm = self.context._make_subcomm(self.targets)
+        self.comm = self.context.make_subcomm(self.targets)
         self.maps = maps
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)

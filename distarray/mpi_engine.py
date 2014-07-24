@@ -72,6 +72,7 @@ class Engine(object):
                 'push': self.push,
                 'pull': self.pull,
                 'kill': self.kill,
+                'free_comm': self.free_comm,
                 'delete': self.delete,
                 'make_targets_comm': self.engine_make_targets_comm,
                 'builtin_call': self.builtin_call}
@@ -134,6 +135,10 @@ class Engine(object):
         module = import_module('__main__')
         res = reduce(getattr, [module] + name.split('.'))
         self._INTERCOMM.send(res, dest=self.client_rank)
+
+    def free_comm(self, msg):
+        comm = msg[1].dereference()
+        comm.Free()
 
     def kill(self, msg):
         """Break out of the engine loop."""
