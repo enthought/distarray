@@ -709,7 +709,6 @@ class IPythonContext(BaseContext):
             self.apply(free_subcomm, (subcomm,), targets=targets)
         if self.owns_client:
             self.client.close()
-        self._base_comm = None
         self.comm = None
 
     # End of key management routines.
@@ -824,21 +823,18 @@ class MPIContext(BaseContext):
     BaseContext
     """
 
-    _BASE_COMM = None
-    _INTERCOMM = None
+    INTERCOMM = None
 
     def delete_key(self, key, targets=None):
         msg = ('delete', key)
         targets = targets or self.targets
-        if self.intercomm:
+        if MPIContext.INTERCOMM:
             self._send_msg(msg, targets=targets)
 
     def __init__(self, targets=None):
 
-        if self.__class__._BASE_COMM is None:
-            base_comm, intercomm = initial_comm_setup()
-            self.__class__._BASE_COMM = base_comm
-            self.__class__._INTERCOMM = intercomm
+        if MPIContext.INTERCOMM is None:
+            MPIContext.INTERCOMM = initial_comm_setup()
             assert get_world_rank() == 0
 
         self.nengines = get_nengines()
@@ -848,15 +844,13 @@ class MPIContext(BaseContext):
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
-        self.intercomm = self.__class__._INTERCOMM
-        self._base_comm = self.__class__._BASE_COMM
-        self._comm_from_targets = {tuple(sorted(self.all_targets)): self._base_comm}
+        self._comm_from_targets = {}
         self.comm = self.make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
             Context._CLEANUP = atexit.register(_shutdown,
-                                               MPIContext._INTERCOMM,
-                                                tuple(self.all_targets))
+                                               MPIContext.INTERCOMM,
+                                               tuple(self.all_targets))
 
         # local imports
         self._execute("from functools import reduce; "
@@ -883,7 +877,7 @@ class MPIContext(BaseContext):
 
     def close(self):
         for targets, subcomm in self._comm_from_targets.items():
-            if subcomm in (MPIContext._BASE_COMM, MPIContext._INTERCOMM):
+            if subcomm is MPIContext.INTERCOMM:
                 continue
             self._send_msg(('free_comm', subcomm), targets=targets)
 
@@ -892,13 +886,13 @@ class MPIContext(BaseContext):
     def _send_msg(self, msg, targets=None):
         targets = self.targets if targets is None else targets
         for t in targets:
-            self.intercomm.send(msg, dest=t)
+            MPIContext.INTERCOMM.send(msg, dest=t)
 
     def _recv_msg(self, targets=None):
         res = []
         targets = self.targets if targets is None else targets
         for t in targets:
-            res.append(self.intercomm.recv(source=t))
+            res.append(MPIContext.INTERCOMM.recv(source=t))
         return res
 
     def make_subcomm(self, targets):

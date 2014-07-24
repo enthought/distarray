@@ -19,8 +19,8 @@ from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
 
 
 class Engine(object):
-    _BASE_COMM = None
-    _INTERCOMM = None
+
+    INTERCOMM = None
 
     def __init__(self):
         self.world = get_comm_world()
@@ -32,12 +32,10 @@ class Engine(object):
                              self.client_rank]
 
         # make engines intracomm (Context._base_comm):
-        base_comm, intercomm = initial_comm_setup()
-        self.__class__._BASE_COMM = base_comm
-        self.__class__._INTERCOMM = intercomm
+        Engine.INTERCOMM = initial_comm_setup()
         assert self.world.rank != 0
         while True:
-            msg = self._INTERCOMM.recv(source=0)
+            msg = Engine.INTERCOMM.recv(source=0)
             val = self.parse_msg(msg)
             if val == 'kill':
                 break
@@ -115,7 +113,7 @@ class Engine(object):
         res = new_func(*args, **kwargs)
         if autoproxyize and isinstance(res, LocalArray):
             res = module.proxyize(res)
-        self._INTERCOMM.send(res, dest=self.client_rank)
+        Engine.INTERCOMM.send(res, dest=self.client_rank)
 
     def execute(self, msg):
         main = import_module('__main__')
@@ -134,7 +132,7 @@ class Engine(object):
         name = msg[1]
         module = import_module('__main__')
         res = reduce(getattr, [module] + name.split('.'))
-        self._INTERCOMM.send(res, dest=self.client_rank)
+        Engine.INTERCOMM.send(res, dest=self.client_rank)
 
     def free_comm(self, msg):
         comm = msg[1].dereference()
@@ -156,4 +154,4 @@ class Engine(object):
         args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
 
         res = func(*args, **kwargs)
-        self._INTERCOMM.send(res, dest=self.client_rank)
+        Engine.INTERCOMM.send(res, dest=self.client_rank)

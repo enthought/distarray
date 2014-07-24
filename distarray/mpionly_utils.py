@@ -150,21 +150,11 @@ def initial_comm_setup():
     world = get_comm_world()
     world_rank = world.rank
 
-    # choose a name for _base_comm
-    if world_rank == 0:
-        comm_name = uid()
-    else:
-        comm_name = ''
-    comm_name = world.bcast(comm_name)
-
     # create a comm that is split into client and engines.
     if world_rank == client_rank:
         split_world = world.Split(0, 0)
     else:
         split_world = world.Split(1, world_rank)
-
-    # attach the comm to __main__, name it comm_name
-    comm_proxy = _set_on_main(comm_name, split_world)
 
     # create the intercomm
     if world_rank == client_rank:
@@ -172,7 +162,7 @@ def initial_comm_setup():
     else:
         intercomm = split_world.Create_intercomm(0, world, 0)
 
-    return comm_proxy, intercomm
+    return intercomm
 
 
 def is_solo_mpi_process():
