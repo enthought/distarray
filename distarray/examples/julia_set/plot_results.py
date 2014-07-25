@@ -12,6 +12,7 @@ from __future__ import print_function, division
 
 import sys
 import random
+import json
 
 import numpy
 import pandas as pd
@@ -51,13 +52,10 @@ def read_results(filename):
 
     Parse into a pandas dataframe.
     """
-    with open(filename, 'rt') as csvfile:
-        note_text = [csvfile.readline() for _ in range(3)]
-        def date_parser(c):
-            return pd.to_datetime(c, unit='s')
-        df = pd.read_csv(csvfile, index_col='Timestamp', skipinitialspace=True,
-                         date_parser=date_parser)
-    return df, note_text
+    def date_parser(c):
+        return pd.to_datetime(c, unit='s')
+    df = pd.read_json(filename, convert_dates=['Start', 'End'], date_unit='s')
+    return df
 
 
 def process_data(df, ideal_dist='b-n', aggfunc=numpy.min):
