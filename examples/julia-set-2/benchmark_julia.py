@@ -195,7 +195,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     t_distarray = t1 - t0
 
     # Print results.
-    dist_text = '-'.join(dist)
+    dist_text = dist if dist=='numpy' else '-'.join(dist)
 
     fmt = '%s, %s, %r, %r, %r, %r, %r'
     result = fmt % (time(), dist_text, dimensions[0], c, num_engines,
