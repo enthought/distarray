@@ -27,7 +27,6 @@ from time import time
 from contextlib import closing
 
 import numpy
-from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
@@ -143,7 +142,7 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
 
 
 def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
-                 plot, benchmark_numpy=False):
+                 benchmark_numpy=False):
     """Do the Julia set calculation and print timing results.
 
     Parameters
@@ -165,8 +164,6 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     n_max : int
         Maximum iteration counts. Points in the set will hit this limit, so
         increasing this has a large effect on the run-time.
-    plot : bool
-        Make plots of the computed Julia sets.
     benchmark_numpy : bool
         Compute with numpy instead of DistArray?
     """
@@ -201,16 +198,11 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     result = fmt % (time(), dist_text, dimensions[0], c, num_engines,
                     t_distarray, str(iters_list))
     print(result)
-    if plot:
-        # Plot the iteration count.
-        image = num_iters.tondarray()
-        pyplot.matshow(image)
-        pyplot.show()
     return sum(iters_list)
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
-                  c_list, re_ax, im_ax, z_max, n_max, plot):
+                  c_list, re_ax, im_ax, z_max, n_max):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -239,8 +231,6 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     n_max : int
         Maximum iteration counts. Points in the set will hit this limit, so
         increasing this has a large effect on the run-time.
-    plot : bool
-        Make plots of the computed Julia sets.
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -270,14 +260,14 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
             for c in c_list:
                 with closing(Context(targets=[0])) as context:
                     do_julia_run(context, 'numpy', dimensions, c, re_ax, im_ax,
-                                 z_max, n_max, plot, benchmark_numpy=True)
+                                 z_max, n_max, benchmark_numpy=True)
                 for engine_count in engine_count_list:
                     for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
                             context.register(numpy_julia_calc)
                             do_julia_run(context, dist, dimensions, c, re_ax,
-                                         im_ax, z_max, n_max, plot,
+                                         im_ax, z_max, n_max,
                                          benchmark_numpy=False)
 
 
@@ -312,8 +302,7 @@ def cli(cmd):
     n_max = 100
 
     do_julia_runs(args.repeat_count, engine_count_list, dist_list,
-                  args.resolution_list, c_list, re_ax, im_ax, z_max, n_max,
-                  plot=False)
+                  args.resolution_list, c_list, re_ax, im_ax, z_max, n_max)
 
 
 if __name__ == '__main__':
