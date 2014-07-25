@@ -32,6 +32,11 @@ import numpy
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
 
+try:
+    from distarray.examples.julia_set.kernel import cython_julia_calc
+except ImportError:
+    pass
+
 
 def numpy_julia_calc(z, c, z_max, n_max):
     """Calculate entirely with NumPy for comparison.
@@ -79,6 +84,8 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
         The (lower, upper) range of the Im axis.
     """
 
+    import numpy as np
+
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
         """Fill in points on the complex coordinate plane."""
         # Drawing the coordinate plane directly like this is currently much
@@ -94,13 +101,13 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     # Create an empty distributed array.
     distribution = Distribution(context, (resolution[0], resolution[1]),
                                 dist=dist)
-    complex_plane = context.empty(distribution, dtype=complex)
+    complex_plane = context.empty(distribution, dtype=np.complex64)
     context.apply(fill_complex_plane,
                   (complex_plane.key, re_ax, im_ax, resolution))
     return complex_plane
 
 
-def local_julia_calc(la, c, z_max, n_max):
+def local_julia_calc(la, c, z_max, n_max, cython=False):
     """Calculate the number of iterations for the point to escape.
 
     Parameters
@@ -113,14 +120,21 @@ def local_julia_calc(la, c, z_max, n_max):
         Magnitude of complex value that we assume goes to infinity.
     n_max : int
         Maximum number of iterations.
+    cython : bool
+        Do the local calculation with Cython?  Default: False
     """
     from distarray.local import LocalArray
-    counts = numpy_julia_calc(la.ndarray, c, z_max, n_max)
+    from distarray.examples.julia_set.kernel import cython_julia_calc
+    if cython:
+        julia_calc = cython_julia_calc
+    else:
+        julia_calc = numpy_julia_calc
+    counts = julia_calc(la.ndarray, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)  # noqa
 
 
-def distributed_julia_calc(distarray, c, z_max, n_max):
+def distributed_julia_calc(distarray, c, z_max, n_max, cython=False):
     """Calculate the Julia set for an array of points in the complex plane.
 
     Parameters
@@ -133,17 +147,20 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
         Magnitude of complex value that we assume goes to infinity.
     n_max : int
         Maximum number of iterations.
+    cython : bool
+        Do the local calculation with Cython?  Default: False
     """
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
-                              (distarray.key, c, z_max, n_max))
+                              (distarray.key, c, z_max, n_max),
+                              {'cython': cython})
     iters_da = DistArray.from_localarrays(iters_key[0], context=context,
                                           dtype=numpy.int32)
     return iters_da
 
 
-def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
-                 benchmark_numpy=False):
+def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
+                 benchmark_numpy=False, cython=False):
     """Do the Julia set calculation and print timing results.
 
     Parameters
@@ -153,12 +170,10 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         Distribution type to test.  Example: 'bc'
     dimensions : 2-tuple of int
         Dimensions of complex plane to use.
-    c_list : complex
+    c : complex
         Constant to use to compute Julia set.  Example: complex(-0.045, 0.45)
-    re_ax : 2-tuple of float
-        Min and max for real axis.
-    im_ax : 2-tuple of float
-        Min and max for imaginary axis.
+    complex_plane: DistArray
+        DistArray of the initial complex plane for iteration.
     z_max : float
         Size of number that we consider as going off to infinity.  I think that
         2.0 is sufficient to be sure that the point will escape.
@@ -167,24 +182,26 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         increasing this has a large effect on the run-time.
     benchmark_numpy : bool
         Compute with numpy instead of DistArray?
+    cython : bool
+        Do the local calculation with Cython?  Default: False
     """
     num_engines = len(context.targets)
     # Calculate the number of iterations to escape for each point.
     if benchmark_numpy:
-        complex_plane = create_complex_plane(context, dimensions, 'bb',
-                                             re_ax, im_ax)
         complex_plane_nd = complex_plane.tondarray()
         t0 = time()
-        num_iters = numpy_julia_calc(complex_plane_nd, c,
-                                     z_max=z_max, n_max=n_max)
+        if cython:
+            julia_calc = cython_julia_calc
+        else:
+            julia_calc = numpy_julia_calc
+        num_iters = julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
         t1 = time()
         iters_list = [numpy.asscalar(num_iters.sum())]
     else:
-        complex_plane = create_complex_plane(context, dimensions, dist,
-                                             re_ax, im_ax)
         t0 = time()
         num_iters = distributed_julia_calc(complex_plane, c,
-                                           z_max=z_max, n_max=n_max)
+                                           z_max=z_max, n_max=n_max,
+                                           cython=cython)
         t1 = time()
         # Iteration count.
         def local_sum(la):
@@ -198,7 +215,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
-                  c_list, re_ax, im_ax, z_max, n_max):
+                  c_list, re_ax, im_ax, z_max, n_max, cython=False):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -227,6 +244,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     n_max : int
         Maximum iteration counts. Points in the set will hit this limit, so
         increasing this has a large effect on the run-time.
+    cython : bool
+        Do the local calculation with Cython?  Default: False
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -243,11 +262,13 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     for i in range(repeat_count):
         for resolution in resolution_list:
             dimensions = (resolution, resolution)
-            # numpy julia run
             for c in c_list:
                 with closing(Context(targets=[0])) as context:
+                    # numpy julia run
+                    complex_plane = create_complex_plane(context, dimensions,
+                                                         'bn', re_ax, im_ax)
                     result = do_julia_run(context, 'numpy', dimensions, c,
-                                          re_ax, im_ax, z_max, n_max,
+                                          complex_plane, z_max, n_max,
                                           benchmark_numpy=True)
                     results.append({h: r for h, r in zip(hdr, result)})
                 for engine_count in engine_count_list:
@@ -255,8 +276,12 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
                             context.register(numpy_julia_calc)
+                            complex_plane = create_complex_plane(context,
+                                                                 dimensions,
+                                                                 dist, re_ax,
+                                                                 im_ax)
                             result = do_julia_run(context, dist, dimensions, c,
-                                                  re_ax, im_ax, z_max, n_max,
+                                                  complex_plane, z_max, n_max,
                                                   benchmark_numpy=False)
                             results.append({h: r for h, r in zip(hdr, result)})
     return results
@@ -297,7 +322,7 @@ def cli(cmd):
 
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                             args.resolution_list, c_list, re_ax, im_ax, z_max,
-                            n_max)
+                            n_max, cython=False)
     with open(args.output_filename, 'wt') as fp:
         json.dump(results, fp,
                   sort_keys=True, indent=4, separators=(',', ': '))
