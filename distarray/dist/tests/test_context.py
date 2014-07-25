@@ -17,11 +17,174 @@ from random import shuffle
 
 import numpy
 
+from numpy.testing import assert_allclose, assert_array_equal
+
 from distarray.testing import ClientTestCase, ContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
 from distarray.local import LocalArray
+
+
+class TestRegister(ContextTestCase):
+
+    ntargets = 'any'
+
+    def test_local_add50(self):
+
+        def local_add50(da):
+            return da + 50
+        self.context.register(local_add50)
+
+        dc = self.context.local_add50(self.da)
+        assert_allclose(dc.tondarray(), 2 * numpy.pi + 50)
+
+    def test_local_add_num(self):
+
+        def local_add_num(da, num):
+            return da + num
+        self.context.register(local_add_num)
+
+        de = self.context.local_add_num(self.da, 11)
+        assert_allclose(de.tondarray(), 2 * numpy.pi + 11)
+
+    def test_local_sin(self):
+
+        def local_sin(da):
+            return numpy.sin(da)
+        self.context.register(local_sin)
+        
+        db = self.context.local_sin(self.da)
+        assert_allclose(0, db.tondarray(), atol=1e-14)
+
+    def test_local_sum(self):
+
+        def local_sum(da):
+            return numpy.sum(da.ndarray)
+        self.context.register(local_sum)
+
+        dd = self.context.local_sum(self.da)
+        if self.ntargets == 1:
+            dd = [dd]
+        lshapes = self.da.localshapes()
+        expected = []
+        for lshape in lshapes:
+            expected.append(lshape[0] * lshape[1] * (2 * numpy.pi))
+        for (v, e) in zip(dd, expected):
+            self.assertAlmostEqual(v, e, places=5)
+
+    def test_local_add_nums(self):
+
+        def local_add_nums(da, num1, num2, num3):
+            return da + num1 + num2 + num3
+        self.context.register(local_add_nums)
+
+        df = self.context.local_add_nums(self.da, 11, 12, 13)
+        assert_allclose(df.tondarray(), 2 * numpy.pi + 11 + 12 + 13)
+
+    def test_barrier(self):
+
+        def call_barrier(da):
+            da.comm.Barrier()
+            return da
+        self.context.register(call_barrier)
+
+        self.context.call_barrier(self.da)
+
+    def test_local_add_distarrayproxies(self):
+
+        def local_add_distarrayproxies(da, dg):
+            return da + dg
+        self.context.register(local_add_distarrayproxies)
+
+        dg = self.context.empty(self.da.distribution)
+        dg.fill(33)
+        dh = self.context.local_add_distarrayproxies(self.da, dg)
+        assert_allclose(dh.tondarray(), 33 + 2 * numpy.pi)
+
+    def test_local_add_mixed(self):
+
+        def local_add_mixed(da, num1, dg, num2):
+            return da + num1 + dg + num2
+        self.context.register(local_add_mixed)
+
+        di = self.context.empty(self.da.distribution)
+        di.fill(33)
+        dj = self.context.local_add_mixed(self.da, 11, di, 12)
+        assert_allclose(dj.tondarray(), 2 * numpy.pi + 11 + 33 + 12)
+
+    def test_local_add_kwargs(self):
+
+        def local_add_kwargs(da, num1, num2=55):
+            return da + num1 + num2
+        self.context.register(local_add_kwargs)
+
+        dl = self.context.local_add_kwargs(self.da, 11, num2=12)
+        assert_allclose(dl.tondarray(), 2 * numpy.pi + 11 + 12)
+
+    def test_local_add_supermix(self):
+
+        def local_add_supermix(da, num1, db, num2, dc, num3=99, num4=66):
+            return da + num1 + db + num2 + dc + num3 + num4
+        self.context.register(local_add_supermix)
+
+        dm = self.context.empty(self.da.distribution)
+        dm.fill(22)
+        dn = self.context.empty(self.da.distribution)
+        dn.fill(44)
+        do = self.context.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
+        expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
+        assert_allclose(do.tondarray(), expected)
+
+    def test_local_none(self):
+
+        def local_none(da):
+            return None
+        self.context.register(local_none)
+
+        dp = self.context.local_none(self.da)
+        self.assertTrue(dp is None)
+
+    def test_parameterless(self):
+        
+        def parameterless():
+            """This is a parameterless function."""
+            return None
+        self.context.register(parameterless)
+
+        self.assertRaises(TypeError, self.context.parameterless)
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestRegister, cls).setUpClass()
+        distribution = Distribution(cls.context, (5, 5))
+        cls.da = cls.context.empty(distribution)
+        cls.da.fill(2 * numpy.pi)
+
+    def test_local(self):
+        context = Context()
+
+        distribution = Distribution(context, (4, 4))
+        da = context.empty(distribution)
+        a = numpy.empty((4, 4))
+
+        def fill_a(a):
+            for (i, j), _ in numpy.ndenumerate(a):
+                a[i, j] = i + j
+            return a
+
+        def fill_da(da):
+            for i in da.distribution[0].global_iter:
+                for j in da.distribution[1].global_iter:
+                    da.global_index[i, j] = i + j
+            return da
+
+        self.context.register(fill_da)
+
+        da = self.context.fill_da(da)
+        a = fill_a(a)
+
+        assert_array_equal(da.tondarray(), a)
 
 
 class TestContext(ContextTestCase):
@@ -217,18 +380,6 @@ class TestApply(ContextTestCase):
 
         self.assertEqual(val, [9] * self.ntargets)
 
-    def test_apply_proxyize(self):
-
-        def foo(a, b, c=None):
-            c = 3 if c is None else c
-            res = proxyize(a + b + c)  # noqa
-            return res
-
-        name = self.context.apply(foo, (1, 2), {'c': 5})[0]
-
-        val = self.context._pull(name, targets=self.context.targets)
-
-        self.assertEqual(val, [8]*len(self.context.targets))
 
     def test_apply_proxy(self):
 
@@ -249,7 +400,8 @@ class TestApply(ContextTestCase):
             p2 = proxyize(20)  # noqa
             return p1, 6, p2
         res = self.context.apply(foo)
-        self.assertTrue(res.count(res[0]) == len(res))
+        self.assertEqual(set(r[0].name for r in res), set([res[0][0].name]))
+        self.assertEqual(set(r[-1].name for r in res), set([res[0][-1].name]))
 
 
 if __name__ == '__main__':

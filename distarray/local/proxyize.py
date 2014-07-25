@@ -4,18 +4,35 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # -----------------------------------------------------------------------------
 
-import importlib
+from importlib import import_module
 
 from distarray.utils import DISTARRAY_BASE_NAME
 
+class Proxy(object):
+
+    def __init__(self, name, obj, module_name):
+        self.name = name
+        self.module_name = module_name
+        self.type_str = str(type(obj))
+        namespace = import_module(self.module_name)
+        setattr(namespace, self.name, obj)
+
+    def dereference(self):
+        """ Callable only on the engines. """
+        namespace = import_module(self.module_name)
+        return getattr(namespace, self.name)
+
+    def cleanup(self):
+        namespace = import_module(self.module_name)
+        delattr(namespace, self.name)
+        self.name = self.module_name = self.type_str = None
+
 
 class Proxyize(object):
-    def __init__(self, context_key):
-        self.context_key = context_key
+
+    def __init__(self):
         self.count = None
         self.state = None
-        self.main = importlib.import_module('__main__')
-        self.context = getattr(self.main, self.context_key)
 
     def set_state(self, state):
         self.state = state
@@ -34,5 +51,4 @@ class Proxyize(object):
 
     def __call__(self, obj):
         new_name = self.next_name()
-        setattr(self.main, new_name, obj)
-        return new_name
+        return Proxy(new_name, obj, '__main__')

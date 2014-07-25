@@ -16,15 +16,18 @@ import collections
 import types
 from abc import ABCMeta, abstractmethod
 
+from functools import wraps
+
 import numpy
 
 from distarray.externals import six
-from distarray.dist import cleanup
+from distarray.dist import ipython_cleanup
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 from distarray.dist.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME
+from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
+from distarray.local.proxyize import Proxy
 
 # mpi context
 from distarray.mpionly_utils import (make_targets_comm, get_nengines,
@@ -62,6 +65,10 @@ class BaseContext(object):
         pass
 
     @abstractmethod
+    def make_subcomm(self, new_targets):
+        pass
+
+    @abstractmethod
     def apply(self, func, args=None, kwargs=None, targets=None):
         pass
 
@@ -88,21 +95,31 @@ class BaseContext(object):
 
     def _generate_key(self):
         """ Generate a unique key name for this context. """
-        key = "%s.%s" % (self.context_key, uid())
+        key = "%s_%s" % (self.context_key, uid())
         return key
 
     def _key_and_push(self, *values, **kwargs):
         keys = [self._generate_key() for value in values]
         targets = kwargs.get('targets', self.targets)
-        self._push(dict(zip(keys, values)), targets=targets)
-        return tuple(keys)
+        def _local_key_and_push(kvs):
+            from distarray.local.proxyize import Proxy
+            return [Proxy(key, val, '__main__') for key, val in kvs]
+        result = self.apply(_local_key_and_push, (zip(keys, values), ), targets=targets)
+        return tuple(result[0])
 
     def delete_key(self, key, targets=None):
         """ Delete the specific key from all the engines. """
-        cmd = ('try: del %s\n'
-               'except NameError: pass') % key
+        def _local_delete(obj):
+            from distarray.local.proxyize import Proxy
+            from importlib import import_module
+            if isinstance(obj, Proxy):
+                obj.cleanup()
+            else:
+                main = import_module('__main__')
+                delattr(main, obj)
         targets = targets or self.targets
-        self._execute(cmd, targets=targets)
+        with self.view.temp_flags(targets=targets):
+            self.view.apply_sync(_local_delete, key)
 
     def _create_local(self, local_call, distribution, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
@@ -436,18 +453,20 @@ class BaseContext(object):
         See numpy.fromfunction for more details.
         """
 
-        # push the function
-        func_key = self._generate_key()
-        push_function(self, func_key, function)
+        self.push_function(function.__name__, function, targets=self.targets)
 
-        def _local_fromfunction(func, comm, ddpr, kwargs):
+        def _local_fromfunction(func_name, comm, ddpr, kwargs):
             from distarray.local import fromfunction
             from distarray.local.maps import Distribution
+            from importlib import import_module
+
+            main = import_module('__main__')
 
             if len(ddpr):
                 dim_data = ddpr[comm.Get_rank()]
             else:
                 dim_data = ()
+            func = getattr(main, func_name)
             dist = Distribution(comm, dim_data=dim_data)
             local_arr = fromfunction(func, dist, **kwargs)
             return proxyize(local_arr)
@@ -459,10 +478,100 @@ class BaseContext(object):
                                     grid_shape=grid_shape)
         ddpr = distribution.get_dim_data_per_rank()
         da_name = self.apply(_local_fromfunction,
-                             (func_key, distribution.comm, ddpr, kwargs),
+                             (function.__name__, distribution.comm, ddpr, kwargs),
                              targets=distribution.targets)
         return DistArray.from_localarrays(da_name[0],
                                           distribution=distribution)
+
+    def register(self, func):
+        """Associate a function with this Context.  Allows access to the local
+        process and local data associated with each DistArray.
+
+        After registering a function with a context, the function can be called
+        as ``context.func(...)``.  Doing so will call the function locally on
+        target processes determined from the arguments passed in using
+        ``Context.apply(...)``.  The function can take non-proxied Python
+        objects, DistArrays, or other proxied objects as arguments.
+        Non-proxied Python objects will be broadcasted to all local processes;
+        proxied objects will be dereferenced before calling the function on the
+        local process.
+        """
+
+        if func.__name__ in ("""__init__ cleanup close apply push_function
+                             delete_key empty zeros ones save_dnpy load_dnpy
+                             save_hdf5 load_npy load_hdf5 fromndarray
+                             fromarray fromfunction register""".split()):
+            msg = "Function name %s clashes with existing function."
+            raise ValueError(msg % func.__name__)
+        if func.__name__.startswith("_"):
+            msg = "Function name %r starts with underscore."
+            raise ValueError(msg % func.__name__)
+
+        self.push_function(func.__name__, func, targets=self.targets)
+
+        @wraps(func)
+        def _wrapper(ctx, *args, **kwargs):
+            dist = ctx._determine_distribution(list(args) +
+                                               list(kwargs.values()))
+            targets = dist.targets
+            args = [a.key if isinstance(a, DistArray) else a
+                    for a in args]
+            kwargs = {k: (v.key if isinstance(v, DistArray) else v)
+                      for k, v in kwargs.items()}
+            results = ctx.apply(func, args=args,
+                                kwargs=kwargs, targets=targets,
+                                autoproxyize=True)
+            return ctx._process_local_results(results, targets)
+
+        setattr(self.__class__, _wrapper.__name__, _wrapper)
+
+    def _determine_distribution(self, objs):
+        dists = []
+        for o in objs:
+            if isinstance(o, DistArray):
+                dists.append(o.distribution)
+        for d in dists[1:]:
+            if not dists[0].is_compatible(d):
+                msg = "Distrbution %r is not compatible with %r"
+                raise ValueError(msg % (dists[0], d))
+        if not dists:
+            raise TypeError("Cannot determine a Distribution.")
+        return dists[0]
+
+    def _process_local_results(self, results, targets):
+        """Figure out what to return on the Client.
+
+        Parameters
+        ----------
+        key : string
+            Key corresponding to wrapped function's return value.
+
+        Returns
+        -------
+        Varied
+            A DistArray (if locally all values are LocalArray), a None (if
+            locally all values are None), or else, pull the result back to the
+            client and return it.  If all but one of the pulled values is None,
+            return that non-None value only.
+        """
+        def is_NoneType(pxy):
+            return pxy.type_str == str(type(None))
+
+        def is_LocalArray(pxy):
+            return (isinstance(pxy, Proxy) and 
+                    pxy.type_str == "<class 'distarray.local.localarray.LocalArray'>")
+
+        if all(is_LocalArray(r) for r in results):
+            result = DistArray.from_localarrays(results[0], context=self, targets=targets)
+        elif all(r is None for r in results):
+            result = None
+        else:
+            if has_exactly_one(results):
+                result = next(x for x in results if x is not None)
+            else:
+                result = results
+
+        return result
 
 
 class IPythonContext(BaseContext):
@@ -480,8 +589,8 @@ class IPythonContext(BaseContext):
     def __init__(self, client=None, targets=None):
 
         if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(cleanup.clear_all),
-                                atexit.register(cleanup.cleanup_all,
+            Context._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
+                                atexit.register(ipython_cleanup.cleanup_all,
                                                 '__main__',
                                                 DISTARRAY_BASE_NAME))
 
@@ -514,20 +623,21 @@ class IPythonContext(BaseContext):
                           "import distarray.local.mpiutils; "
                           "import distarray.utils; "
                           "import distarray.local.proxyize as proxyize; "
+                          "from distarray.local.proxyize import Proxy; "
                           "import numpy")
 
         self.context_key = self._setup_context_key()
 
         # setup proxyize which is used by context.apply in the rest of the
         # setup.
-        cmd = "proxyize = proxyize.Proxyize('%s')" % (self.context_key,)
+        cmd = "proxyize = proxyize.Proxyize()"
         self.view.execute(cmd)
 
         self._base_comm = self._make_base_comm()
         self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
-        self.comm = self._make_subcomm(self.targets)
+        self.comm = self.make_subcomm(self.targets)
 
-    def _make_subcomm(self, new_targets):
+    def make_subcomm(self, new_targets):
 
         if new_targets != sorted(new_targets):
             raise ValueError("targets must be in sorted order.")
@@ -587,11 +697,16 @@ class IPythonContext(BaseContext):
     # Key management routines:
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        cleanup.cleanup(view=self.view, module_name='__main__',
-                        prefix=self.context_key)
+        # TODO: FIXME: cleanup needs updating to work with proxy objects.
+        ipython_cleanup.cleanup(view=self.view, module_name='__main__',
+                                prefix=self.context_key)
 
     def close(self):
         self.cleanup()
+        def free_subcomm(subcomm):
+            subcomm.Free()
+        for targets, subcomm in self._comm_from_targets.items():
+            self.apply(free_subcomm, (subcomm,), targets=targets)
         if self.owns_client:
             self.client.close()
         self._base_comm = None
@@ -605,10 +720,7 @@ class IPythonContext(BaseContext):
     def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def _pull(self, k, targets):
-        return self.view.pull(k, targets=targets, block=True)
-
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -621,13 +733,15 @@ class IPythonContext(BaseContext):
             key word arguments to func
         targets : sequence of integers
             engines func is to be run on.
+        autoproxyize: bool, default False
+            If True, implicitly return a Proxy object from the function.
 
         Returns
         -------
             return a list of the results on the each engine.
         """
 
-        def func_wrapper(func, apply_nonce, context_key, args, kwargs):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs, autoproxyize):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -635,9 +749,9 @@ class IPythonContext(BaseContext):
             """
             from importlib import import_module
             import types
+            from distarray.local import LocalArray
 
             main = import_module('__main__')
-            prefix = main.distarray.utils.DISTARRAY_BASE_NAME
             main.proxyize.set_state(apply_nonce)
 
             # Modify func to change the namespace it executes in.
@@ -645,7 +759,6 @@ class IPythonContext(BaseContext):
             if not isinstance(func, types.BuiltinFunctionType):
                 # get func's building  blocks first
                 func_code = func.__code__
-                func_globals = func.__globals__  # noqa we don't need these.
                 func_name = func.__name__
                 func_defaults = func.__defaults__
                 func_closure = func.__closure__
@@ -660,23 +773,28 @@ class IPythonContext(BaseContext):
             # convert args
             args = list(args)
             for i, a in enumerate(args):
-                if (isinstance(a, str) and a.startswith(prefix)):
-                    args[i] = main.reduce(getattr, [main] + a.split('.'))
+                if isinstance(a, main.Proxy):
+                    args[i] = a.dereference()
             args = tuple(args)
 
             # convert kwargs
             for k in kwargs.keys():
                 val = kwargs[k]
-                if (isinstance(val, str) and val.startswith(prefix)):
-                    kwargs[k] = main.reduce(getattr, [main] + val.split('.'))
+                if isinstance(val, main.Proxy):
+                    kwargs[k] = val.dereference()
 
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+
+            if autoproxyize and isinstance(result, LocalArray):
+                return main.proxyize(result)
+            else:
+                return result
 
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         apply_nonce = uid()[13:]
-        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs)
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize)
 
         targets = self.targets if targets is None else targets
 
@@ -687,6 +805,12 @@ class IPythonContext(BaseContext):
         targets = targets or self.targets
         self._push({key: func}, targets=targets)
 
+
+def _shutdown(intercomm, targets):
+    msg = ('kill',)
+    for t in targets:
+        intercomm.send(msg, dest=t)
+    intercomm.Free()
 
 class MPIContext(BaseContext):
 
@@ -703,6 +827,12 @@ class MPIContext(BaseContext):
     _BASE_COMM = None
     _INTERCOMM = None
 
+    def delete_key(self, key, targets=None):
+        msg = ('delete', key)
+        targets = targets or self.targets
+        if self.intercomm:
+            self._send_msg(msg, targets=targets)
+
     def __init__(self, targets=None):
 
         if self.__class__._BASE_COMM is None:
@@ -714,44 +844,48 @@ class MPIContext(BaseContext):
         self.nengines = get_nengines()
 
         self.all_targets = list(range(self.nengines))
-        targets = self.all_targets if targets is None else targets
-        self.targets = targets
-        self.ntargets = len(self.targets)
+        self.targets = self.all_targets if targets is None else sorted(targets)
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
         self.intercomm = self.__class__._INTERCOMM
         self._base_comm = self.__class__._BASE_COMM
-        self.comm = self._make_subcomm(self.targets)
+        self._comm_from_targets = {tuple(sorted(self.all_targets)): self._base_comm}
+        self.comm = self.make_subcomm(self.targets)
 
         if Context._CLEANUP is None:
-            Context._CLEANUP = atexit.register(self.cleanup)
+            Context._CLEANUP = atexit.register(_shutdown,
+                                               MPIContext._INTERCOMM,
+                                                tuple(self.all_targets))
 
         # local imports
         self._execute("from functools import reduce; "
-                      "from importlib import import_module; "
-                      "import distarray.local; "
-                      "import distarray.local.mpiutils; "
-                      "import distarray.utils; "
-                      "from distarray.local.proxyize import Proxyize; "
-                      "import numpy")
+                          "from importlib import import_module; "
+                          "import distarray.local; "
+                          "import distarray.local.mpiutils; "
+                          "import distarray.utils; "
+                          "from distarray.local.proxyize import Proxyize, Proxy; "
+                          "import numpy")
 
         self.context_key = self._setup_context_key()
 
         # setup proxyize which is used by context.apply in the rest of the
         # setup.
-        cmd = "proxyize = Proxyize('%s')" % (self.context_key,)
+        cmd = "proxyize = Proxyize()"
         self._execute(cmd)
 
     # Key management routines:
 
     def cleanup(self):
         """ Delete keys that this context created from all the engines. """
-        msg = ('kill',)
-        self._send_msg(msg)
+        # TODO: implement cleanup.
+        pass
 
     def close(self):
-        pass
+        for targets, subcomm in self._comm_from_targets.items():
+            if subcomm in (MPIContext._BASE_COMM, MPIContext._INTERCOMM):
+                continue
+            self._send_msg(('free_comm', subcomm), targets=targets)
 
     # End of key management routines.
 
@@ -767,16 +901,25 @@ class MPIContext(BaseContext):
             res.append(self.intercomm.recv(source=t))
         return res
 
-    def _make_subcomm(self, targets):
+    def make_subcomm(self, targets):
         if len(targets) > self.nengines:
             msg = ("The number of engines (%s) is less than the number of "
                    "targets you want (%s)." % (self.nengines, len(targets)))
             raise ValueError(msg)
 
+        if targets != sorted(targets):
+            raise ValueError("targets must be in sorted order.")
+
+        try:
+            return self._comm_from_targets[tuple(targets)]
+        except KeyError:
+            pass
+
         msg = ('make_targets_comm', targets)
         self._send_msg(msg, targets=self.all_targets)
-        comm_name = make_targets_comm(targets)
-        return comm_name
+        new_comm = make_targets_comm(targets)
+        self._comm_from_targets[tuple(targets)] = new_comm
+        return new_comm
 
     def _execute(self, lines, targets=None):
         msg = ('execute', lines)
@@ -786,12 +929,7 @@ class MPIContext(BaseContext):
         msg = ('push', d)
         return self._send_msg(msg, targets=targets)
 
-    def _pull(self, k, targets=None):
-        msg = ('pull', k)
-        self._send_msg(msg, targets=targets)
-        return self._recv_msg(targets=targets)
-
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -804,6 +942,8 @@ class MPIContext(BaseContext):
             keyword arguments to func
         targets : sequence of integers
             engines func is to be run on.
+        autoproxyize: bool, default False
+            If True, implicitly return a Proxy object from the function.
 
         Returns
         -------
@@ -821,17 +961,16 @@ class MPIContext(BaseContext):
         if not isinstance(func, types.BuiltinFunctionType):
             # break up the function
             func_code = func.__code__
-            func_globals = func.__globals__  # noqa we don't need these.
             func_name = func.__name__
             func_defaults = func.__defaults__
             func_closure = func.__closure__
 
             func_data = (func_code, func_name, func_defaults, func_closure)
 
-            msg = ('func_call', func_data, args, kwargs, apply_metadata)
+            msg = ('func_call', func_data, args, kwargs, apply_metadata, autoproxyize)
 
         else:
-            msg = ('builtin_call', func, args, kwargs)
+            msg = ('builtin_call', func, args, kwargs, autoproxyize)
 
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
@@ -840,7 +979,10 @@ class MPIContext(BaseContext):
         push_function(self, key, func, targets=targets)
 
 
-if is_solo_mpi_process():
+if is_solo_mpi_process() and IPythonClient is not None:
     Context = IPythonContext
-else:
+elif not is_solo_mpi_process():
     Context = MPIContext
+else:
+    raise ImportError("Cannot create Context class."
+                      "Must have an IPython cluster running or run in MPI-only mode.")
