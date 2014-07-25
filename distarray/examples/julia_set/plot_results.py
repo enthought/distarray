@@ -58,12 +58,13 @@ def read_results(filename):
     return df
 
 
-def process_data(df, ideal_dist='b-n', aggfunc=numpy.min):
+def process_data(df, ideal_dist='numpy', aggfunc=numpy.min):
     """Process the timing results.
 
     Add an ideal scaling line from the origin through the first 'b-b' point.
     """
-    pdf = df.pivot_table(index='Engines', columns='Dist', values='t_DistArray',
+    df['Runtime (s)'] = (df['End'] - df['Start']) / numpy.timedelta64(1, 's')
+    pdf = df.pivot_table(index='Engines', columns='Dist', values='Runtime (s)',
                          aggfunc=aggfunc)
     resolution = df.Resolution.iloc[0]
     kpoints_df = (resolution**2 / pdf) / 1000
@@ -72,21 +73,21 @@ def process_data(df, ideal_dist='b-n', aggfunc=numpy.min):
     return kpoints_df
 
 
-def plot_points(df, note, ideal_dist='b-n', aggfunc=numpy.min):
+def plot_points(df, subtitle, ideal_dist='numpy', aggfunc=numpy.min):
     """Plot the timing results.
 
-    Plot an ideal scaling line from the origin through the first 'b-b' point.
+    Plot an ideal scaling line from the origin through the first `ideal_idst`
+    point.
     """
     styles = iter(STYLES)
     for col in df.columns:
         if col.startswith("ideal"):
-            continue
+            pyplot.plot(df.index, df['ideal ' + ideal_dist], '--')
         else:
             pyplot.plot(df.index, df[col], next(styles))
-    pyplot.plot(df.index, df['ideal ' + ideal_dist], '--')
 
-    pyplot.suptitle(note[0])
-    pyplot.title(note[2], fontsize=12)
+    pyplot.suptitle("Julia Set Benchmark")
+    pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('kpoints / s')
     pyplot.legend(df.columns, loc='upper left')
@@ -96,9 +97,17 @@ def plot_points(df, note, ideal_dist='b-n', aggfunc=numpy.min):
 
 def main(filename):
     # Read and parse timing results.
-    df, note = read_results(filename)
+    df = read_results(filename)
+
+    # Build the subtitle
+    resolution = df['Resolution'].unique()
+    c = df['c'].unique()
+    total_time = (df['End'].max() - df['Start'].min()).seconds
+    fmt = "resolution={}, c={}, total_time={}s"
+    subtitle = fmt.format(resolution, c, total_time)
+
     pdf = process_data(df)
-    plot_points(pdf, note)
+    plot_points(pdf, subtitle)
 
 
 if __name__ == '__main__':
