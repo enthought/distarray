@@ -30,6 +30,7 @@ from matplotlib import pyplot
 
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
+from distarray.examples.julia_set.kernel import cython_julia_calc
 
 
 def numpy_julia_calc(z, c, z_max, n_max):
@@ -78,6 +79,8 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
         The (lower, upper) range of the Im axis.
     """
 
+    import numpy as np
+
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
         """Fill in points on the complex coordinate plane."""
         # Drawing the coordinate plane directly like this is currently much
@@ -93,7 +96,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     # Create an empty distributed array.
     distribution = Distribution(context, (resolution[0], resolution[1]),
                                 dist=dist)
-    complex_plane = context.empty(distribution, dtype=complex)
+    complex_plane = context.empty(distribution, dtype=np.complex64)
     context.apply(fill_complex_plane,
                   (complex_plane.key, re_ax, im_ax, resolution))
     return complex_plane
@@ -114,7 +117,8 @@ def local_julia_calc(la, c, z_max, n_max):
         Maximum number of iterations.
     """
     from distarray.local import LocalArray
-    counts = numpy_julia_calc(la.ndarray, c, z_max, n_max)
+    from distarray.examples.julia_set.kernel import cython_julia_calc
+    counts = cython_julia_calc(la.ndarray, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)
 
@@ -141,7 +145,7 @@ def distributed_julia_calc(distarray, c, z_max, n_max):
     return iters_da
 
 
-def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
+def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
                  plot, benchmark_numpy=False):
     """Do the Julia set calculation and print timing results.
 
@@ -154,10 +158,6 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         Dimensions of complex plane to use.
     c_list : complex
         Constant to use to compute Julia set.  Example: complex(-0.045, 0.45)
-    re_ax : 2-tuple of float
-        Min and max for real axis.
-    im_ax : 2-tuple of float
-        Min and max for imaginary axis.
     z_max : float
         Size of number that we consider as going off to infinity.  I think that
         2.0 is sufficient to be sure that the point will escape.
@@ -170,9 +170,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         Compare with the NumPy calculation?
     """
     num_engines = len(context.targets)
-    # Create a distarray for the points on the complex plane.
-    complex_plane = create_complex_plane(context, dimensions, dist,
-                                         re_ax, im_ax)
+
     # Calculate the number of iterations to escape for each point.
     t0 = time()
     num_iters = distributed_julia_calc(complex_plane, c,
@@ -184,7 +182,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         # Now try with numpy so we can compare times.
         complex_plane_nd = complex_plane.tondarray()
         t0 = time()
-        numpy_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
+        cython_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
         t1 = time()
         t_numpy = t1 - t0
         t_ratio = t_numpy / t_distarray
@@ -263,17 +261,18 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
 
     # Loop over everything and time the calculations.
     print('Timestamp, Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
-    for i in range(repeat_count):
-        for engine_count in engine_count_list:
-            for dist in dist_list:
-                for resolution in resolution_list:
-                    dimensions = (resolution, resolution)
-                    for c in c_list:
+    for engine_count in engine_count_list:
+        for dist in dist_list:
+            for resolution in resolution_list:
+                dimensions = (resolution, resolution)
+                for c in c_list:
+                    for i in range(repeat_count):
                         context_use = Context(targets=range(engine_count))
-                        context_use.register(numpy_julia_calc)
+                        complex_plane = create_complex_plane(context_use, dimensions, dist,
+                                                            re_ax, im_ax)
                         do_julia_run(context_use, dist, dimensions, c,
-                                     re_ax, im_ax, z_max, n_max,
-                                     plot, benchmark_numpy)
+                                    complex_plane, z_max, n_max,
+                                    plot, benchmark_numpy)
                         context_use.close()
 
 
