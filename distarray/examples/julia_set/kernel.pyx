@@ -15,18 +15,21 @@ def fill_complex_plane(arr, re_ax, im_ax, resolution):
         float _im_ax0 = im_ax[0]
         float re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
         float im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
-        unsigned int row_start, col_start, nrow, ncol, i, j, glb_i, glb_j
+        unsigned int row_start, col_start, row_step, col_step, nrow, ncol, i, j, glb_i, glb_j
         float complex[:,::1] _arr = arr.ndarray
 
-    row_start, _ = arr.global_limits(dim=0)
-    col_start, _ = arr.global_limits(dim=1)
+    s0, s1 = arr.distribution.global_slice
+    row_start, row_step = s0.start, (s0.step or 1)
+    d1 = arr.distribution[1]
+    col_start, col_step = s1.start, (s1.step or 1)
+
     nrow = _arr.shape[0]
     ncol = _arr.shape[1]
 
     for i in range(nrow):
-        glb_i = i + row_start
+        glb_i = row_start + i * row_step
         for j in range(ncol):
-            glb_j = j + col_start
+            glb_j = col_start + j * col_step
             _arr[i, j].real = _re_ax0 + re_step * glb_i
             _arr[i, j].imag = _im_ax0 + im_step * glb_j
 
