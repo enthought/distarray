@@ -168,51 +168,49 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     plot : bool
         Make plots of the computed Julia sets.
     benchmark_numpy : bool
-        Compare with the NumPy calculation?
+        Compute with numpy instead of DistArray?
     """
     num_engines = len(context.targets)
-    # Create a distarray for the points on the complex plane.
-    complex_plane = create_complex_plane(context, dimensions, dist,
-                                         re_ax, im_ax)
     # Calculate the number of iterations to escape for each point.
-    t0 = time()
-    num_iters = distributed_julia_calc(complex_plane, c,
-                                       z_max=z_max, n_max=n_max)
-    t1 = time()
-    t_distarray = t1 - t0
-
     if benchmark_numpy:
-        # Now try with numpy so we can compare times.
+        complex_plane = create_complex_plane(context, dimensions, 'bb',
+                                             re_ax, im_ax)
         complex_plane_nd = complex_plane.tondarray()
         t0 = time()
-        numpy_julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
+        num_iters = numpy_julia_calc(complex_plane_nd, c,
+                                     z_max=z_max, n_max=n_max)
         t1 = time()
-        t_numpy = t1 - t0
-        t_ratio = t_numpy / t_distarray
+        iters_list = [num_iters.sum()]
     else:
-        t_numpy = None
-        t_ratio = None
+        complex_plane = create_complex_plane(context, dimensions, dist,
+                                             re_ax, im_ax)
+        t0 = time()
+        num_iters = distributed_julia_calc(complex_plane, c,
+                                           z_max=z_max, n_max=n_max)
+        t1 = time()
+        # Iteration count.
+        def local_sum(la):
+            return la.ndarray.sum()
+        iters_list = context.apply(local_sum, (num_iters.key,))
+    t_distarray = t1 - t0
 
-    # Average iteration count.
-    avg_iters = float(num_iters.mean().tondarray())
     # Print results.
-    dist_text = '%s-%s' % (dist[0], dist[1])
+    dist_text = '-'.join(dist)
 
-    fmt = '%s, %s, %r, %r, %r, %r, %r, %r, %r'
-    result = fmt % (time(), dist_text, num_engines, dimensions[0],
-                    t_distarray, t_numpy, t_ratio, avg_iters, str(c))
+    fmt = '%s, %s, %r, %r, %r, %r, %r'
+    result = fmt % (time(), dist_text, dimensions[0], c, num_engines,
+                    t_distarray, str(iters_list))
     print(result)
     if plot:
         # Plot the iteration count.
         image = num_iters.tondarray()
         pyplot.matshow(image)
         pyplot.show()
-    return avg_iters
+    return sum(iters_list)
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
-                  c_list, re_ax, im_ax, z_max, n_max, plot,
-                  benchmark_numpy=False):
+                  c_list, re_ax, im_ax, z_max, n_max, plot):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -243,8 +241,6 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         increasing this has a large effect on the run-time.
     plot : bool
         Make plots of the computed Julia sets.
-    benchmark_numpy : bool
-        Compare with NumPy?
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -264,21 +260,25 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    hdr = ', '.join(('Timestamp', 'Dist', 'Engines', 'Resolution',
-                     't_DistArray', 't_NumPy', 't_Ratio', 'Iters', 'c'))
+    hdr = ', '.join(('Timestamp', 'Dist', 'Engines', 'Resolution', 'c',
+                     't_DistArray', 'Iters'))
     print(hdr)
     for i in range(repeat_count):
         for resolution in resolution_list:
-            for engine_count in engine_count_list:
-                for dist in dist_list:
-                    dimensions = (resolution, resolution)
-                    for c in c_list:
+            dimensions = (resolution, resolution)
+            # numpy julia run
+            for c in c_list:
+                with closing(Context(targets=[0])) as context:
+                    do_julia_run(context, 'numpy', dimensions, c, re_ax, im_ax,
+                                 z_max, n_max, plot, benchmark_numpy=True)
+                for engine_count in engine_count_list:
+                    for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
                             context.register(numpy_julia_calc)
-                            do_julia_run(context, dist, dimensions, c,
-                                         re_ax, im_ax, z_max, n_max,
-                                         plot, benchmark_numpy)
+                            do_julia_run(context, dist, dimensions, c, re_ax,
+                                         im_ax, z_max, n_max, plot,
+                                         benchmark_numpy=False)
 
 
 def cli(cmd):
@@ -313,7 +313,7 @@ def cli(cmd):
 
     do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                   args.resolution_list, c_list, re_ax, im_ax, z_max, n_max,
-                  plot=False, benchmark_numpy=False)
+                  plot=False)
 
 
 if __name__ == '__main__':
