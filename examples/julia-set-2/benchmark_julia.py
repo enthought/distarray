@@ -250,7 +250,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     title = 'Julia Set Performance'
     print(title)
     print("Benchmark started: %s" % time())
-    fmt = ' ,'.join(('num_engines=%d', 'z_max=%r', 'n_max=%r', 're_ax=%r',
+    fmt = ', '.join(('num_engines=%d', 'z_max=%r', 'n_max=%r', 're_ax=%r',
                      'im_ax=%r', 'repeat_count=%r'))
     msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, repeat_count)
     print(msg)
@@ -260,7 +260,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    hdr = ', '.join(('Timestamp', 'Dist', 'Engines', 'Resolution', 'c',
+    hdr = ', '.join(('Timestamp', 'Dist', 'Resolution', 'c', 'Engines',
                      't_DistArray', 'Iters'))
     print(hdr)
     for i in range(repeat_count):
