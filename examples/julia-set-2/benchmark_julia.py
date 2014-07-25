@@ -24,6 +24,7 @@ from __future__ import print_function
 
 import argparse
 from time import time
+from contextlib import closing
 
 import numpy
 from matplotlib import pyplot
@@ -209,16 +210,15 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
     return avg_iters
 
 
-def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
-                  resolution_list, c_list, re_ax, im_ax, z_max, n_max,
-                  plot, benchmark_numpy=False):
+def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
+                  c_list, re_ax, im_ax, z_max, n_max, plot,
+                  benchmark_numpy=False):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
 
     Parameters
     ----------
-    context : DistArray Context
     repeat_count : int
         Number of times to repeat each unique parameter set.  Later we can take
         the average or minimum of these values to reduce noise in the output.
@@ -246,10 +246,11 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
     benchmark_numpy : bool
         Compare with NumPy?
     """
+    with closing(Context()) as context:
+        # Check that we have enough engines available.
+        max_engine_count = max(engine_count_list)
+        num_engines = len(context.targets)
 
-    # Check that we have enough engines available.
-    max_engine_count = max(engine_count_list)
-    num_engines = len(context.targets)
     title = 'Julia Set Performance'
     print(title)
     print("Benchmark started: %s" % time())
@@ -267,17 +268,17 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
                      't_DistArray', 't_NumPy', 't_Ratio', 'Iters', 'c'))
     print(hdr)
     for i in range(repeat_count):
-        for engine_count in engine_count_list:
-            for dist in dist_list:
-                for resolution in resolution_list:
+        for resolution in resolution_list:
+            for engine_count in engine_count_list:
+                for dist in dist_list:
                     dimensions = (resolution, resolution)
                     for c in c_list:
-                        context_use = Context(targets=range(engine_count))
-                        context_use.register(numpy_julia_calc)
-                        do_julia_run(context_use, dist, dimensions, c,
-                                     re_ax, im_ax, z_max, n_max,
-                                     plot, benchmark_numpy)
-                        context_use.close()
+                        targets = list(range(engine_count))
+                        with closing(Context(targets=targets)) as context:
+                            context.register(numpy_julia_calc)
+                            do_julia_run(context, dist, dimensions, c,
+                                         re_ax, im_ax, z_max, n_max,
+                                         plot, benchmark_numpy)
 
 
 def cli(cmd):
@@ -298,11 +299,10 @@ def cli(cmd):
                               "set, default: 3"))
     args = parser.parse_args()
 
-    context = Context()
-
     ## Default parameters
-    # use all available targets
-    engine_count_list = list(range(1, len(context.targets) + 1))
+    with closing(Context()) as context:
+        # use all available targets
+        engine_count_list = list(range(1, len(context.targets) + 1))
     dist_list = ['bn', 'cn', 'bb', 'cc']
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
@@ -311,7 +311,7 @@ def cli(cmd):
     z_max = 2.0
     n_max = 100
 
-    do_julia_runs(context, args.repeat_count, engine_count_list, dist_list,
+    do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                   args.resolution_list, c_list, re_ax, im_ax, z_max, n_max,
                   plot=False, benchmark_numpy=False)
 
