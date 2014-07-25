@@ -246,9 +246,9 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     benchmark_numpy : bool
         Compare with NumPy?
     """
+    max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
         # Check that we have enough engines available.
-        max_engine_count = max(engine_count_list)
         num_engines = len(context.targets)
 
     title = 'Julia Set Performance'
