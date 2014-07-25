@@ -116,7 +116,7 @@ def local_julia_calc(la, c, z_max, n_max):
     from distarray.local import LocalArray
     counts = numpy_julia_calc(la.ndarray, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
-    return proxyize(res)
+    return proxyize(res)  # noqa
 
 
 def distributed_julia_calc(distarray, c, z_max, n_max):
@@ -253,7 +253,8 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
     title = 'Julia Set Performance'
     print(title)
     print("Benchmark started: %s" % time())
-    fmt = 'num_engines=%d, z_max=%r, n_max=%r, re_ax=%r, im_ax=%r, repeat_count=%r'
+    fmt = ' ,'.join(('num_engines=%d', 'z_max=%r', 'n_max=%r', 're_ax=%r',
+                     'im_ax=%r', 'repeat_count=%r'))
     msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, repeat_count)
     print(msg)
     if max_engine_count > num_engines:
@@ -262,7 +263,9 @@ def do_julia_runs(context, repeat_count, engine_count_list, dist_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    print('Timestamp, Dist, Engines, Resolution, t_DistArray, t_NumPy, t_Ratio, Iters, c')
+    hdr = ', '.join(('Timestamp', 'Dist', 'Engines', 'Resolution',
+                     't_DistArray', 't_NumPy', 't_Ratio', 'Iters', 'c'))
+    print(hdr)
     for i in range(repeat_count):
         for engine_count in engine_count_list:
             for dist in dist_list:
@@ -299,7 +302,7 @@ def cli(cmd):
 
     ## Default parameters
     # use all available targets
-    engine_count_list = list(range(1, len(context.targets)+1))
+    engine_count_list = list(range(1, len(context.targets) + 1))
     dist_list = ['bn', 'cn', 'bb', 'cc']
     c_list = [complex(-0.045, 0.45)]  # This Julia set has many points inside
                                       # needing all iterations.
