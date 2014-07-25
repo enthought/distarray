@@ -223,7 +223,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         Number of times to repeat each unique parameter set.  Later we can take
         the average or minimum of these values to reduce noise in the output.
     engine_count_list : list of int
-        List of engine ids to use.  Example: list(range(1, 5))
+        List of numbers of engines to test.  Example: list(range(1, 5))
     dist_list : list of 2-element sequences
         List of distribution types to test.  Example: ['bn', 'cn', 'bb', 'cc']
     resolution_list = list of int
