@@ -34,8 +34,9 @@ from distarray.dist.distarray import DistArray
 
 try:
     from distarray.examples.julia_set.kernel import cython_julia_calc
+    CYTHON = True
 except ImportError:
-    pass
+    CYTHON = False
 
 
 def numpy_julia_calc(z, c, z_max, n_max):
@@ -196,7 +197,7 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
             julia_calc = numpy_julia_calc
         num_iters = julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
         t1 = time()
-        iters_list = [numpy.asscalar(num_iters.sum())]
+        iters_list = [numpy.asscalar(numpy.asarray(num_iters).sum())]
     else:
         t0 = time()
         num_iters = distributed_julia_calc(complex_plane, c,
@@ -269,7 +270,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                                                          'bn', re_ax, im_ax)
                     result = do_julia_run(context, 'numpy', dimensions, c,
                                           complex_plane, z_max, n_max,
-                                          benchmark_numpy=True)
+                                          benchmark_numpy=True, cython=cython)
                     results.append({h: r for h, r in zip(hdr, result)})
                 for engine_count in engine_count_list:
                     for dist in dist_list:
@@ -282,7 +283,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                                                                  im_ax)
                             result = do_julia_run(context, dist, dimensions, c,
                                                   complex_plane, z_max, n_max,
-                                                  benchmark_numpy=False)
+                                                  benchmark_numpy=False,
+                                                  cython=cython)
                             results.append({h: r for h, r in zip(hdr, result)})
     return results
 
@@ -322,7 +324,7 @@ def cli(cmd):
 
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                             args.resolution_list, c_list, re_ax, im_ax, z_max,
-                            n_max, cython=False)
+                            n_max, cython=CYTHON)
     with open(args.output_filename, 'wt') as fp:
         json.dump(results, fp,
                   sort_keys=True, indent=4, separators=(',', ': '))
