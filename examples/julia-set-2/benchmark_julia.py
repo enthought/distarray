@@ -23,6 +23,7 @@ the connected sets will usually take longer to compute.
 from __future__ import print_function
 
 import argparse
+import json
 from time import time
 from contextlib import closing
 
@@ -177,7 +178,7 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         num_iters = numpy_julia_calc(complex_plane_nd, c,
                                      z_max=z_max, n_max=n_max)
         t1 = time()
-        iters_list = [num_iters.sum()]
+        iters_list = [numpy.asscalar(num_iters.sum())]
     else:
         complex_plane = create_complex_plane(context, dimensions, dist,
                                              re_ax, im_ax)
@@ -187,18 +188,13 @@ def do_julia_run(context, dist, dimensions, c, re_ax, im_ax, z_max, n_max,
         t1 = time()
         # Iteration count.
         def local_sum(la):
-            return la.ndarray.sum()
+            return numpy.asscalar(la.ndarray.sum())
         iters_list = context.apply(local_sum, (num_iters.key,))
-    t_distarray = t1 - t0
 
     # Print results.
     dist_text = dist if dist=='numpy' else '-'.join(dist)
 
-    fmt = '%s, %s, %r, %r, %r, %r, %r'
-    result = fmt % (time(), dist_text, dimensions[0], c, num_engines,
-                    t_distarray, str(iters_list))
-    print(result)
-    return sum(iters_list)
+    return (t0, t1, dist_text, dimensions[0], str(c), num_engines, iters_list)
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
@@ -236,39 +232,34 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     with closing(Context()) as context:
         # Check that we have enough engines available.
         num_engines = len(context.targets)
-
-    title = 'Julia Set Performance'
-    print(title)
-    print("Benchmark started: %s" % time())
-    fmt = ', '.join(('num_engines=%d', 'z_max=%r', 'n_max=%r', 're_ax=%r',
-                     'im_ax=%r', 'repeat_count=%r'))
-    msg = fmt % (num_engines, z_max, n_max, re_ax, im_ax, repeat_count)
-    print(msg)
     if max_engine_count > num_engines:
         msg = 'Require %d engines, but only %d are available.' % (
             max_engine_count, num_engines)
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    hdr = ', '.join(('Timestamp', 'Dist', 'Resolution', 'c', 'Engines',
-                     't_DistArray', 'Iters'))
-    print(hdr)
+    hdr = (('Start', 'End', 'Dist', 'Resolution', 'c', 'Engines', 'Iters'))
+    results = []
     for i in range(repeat_count):
         for resolution in resolution_list:
             dimensions = (resolution, resolution)
             # numpy julia run
             for c in c_list:
                 with closing(Context(targets=[0])) as context:
-                    do_julia_run(context, 'numpy', dimensions, c, re_ax, im_ax,
-                                 z_max, n_max, benchmark_numpy=True)
+                    result = do_julia_run(context, 'numpy', dimensions, c,
+                                          re_ax, im_ax, z_max, n_max,
+                                          benchmark_numpy=True)
+                    results.append({h: r for h, r in zip(hdr, result)})
                 for engine_count in engine_count_list:
                     for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
                             context.register(numpy_julia_calc)
-                            do_julia_run(context, dist, dimensions, c, re_ax,
-                                         im_ax, z_max, n_max,
-                                         benchmark_numpy=False)
+                            result = do_julia_run(context, dist, dimensions, c,
+                                                  re_ax, im_ax, z_max, n_max,
+                                                  benchmark_numpy=False)
+                            results.append({h: r for h, r in zip(hdr, result)})
+    return results
 
 
 def cli(cmd):
@@ -287,6 +278,9 @@ def cli(cmd):
                         default=3,
                         help=("number of repetitions of each unique parameter "
                               "set, default: 3"))
+    parser.add_argument("-o", "--output-filename", type=str,
+                        dest='output_filename', default='out.json',
+                        help=("filename to write the json data to."))
     args = parser.parse_args()
 
     ## Default parameters
@@ -301,8 +295,12 @@ def cli(cmd):
     z_max = 2.0
     n_max = 100
 
-    do_julia_runs(args.repeat_count, engine_count_list, dist_list,
-                  args.resolution_list, c_list, re_ax, im_ax, z_max, n_max)
+    results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
+                            args.resolution_list, c_list, re_ax, im_ax, z_max,
+                            n_max)
+    with open(args.output_filename, 'wt') as fp:
+        json.dump(results, fp,
+                  sort_keys=True, indent=4, separators=(',', ': '))
 
 
 if __name__ == '__main__':
