@@ -258,8 +258,16 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         raise ValueError(msg)
 
     # Loop over everything and time the calculations.
-    hdr = (('Start', 'End', 'Dist', 'Resolution', 'c', 'Engines', 'Iters'))
     results = []
+    hdr = (('Start', 'End', 'Dist', 'Resolution', 'c', 'Engines', 'Iters'))
+    print("(n/n_runs: time)", hdr)
+    # progress stats
+    n_regular_runs = repeat_count * (len(resolution_list) * len(c_list) *
+                                     len(engine_count_list) * len(dist_list))
+    n_numpy_runs = repeat_count * (len(resolution_list) * len(c_list))
+    n_runs = n_regular_runs + n_numpy_runs
+    prog_fmt = "({:d}/{:d}: {:0.3f}s)"
+    n = 0
     for i in range(repeat_count):
         for resolution in resolution_list:
             dimensions = (resolution, resolution)
@@ -272,6 +280,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                                           complex_plane, z_max, n_max,
                                           benchmark_numpy=True, cython=cython)
                     results.append({h: r for h, r in zip(hdr, result)})
+                    n += 1
+                    print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
                 for engine_count in engine_count_list:
                     for dist in dist_list:
                         targets = list(range(engine_count))
@@ -286,6 +296,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                                                   benchmark_numpy=False,
                                                   cython=cython)
                             results.append({h: r for h, r in zip(hdr, result)})
+                            n += 1
+                            print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
     return results
 
 
