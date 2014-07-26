@@ -27,7 +27,7 @@ CBcdict = {
     'Or': (.9, .6, 0),
     'SB': (.35, .7, .9),
     'bG': (0, .6, .5),
-    'Ye': (.95, .9, .25),
+#    'Ye': (.95, .9, .25),
     'Bu': (0, .45, .7),
     'Ve': (.8, .4, 0),
     'rP': (.8, .6, .7),
@@ -67,28 +67,33 @@ def process_data(df, ideal_dist='numpy', aggfunc=numpy.min):
     resolution = df.Resolution.iloc[0]
     kpoints_df = (resolution**2 / pdf) / 1000
     kpoints_df['ideal ' + ideal_dist] = kpoints_df[ideal_dist].iloc[0] * kpoints_df.index.values
+    del kpoints_df[ideal_dist]
 
     return kpoints_df
 
 
-def plot_points(df, subtitle, ideal_dist='numpy', aggfunc=numpy.min):
+def plot_points(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     """Plot the timing results.
 
     Plot an ideal scaling line from the origin through the first `ideal_idst`
     point.
     """
     styles = iter(STYLES)
-    for col in df.columns:
-        if col.startswith("ideal"):
-            pyplot.plot(df.index, df['ideal ' + ideal_dist], '--')
+    for col in dfmed.columns:
+        if col == 'ideal ' + ideal_dist:
+            fmt='--'
         else:
-            pyplot.plot(df.index, df[col], next(styles))
+            fmt = next(styles)
+        pyplot.errorbar(x=dfmed.index, y=dfmed[col],
+                        yerr=[dfmin[col], dfmax[col]],
+                        lolims=True, uplims=True,
+                        fmt=fmt)
 
     pyplot.suptitle("Julia Set Benchmark")
     pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('kpoints / s')
-    pyplot.legend(df.columns, loc='upper left')
+    pyplot.legend(dfmed.columns, loc='upper left')
     pyplot.grid(axis='y')
     pyplot.show()
 
@@ -104,8 +109,10 @@ def main(filename):
     fmt = "resolution={}, c={}, total_time={}s"
     subtitle = fmt.format(resolution, c, total_time)
 
-    pdf = process_data(df)
-    plot_points(pdf, subtitle)
+    pdfmin = process_data(df, aggfunc=numpy.min)
+    pdfmax = process_data(df, aggfunc=numpy.max)
+    pdfmed = process_data(df, aggfunc=numpy.median)
+    plot_points(pdfmed, pdfmed-pdfmin, pdfmax-pdfmed, subtitle)
 
 
 if __name__ == '__main__':
