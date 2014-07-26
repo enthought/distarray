@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# Usage: mpi_benchmark <reps> <resolution>
+# Usage: mpi_benchmark <reps> <output_filename> <resolution>
 
-mpiexec -n 1 python benchmark_julia.py -r$1 $2 : -n 12 python -m distarray.apps.engine | tee -a $1_mpi.csv
+mpiexec -n 1 python benchmark_julia.py -r$1 -o$2 $3 : -n 12 python -m distarray.apps.engine
