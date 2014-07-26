@@ -208,7 +208,7 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
-                  c_list, re_ax, im_ax, z_max, n_max, cython=False):
+                  c_list, re_ax, im_ax, z_max, n_max, output_filename, cython=False):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -239,6 +239,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         increasing this has a large effect on the run-time.
     cython : bool
         Do the local calculation with Cython?  Default: False
+    output_filename : str
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -290,6 +291,9 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                             results.append({h: r for h, r in zip(hdr, result)})
                             n += 1
                             print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
+                            with open(output_filename, 'wt') as fp:
+                                json.dump(results, fp,
+                                        sort_keys=True, indent=4, separators=(',', ': '))
     return results
 
 
@@ -328,10 +332,8 @@ def cli(cmd):
 
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                             args.resolution_list, c_list, re_ax, im_ax, z_max,
-                            n_max, cython=CYTHON)
-    with open(args.output_filename, 'wt') as fp:
-        json.dump(results, fp,
-                  sort_keys=True, indent=4, separators=(',', ': '))
+                            n_max, output_filename=args.output_filename,
+                            cython=CYTHON)
 
 
 if __name__ == '__main__':
