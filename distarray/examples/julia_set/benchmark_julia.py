@@ -88,16 +88,8 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     import numpy as np
 
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
-        """Fill in points on the complex coordinate plane."""
-        # Drawing the coordinate plane directly like this is currently much
-        # faster than trying to do it by indexing a distarray.
-        # This may not be the most DistArray-thonic way to do this.
-        re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
-        im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
-        for i in arr.distribution[0].global_iter:
-            for j in arr.distribution[1].global_iter:
-                arr.global_index[i, j] = complex(re_ax[0] + re_step * i,
-                                                 im_ax[0] + im_step * j)
+        from distarray.examples.julia_set.kernel import fill_complex_plane
+        fill_complex_plane(arr, re_ax, im_ax, resolution)
 
     # Create an empty distributed array.
     distribution = Distribution(context, (resolution[0], resolution[1]),
