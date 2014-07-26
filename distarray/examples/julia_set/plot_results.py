@@ -11,8 +11,6 @@ Plot the results of the Julia set timings.
 from __future__ import print_function, division
 
 import sys
-import random
-import json
 
 import numpy
 import pandas as pd
