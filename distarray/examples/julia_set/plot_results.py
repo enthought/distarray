@@ -106,8 +106,11 @@ def main(filename):
     resolution = df['Resolution'].unique()
     c = df['c'].unique()
     total_time = (df['End'].max() - df['Start'].min()).seconds
-    fmt = "resolution={}, c={}, total_time={}s"
-    subtitle = fmt.format(resolution, c, total_time)
+    nreps = df.pivot_table(index='Engines', columns='Dist',
+                           values='Resolution', aggfunc=len).min().min()
+
+    fmt = "resolution={}, c={}, total_time={:0.2f}s, nreps={}"
+    subtitle = fmt.format(resolution, c, total_time, int(nreps))
 
     pdfmin = process_data(df, aggfunc=numpy.min)
     pdfmax = process_data(df, aggfunc=numpy.max)
