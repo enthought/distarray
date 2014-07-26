@@ -292,8 +292,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                             n += 1
                             print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
                             with open(output_filename, 'wt') as fp:
-                                json.dump(results, fp,
-                                        sort_keys=True, indent=4, separators=(',', ': '))
+                                json.dump(results, fp, sort_keys=True,
+                                          indent=4, separators=(',', ': '))
     return results
 
 
