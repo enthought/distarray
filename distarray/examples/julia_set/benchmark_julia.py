@@ -32,12 +32,6 @@ import numpy
 from distarray.dist import Context, Distribution
 from distarray.dist.distarray import DistArray
 
-try:
-    from distarray.examples.julia_set.kernel import cython_julia_calc
-    CYTHON = True
-except ImportError:
-    CYTHON = False
-
 
 def numpy_julia_calc(z, c, z_max, n_max):
     """Calculate entirely with NumPy for comparison.
@@ -64,6 +58,35 @@ def numpy_julia_calc(z, c, z_max, n_max):
         counts[mask] = n
         hits |= mask
         z[hits] = 0
+        n += 1
+    counts[~hits] = n_max
+    return counts
+
+
+def fancy_numpy_julia_calc(z, c, z_max, n_max):
+    """Calculate entirely with NumPy, using fancy indexing.
+
+    Parameters
+    ----------
+    z : NumPy array
+        array of complex values whose iterations we will count.
+    c : complex
+        Complex number to add at each iteration.
+    z_max : float
+        Magnitude of complex value that we assume goes to infinity.
+    n_max : int
+        Maximum number of iterations.
+    """
+    counts = numpy.zeros_like(z, dtype=numpy.int32)
+    hits = numpy.zeros_like(z, dtype=numpy.bool)
+    mask = numpy.zeros_like(z, dtype=numpy.bool)
+    n = 0
+
+    while not numpy.all(hits) and n < n_max:
+        z[~hits] = z[~hits] * z[~hits] + c
+        mask = (abs(z) > z_max) & (~hits)
+        counts[mask] = n
+        hits |= mask
         n += 1
     counts[~hits] = n_max
     return counts
@@ -100,7 +123,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     return complex_plane
 
 
-def local_julia_calc(la, c, z_max, n_max, cython=False):
+def local_julia_calc(la, c, z_max, n_max, kernel=fancy_numpy_julia_calc):
     """Calculate the number of iterations for the point to escape.
 
     Parameters
@@ -113,21 +136,16 @@ def local_julia_calc(la, c, z_max, n_max, cython=False):
         Magnitude of complex value that we assume goes to infinity.
     n_max : int
         Maximum number of iterations.
-    cython : bool
-        Do the local calculation with Cython?  Default: False
+    kernel : function
     """
     from distarray.local import LocalArray
-    from distarray.examples.julia_set.kernel import cython_julia_calc
-    if cython:
-        julia_calc = cython_julia_calc
-    else:
-        julia_calc = numpy_julia_calc
-    counts = julia_calc(la.ndarray, c, z_max, n_max)
+    counts = kernel(la.ndarray, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)  # noqa
 
 
-def distributed_julia_calc(distarray, c, z_max, n_max, cython=False):
+def distributed_julia_calc(distarray, c, z_max, n_max,
+                           kernel=fancy_numpy_julia_calc):
     """Calculate the Julia set for an array of points in the complex plane.
 
     Parameters
@@ -140,20 +158,19 @@ def distributed_julia_calc(distarray, c, z_max, n_max, cython=False):
         Magnitude of complex value that we assume goes to infinity.
     n_max : int
         Maximum number of iterations.
-    cython : bool
-        Do the local calculation with Cython?  Default: False
+    kernel: function
     """
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
                               (distarray.key, c, z_max, n_max),
-                              {'cython': cython})
+                              {'kernel': kernel})
     iters_da = DistArray.from_localarrays(iters_key[0], context=context,
                                           dtype=numpy.int32)
     return iters_da
 
 
 def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
-                 benchmark_numpy=False, cython=False):
+                 benchmark_numpy=False, kernel=fancy_numpy_julia_calc):
     """Do the Julia set calculation and print timing results.
 
     Parameters
@@ -175,26 +192,21 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
         increasing this has a large effect on the run-time.
     benchmark_numpy : bool
         Compute with numpy instead of DistArray?
-    cython : bool
-        Do the local calculation with Cython?  Default: False
+    kernel : function
     """
     num_engines = len(context.targets)
     # Calculate the number of iterations to escape for each point.
     if benchmark_numpy:
         complex_plane_nd = complex_plane.tondarray()
         t0 = time()
-        if cython:
-            julia_calc = cython_julia_calc
-        else:
-            julia_calc = numpy_julia_calc
-        num_iters = julia_calc(complex_plane_nd, c, z_max=z_max, n_max=n_max)
+        num_iters = kernel(complex_plane_nd, c, z_max=z_max, n_max=n_max)
         t1 = time()
         iters_list = [numpy.asscalar(numpy.asarray(num_iters).sum())]
     else:
         t0 = time()
         num_iters = distributed_julia_calc(complex_plane, c,
                                            z_max=z_max, n_max=n_max,
-                                           cython=cython)
+                                           kernel=kernel)
         t1 = time()
         # Iteration count.
         def local_sum(la):
@@ -208,7 +220,8 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
 
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
-                  c_list, re_ax, im_ax, z_max, n_max, output_filename, cython=False):
+                  c_list, re_ax, im_ax, z_max, n_max, output_filename,
+                  kernel=fancy_numpy_julia_calc):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -237,9 +250,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     n_max : int
         Maximum iteration counts. Points in the set will hit this limit, so
         increasing this has a large effect on the run-time.
-    cython : bool
-        Do the local calculation with Cython?  Default: False
     output_filename : str
+    kernel : function
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -271,7 +283,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                                                          'bn', re_ax, im_ax)
                     result = do_julia_run(context, 'numpy', dimensions, c,
                                           complex_plane, z_max, n_max,
-                                          benchmark_numpy=True, cython=cython)
+                                          benchmark_numpy=True, kernel=kernel)
                     results.append({h: r for h, r in zip(hdr, result)})
                     n += 1
                     print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
@@ -287,7 +299,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                             result = do_julia_run(context, dist, dimensions, c,
                                                   complex_plane, z_max, n_max,
                                                   benchmark_numpy=False,
-                                                  cython=cython)
+                                                  kernel=kernel)
                             results.append({h: r for h, r in zip(hdr, result)})
                             n += 1
                             print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
@@ -316,6 +328,8 @@ def cli(cmd):
     parser.add_argument("-o", "--output-filename", type=str,
                         dest='output_filename', default='out.json',
                         help=("filename to write the json data to."))
+    parser.add_argument("-k", "--kernel", type=str, default='fancy',
+                        help=("kernel to use for computation."))
     args = parser.parse_args()
 
     ## Default parameters
@@ -330,10 +344,17 @@ def cli(cmd):
     z_max = 2.0
     n_max = 100
 
+    fn_from_kernel = {'fancy': fancy_numpy_julia_calc,
+                      'numpy': numpy_julia_calc}
+
+    if args.kernel == 'cython':
+        from distarray.examples.julia_set.kernel import cython_julia_calc
+        fn_from_kernel['cython'] = cython_julia_calc
+
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                             args.resolution_list, c_list, re_ax, im_ax, z_max,
                             n_max, output_filename=args.output_filename,
-                            cython=CYTHON)
+                            kernel=fn_from_kernel[args.kernel])
 
 
 if __name__ == '__main__':
