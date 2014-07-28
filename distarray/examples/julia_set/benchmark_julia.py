@@ -136,6 +136,8 @@ def local_julia_calc(la, c, z_max, n_max, kernel):
     n_max : int
         Maximum number of iterations.
     kernel : function
+        Kernel to use for computation of the Julia set.  Options are 'fancy',
+        'numpy', or 'cython'.
     """
     from distarray.local import LocalArray
     counts = kernel(la.ndarray, c, z_max, n_max)
@@ -158,6 +160,8 @@ def distributed_julia_calc(distarray, c, z_max, n_max,
     n_max : int
         Maximum number of iterations.
     kernel: function
+        Kernel to use for computation of the Julia set.  Options are 'fancy',
+        'numpy', or 'cython'.
     """
     context = distarray.context
     iters_key = context.apply(local_julia_calc,
@@ -192,6 +196,8 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
     benchmark_numpy : bool
         Compute with numpy instead of DistArray?
     kernel : function
+        Kernel to use for computation of the Julia set.  Options are 'fancy',
+        'numpy', or 'cython'.
     """
     num_engines = len(context.targets)
     # Calculate the number of iterations to escape for each point.
@@ -252,6 +258,8 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
         increasing this has a large effect on the run-time.
     output_filename : str
     kernel : function
+        Kernel to use for computation of the Julia set.  Options are 'fancy',
+        'numpy', or 'cython'.
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
