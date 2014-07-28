@@ -89,6 +89,9 @@ def plot_points(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
                         lolims=True, uplims=True,
                         fmt=fmt)
 
+    xmin = dfmed.index.min() - 1
+    xmax = dfmed.index.max() + 1
+    pyplot.xlim((xmin, xmax))
     pyplot.suptitle("Julia Set Benchmark")
     pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
