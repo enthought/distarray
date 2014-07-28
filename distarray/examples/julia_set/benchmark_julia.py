@@ -329,7 +329,8 @@ def cli(cmd):
                         dest='output_filename', default='out.json',
                         help=("filename to write the json data to."))
     parser.add_argument("-k", "--kernel", type=str, default='fancy',
-                        help=("kernel to use for computation."))
+                        help=("kernel to use for computation.  "
+                              "Options are 'fancy', 'numpy', or 'cython'."))
     args = parser.parse_args()
 
     ## Default parameters
