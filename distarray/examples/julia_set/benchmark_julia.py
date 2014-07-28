@@ -107,7 +107,6 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     im_ax : 2-tuple
         The (lower, upper) range of the Im axis.
     """
-
     import numpy as np
 
     def fill_complex_plane(arr, re_ax, im_ax, resolution):
@@ -208,13 +207,14 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
                                            z_max=z_max, n_max=n_max,
                                            kernel=kernel)
         t1 = time()
+
         # Iteration count.
         def local_sum(la):
             return numpy.asscalar(la.ndarray.sum())
         iters_list = context.apply(local_sum, (num_iters.key,))
 
     # Print results.
-    dist_text = dist if dist=='numpy' else '-'.join(dist)
+    dist_text = dist if dist == 'numpy' else '-'.join(dist)
 
     return (t0, t1, dist_text, dimensions[0], str(c), num_engines, iters_list)
 
