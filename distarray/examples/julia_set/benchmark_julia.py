@@ -122,7 +122,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
     return complex_plane
 
 
-def local_julia_calc(la, c, z_max, n_max, kernel=fancy_numpy_julia_calc):
+def local_julia_calc(la, c, z_max, n_max, kernel):
     """Calculate the number of iterations for the point to escape.
 
     Parameters
