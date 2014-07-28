@@ -110,6 +110,9 @@ def plot_ratios(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     ratios = []
 
     for df in (dfmed, dfmin, dfmax):
+        if df is None:
+            ratios.append(None)
+            continue
         ratio = df.div(df[ideal], axis='index')
         del ratio[ideal]
         ratios.append(ratio)
@@ -118,8 +121,12 @@ def plot_ratios(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     styles = iter(STYLES)
     for col in dfmed.columns:
         fmt = next(styles)
+        if dfmin and dfmax:
+            yerr = [dfmin[col], dfmax[col]]
+        else:
+            yerr = None
         pyplot.errorbar(x=dfmed.index, y=dfmed[col],
-                        yerr=[dfmin[col], dfmax[col]],
+                        yerr=yerr,
                         lolims=True, uplims=True,
                         fmt=fmt)
 
@@ -130,7 +137,7 @@ def plot_ratios(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
     pyplot.ylabel('kpoints / ideal kpoints')
-    pyplot.legend(dfmed.columns, loc='upper left')
+    pyplot.legend(dfmed.columns, loc='lower left')
     pyplot.grid(axis='y')
     pyplot.show()
 
@@ -154,7 +161,7 @@ def main(filename, ratios=False):
     pdfmed = process_data(df, aggfunc=numpy.median)
 
     if ratios:
-        plot_ratios(pdfmed, pdfmed-pdfmin, pdfmax-pdfmed, subtitle)
+        plot_ratios(pdfmed, None, None, subtitle)
     else:
         plot_points(pdfmed, pdfmed-pdfmin, pdfmax-pdfmed, subtitle)
 
