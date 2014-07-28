@@ -16,7 +16,7 @@ def fill_complex_plane(arr, re_ax, im_ax, resolution):
         float re_step = float(re_ax[1] - re_ax[0]) / resolution[0]
         float im_step = float(im_ax[1] - im_ax[0]) / resolution[1]
         unsigned int row_start, col_start, row_step, col_step, nrow, ncol, i, j, glb_i, glb_j
-        float complex[:,::1] _arr = arr.ndarray
+        float complex[:,::1] _arr = np.asarray(arr, dtype=np.complex64)
 
     s0, s1 = arr.distribution.global_slice
     row_start, row_step = s0.start, (s0.step or 1)
@@ -38,10 +38,11 @@ cdef inline float cabs2(float complex z):
     return z.real * z.real + z.imag * z.imag
 
 
-def cython_julia_calc(float complex[:,::1] z, float complex c,
+def cython_julia_calc(_z, float complex c,
                       float z_max, unsigned int n_max):
 
     cdef:
+        float complex[:,::1] z = np.asarray(_z, dtype=np.complex64)
         float complex zt
         float z_max2 = z_max * z_max
         unsigned int nrow, ncol, i, j, count

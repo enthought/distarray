@@ -2,4 +2,4 @@
 
 # Usage: mpi_benchmark <reps> <output_filename> <kernel> <resolution>
 
-mpiexec -n 1 python benchmark_julia.py -r$1 -o$2 --kernel=$3 $4: -n 12 python -m distarray.apps.engine
+mpiexec -n 1 python benchmark_julia.py -r$1 -o$2 --kernel=$3 $4 : -n 12 python -m distarray.apps.engine

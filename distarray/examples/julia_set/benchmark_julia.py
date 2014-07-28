@@ -108,10 +108,7 @@ def create_complex_plane(context, resolution, dist, re_ax, im_ax):
         The (lower, upper) range of the Im axis.
     """
     import numpy as np
-
-    def fill_complex_plane(arr, re_ax, im_ax, resolution):
-        from distarray.examples.julia_set.kernel import fill_complex_plane
-        fill_complex_plane(arr, re_ax, im_ax, resolution)
+    from kernel import fill_complex_plane
 
     # Create an empty distributed array.
     distribution = Distribution(context, (resolution[0], resolution[1]),
@@ -140,7 +137,7 @@ def local_julia_calc(la, c, z_max, n_max, kernel):
         'numpy', or 'cython'.
     """
     from distarray.local import LocalArray
-    counts = kernel(la.ndarray, c, z_max, n_max)
+    counts = kernel(la, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)  # noqa
 
@@ -357,7 +354,7 @@ def cli(cmd):
                       'numpy': numpy_julia_calc}
 
     if args.kernel == 'cython':
-        from distarray.examples.julia_set.kernel import cython_julia_calc
+        from kernel import cython_julia_calc
         fn_from_kernel['cython'] = cython_julia_calc
 
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
