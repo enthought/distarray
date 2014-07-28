@@ -163,7 +163,7 @@ class ClientTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # skip if there isn't a cluster available
-        if Context is IPythonContext:
+        if IPythonContext is not None:
             try:
                 cls.client = IPythonClient()
             except EnvironmentError:
@@ -173,7 +173,7 @@ class ClientTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if Context is IPythonContext:
+        if IPythonContext is not None:
             try:
                 cls.client.close()
             except RuntimeError:

@@ -588,11 +588,11 @@ class IPythonContext(BaseContext):
 
     def __init__(self, client=None, targets=None):
 
-        if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
-                                atexit.register(ipython_cleanup.cleanup_all,
-                                                '__main__',
-                                                DISTARRAY_BASE_NAME))
+        if not BaseContext._CLEANUP:
+            BaseContext._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
+                                    atexit.register(ipython_cleanup.cleanup_all,
+                                                    '__main__',
+                                                    DISTARRAY_BASE_NAME))
 
         if client is None:
             self.client = IPythonClient()
@@ -847,8 +847,8 @@ class MPIContext(BaseContext):
         self._comm_from_targets = {}
         self.comm = self.make_subcomm(self.targets)
 
-        if Context._CLEANUP is None:
-            Context._CLEANUP = atexit.register(_shutdown,
+        if BaseContext._CLEANUP is None:
+            BaseContext._CLEANUP = atexit.register(_shutdown,
                                                MPIContext.INTERCOMM,
                                                tuple(self.all_targets))
 
@@ -973,10 +973,25 @@ class MPIContext(BaseContext):
         push_function(self, key, func, targets=targets)
 
 
-if is_solo_mpi_process() and IPythonClient is not None:
-    Context = IPythonContext
-elif not is_solo_mpi_process():
-    Context = MPIContext
-else:
-    raise ImportError("Cannot create Context class."
-                      "Must have an IPython cluster running or run in MPI-only mode.")
+def Context(*args, **kwargs):
+
+    kind = kwargs.pop('kind', '')
+
+    if not kind:
+
+        if is_solo_mpi_process() and IPythonClient is not None:
+            return IPythonContext(*args, **kwargs)
+        elif not is_solo_mpi_process():
+            return MPIContext(*args, **kwargs)
+        else:
+            raise ImportError("Cannot automatically create Context class."
+                            "Must have an IPython cluster running or run in MPI-only mode.")
+
+    elif kind.startswith('MPI'):
+        return MPIContext(*args, **kwargs)
+
+    elif kind.startswith('IPython'):
+        return IPythonClient(*args, **kwargs)
+
+    else:
+        raise ImportError("%s is not a valid Context selector string." % kind)
