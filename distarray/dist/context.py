@@ -32,7 +32,8 @@ from distarray.local.proxyize import Proxy
 # mpi context
 from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      get_world_rank, initial_comm_setup,
-                                     is_solo_mpi_process, push_function)
+                                     is_solo_mpi_process, get_comm_world,
+                                     mpi, push_function)
 
 
 @six.add_metaclass(ABCMeta)
@@ -588,12 +589,6 @@ class IPythonContext(BaseContext):
 
     def __init__(self, client=None, targets=None):
 
-        if not Context._CLEANUP:
-            Context._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
-                                atexit.register(ipython_cleanup.cleanup_all,
-                                                '__main__',
-                                                DISTARRAY_BASE_NAME))
-
         if client is None:
             self.client = IPythonClient()
             self.owns_client = True
@@ -636,6 +631,12 @@ class IPythonContext(BaseContext):
         self._base_comm = self._make_base_comm()
         self._comm_from_targets = {tuple(sorted(self.view.targets)): self._base_comm}
         self.comm = self.make_subcomm(self.targets)
+
+        if not BaseContext._CLEANUP:
+            BaseContext._CLEANUP = (atexit.register(ipython_cleanup.clear_all),
+                                    atexit.register(ipython_cleanup.cleanup_all,
+                                                    '__main__',
+                                                    DISTARRAY_BASE_NAME))
 
     def make_subcomm(self, new_targets):
 
@@ -709,7 +710,6 @@ class IPythonContext(BaseContext):
             self.apply(free_subcomm, (subcomm,), targets=targets)
         if self.owns_client:
             self.client.close()
-        self._base_comm = None
         self.comm = None
 
     # End of key management routines.
@@ -806,11 +806,12 @@ class IPythonContext(BaseContext):
         self._push({key: func}, targets=targets)
 
 
-def _shutdown(intercomm, targets):
+def _shutdown(mpi, intercomm, targets):
     msg = ('kill',)
     for t in targets:
         intercomm.send(msg, dest=t)
     intercomm.Free()
+    mpi.Finalize()
 
 class MPIContext(BaseContext):
 
@@ -824,21 +825,18 @@ class MPIContext(BaseContext):
     BaseContext
     """
 
-    _BASE_COMM = None
-    _INTERCOMM = None
+    INTERCOMM = None
 
     def delete_key(self, key, targets=None):
         msg = ('delete', key)
         targets = targets or self.targets
-        if self.intercomm:
+        if MPIContext.INTERCOMM:
             self._send_msg(msg, targets=targets)
 
     def __init__(self, targets=None):
 
-        if self.__class__._BASE_COMM is None:
-            base_comm, intercomm = initial_comm_setup()
-            self.__class__._BASE_COMM = base_comm
-            self.__class__._INTERCOMM = intercomm
+        if MPIContext.INTERCOMM is None:
+            MPIContext.INTERCOMM = initial_comm_setup()
             assert get_world_rank() == 0
 
         self.nengines = get_nengines()
@@ -848,15 +846,14 @@ class MPIContext(BaseContext):
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
-        self.intercomm = self.__class__._INTERCOMM
-        self._base_comm = self.__class__._BASE_COMM
-        self._comm_from_targets = {tuple(sorted(self.all_targets)): self._base_comm}
+        self._comm_from_targets = {}
         self.comm = self.make_subcomm(self.targets)
 
-        if Context._CLEANUP is None:
-            Context._CLEANUP = atexit.register(_shutdown,
-                                               MPIContext._INTERCOMM,
-                                                tuple(self.all_targets))
+        if BaseContext._CLEANUP is None:
+            BaseContext._CLEANUP = atexit.register(_shutdown,
+                                               mpi,
+                                               MPIContext.INTERCOMM,
+                                               tuple(self.all_targets))
 
         # local imports
         self._execute("from functools import reduce; "
@@ -883,7 +880,7 @@ class MPIContext(BaseContext):
 
     def close(self):
         for targets, subcomm in self._comm_from_targets.items():
-            if subcomm in (MPIContext._BASE_COMM, MPIContext._INTERCOMM):
+            if subcomm is MPIContext.INTERCOMM:
                 continue
             self._send_msg(('free_comm', subcomm), targets=targets)
 
@@ -892,13 +889,13 @@ class MPIContext(BaseContext):
     def _send_msg(self, msg, targets=None):
         targets = self.targets if targets is None else targets
         for t in targets:
-            self.intercomm.send(msg, dest=t)
+            MPIContext.INTERCOMM.send(msg, dest=t)
 
     def _recv_msg(self, targets=None):
         res = []
         targets = self.targets if targets is None else targets
         for t in targets:
-            res.append(self.intercomm.recv(source=t))
+            res.append(MPIContext.INTERCOMM.recv(source=t))
         return res
 
     def make_subcomm(self, targets):
@@ -979,10 +976,35 @@ class MPIContext(BaseContext):
         push_function(self, key, func, targets=targets)
 
 
-if is_solo_mpi_process() and IPythonClient is not None:
-    Context = IPythonContext
-elif not is_solo_mpi_process():
-    Context = MPIContext
-else:
-    raise ImportError("Cannot create Context class."
-                      "Must have an IPython cluster running or run in MPI-only mode.")
+class ContextCreationError(RuntimeError):
+    pass
+
+
+def _fire_off_engines(rank):
+    if rank:
+        from distarray.mpi_engine import Engine
+        Engine()
+
+def Context(*args, **kwargs):
+
+    kind = kwargs.pop('kind', '')
+
+    if not kind:
+        kind = 'ipython' if is_solo_mpi_process() else 'mpi'
+
+    if kind.lower().startswith('mpi'):
+
+        CW = get_comm_world()
+        myrank = CW.rank
+        if myrank:
+            _fire_off_engines(myrank)
+            import sys
+            sys.exit()
+        else:
+            return MPIContext(*args, **kwargs)
+
+    elif kind.lower().startswith('ipython'):
+        return IPythonContext(*args, **kwargs)
+
+    else:
+        raise ContextCreationError("%s is not a valid Context selector string." % kind)

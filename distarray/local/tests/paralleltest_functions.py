@@ -9,14 +9,14 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from distarray.testing import MpiTestCase, assert_localarrays_equal
+from distarray.testing import ParallelTestCase, assert_localarrays_equal
 from distarray.local import arecompatible
 import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
 from distarray.local.maps import Distribution
 
 
-class TestFunctions(MpiTestCase):
+class TestFunctions(ParallelTestCase):
 
     def test_arecompatible(self):
         """Test if two DistArrays are compatible."""
@@ -65,7 +65,7 @@ class TestFunctions(MpiTestCase):
         la1 = localarray.fromndarray_like(la0.ndarray, la0)
         assert_localarrays_equal(la0, la1, check_dtype=True)
 
-class TestCreationFunctions(MpiTestCase):
+class TestCreationFunctions(ParallelTestCase):
 
     def test_empty(self):
         size = self.comm_size
