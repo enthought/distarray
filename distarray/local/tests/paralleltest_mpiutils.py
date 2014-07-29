@@ -21,7 +21,7 @@ class TestCreateCommAlternate(unittest.TestCase):
     In particular, test creating the comm from a list,
     and the failure modes for creating the comm.
 
-    These code paths are not covered normally by MpiTestCase,
+    These code paths are not covered normally by ParallelTestCase,
     so this test case does not derive from that usual base class.
     """
 

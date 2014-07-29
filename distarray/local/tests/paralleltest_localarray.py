@@ -10,14 +10,14 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from distarray import utils
-from distarray.testing import (MpiTestCase, assert_localarrays_allclose,
+from distarray.testing import (ParallelTestCase, assert_localarrays_allclose,
                                assert_localarrays_equal)
 from distarray.local.localarray import LocalArray, ndenumerate, ones
 from distarray.local.maps import Distribution
 from distarray.local.error import InvalidDimensionError, IncompatibleArrayError
 
 
-class TestInit(MpiTestCase):
+class TestInit(ParallelTestCase):
 
     """Is the __init__ method working properly?"""
 
@@ -94,7 +94,7 @@ class TestInit(MpiTestCase):
         self.assertEqual(actual_2d, expected_2d)
 
 
-class TestLocalInd(MpiTestCase):
+class TestLocalInd(ParallelTestCase):
 
     """Test the computation of local indices."""
 
@@ -188,7 +188,7 @@ class TestLocalInd(MpiTestCase):
         self.assertEqual(result, expected_lis)
 
 
-class TestGlobalInd(MpiTestCase):
+class TestGlobalInd(ParallelTestCase):
 
     """Test the computation of global indices."""
 
@@ -253,7 +253,7 @@ class TestGlobalInd(MpiTestCase):
             a.global_limits(-1)
 
 
-class TestRankCoords(MpiTestCase):
+class TestRankCoords(ParallelTestCase):
     """ Test the rank <--> coords methods. """
 
     def round_trip(self, la, rank):
@@ -274,7 +274,7 @@ class TestRankCoords(MpiTestCase):
             self.round_trip(la, rank=rank)
 
 
-class TestArrayConversion(MpiTestCase):
+class TestArrayConversion(ParallelTestCase):
     """ Test array conversion methods. """
 
     def setUp(self):
@@ -302,7 +302,7 @@ class TestArrayConversion(MpiTestCase):
             self.assertTrue(isinstance(value, self.int_type))
 
 
-class TestIndexing(MpiTestCase):
+class TestIndexing(ParallelTestCase):
 
     def test_indexing_0(self):
         """Can we get and set local elements for a simple dist?"""
@@ -341,7 +341,7 @@ class TestIndexing(MpiTestCase):
             self.assertEqual(global_inds, a.unpack_index(packed_ind))
 
 
-class TestSlicing(MpiTestCase):
+class TestSlicing(ParallelTestCase):
 
     comm_size = 2
 
@@ -379,7 +379,7 @@ class TestSlicing(MpiTestCase):
                                              new_distribution=new_distribution)
             assert_array_equal(rvals, np.ones((2, 16)))
 
-class TestLocalArrayMethods(MpiTestCase):
+class TestLocalArrayMethods(ParallelTestCase):
 
     ddpr = [
         ({'dist_type': 'c',
@@ -495,7 +495,7 @@ class TestLocalArrayMethods(MpiTestCase):
         self.assertRaises(IncompatibleArrayError, a.asdist_like, b)
 
 
-class TestComm(MpiTestCase):
+class TestComm(ParallelTestCase):
 
     def test_create_localarray(self):
         # regression test for issue #144
@@ -504,7 +504,7 @@ class TestComm(MpiTestCase):
         la = LocalArray(dist)
 
 
-class TestNDEnumerate(MpiTestCase):
+class TestNDEnumerate(ParallelTestCase):
     """Make sure we generate indices compatible with __getitem__."""
 
     def test_ndenumerate(self):

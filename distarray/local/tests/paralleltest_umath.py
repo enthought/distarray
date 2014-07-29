@@ -15,10 +15,10 @@ import distarray.local.localarray as localarray
 from distarray.local.localarray import LocalArray
 from distarray.local.maps import Distribution
 from distarray.local.error import IncompatibleArrayError
-from distarray.testing import MpiTestCase
+from distarray.testing import ParallelTestCase
 
 
-class TestUnaryUFunc(MpiTestCase):
+class TestUnaryUFunc(ParallelTestCase):
 
     def test_negative(self):
         """See if unary ufunc works for a LocalArray."""
@@ -38,7 +38,7 @@ class TestUnaryUFunc(MpiTestCase):
         self.assertRaises(IncompatibleArrayError, localarray.negative, b, a)
 
 
-class TestBinaryUFunc(MpiTestCase):
+class TestBinaryUFunc(ParallelTestCase):
 
     def test_add(self):
         """See if binary ufunc works for a LocalArray."""
@@ -93,7 +93,7 @@ def add_checkers(cls, ops, bad_ops):
             setattr(cls, fn_name, check(op))
 
 
-class TestLocalArrayUnaryOperations(MpiTestCase):
+class TestLocalArrayUnaryOperations(ParallelTestCase):
 
     def check_op(self, op):
         """Check unary operation for success.
@@ -112,7 +112,7 @@ class TestLocalArrayUnaryOperations(MpiTestCase):
         assert_array_equal(result0.ndarray, y.ndarray)
 
 
-class TestLocalArrayBinaryOperations(MpiTestCase):
+class TestLocalArrayBinaryOperations(ParallelTestCase):
 
     def check_op(self, op):
         """Check binary operation for success.

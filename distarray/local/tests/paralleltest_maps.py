@@ -9,7 +9,7 @@ import numpy as np
 
 from distarray.externals.six.moves import reduce
 
-from distarray.testing import MpiTestCase
+from distarray.testing import ParallelTestCase
 from distarray.local.maps import Distribution
 
 
@@ -35,7 +35,7 @@ dd3 = dict(dist_type='c',
 test_dim_data = (dd0, dd1, dd2, dd3)
 
 
-class TestDistributionCreation(MpiTestCase):
+class TestDistributionCreation(ParallelTestCase):
 
     def test_creation(self):
         distribution = Distribution(comm=self.comm,
@@ -43,7 +43,7 @@ class TestDistributionCreation(MpiTestCase):
         self.assertTrue(len(distribution) == len(test_dim_data))
 
 
-class TestFromShape(MpiTestCase):
+class TestFromShape(ParallelTestCase):
 
     """Is the __init__ method working properly?"""
 
@@ -119,7 +119,7 @@ class TestFromShape(MpiTestCase):
         self.assertEqual(actual_2d, expected_2d)
 
 
-class TestInitShapeEquivalence(MpiTestCase):
+class TestInitShapeEquivalence(ParallelTestCase):
 
     comm_size = 2
 
@@ -209,7 +209,7 @@ class TestInitShapeEquivalence(MpiTestCase):
         self.assert_alike(larr, expected)
 
 
-class TestGridShape(MpiTestCase):
+class TestGridShape(ParallelTestCase):
 
     comm_size = 12
 

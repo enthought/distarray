@@ -18,12 +18,12 @@ import numpy
 from numpy.testing import assert_array_equal, assert_allclose
 
 from distarray.externals.six.moves import range
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
 
-class TestDistArray(ContextTestCase):
+class TestDistArray(DefaultContextTestCase):
 
     def test_set_and_getitem_block_dist(self):
         size = 10
@@ -139,7 +139,7 @@ class TestDistArray(ContextTestCase):
         numpy.testing.assert_array_equal(dap.tondarray(), ndarr)
 
 
-class TestGetItemSlicing(ContextTestCase):
+class TestGetItemSlicing(DefaultContextTestCase):
 
     def test_full_slice_block_dist(self):
         size = 10
@@ -296,7 +296,7 @@ class TestGetItemSlicing(ContextTestCase):
         assert_array_equal(arr[...].toarray(), expected[...])
 
 
-class TestSetItemSlicing(ContextTestCase):
+class TestSetItemSlicing(DefaultContextTestCase):
 
     def test_small_1d_slice(self):
         source = numpy.random.randint(10, size=20)
@@ -435,7 +435,7 @@ class TestSetItemSlicing(ContextTestCase):
         assert_array_equal(arr[...].toarray(), numpy.array(val1))
 
 
-class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
+class TestDistArrayCreationFromGlobalDimData(DefaultContextTestCase):
 
     def test_from_global_dim_data_irregular_block(self):
 
@@ -627,7 +627,7 @@ class TestDistArrayCreationFromGlobalDimData(ContextTestCase):
         distarr.toarray()
 
 
-class TestDistArrayCreation(ContextTestCase):
+class TestDistArrayCreation(DefaultContextTestCase):
 
     """Test distarray creation methods"""
 
@@ -708,7 +708,7 @@ class TestDistArrayCreation(ContextTestCase):
         assert_array_equal(expected, result.tondarray())
 
 
-class TestDistArrayCreationSubSet(ContextTestCase):
+class TestDistArrayCreationSubSet(DefaultContextTestCase):
 
     def test_create_target_subset(self):
         shape = (100, 100)
@@ -723,7 +723,7 @@ class TestDistArrayCreationSubSet(ContextTestCase):
         self.assertEqual(len(ddpr), len(subtargets))
 
 
-class TestReductionRegression(ContextTestCase):
+class TestReductionRegression(DefaultContextTestCase):
     ''' Separate class necessary b/c need to run on at least 9 engines to exercise
     regression.
 
@@ -739,7 +739,7 @@ class TestReductionRegression(ContextTestCase):
         assert_allclose(darr.sum().tondarray(), arr.sum())
 
 
-class TestReduceMethods(ContextTestCase):
+class TestReduceMethods(DefaultContextTestCase):
     """Test reduction methods"""
 
     @classmethod
@@ -918,7 +918,7 @@ class TestReduceMethods(ContextTestCase):
         assert_allclose(mask.std().tondarray(), np_mask.std())
 
 
-class TestFromLocalArrays(ContextTestCase):
+class TestFromLocalArrays(DefaultContextTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -955,7 +955,7 @@ class TestFromLocalArrays(ContextTestCase):
                                        distribution=self.distribution)
 
 
-class TestView(ContextTestCase):
+class TestView(DefaultContextTestCase):
 
     def test_plain_view(self):
         a = numpy.zeros((4, 5), dtype=numpy.float32)

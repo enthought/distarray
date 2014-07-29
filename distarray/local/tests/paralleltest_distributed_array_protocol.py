@@ -11,7 +11,7 @@ from numpy.testing import assert_array_equal
 from distarray.externals import six
 from distarray.local.localarray import LocalArray
 from distarray.local.maps import Distribution
-from distarray.testing import MpiTestCase, CommNullPasser, validate_distbuffer
+from distarray.testing import ParallelTestCase, CommNullPasser, validate_distbuffer
 
 
 @six.add_metaclass(CommNullPasser)
@@ -71,7 +71,7 @@ class DapValidatorMixin(object):
         assert_array_equal(larr.ndarray, self.larr.ndarray)
 
 
-class TestDapBasic(DapValidatorMixin, MpiTestCase):
+class TestDapBasic(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm,
@@ -80,7 +80,7 @@ class TestDapBasic(DapValidatorMixin, MpiTestCase):
         self.larr = LocalArray(d)
 
 
-class TestDapUint(DapValidatorMixin, MpiTestCase):
+class TestDapUint(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm,
@@ -89,7 +89,7 @@ class TestDapUint(DapValidatorMixin, MpiTestCase):
         self.larr = LocalArray(d, dtype='uint8', buf=None)
 
 
-class TestDapComplex(DapValidatorMixin, MpiTestCase):
+class TestDapComplex(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm,
@@ -98,7 +98,7 @@ class TestDapComplex(DapValidatorMixin, MpiTestCase):
         self.larr = LocalArray(d, dtype='complex128', buf=None)
 
 
-class TestDapExplicitNoDist0(DapValidatorMixin, MpiTestCase):
+class TestDapExplicitNoDist0(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(16, 16),
@@ -106,7 +106,7 @@ class TestDapExplicitNoDist0(DapValidatorMixin, MpiTestCase):
         self.larr = LocalArray(d)
 
 
-class TestDapExplicitNoDist1(DapValidatorMixin, MpiTestCase):
+class TestDapExplicitNoDist1(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(30, 60),
@@ -115,7 +115,7 @@ class TestDapExplicitNoDist1(DapValidatorMixin, MpiTestCase):
 
 
 class TestDapTwoDistDims(DapRoundTripEqualityMixin, DapValidatorMixin,
-                         MpiTestCase):
+                         ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(53, 77),
@@ -124,7 +124,7 @@ class TestDapTwoDistDims(DapRoundTripEqualityMixin, DapValidatorMixin,
 
 
 class TestDapThreeBlockDims(DapRoundTripEqualityMixin, DapValidatorMixin,
-                            MpiTestCase):
+                            ParallelTestCase):
 
     comm_size = 12
 
@@ -135,7 +135,7 @@ class TestDapThreeBlockDims(DapRoundTripEqualityMixin, DapValidatorMixin,
         self.larr = LocalArray(d)
 
 
-class TestDapCyclicDim(DapValidatorMixin, MpiTestCase):
+class TestDapCyclicDim(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(53, 77),
@@ -144,7 +144,7 @@ class TestDapCyclicDim(DapValidatorMixin, MpiTestCase):
 
 
 class TestDapCyclicBlock(DapRoundTripEqualityMixin, DapValidatorMixin,
-                         MpiTestCase):
+                         ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(53, 77),
@@ -152,7 +152,7 @@ class TestDapCyclicBlock(DapRoundTripEqualityMixin, DapValidatorMixin,
         self.larr = LocalArray(d)
 
 
-class TestDapThreeMixedDims(DapValidatorMixin, MpiTestCase):
+class TestDapThreeMixedDims(DapValidatorMixin, ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(53, 77, 99),
@@ -161,7 +161,7 @@ class TestDapThreeMixedDims(DapValidatorMixin, MpiTestCase):
         self.larr = LocalArray(d, dtype='float64')
 
 
-class TestDapLopsided(DapValidatorMixin, MpiTestCase):
+class TestDapLopsided(DapValidatorMixin, ParallelTestCase):
 
     comm_size = 2
 

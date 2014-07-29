@@ -16,11 +16,14 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 import distarray.dist.functions as functions
-from distarray.dist import Context
+from distarray.dist import Context, ContextCreationError
 
-glb_ctx = None
+try:
+    glb_ctx = Context()
+except ContextCreationError:
+    raise unittest.SkipTest()
 
 def setUpModule():
     global glb_ctx
@@ -45,10 +48,6 @@ def add_checkers(cls, ops_and_data, checker_name):
 
     ops, data = ops_and_data
 
-    global glb_ctx
-    if not glb_ctx:
-        glb_ctx = Context()
-
     dist_data = tuple(glb_ctx.fromndarray(d) for d in data)
 
     def check(op_name):
@@ -59,7 +58,7 @@ def add_checkers(cls, ops_and_data, checker_name):
         setattr(cls, op_test_name, check(op_name))
 
 
-class TestDistArrayUfuncs(ContextTestCase):
+class TestDistArrayUfuncs(DefaultContextTestCase):
     """Test ufuncs operating on distarrays"""
 
     ntargets = 'any'
@@ -94,7 +93,7 @@ class TestDistArrayUfuncs(ContextTestCase):
         assert_allclose(result.toarray(), expected)
 
 
-class TestSpecialMethods(ContextTestCase):
+class TestSpecialMethods(DefaultContextTestCase):
     """Test the __methods__"""
 
     ntargets = 'any'
