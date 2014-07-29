@@ -19,7 +19,7 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals import protocol_validator
-from distarray.dist.context import Context
+from distarray.dist.context import Context, ContextCreationError
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
@@ -176,6 +176,26 @@ class BaseContextTestCase(unittest.TestCase):
     ntargets = 4
 
     @classmethod
+    def setUpClass(cls):
+        super(BaseContextTestCase, cls).setUpClass()
+
+        # skip if there aren't enough engines
+
+        try:
+            if cls.ntargets == 'any':
+                cls.context = cls.make_context()
+                cls.ntargets = len(cls.context.targets)
+            else:
+                try:
+                    cls.context = cls.make_context(targets=list(range(cls.ntargets)))
+                except ValueError:
+                    msg = ("Not enough targets available for this test. (%s) "
+                        "required" % (cls.ntargets))
+                    raise unittest.SkipTest(msg)
+        except ContextCreationError as e:
+            raise unittest.SkipTest(e.message)
+
+    @classmethod
     def tearDownClass(cls):
         try:
             cls.context.close()
@@ -186,77 +206,33 @@ class BaseContextTestCase(unittest.TestCase):
 class MPIContextTestCase(BaseContextTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        super(MPIContextTestCase, cls).setUpClass()
-
-        # skip if there aren't enough engines
-
-        if cls.ntargets == 'any':
-            cls.context = Context(kind='MPI')
-            cls.ntargets = len(cls.context.targets)
-        else:
-            try:
-                cls.context = Context(kind='MPI', targets=list(range(cls.ntargets)))
-            except ValueError:
-                msg = ("Not enough targets available for this test. (%s) "
-                       "required" % (cls.ntargets))
-                raise unittest.SkipTest(msg)
+    def make_context(cls, targets=None):
+        return Context(kind='MPI', targets=targets)
 
 
 class IPythonContextTestCase(BaseContextTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        super(IPythonContextTestCase, cls).setUpClass()
-
-        try:
-            cls.client = IPythonClient()
-        except EnvironmentError:
-            msg = "You must have an ipcluster running to run this test case."
-            raise unittest.SkipTest(msg)
-
-        # skip if there aren't enough engines
-
-        if cls.ntargets == 'any':
-            cls.context = Context(kind='IPython', client=cls.client)
-            cls.ntargets = len(cls.context.targets)
-        else:
-            try:
-                cls.context = Context(kind='IPython',
-                                     client=cls.client,
-                                     targets=list(range(cls.ntargets)))
-            except ValueError:
-                msg = ("Not enough targets available for this test. (%s) "
-                       "required" % (cls.ntargets))
-                raise unittest.SkipTest(msg)
+    def make_context(cls, targets=None):
+        return Context(kind='IPython', targets=targets)
 
     @classmethod
-    def tearDownClass(cls):
-        super(IPythonContextTestCase, cls).tearDownClass()
+    def setUpClass(cls):
         try:
-            cls.client.close()
-        except RuntimeError:
-            pass
+            super(IPythonContextTestCase, cls).setUpClass()
+        # except EnvironmentError:
+        except IOError:
+            msg = "You must have an ipcluster running to run this test case."
+            raise unittest.SkipTest(msg)
+        else:
+            cls.client = cls.context.client
 
 
 class DefaultContextTestCase(BaseContextTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        super(DefaultContextTestCase, cls).setUpClass()
-
-        # skip if there aren't enough engines
-
-        if cls.ntargets == 'any':
-            cls.context = Context()
-            cls.ntargets = len(cls.context.targets)
-        else:
-            try:
-                cls.context = Context(targets=list(range(cls.ntargets)))
-            except ValueError:
-                msg = ("Not enough targets available for this test. (%s) "
-                       "required" % (cls.ntargets))
-                raise unittest.SkipTest(msg)
+    def make_context(cls, targets=None):
+        return Context(targets=targets)
 
 
 def check_targets(required, available):

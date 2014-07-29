@@ -212,7 +212,6 @@ class TestIPythonContextCreation(IPythonContextTestCase):
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
-        import ipdb; ipdb.set_trace()
         dac = Context(kind='IPython', client=self.client)
         self.assertIs(dac.client, self.client)
 
