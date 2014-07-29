@@ -20,7 +20,7 @@ from numpy.testing import assert_array_equal
 
 from distarray.externals.six.moves import range
 
-from distarray.testing import import_or_skip, ContextTestCase
+from distarray.testing import import_or_skip, DefaultContextTestCase
 from distarray.dist.distarray import DistArray
 from distarray.dist.maps import Distribution
 
@@ -36,7 +36,7 @@ def engine_temp_path(extension=''):
     return temp_filepath(extension)
 
 
-class TestDnpyFileIO(ContextTestCase):
+class TestDnpyFileIO(DefaultContextTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -144,7 +144,7 @@ nu_test_data = [
     ]
 
 
-class TestNpyFileLoad(ContextTestCase):
+class TestNpyFileLoad(DefaultContextTestCase):
 
     """Try loading a .npy file on the engines.
 
@@ -212,7 +212,7 @@ def check_hdf5_file(output_path, expected, dataset="buffer"):
     return True
 
 
-class TestHdf5FileSave(ContextTestCase):
+class TestHdf5FileSave(DefaultContextTestCase):
 
     def setUp(self):
         super(TestHdf5FileSave, self).setUp()
@@ -274,7 +274,7 @@ class TestHdf5FileSave(ContextTestCase):
         self.assertTrue(bar_checks)
 
 
-class TestHdf5FileLoad(ContextTestCase):
+class TestHdf5FileLoad(DefaultContextTestCase):
 
     ntargets = 2
 

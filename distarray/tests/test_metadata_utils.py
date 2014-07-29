@@ -8,7 +8,7 @@ import unittest
 from distarray import metadata_utils
 from distarray.dist import Distribution, Context
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 
 
 class TestMakeGridShape(unittest.TestCase):
@@ -217,7 +217,7 @@ class TestTupleIntersection(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-class TestGridSizes(ContextTestCase):
+class TestGridSizes(DefaultContextTestCase):
 
     def test_dist_sizes(self):
         dist = Distribution(self.context, (2, 3, 4), dist=('n', 'b', 'c'))

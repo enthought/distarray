@@ -19,14 +19,14 @@ import numpy
 
 from numpy.testing import assert_allclose, assert_array_equal
 
-from distarray.testing import ClientTestCase, ContextTestCase, check_targets
+from distarray.testing import DefaultContextTestCase, IPythonContextTestCase, check_targets
 from distarray.dist.context import Context
 from distarray.dist.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
 from distarray.local import LocalArray
 
 
-class TestRegister(ContextTestCase):
+class TestRegister(DefaultContextTestCase):
 
     ntargets = 'any'
 
@@ -187,7 +187,7 @@ class TestRegister(ContextTestCase):
         assert_array_equal(da.tondarray(), a)
 
 
-class TestContext(ContextTestCase):
+class TestContext(DefaultContextTestCase):
     """Test Context methods"""
 
     @classmethod
@@ -207,12 +207,13 @@ class TestContext(ContextTestCase):
 
 @unittest.skipIf(not is_solo_mpi_process(),  # not in ipython mode
                  "Cannot test IPythonContext in MPI mode")
-class TestIPythonContextCreation(ClientTestCase):
+class TestIPythonContextCreation(IPythonContextTestCase):
     """Test Context Creation"""
 
     def test_create_Context(self):
         """Can we create a plain vanilla context?"""
-        dac = Context(self.client)
+        import ipdb; ipdb.set_trace()
+        dac = Context(kind='IPython', client=self.client)
         self.assertIs(dac.client, self.client)
 
     def test_create_Context_with_targets(self):
@@ -285,7 +286,7 @@ class TestMPIContextCreation(unittest.TestCase):
         dac.close()
 
 
-class TestPrimeCluster(ContextTestCase):
+class TestPrimeCluster(DefaultContextTestCase):
 
     ntargets = 3
 
@@ -316,7 +317,7 @@ class TestPrimeCluster(ContextTestCase):
         self.assertEqual(c.grid_shape, (1, 1, 3))
 
 
-class TestApply(ContextTestCase):
+class TestApply(DefaultContextTestCase):
 
     ntargets = 'any'
 

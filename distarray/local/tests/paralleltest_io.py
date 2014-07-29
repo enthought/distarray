@@ -8,14 +8,14 @@ import os
 import numpy
 
 from numpy.testing import assert_allclose, assert_equal
-from distarray.testing import MpiTestCase, import_or_skip, temp_filepath
+from distarray.testing import ParallelTestCase, import_or_skip, temp_filepath
 from distarray.local import LocalArray, ndenumerate
 from distarray.local import (save_dnpy, load_dnpy, save_hdf5, load_hdf5,
                              load_npy)
 from distarray.local.maps import Distribution
 
 
-class TestDnpyFileIO(MpiTestCase):
+class TestDnpyFileIO(ParallelTestCase):
 
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(7,))
@@ -133,7 +133,7 @@ nu_test_data = [
     ]
 
 
-class TestNpyFileLoad(MpiTestCase):
+class TestNpyFileLoad(ParallelTestCase):
 
     comm_size = 2
 
@@ -184,7 +184,7 @@ class TestNpyFileLoad(MpiTestCase):
         assert_equal(la, self.expected[:, expected_indices[self.rank]])
 
 
-class TestHdf5FileSave(MpiTestCase):
+class TestHdf5FileSave(ParallelTestCase):
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
@@ -229,7 +229,7 @@ class TestHdf5FileSave(MpiTestCase):
                 os.remove(self.output_path)
 
 
-class TestHdf5FileLoad(MpiTestCase):
+class TestHdf5FileLoad(ParallelTestCase):
 
     comm_size = 2
 

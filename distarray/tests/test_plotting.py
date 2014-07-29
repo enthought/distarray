@@ -18,12 +18,12 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 
 import unittest
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 from distarray.dist import Distribution
 from distarray.testing import import_or_skip
 
 
-class TestPlotting(ContextTestCase):
+class TestPlotting(DefaultContextTestCase):
     """Test Context methods"""
 
     @classmethod

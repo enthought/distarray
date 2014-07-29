@@ -9,10 +9,10 @@ import numpy as np
 
 from distarray.local import random as local_random
 from distarray.local.maps import Distribution
-from distarray.testing import MpiTestCase
+from distarray.testing import ParallelTestCase
 
 
-class TestBasic(MpiTestCase):
+class TestBasic(ParallelTestCase):
     """Run basic shape/size tests on functions in `random.py`."""
 
     def shape_asserts(self, la):

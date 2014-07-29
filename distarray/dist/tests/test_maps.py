@@ -11,11 +11,11 @@ from random import randrange
 
 from distarray.externals.six.moves import range
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 from distarray.dist.maps import MapBase, Distribution
 
 
-class TestClientMap(ContextTestCase):
+class TestClientMap(DefaultContextTestCase):
 
     def test_2D_bn(self):
         nrows, ncols = 31, 53
@@ -190,7 +190,7 @@ class TestClientMap(ContextTestCase):
         self.assertEqual(set(new_dist.targets), set(dist.targets[:1]))
 
 
-class TestSlice(ContextTestCase):
+class TestSlice(DefaultContextTestCase):
 
     def test_from_partial_slice_1d(self):
         d0 = Distribution(context=self.context, shape=(15,))
@@ -272,7 +272,7 @@ class TestSlice(ContextTestCase):
         self.assertEqual(d1.shape, (15,))
 
 
-class TestDunderMethods(ContextTestCase):
+class TestDunderMethods(DefaultContextTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -293,14 +293,14 @@ class TestDunderMethods(ContextTestCase):
         self.assertEqual(self.cm[-1].dist, 'n')
 
 
-class TestDistributionCreation(ContextTestCase):
+class TestDistributionCreation(DefaultContextTestCase):
     def test_all_n_dist(self):
         distribution = Distribution(self.context, shape=(3, 3),
                                     dist=('n', 'n'))
         self.context.ones(distribution)
 
 
-class TestNoEmptyLocals(ContextTestCase):
+class TestNoEmptyLocals(DefaultContextTestCase):
 
     def test_no_empty_local_arrays_4_targets(self):
         for n in range(1, 20):

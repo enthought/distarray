@@ -16,7 +16,7 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 import distarray.dist.functions as functions
 from distarray.dist import Context
 
@@ -59,7 +59,7 @@ def add_checkers(cls, ops_and_data, checker_name):
         setattr(cls, op_test_name, check(op_name))
 
 
-class TestDistArrayUfuncs(ContextTestCase):
+class TestDistArrayUfuncs(DefaultContextTestCase):
     """Test ufuncs operating on distarrays"""
 
     ntargets = 'any'
@@ -94,7 +94,7 @@ class TestDistArrayUfuncs(ContextTestCase):
         assert_allclose(result.toarray(), expected)
 
 
-class TestSpecialMethods(ContextTestCase):
+class TestSpecialMethods(DefaultContextTestCase):
     """Test the __methods__"""
 
     ntargets = 'any'

@@ -8,12 +8,12 @@
 
 import unittest
 
-from distarray.testing import ContextTestCase
+from distarray.testing import DefaultContextTestCase
 from distarray.dist.maps import Distribution
 from distarray.dist.random import Random
 
 
-class TestRandom(ContextTestCase):
+class TestRandom(DefaultContextTestCase):
     """Test the Random classes methods, since the expected results are
     'random' we just check for the correct shape. Which is dumb, but
     better than nothing.

@@ -19,7 +19,7 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals import protocol_validator
-from distarray.dist.context import Context, IPythonContext
+from distarray.dist.context import Context
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
 from distarray.local.mpiutils import MPI, create_comm_of_size
@@ -125,9 +125,9 @@ class CommNullPasser(type):
 
 
 @six.add_metaclass(CommNullPasser)
-class MpiTestCase(unittest.TestCase):
+class ParallelTestCase(unittest.TestCase):
 
-    """Base test class for MPI test cases.
+    """Base test class for fully distributed and client-less test cases.
 
     Overload the `comm_size` class attribute to change the default number of
     processes required.
@@ -156,31 +156,7 @@ class MpiTestCase(unittest.TestCase):
             cls.comm.Free()
 
 
-class ClientTestCase(unittest.TestCase):
-
-    """Base test class for test cases that use an IPython.parallel Client."""
-
-    @classmethod
-    def setUpClass(cls):
-        # skip if there isn't a cluster available
-        if IPythonContext is not None:
-            try:
-                cls.client = IPythonClient()
-            except EnvironmentError:
-                # IOError on Python2, FileNotFoundError on Python3
-                msg = "You must have an ipcluster running to run this test case."
-                raise unittest.SkipTest(msg)
-
-    @classmethod
-    def tearDownClass(cls):
-        if IPythonContext is not None:
-            try:
-                cls.client.close()
-            except RuntimeError:
-                pass
-
-
-class ContextTestCase(ClientTestCase):
+class BaseContextTestCase(unittest.TestCase):
 
     """Base test class for test cases that use a Context.
 
@@ -200,8 +176,74 @@ class ContextTestCase(ClientTestCase):
     ntargets = 4
 
     @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.context.close()
+        except RuntimeError:
+            pass
+
+
+class MPIContextTestCase(BaseContextTestCase):
+
+    @classmethod
     def setUpClass(cls):
-        super(ContextTestCase, cls).setUpClass()
+        super(MPIContextTestCase, cls).setUpClass()
+
+        # skip if there aren't enough engines
+
+        if cls.ntargets == 'any':
+            cls.context = Context(kind='MPI')
+            cls.ntargets = len(cls.context.targets)
+        else:
+            try:
+                cls.context = Context(kind='MPI', targets=list(range(cls.ntargets)))
+            except ValueError:
+                msg = ("Not enough targets available for this test. (%s) "
+                       "required" % (cls.ntargets))
+                raise unittest.SkipTest(msg)
+
+
+class IPythonContextTestCase(BaseContextTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(IPythonContextTestCase, cls).setUpClass()
+
+        try:
+            cls.client = IPythonClient()
+        except EnvironmentError:
+            msg = "You must have an ipcluster running to run this test case."
+            raise unittest.SkipTest(msg)
+
+        # skip if there aren't enough engines
+
+        if cls.ntargets == 'any':
+            cls.context = Context(kind='IPython', client=cls.client)
+            cls.ntargets = len(cls.context.targets)
+        else:
+            try:
+                cls.context = Context(kind='IPython',
+                                     client=cls.client,
+                                     targets=list(range(cls.ntargets)))
+            except ValueError:
+                msg = ("Not enough targets available for this test. (%s) "
+                       "required" % (cls.ntargets))
+                raise unittest.SkipTest(msg)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(IPythonContextTestCase, cls).tearDownClass()
+        try:
+            cls.client.close()
+        except RuntimeError:
+            pass
+
+
+class DefaultContextTestCase(BaseContextTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(DefaultContextTestCase, cls).setUpClass()
 
         # skip if there aren't enough engines
 
@@ -215,14 +257,6 @@ class ContextTestCase(ClientTestCase):
                 msg = ("Not enough targets available for this test. (%s) "
                        "required" % (cls.ntargets))
                 raise unittest.SkipTest(msg)
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.context.close()
-        except RuntimeError:
-            pass
-        super(ContextTestCase, cls).tearDownClass()
 
 
 def check_targets(required, available):

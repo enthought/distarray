@@ -10,7 +10,6 @@ from numpy import arange
 from numpy.testing import assert_array_equal
 
 from distarray import utils
-from distarray.testing import ClientTestCase
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.mpionly_utils import is_solo_mpi_process
 
@@ -78,17 +77,6 @@ class TestHasExactlyOne(unittest.TestCase):
     def test_has_exactly_one_multi_non_none(self):
         iterable = [None, 5, 'abc', None, None]
         self.assertFalse(utils.has_exactly_one(iterable))
-
-
-@unittest.skipIf(not is_solo_mpi_process(), "Ipython only test")
-class TestCountRoundTrips(ClientTestCase):
-    def test_count_round_trips(self):
-        view = self.client[:]
-
-        with utils.count_round_trips(self.client) as r:
-            view.execute('42')
-
-        self.assertEqual(r.count, len(view))
 
 
 if __name__ == '__main__':
