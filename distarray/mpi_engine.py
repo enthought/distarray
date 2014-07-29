@@ -14,7 +14,8 @@ import types
 from distarray.local import LocalArray
 from distarray.local.proxyize import Proxy
 
-from distarray.mpionly_utils import (initial_comm_setup, make_targets_comm,
+from distarray.mpionly_utils import (initial_comm_setup,
+                                     make_targets_comm,
                                      get_comm_world)
 
 
@@ -39,6 +40,7 @@ class Engine(object):
             val = self.parse_msg(msg)
             if val == 'kill':
                 break
+        Engine.INTERCOMM.Free()
 
     def arg_kwarg_proxy_converter(self, args, kwargs):
         module = import_module('__main__')
