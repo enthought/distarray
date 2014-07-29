@@ -32,7 +32,8 @@ from distarray.local.proxyize import Proxy
 # mpi context
 from distarray.mpionly_utils import (make_targets_comm, get_nengines,
                                      get_world_rank, initial_comm_setup,
-                                     is_solo_mpi_process, push_function)
+                                     is_solo_mpi_process, get_comm_world,
+                                     mpi, push_function)
 
 
 @six.add_metaclass(ABCMeta)
@@ -805,11 +806,12 @@ class IPythonContext(BaseContext):
         self._push({key: func}, targets=targets)
 
 
-def _shutdown(intercomm, targets):
+def _shutdown(mpi, intercomm, targets):
     msg = ('kill',)
     for t in targets:
         intercomm.send(msg, dest=t)
     intercomm.Free()
+    mpi.Finalize()
 
 class MPIContext(BaseContext):
 
@@ -849,6 +851,7 @@ class MPIContext(BaseContext):
 
         if BaseContext._CLEANUP is None:
             BaseContext._CLEANUP = atexit.register(_shutdown,
+                                               mpi,
                                                MPIContext.INTERCOMM,
                                                tuple(self.all_targets))
 
@@ -977,23 +980,28 @@ class ContextCreationError(RuntimeError):
     pass
 
 
+def _fire_off_engines(rank):
+    if rank:
+        from distarray.mpi_engine import Engine
+        Engine()
+
 def Context(*args, **kwargs):
 
     kind = kwargs.pop('kind', '')
 
     if not kind:
+        kind = 'ipython' if is_solo_mpi_process() else 'mpi'
 
-        if not is_solo_mpi_process():
-            return MPIContext(*args, **kwargs)
+    if kind.lower().startswith('mpi'):
+
+        CW = get_comm_world()
+        myrank = CW.rank
+        if myrank:
+            _fire_off_engines(myrank)
+            import sys
+            sys.exit()
         else:
-            try:
-                return IPythonContext(*args, **kwargs)
-            except (IOError, EnvironmentError):
-                raise ContextCreationError("Cannot create default context. "
-                                           "Must be run within an MPI communicator or with an accessible IPython.parallel cluster.")
-
-    elif kind.lower().startswith('mpi'):
-        return MPIContext(*args, **kwargs)
+            return MPIContext(*args, **kwargs)
 
     elif kind.lower().startswith('ipython'):
         return IPythonContext(*args, **kwargs)

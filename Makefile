@@ -21,6 +21,9 @@ PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
 MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
 
+
+MPI_ONLY_LAUNCH_TEST := mpiexec -np 5 python ./distarray/dist/tests/launch_mpi.py 
+
 # see if we're using MPICH2, else assume OpenMPI
 ifneq (,$(findstring MPICH2,$(shell mpicc -v 2>&1)))
     MPIEXEC_ARGS := --outfile-pattern ${MPI_OUT_PREFIX}.%r.stdout \
@@ -84,10 +87,12 @@ test_engines_with_coverage: ${PARALLEL_OUT_DIR}
 
 test_mpi:
 	mpiexec -np 1 python -m unittest discover -c : -np 4 distarray/apps/engine.py
+	${MPI_ONLY_LAUNCH_TEST}
 .PHONY: test_mpi
 
 test_mpi_with_coverage:
 	mpiexec -np 1 ${COVERAGE} run -m unittest discover -c : -np 4 ${COVERAGE} run distarray/apps/engine.py
+	${MPI_ONLY_LAUNCH_TEST}
 .PHONY: test_mpi_with_coverage
 
 test: test_client test_engines test_mpi
