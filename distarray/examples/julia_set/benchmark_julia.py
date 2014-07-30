@@ -26,6 +26,7 @@ import argparse
 import json
 from time import time
 from contextlib import closing
+from math import sqrt, floor
 
 import numpy
 
@@ -224,7 +225,7 @@ def do_julia_run(context, dist, dimensions, c, complex_plane, z_max, n_max,
 
 def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                   c_list, re_ax, im_ax, z_max, n_max, output_filename,
-                  kernel=fancy_numpy_julia_calc):
+                  kernel=fancy_numpy_julia_calc, scaling="strong"):
     """Perform a series of Julia set calculations, and print the results.
 
     Loop over all parameter lists.
@@ -257,6 +258,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
     kernel : function
         Kernel to use for computation of the Julia set.  Options are 'fancy',
         'numpy', or 'cython'.
+    scaling: str, either "strong" or "weak"
     """
     max_engine_count = max(engine_count_list)
     with closing(Context()) as context:
@@ -293,6 +295,9 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                     n += 1
                     print(prog_fmt.format(n, n_runs, result[1] - result[0]), result)
                 for engine_count in engine_count_list:
+                    if scaling == "weak":
+                        factor = sqrt(engine_count)
+                        dimensions = (int(floor(resolution * factor)),) * 2
                     for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
@@ -334,8 +339,12 @@ def cli(cmd):
                         dest='output_filename', default='out.json',
                         help=("filename to write the json data to."))
     parser.add_argument("-k", "--kernel", type=str, default='fancy',
+                        choices=("fancy", "numpy", "cython"),
                         help=("kernel to use for computation.  "
                               "Options are 'fancy', 'numpy', or 'cython'."))
+    parser.add_argument("-s", "--scaling", type=str, default="strong",
+                        choices=("strong", "weak"),
+                        help=("Kind of scaling test.  Options are 'strong' or 'weak'"))
     args = parser.parse_args()
 
     ## Default parameters
@@ -360,7 +369,8 @@ def cli(cmd):
     results = do_julia_runs(args.repeat_count, engine_count_list, dist_list,
                             args.resolution_list, c_list, re_ax, im_ax, z_max,
                             n_max, output_filename=args.output_filename,
-                            kernel=fn_from_kernel[args.kernel])
+                            kernel=fn_from_kernel[args.kernel],
+                            scaling=args.scaling)
 
 
 if __name__ == '__main__':

@@ -64,8 +64,8 @@ def process_data(df, ideal_dist='numpy', aggfunc=numpy.min):
     df['Runtime (s)'] = (df['End'] - df['Start']) / numpy.timedelta64(1, 's')
     pdf = df.pivot_table(index='Engines', columns='Dist', values='Runtime (s)',
                          aggfunc=aggfunc)
-    resolution = df.Resolution.iloc[0]
-    kpoints_df = (resolution**2 / pdf) / 1000
+    resolution = df.groupby(['Engines'])['Resolution'].min()
+    kpoints_df = (resolution[:,None]**2 / pdf) / 1000
     kpoints_df['ideal ' + ideal_dist] = kpoints_df[ideal_dist].iloc[0] * kpoints_df.index.values
     del kpoints_df[ideal_dist]
 
