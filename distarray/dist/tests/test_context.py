@@ -157,16 +157,15 @@ class TestRegister(DefaultContextTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestRegister, cls).setUpClass()
-        distribution = Distribution(cls.context, (5, 5))
-        cls.da = cls.context.empty(distribution)
+        cls.da = cls.context.empty((5, 5))
         cls.da.fill(2 * numpy.pi)
 
     def test_local(self):
         context = Context()
 
-        distribution = Distribution(context, (4, 4))
-        da = context.empty(distribution)
-        a = numpy.empty((4, 4))
+        shape = (4, 4)
+        da = context.empty(shape)
+        a = numpy.empty(shape)
 
         def fill_a(a):
             for (i, j), _ in numpy.ndenumerate(a):
@@ -290,21 +289,18 @@ class TestPrimeCluster(DefaultContextTestCase):
     ntargets = 3
 
     def test_1D(self):
-        d = Distribution(self.context, (3,))
-        a = self.context.empty(d)
+        a = self.context.empty((3,))
         self.assertEqual(a.grid_shape, (3,))
 
     def test_2D(self):
-        da = Distribution(self.context, (3, 3))
-        a = self.context.empty(da)
+        a = self.context.empty((3, 3))
         db = Distribution(self.context, (3, 3), dist=('n', 'b'))
         b = self.context.empty(db)
         self.assertEqual(a.grid_shape, (3, 1))
         self.assertEqual(b.grid_shape, (1, 3))
 
     def test_3D(self):
-        da = Distribution(self.context, (3, 3, 3))
-        a = self.context.empty(da)
+        a = self.context.empty((3, 3, 3))
         db = Distribution(self.context, (3, 3, 3),
                                      dist=('n', 'b', 'n'))
         b = self.context.empty(db)

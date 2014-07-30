@@ -23,7 +23,7 @@ import numpy
 from distarray.externals import six
 from distarray.dist import ipython_cleanup
 from distarray.dist.distarray import DistArray
-from distarray.dist.maps import Distribution
+from distarray.dist.maps import Distribution, asdistribution
 
 from distarray.dist.ipython_utils import IPythonClient
 from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
@@ -122,8 +122,9 @@ class BaseContext(object):
         with self.view.temp_flags(targets=targets):
             self.view.apply_sync(_local_delete, key)
 
-    def _create_local(self, local_call, distribution, dtype):
+    def _create_local(self, local_call, shape_or_dist, dtype):
         """Creates LocalArrays with the method named in `local_call`."""
+
         def create_local(local_call, ddpr, dtype, comm):
             from distarray.local.maps import Distribution
             if len(ddpr) == 0:
@@ -135,6 +136,8 @@ class BaseContext(object):
             rval = local_call(distribution=distribution, dtype=dtype)
             return proxyize(rval)
 
+        distribution = asdistribution(self, shape_or_dist)
+
         ddpr = distribution.get_dim_data_per_rank()
         args = [local_call, ddpr, dtype, distribution.comm]
         da_key = self.apply(create_local, args=args,
@@ -142,12 +145,12 @@ class BaseContext(object):
         return DistArray.from_localarrays(da_key, distribution=distribution,
                                           dtype=dtype)
 
-    def empty(self, distribution, dtype=float):
+    def empty(self, shape_or_dist, dtype=float):
         """Create an empty Distarray.
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
         dtype : NumPy dtype, optional (default float)
 
         Returns
@@ -156,14 +159,14 @@ class BaseContext(object):
             A DistArray distributed as specified, with uninitialized values.
         """
         return self._create_local(local_call='distarray.local.empty',
-                                  distribution=distribution, dtype=dtype)
+                                  shape_or_dist=shape_or_dist, dtype=dtype,)
 
-    def zeros(self, distribution, dtype=float):
+    def zeros(self, shape_or_dist, dtype=float):
         """Create a Distarray filled with zeros.
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
         dtype : NumPy dtype, optional (default float)
 
         Returns
@@ -172,14 +175,14 @@ class BaseContext(object):
             A DistArray distributed as specified, filled with zeros.
         """
         return self._create_local(local_call='distarray.local.zeros',
-                                  distribution=distribution, dtype=dtype)
+                                  shape_or_dist=shape_or_dist, dtype=dtype,)
 
-    def ones(self, distribution, dtype=float):
+    def ones(self, shape_or_dist, dtype=float):
         """Create a Distarray filled with ones.
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
         dtype : NumPy dtype, optional (default float)
 
         Returns
@@ -188,7 +191,24 @@ class BaseContext(object):
             A DistArray distributed as specified, filled with ones.
         """
         return self._create_local(local_call='distarray.local.ones',
-                                  distribution=distribution, dtype=dtype,)
+                                  shape_or_dist=shape_or_dist, dtype=dtype,)
+
+    def allclose(self, a, b, rtol=1e-05, atol=1e-08):
+
+        adist = a.distribution
+        bdist = b.distribution
+
+        if not adist.is_compatible(bdist):
+            raise ValueError("%r and %r have incompatible distributions.")
+
+        def local_allclose(la, lb, rtol, atol):
+            from numpy import allclose
+            return allclose(la.ndarray, lb.ndarray, rtol, atol)
+
+        local_results = self.apply(local_allclose, 
+                                  (a.key, b.key, rtol, atol),
+                                  targets=a.targets)
+        return all(local_results)
 
     def save_dnpy(self, name, da):
         """

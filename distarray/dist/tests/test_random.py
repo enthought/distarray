@@ -26,29 +26,32 @@ class TestRandom(DefaultContextTestCase):
         super(TestRandom, cls).setUpClass()
         cls.random = Random(cls.context)
 
-    def test_rand(self):
+    def test_shape_or_distribution(self):
         shape = (3, 4)
         distribution = Distribution(context=self.context, shape=shape)
-        a = self.random.rand(distribution)
+        a = self.random.randn(distribution)
+        b = self.random.randn(shape)
+        self.assertTrue(a.distribution.is_compatible(b.distribution))
+
+    def test_rand(self):
+        shape = (3, 4)
+        a = self.random.rand(shape)
         self.assertEqual(a.shape, shape)
 
     def test_normal(self):
-        shape = (3, 4)  # aka shape
-        distribution = Distribution(context=self.context, shape=shape)
-        a = self.random.normal(distribution)
+        shape = (3, 4)
+        a = self.random.normal(shape)
         self.assertEqual(a.shape, shape)
 
     def test_randint(self):
         low = 1
-        shape = (3, 4)  # aka shape
-        distribution = Distribution(context=self.context, shape=shape)
-        a = self.random.randint(distribution, low=low)
+        shape = (3, 4)
+        a = self.random.randint(shape, low=low)
         self.assertEqual(a.shape, shape)
 
     def test_randn(self):
         shape = (3, 4)
-        distribution = Distribution(context=self.context, shape=shape)
-        a = self.random.randn(distribution)
+        a = self.random.randn(shape)
         self.assertEqual(a.shape, shape)
 
     def test_seed_same(self):

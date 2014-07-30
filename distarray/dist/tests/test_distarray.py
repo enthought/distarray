@@ -891,7 +891,7 @@ class TestReduceMethods(DefaultContextTestCase):
         arr.fill(3)
         dist = Distribution(self.context, shape=shape,
                             dist=('c', 'c', 'c', 'c'))
-        darr = self.context.empty(distribution=dist)
+        darr = self.context.empty(shape_or_dist=dist)
         darr.fill(3)
         for axis in range(4):
             arr_sum = arr.sum(axis=axis)

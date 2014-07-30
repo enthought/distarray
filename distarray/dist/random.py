@@ -10,6 +10,7 @@
 from __future__ import absolute_import
 
 from distarray.dist.distarray import DistArray
+from distarray.dist.maps import asdistribution
 
 
 class Random(object):
@@ -43,7 +44,7 @@ class Random(object):
                            (seed, self.context.comm),
                            targets=self.context.targets)
 
-    def rand(self, distribution):
+    def rand(self, shape_or_dist):
         """Random values over a given distribution.
 
         Create a distarray of the given shape and propagate it with
@@ -52,7 +53,7 @@ class Random(object):
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
 
         Returns
         -------
@@ -60,9 +61,9 @@ class Random(object):
             Random values.
 
         """
-        return self._local_rand_call('rand', distribution)
+        return self._local_rand_call('rand', shape_or_dist)
 
-    def normal(self, distribution, loc=0.0, scale=1.0):
+    def normal(self, shape_or_dist, loc=0.0, scale=1.0):
         """Draw random samples from a normal (Gaussian) distribution.
 
         The probability density function of the normal distribution, first
@@ -81,7 +82,7 @@ class Random(object):
             Mean ("centre") of the distribution.
         scale : float
             Standard deviation (spread or "width") of the distribution.
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
 
         Notes
         -----
@@ -109,10 +110,10 @@ class Random(object):
                pp. 51, 51, 125.
 
         """
-        return self._local_rand_call('normal', distribution,
+        return self._local_rand_call('normal', shape_or_dist,
                                      dict(loc=loc, scale=scale))
 
-    def randint(self, distribution, low, high=None):
+    def randint(self, shape_or_dist, low, high=None):
         """Return random integers from `low` (inclusive) to `high` (exclusive).
 
         Return random integers from the "discrete uniform" distribution in the
@@ -121,7 +122,7 @@ class Random(object):
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
         low : int
             Lowest (signed) integer to be drawn from the distribution (unless
             ``high=None``, in which case this parameter is the *highest* such
@@ -136,15 +137,15 @@ class Random(object):
             DistArray of random integers from the appropriate distribution.
 
         """
-        return self._local_rand_call('randint', distribution,
+        return self._local_rand_call('randint', shape_or_dist,
                                      dict(low=low, high=high))
 
-    def randn(self, distribution):
+    def randn(self, shape_or_dist):
         """Return samples from the "standard normal" distribution.
 
         Parameters
         ----------
-        distribution : Distribution object
+        shape_or_dist : shape tuple or Distribution object
 
         Returns
         -------
@@ -152,9 +153,9 @@ class Random(object):
             A DistArray of floating-point samples from the standard normal
             distribution.
         """
-        return self._local_rand_call('randn', distribution)
+        return self._local_rand_call('randn', shape_or_dist)
 
-    def _local_rand_call(self, local_func_name, distribution, kwargs=None):
+    def _local_rand_call(self, local_func_name, shape_or_dist, kwargs=None):
 
         kwargs = kwargs or {}
 
@@ -169,6 +170,7 @@ class Random(object):
             dist = Distribution(dim_data=dim_data, comm=comm)
             return proxyize(local_func(distribution=dist, **kwargs))
 
+        distribution = asdistribution(self.context, shape_or_dist)
         ddpr = distribution.get_dim_data_per_rank()
         args = (distribution.comm, local_func_name, ddpr, kwargs)
 
