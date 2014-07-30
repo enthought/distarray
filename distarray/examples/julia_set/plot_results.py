@@ -65,11 +65,11 @@ def process_data(df, ideal_dist='numpy', aggfunc=numpy.min):
     pdf = df.pivot_table(index='Engines', columns='Dist', values='Runtime (s)',
                          aggfunc=aggfunc)
     resolution = df.groupby(['Engines'])['Resolution'].min()
-    kpoints_df = (resolution[:,None]**2 / pdf) / 1000
-    kpoints_df['ideal ' + ideal_dist] = kpoints_df[ideal_dist].iloc[0] * kpoints_df.index.values
-    del kpoints_df[ideal_dist]
+    mpoints_df = (resolution[:,None]**2 / pdf) / 10**6
+    mpoints_df['ideal ' + ideal_dist] = mpoints_df[ideal_dist].iloc[0] * mpoints_df.index.values
+    del mpoints_df[ideal_dist]
 
-    return kpoints_df
+    return mpoints_df
 
 
 def plot_points(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
@@ -95,7 +95,7 @@ def plot_points(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     pyplot.suptitle("Julia Set Benchmark")
     pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
-    pyplot.ylabel('kpoints / s')
+    pyplot.ylabel('mpoints / s')
     pyplot.legend(dfmed.columns, loc='upper left')
     pyplot.grid(axis='y')
     pyplot.show()
@@ -136,7 +136,7 @@ def plot_ratios(dfmed, dfmin, dfmax, subtitle, ideal_dist='numpy'):
     pyplot.suptitle("Julia Set Benchmark (ratios)")
     pyplot.title(subtitle, fontsize=12)
     pyplot.xlabel('Engine Count')
-    pyplot.ylabel('kpoints / ideal kpoints')
+    pyplot.ylabel('mpoints / ideal mpoints')
     pyplot.legend(dfmed.columns, loc='lower left')
     pyplot.grid(axis='y')
     pyplot.show()
