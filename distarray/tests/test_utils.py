@@ -10,7 +10,7 @@ from numpy import arange
 from numpy.testing import assert_array_equal
 
 from distarray import utils
-from distarray.dist.ipython_utils import IPythonClient
+from distarray.globalapi.ipython_utils import IPythonClient
 from distarray.mpionly_utils import is_solo_mpi_process
 
 

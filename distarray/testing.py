@@ -19,10 +19,10 @@ import numpy as np
 
 from distarray.externals import six
 from distarray.externals import protocol_validator
-from distarray.dist.context import Context, ContextCreationError
-from distarray.dist.ipython_utils import IPythonClient
+from distarray.globalapi.context import Context, ContextCreationError
+from distarray.globalapi.ipython_utils import IPythonClient
 from distarray.error import InvalidCommSizeError
-from distarray.local.mpiutils import MPI, create_comm_of_size
+from distarray.localapi.mpiutils import MPI, create_comm_of_size
 
 
 def raise_typeerror(fn):

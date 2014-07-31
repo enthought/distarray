@@ -11,8 +11,8 @@ from functools import reduce
 from importlib import import_module
 import types
 
-from distarray.local import LocalArray
-from distarray.local.proxyize import Proxy
+from distarray.localapi import LocalArray
+from distarray.localapi.proxyize import Proxy
 
 from distarray.mpionly_utils import (initial_comm_setup,
                                      make_targets_comm,

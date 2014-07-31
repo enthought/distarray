@@ -22,8 +22,8 @@ from timeit import default_timer as clock
 import numpy as np
 from matplotlib import pyplot
 
-from distarray.dist import Context, Distribution
-from distarray.dist.decorators import local, vectorize
+from distarray.globalapi import Context, Distribution
+from distarray.globalapi.decorators import local, vectorize
 
 
 # Make an empty distributed array

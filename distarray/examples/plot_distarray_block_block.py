@@ -11,7 +11,7 @@ Create a distarray, then plot its array distribution.
 from matplotlib import pyplot
 
 from distarray import plotting
-from distarray.dist import Context, Distribution
+from distarray.globalapi import Context, Distribution
 
 
 c = Context()

@@ -30,8 +30,8 @@ from math import sqrt, floor
 
 import numpy
 
-from distarray.dist import Context, Distribution
-from distarray.dist.distarray import DistArray
+from distarray.globalapi import Context, Distribution
+from distarray.globalapi.distarray import DistArray
 
 
 def numpy_julia_calc(z, c, z_max, n_max):
@@ -137,7 +137,7 @@ def local_julia_calc(la, c, z_max, n_max, kernel):
         Kernel to use for computation of the Julia set.  Options are 'fancy',
         'numpy', or 'cython'.
     """
-    from distarray.local import LocalArray
+    from distarray.localapi import LocalArray
     counts = kernel(la, c, z_max, n_max)
     res = LocalArray(la.distribution, buf=counts)
     return proxyize(res)  # noqa

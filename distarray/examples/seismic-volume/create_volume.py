@@ -36,8 +36,8 @@ import numpy.random
 import h5py
 from numpy import linspace, float32
 
-from distarray.dist import Context, Distribution
-from distarray.dist.distarray import DistArray
+from distarray.globalapi import Context, Distribution
+from distarray.globalapi.distarray import DistArray
 
 
 # Physical size of volume.
@@ -84,7 +84,7 @@ def local_create_horizon(horizon_la, physical_x, physical_y, normal, D):
                 y = physical_xy[i, j, 1]
                 horizon[i, j] = plane(x, y, normal=normal, D=D)
 
-    from distarray.local import LocalArray
+    from distarray.localapi import LocalArray
     horizon = horizon_la.ndarray
     shape = horizon.shape
     # Get physical x and y values in an array the same shape as the horizon.

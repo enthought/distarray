@@ -14,7 +14,7 @@ NPROCS := 12
 
 PARALLEL_OUT_DIR := .parallel_out
 
-PARALLEL_UNITTEST_ARGS := -m unittest discover -s distarray/local/tests -p 'paralleltest*.py'
+PARALLEL_UNITTEST_ARGS := -m unittest discover -s distarray/localapi/tests -p 'paralleltest*.py'
 PARALLEL_TEST_REGULAR := ${PYTHON} ${PARALLEL_UNITTEST_ARGS}
 PARALLEL_TEST_COVERAGE := ${COVERAGE} run -p ${PARALLEL_UNITTEST_ARGS}
 
@@ -22,7 +22,7 @@ MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
 
 
-MPI_ONLY_LAUNCH_TEST := mpiexec -np 5 python ./distarray/dist/tests/launch_mpi.py 
+MPI_ONLY_LAUNCH_TEST := mpiexec -np 5 python ./distarray/globalapi/tests/launch_mpi.py 
 
 # see if we're using MPICH2, else assume OpenMPI
 ifneq (,$(findstring MPICH2,$(shell mpicc -v 2>&1)))

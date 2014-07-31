@@ -9,7 +9,7 @@ from __future__ import print_function
 import numpy
 from distarray.externals.six.moves import input
 
-from distarray.dist import Context, Distribution
+from distarray.globalapi import Context, Distribution
 from pprint import pprint
 
 context = Context()
@@ -29,9 +29,9 @@ context.register(local_sin_plus_50)
 
 def global_sum(da):
     """Reproducing the `sum` function in LocalArray."""
-    from distarray.local.mpiutils import MPI
-    from distarray.local import LocalArray
-    from distarray.local.maps import Distribution
+    from distarray.localapi.mpiutils import MPI
+    from distarray.localapi import LocalArray
+    from distarray.localapi.maps import Distribution
 
     local_sum = da.ndarray.sum()
     global_sum = da.comm.allreduce(local_sum, None, op=MPI.SUM)
