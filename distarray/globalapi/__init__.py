@@ -4,13 +4,9 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-"""
-Create a distarray.
-"""
+from __future__ import absolute_import
 
-from distarray.globalapi import Context, Distribution
-
-
-c = Context()
-d = Distribution(c, (10, 10, 10), dist=('b', 'n', 'c'))
-a = c.zeros(d, dtype='int32')
+from distarray.globalapi.distarray import DistArray
+from distarray.globalapi.context import Context, ContextCreationError
+from distarray.globalapi.maps import Distribution
+from distarray.globalapi.functions import *

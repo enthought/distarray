@@ -16,8 +16,8 @@ import sys
 
 from util import timer
 
-from distarray.dist import Context, Distribution, hypot
-from distarray.dist.random import Random
+from distarray.globalapi import Context, Distribution, hypot
+from distarray.globalapi.random import Random
 
 
 context = Context()

@@ -19,7 +19,7 @@ engines should be launched with MPI, using the MPIEngineSetLauncher.
 import unittest
 
 from distarray.testing import DefaultContextTestCase
-from distarray.dist import Distribution
+from distarray.globalapi import Distribution
 from distarray.testing import import_or_skip
 
 

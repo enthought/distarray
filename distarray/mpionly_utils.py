@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from mpi4py import MPI as mpi
 
 from distarray.utils import uid
-from distarray.local.proxyize import Proxy
+from distarray.localapi.proxyize import Proxy
 
 
 client_rank = 0

@@ -20,7 +20,7 @@ def get_ranks(arr):
     with the elements equal to the rank of the process the element is
     on.
     """
-    from distarray.local import LocalArray
+    from distarray.localapi import LocalArray
     out = LocalArray(distribution=arr.distribution, dtype=int)
     out.fill(arr.comm_rank)
     return out

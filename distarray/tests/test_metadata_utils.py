@@ -6,7 +6,7 @@
 
 import unittest
 from distarray import metadata_utils
-from distarray.dist import Distribution, Context
+from distarray.globalapi import Distribution, Context
 
 from distarray.testing import DefaultContextTestCase
 

@@ -35,8 +35,8 @@ import numpy
 import h5py
 from matplotlib import pyplot
 
-from distarray.dist import Context, Distribution
-from distarray.dist.distarray import DistArray
+from distarray.globalapi import Context, Distribution
+from distarray.globalapi.distarray import DistArray
 
 
 # Load/save of seismic data from HDF5 for .dnpy files.
@@ -240,7 +240,7 @@ def local_filter_avg3(la):
         b[:, :, -1] = (a[:, :, -2] + a[:, :, -1]) / 2.0
         return b
 
-    from distarray.local import LocalArray
+    from distarray.localapi import LocalArray
     a = la.ndarray
     b = filter_avg3(a)
     res = LocalArray(la.distribution, buf=b)
@@ -276,7 +276,7 @@ def local_filter_max3(la):
             b[:, :, k] = a[:, :, k0:k1 + 1].max(axis=2)
         return b
 
-    from distarray.local import LocalArray
+    from distarray.localapi import LocalArray
     a = la.ndarray
     b = filter_max3(a)
     res = LocalArray(la.distribution, buf=b)
