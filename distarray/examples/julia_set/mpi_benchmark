@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Usage: mpi_benchmark <reps> <output_filename> <kernel> <resolution>
+
+mpiexec -n 13 python benchmark_julia.py -r$1 -o$2 --kernel=$3 $4

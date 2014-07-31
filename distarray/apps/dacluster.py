@@ -18,10 +18,12 @@ from time import sleep
 from subprocess import Popen, PIPE
 
 from distarray.externals import six
-from distarray.dist.cleanup import clear_all
+from distarray.globalapi.ipython_cleanup import clear_all
 
 
-if six.PY2:
+is_anaconda = "Anaconda" in sys.version or "Continuum" in sys.version
+
+if six.PY2 or is_anaconda:
     ipcluster_cmd = 'ipcluster'
 elif six.PY3:
     ipcluster_cmd = 'ipcluster3'
@@ -93,6 +95,11 @@ def clear(**kwargs):
 
 
 def main():
+    """ Main function for dacluster utility.
+
+    Either start, stop, restart, or clear is called depending on the
+    command line arguments.
+    """
     main_description = """
     Start, stop and manage a IPython.parallel cluster. `dacluster` can take
     all the commands IPython's `ipcluster` can, and a few extras that are
@@ -152,6 +159,7 @@ def main():
     # run it
     args = parser.parse_args()
     args.func(**vars(args))
+
 
 if __name__ == '__main__':
     main()

@@ -4,5 +4,6 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
-__version__ = "0.4.0"
+from distarray.__version__ import __version__
+from distarray.run_tests import test
 DISTARRAY_BASE_NAME = '__distarray__'

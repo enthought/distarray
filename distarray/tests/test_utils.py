@@ -10,7 +10,9 @@ from numpy import arange
 from numpy.testing import assert_array_equal
 
 from distarray import utils
-from distarray.dist.ipython_utils import IPythonClient
+from distarray.globalapi.ipython_utils import IPythonClient
+from distarray.mpionly_utils import is_solo_mpi_process
+
 
 class TestMultPartitions(unittest.TestCase):
     """
@@ -29,7 +31,6 @@ class TestMultPartitions(unittest.TestCase):
                                                         (1, 2, 2, 4),
                                                         (2, 2, 2, 2)])
         self.assertEqual(utils.mult_partitions(6, 3), [(1, 1, 6), (1, 2, 3)])
-
 
 
 class TestSliceIntersection(unittest.TestCase):
@@ -76,17 +77,6 @@ class TestHasExactlyOne(unittest.TestCase):
     def test_has_exactly_one_multi_non_none(self):
         iterable = [None, 5, 'abc', None, None]
         self.assertFalse(utils.has_exactly_one(iterable))
-
-
-class TestCountRoundTrips(unittest.TestCase):
-    def test_count_round_trips(self):
-        client = IPythonClient()
-        view = client[:]
-
-        with utils.count_round_trips(client) as r:
-            view.execute('42')
-
-        self.assertEqual(r.count, len(view))
 
 
 if __name__ == '__main__':
