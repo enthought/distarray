@@ -501,7 +501,7 @@ class DistArray(object):
 
 
         def _local_redistribute(comm, plan, la_from, la_to):
-            from distarray.local import redistribute
+            from distarray.localapi import redistribute
             redistribute(comm, plan, la_from, la_to)
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),

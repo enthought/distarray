@@ -740,7 +740,7 @@ class IPythonContext(BaseContext):
     def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False, default=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -761,7 +761,7 @@ class IPythonContext(BaseContext):
             return a list of the results on the each engine.
         """
 
-        def func_wrapper(func, apply_nonce, context_key, args, kwargs, autoproxyize):
+        def func_wrapper(func, apply_nonce, context_key, args, kwargs, autoproxyize, default):
             """
             Function which calls the applied function after grabbing all the
             arguments on the engines that are passed in as names of the form
@@ -794,14 +794,20 @@ class IPythonContext(BaseContext):
             args = list(args)
             for i, a in enumerate(args):
                 if isinstance(a, main.Proxy):
-                    args[i] = a.dereference()
+                    try:
+                        args[i] = a.dereference()
+                    except AttributeError:
+                        args[i] = default
             args = tuple(args)
 
             # convert kwargs
             for k in kwargs.keys():
                 val = kwargs[k]
                 if isinstance(val, main.Proxy):
-                    kwargs[k] = val.dereference()
+                    try:
+                        kwargs[k] = val.dereference()
+                    except AttributeError:
+                        kwargs[k] = default
 
             result = func(*args, **kwargs)
 
@@ -814,7 +820,7 @@ class IPythonContext(BaseContext):
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
         apply_nonce = uid()[13:]
-        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize)
+        wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize, default)
 
         targets = self.targets if targets is None else targets
 
@@ -946,7 +952,7 @@ class MPIContext(BaseContext):
         msg = ('push', d)
         return self._send_msg(msg, targets=targets)
 
-    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False, default=None):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -984,10 +990,10 @@ class MPIContext(BaseContext):
 
             func_data = (func_code, func_name, func_defaults, func_closure)
 
-            msg = ('func_call', func_data, args, kwargs, apply_metadata, autoproxyize)
+            msg = ('func_call', func_data, args, kwargs, apply_metadata, autoproxyize, default)
 
         else:
-            msg = ('builtin_call', func, args, kwargs, autoproxyize)
+            msg = ('builtin_call', func, args, kwargs, autoproxyize, default)
 
         self._send_msg(msg, targets=targets)
         return self._recv_msg(targets=targets)
