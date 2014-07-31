@@ -519,6 +519,13 @@ class UnstructuredMap(MapBase):
 # N-Dimensional map.
 # ---------------------------------------------------------------------------
 
+def asdistribution(context, shape_or_dist, dist=None, grid_shape=None, targets=None):
+    if isinstance(shape_or_dist, Distribution):
+        return shape_or_dist
+    return Distribution(context=context, shape=shape_or_dist,
+                        dist=dist, grid_shape=grid_shape,
+                        targets=targets)
+
 class Distribution(object):
 
     """ Governs the mapping between global indices and process ranks for
