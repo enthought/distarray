@@ -20,18 +20,20 @@ from distarray.testing import DefaultContextTestCase
 import distarray.globalapi.functions as functions
 from distarray.globalapi import Context, ContextCreationError
 
+SKIP = True
 try:
     glb_ctx = Context()
-except ContextCreationError:
-    raise unittest.SkipTest()
+    SKIP = False
+except EnvironmentError:
+    pass
 
 def setUpModule():
     global glb_ctx
-    if not glb_ctx:
+    if not SKIP and not glb_ctx:
         glb_ctx = Context()
 
 def tearDownModule():
-    if glb_ctx:
+    if not SKIP and glb_ctx:
         glb_ctx.close()
 
 def add_checkers(cls, ops_and_data, checker_name):
@@ -48,10 +50,14 @@ def add_checkers(cls, ops_and_data, checker_name):
 
     ops, data = ops_and_data
 
-    dist_data = tuple(glb_ctx.fromndarray(d) for d in data)
+    if not SKIP:
+        dist_data = tuple(glb_ctx.fromndarray(d) for d in data)
 
     def check(op_name):
-        return lambda self: op_checker(self, op_name, data, dist_data)
+        if SKIP:
+            return lambda self: None
+        else:
+            return lambda self: op_checker(self, op_name, data, dist_data)
 
     for op_name in ops:
         op_test_name = 'test_' + op_name
