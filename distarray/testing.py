@@ -214,25 +214,27 @@ class IPythonContextTestCase(BaseContextTestCase):
 
     @classmethod
     def make_context(cls, targets=None):
-        return Context(kind='IPython', targets=targets)
+        try:
+            return Context(kind='IPython', targets=targets)
+        except EnvironmentError:
+            msg = "You must have an ipcluster running to run this test case."
+            raise unittest.SkipTest(msg)
 
     @classmethod
     def setUpClass(cls):
-        try:
-            super(IPythonContextTestCase, cls).setUpClass()
-        # except EnvironmentError:
-        except IOError:
-            msg = "You must have an ipcluster running to run this test case."
-            raise unittest.SkipTest(msg)
-        else:
-            cls.client = cls.context.client
+        super(IPythonContextTestCase, cls).setUpClass()
+        cls.client = cls.context.client
 
 
 class DefaultContextTestCase(BaseContextTestCase):
 
     @classmethod
     def make_context(cls, targets=None):
-        return Context(targets=targets)
+        try:
+            return Context(targets=targets)
+        except EnvironmentError:
+            msg = "You must have an ipcluster running to run this test case."
+            raise unittest.SkipTest(msg)
 
 
 def check_targets(required, available):
