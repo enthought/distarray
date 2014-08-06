@@ -6,8 +6,6 @@
 
 """
 Calculate pi using a Monte Carlo method using pure NumPy.
-Usage:
-    python pi_numpy.py <number of points>
 """
 
 import sys
@@ -25,8 +23,18 @@ def calc_pi(n):
     r = numpy.hypot(x, y)
     return 4 * float((r < 1.).sum()) / n
 
-if __name__ == '__main__':
-    # Get the number of points.
-    N = int(sys.argv[1])
+
+def main(N):
     result, time = calc_pi(N)
     print('time  : %3.4g\nresult: %.7f' % (time, result))
+
+
+if __name__ == '__main__':
+    import argparse
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=formatter)
+    parser.add_argument("npoints", metavar="N", type=int,
+                        help=("number of points to use in estimation"))
+    args = parser.parse_args()
+    main(args.npoints)

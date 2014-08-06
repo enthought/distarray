@@ -6,8 +6,6 @@
 
 """
 Calculate pi using a Monte Carlo method using IPython Parallel.
-Usage:
-    python pi_ipython_parallel.py <number of points>
 """
 
 import sys
@@ -35,8 +33,19 @@ def calc_pi(n):
     results = view.apply_sync(calc_pi_on_engines, n_engines)
     return float(sum(results))/len(results)
 
-if __name__ == "__main__":
-    N = int(sys.argv[1])
+
+def main(N):
     result, time = calc_pi(N)
     print('time  : %3.4g\nresult: %.7f' % (time, result))
     client.purge_everything()
+
+
+if __name__ == '__main__':
+    import argparse
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=formatter)
+    parser.add_argument("npoints", metavar="N", type=int,
+                        help=("number of points to use in estimation"))
+    args = parser.parse_args()
+    main(args.npoints)
