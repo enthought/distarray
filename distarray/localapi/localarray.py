@@ -74,10 +74,11 @@ def _massage_indices(local_distribution, glb_intervals):
                             for i in glb_intervals]
     return _condense(local_flat_slices)
 
-def _mpi_dtype_from_intervals(npdtype, local_intervals):
+def _mpi_dtype_from_intervals(larr, glb_intervals):
+    local_intervals = _massage_indices(larr.distribution, glb_intervals)
     blocklengths = [stop-start for (start, stop) in local_intervals]
     displacements = [start for (start, _) in local_intervals]
-    mpidtype = MPI.__TypeDict__[np.sctype2char(npdtype)]
+    mpidtype = MPI.__TypeDict__[np.sctype2char(larr.dtype)]
     newtype = mpidtype.Create_indexed(blocklengths, displacements)
     newtype.Commit()
     return newtype
@@ -87,21 +88,17 @@ def redistribute_general(comm, plan, la_from, la_to):
     for dta in plan:
         if dta['source_rank'] == dta['dest_rank'] == myrank:
             # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
-            from_intervals = _massage_indices(la_from.distribution, dta['indices'])
-            to_intervals = _massage_indices(la_to.distribution, dta['indices'])
-            from_dtype = _mpi_dtype_from_intervals(la_from.dtype, from_intervals)
-            to_dtype = _mpi_dtype_from_intervals(la_to.dtype, to_intervals)
+            from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
+            to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
             comm.Sendrecv(sendbuf=[la_from.ndarray, 1, from_dtype], dest=myrank,
                           recvbuf=[la_to.ndarray, 1, to_dtype], source=myrank)
         elif dta['source_rank'] == myrank:
             # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
-            from_intervals = _massage_indices(la_from.distribution, dta['indices'])
-            from_dtype = _mpi_dtype_from_intervals(la_from.dtype, from_intervals)
+            from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
             comm.Send([la_from.ndarray, 1, from_dtype], dest=dta['dest_rank'])
         elif dta['dest_rank'] == myrank:
             # mpi_print("receiving from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
-            to_intervals = _massage_indices(la_to.distribution, dta['indices'])
-            to_dtype = _mpi_dtype_from_intervals(la_to.dtype, to_intervals)
+            to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
             comm.Recv([la_to.ndarray, 1, to_dtype], source=dta['source_rank'])
 
 def redistribute(comm, plan, la_from, la_to):
