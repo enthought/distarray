@@ -563,6 +563,12 @@ def create_distribution_plot_and_documentation_all(context):
 
 
 def main():
+    import argparse
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=formatter)
+    parser.parse_args()
+
     context = distarray.globalapi.Context()
     num_targets = len(context.targets)
     # Examples are designed for various engine counts...
