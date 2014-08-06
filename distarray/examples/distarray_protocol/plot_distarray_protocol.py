@@ -11,7 +11,7 @@ The output from this script should be directly usable in the Distributed Array
 Protocol documentation (if saved as examples.rst).  The output .png files
 should be copied to the images folder as well.
 
-To generate the documentation, run
+To generate the documentation, run:
 
     $ python plot_distarray_protocol.py > examples.rst
 
@@ -35,18 +35,14 @@ from distarray import plotting
 from distarray.globalapi import Distribution
 
 
-def print_array_documentation(context,
-                              array,
-                              title,
-                              text,
-                              global_plot_filename,
-                              local_plot_filename):
-    """ Print some properties of the array.
+def print_array_documentation(context, array, title, text,
+                              global_plot_filename, local_plot_filename):
+    """Print some properties of the array.
 
-    The output is rst formatted, so that it can be directly
-    used for documentation. It includes a plot of the array distribution,
-    some properties that are same for each process, and properties that
-    vary per process.
+    The output is rst formatted so that it can be directly used for
+    documentation. It includes a plot of the array distribution, some
+    properties that are same for each process, and properties that vary per
+    process.
 
     Parameters
     ----------
@@ -73,7 +69,8 @@ def print_array_documentation(context,
         return trims
 
     def rst_code(lines):
-        """ Format a list of lines into a python code block.
+        """Format a list of lines into a python code block.
+
         Returns a list of text lines.
         """
         code_lines = []
@@ -185,13 +182,12 @@ def print_array_documentation(context,
     # Examine the array on all the engines.
     def _array_attrs(local_arr):
         distbuffer = local_arr.__distarray__()
-        return dict(
-                db_keys=list(distbuffer.keys()),
-                db_version=distbuffer["__version__"],
-                db_buffer=distbuffer["buffer"],
-                db_dim_data=distbuffer["dim_data"],
-                db_coords=local_arr.cart_coords,
-                )
+        return dict(db_keys=list(distbuffer.keys()),
+                    db_version=distbuffer["__version__"],
+                    db_buffer=distbuffer["buffer"],
+                    db_dim_data=distbuffer["dim_data"],
+                    db_coords=local_arr.cart_coords,
+                    )
 
     attrs = context.apply(_array_attrs, (array.key,),
                           targets=array.targets)
@@ -277,9 +273,7 @@ def print_array_documentation(context,
 
 
 def create_distribution_plot_and_documentation(context, params):
-    """ Create an array distribution plot,
-    and the related .rst documentation.
-    """
+    """Create an array distribution plot and the related .rst documentation."""
 
     def shape_text(shape):
         """ Get a text string describing the array shape. """
@@ -398,8 +392,7 @@ def create_distribution_plot_and_documentation(context, params):
 
 
 def create_distribution_plot_and_documentation_all(context):
-    """ Create plots for the distributed array protocol documentation. """
-
+    """Create plots for the distributed array protocol documentation."""
     # Some random values for undistributed example.
     # Use a fixed seed for reproducibility.
     rows, cols = 5, 9
