@@ -45,3 +45,8 @@ of the 3-point average filter is written out to a .hdf5 file and to a set of
 
 The script will also perform many of these operations using NumPy directly and
 check that it gets the same results as when operating on the distributed array.
+
+seismic_volume.ipynb
+--------------------
+
+This is a simplified version of the above example as an IPython notebook.
