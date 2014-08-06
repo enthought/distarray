@@ -8,7 +8,6 @@
 Calculate pi using a Monte Carlo method using IPython Parallel.
 """
 
-import sys
 from IPython.parallel import Client, interactive
 
 from util import timer

@@ -8,7 +8,6 @@
 Calculate pi using a Monte Carlo method using pure NumPy.
 """
 
-import sys
 import numpy
 from numpy import random
 
