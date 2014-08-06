@@ -6,6 +6,9 @@
 
 from __future__ import print_function, division
 
+def mpi_print(*args, **kwargs):
+    from distarray.mpionly_utils import get_world_rank
+    print("[%d]" % get_world_rank(), *args, **kwargs)
 
 # ---------------------------------------------------------------------------
 # Imports
@@ -26,6 +29,79 @@ from distarray.localapi.error import InvalidDimensionError, IncompatibleArrayErr
 def make_local_slices(local_arr, glb_indices):
     slices = tuple(slice(*inds) for inds in glb_indices)
     return local_arr.local_from_global(slices)
+
+def ndim_from_flat(flat, strides):
+    res = []
+    for st in strides:
+        res.append(flat // st)
+        flat %= st
+    return tuple(res)
+
+def flat_from_ndim(ndim, strides):
+    return sum(i * s for (i, s) in zip(ndim, strides))
+
+def _accum(start, next):
+    return tuple(s * next for s in start) + (next,)
+
+def _get_strides(shape):
+    return reduce(_accum, tuple(shape[1:]) + (1,), ())
+
+def _transform(local_distribution, glb_flat):
+    glb_strides = _get_strides(local_distribution.global_shape)
+    local_strides = _get_strides(local_distribution.local_shape)
+    glb_ndim_inds = ndim_from_flat(glb_flat, glb_strides)
+    local_ind = local_distribution.local_from_global(glb_ndim_inds, check_bounds=False)
+    local_flat = local_distribution.local_flat_from_local(local_ind)
+    return local_flat
+
+def _squeeze(accum, next):
+    last = accum[-1]
+    if not last:
+        return [next]
+    elif last[-1] != next[0]:
+        return accum + [next]
+    elif last[-1] == next[0]:
+        return accum[:-1] + [(last[0], next[-1])]
+
+def _condense(intervals):
+    intervals = reduce(_squeeze, intervals, [[]])
+    return intervals
+
+def _massage_indices(local_distribution, glb_intervals):
+    local_flat_slices = [(_transform(local_distribution, i[0]),
+                          _transform(local_distribution, i[1]))
+                            for i in glb_intervals]
+    return _condense(local_flat_slices)
+
+def _mpi_dtype_from_intervals(npdtype, local_intervals):
+    blocklengths = [stop-start for (start, stop) in local_intervals]
+    displacements = [start for (start, _) in local_intervals]
+    mpidtype = MPI.__TypeDict__[np.sctype2char(npdtype)]
+    newtype = mpidtype.Create_indexed(blocklengths, displacements)
+    newtype.Commit()
+    return newtype
+
+def redistribute_general(comm, plan, la_from, la_to):
+    myrank = comm.Get_rank()
+    for dta in plan:
+        if dta['source_rank'] == dta['dest_rank'] == myrank:
+            # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
+            from_intervals = _massage_indices(la_from.distribution, dta['indices'])
+            to_intervals = _massage_indices(la_to.distribution, dta['indices'])
+            from_dtype = _mpi_dtype_from_intervals(la_from.dtype, from_intervals)
+            to_dtype = _mpi_dtype_from_intervals(la_to.dtype, to_intervals)
+            comm.Sendrecv(sendbuf=[la_from.ndarray, 1, from_dtype], dest=myrank,
+                          recvbuf=[la_to.ndarray, 1, to_dtype], source=myrank)
+        elif dta['source_rank'] == myrank:
+            # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
+            from_intervals = _massage_indices(la_from.distribution, dta['indices'])
+            from_dtype = _mpi_dtype_from_intervals(la_from.dtype, from_intervals)
+            comm.Send([la_from.ndarray, 1, from_dtype], dest=dta['dest_rank'])
+        elif dta['dest_rank'] == myrank:
+            # mpi_print("receiving from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
+            to_intervals = _massage_indices(la_to.distribution, dta['indices'])
+            to_dtype = _mpi_dtype_from_intervals(la_to.dtype, to_intervals)
+            comm.Recv([la_to.ndarray, 1, to_dtype], source=dta['source_rank'])
 
 def redistribute(comm, plan, la_from, la_to):
     myrank = comm.Get_rank()

@@ -494,15 +494,22 @@ class DistArray(object):
                                           dtype=dtype)
 
     def distribute_as(self, dist):
-
         plan = self.distribution.get_redist_plan(dist)
         ubercomm, all_targets = self.distribution.comm_union(dist)
         result = DistArray(dist, dtype=self.dtype)
 
-
-        def _local_redistribute(comm, plan, la_from, la_to):
+        def _local_redistribute_same_shape(comm, plan, la_from, la_to):
             from distarray.localapi import redistribute
             redistribute(comm, plan, la_from, la_to)
+
+        def _local_redistribute_general(comm, plan, la_from, la_to):
+            from distarray.localapi import redistribute_general
+            redistribute_general(comm, plan, la_from, la_to)
+
+        if self.distribution.shape == dist.shape:
+            _local_redistribute = _local_redistribute_same_shape
+        else:
+            _local_redistribute = _local_redistribute_general
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=all_targets)

@@ -20,7 +20,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 from distarray.externals.six.moves import range
 from distarray.testing import DefaultContextTestCase
 from distarray.globalapi.distarray import DistArray
-from distarray.globalapi.maps import Distribution
+from distarray.globalapi.maps import Distribution, global_flat_indices
 
 
 class TestDistArray(DefaultContextTestCase):
@@ -1048,13 +1048,13 @@ class TestBlockRedistribution(DefaultContextTestCase):
         source_dist = Distribution(self.context, (nrows, ncols),
                                    ('b', 'b'), (2, 2), targets=range(4))
         dest_gdd = (
-                {
-                    'dist_type': 'b',
-                    'bounds': [0, nrows//3, nrows],
+                    {
+                        'dist_type': 'b',
+                        'bounds': [0, nrows//3, nrows],
                     },
-                {
-                    'dist_type': 'b',
-                    'bounds': [0, ncols//3, ncols],
+                    {
+                        'dist_type': 'b',
+                        'bounds': [0, ncols//3, ncols],
                     }
                 )
         dest_dist = Distribution.from_global_dim_data(self.context,
@@ -1065,6 +1065,95 @@ class TestBlockRedistribution(DefaultContextTestCase):
         dest_da = source_da.distribute_as(dest_dist)
         assert_array_equal(source_da.tondarray(), dest_da.tondarray())
 
+    def test_redist_reshape_same_target(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (1,), targets=[1])
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (1,), targets=[1])
+
+        da_src = self.context.empty(dist0)
+        da_src.fill(-10)
+        da_dest = da_src.distribute_as(dist1)
+
+        expected = numpy.empty((5, 8))
+        expected.fill(-10)
+
+        assert_array_equal(da_dest.tondarray(), expected)
+        
+    def test_redist_reshape_diff_target(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (1,), targets=[0])
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (1,), targets=[1])
+
+        da_src = self.context.empty(dist0)
+        da_src.fill(-10)
+        da_dest = da_src.distribute_as(dist1)
+
+        expected = numpy.empty((5, 8))
+        expected.fill(-10)
+
+        assert_array_equal(da_dest.tondarray(), expected)
+
+    def test_redist_reshape_split_targets(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (1,), targets=[0])
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (2,), targets=[0,1])
+
+        da_src = self.context.empty(dist0)
+        da_src.fill(-10)
+        da_dest = da_src.distribute_as(dist1)
+
+        expected = numpy.empty((5, 8))
+        expected.fill(-10)
+
+        assert_array_equal(da_dest.tondarray(), expected)
+
+    def test_redist_reshape_disjoint_targets(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (2,), targets=[0,2])
+
+        da_src = self.context.empty(dist0)
+        da_src.fill(-10)
+        da_dest = da_src.distribute_as(dist1)
+
+        expected = numpy.empty((5, 8))
+        expected.fill(-10)
+
+        assert_array_equal(da_dest.tondarray(), expected)
+
+    # def test_redist_reshape_big(self):
+        # three_dee_shape = (13, 17, 23)
+        # two_dee_shape = (13 * 23, 17)
+        # NN = 13 * 17 * 23
+        # dist0 = Distribution(self.context, three_dee_shape, ('b', 'b', 'n'), (2, 2))
+        # dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
+
+        # da_src = self.context.empty(dist0)
+        # da_src.fill(47)
+        
+        # da_dest = da_src.distribute_as(dist1)
+
+        # self.assertTrue(da_dest.distribution.is_compatible(dist1))
+
+        # expected = numpy.empty(two_dee_shape)
+        # expected.fill(47)
+
+        # assert_array_equal(da_dest.tondarray(), expected)
+
+    def test_global_flat_indices(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
+
+        self.assertSequenceEqual([[(0, 20)], [(20, 40)]],
+                                 [global_flat_indices(ddpr) for ddpr in dist0.get_dim_data_per_rank()])
+
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (2,), targets=[0,2])
+
+        self.assertSequenceEqual([[(0, 24)], [(24, 40)]],
+                                 [global_flat_indices(ddpr) for ddpr in dist1.get_dim_data_per_rank()])
+
+        dist2 = Distribution(self.context, (5, 8), ('b', 'b'), (2, 2), targets=[0,1,2,3])
+        
+        self.assertSequenceEqual([[(0, 4), (8, 12), (16, 20)],
+                                  [(4, 8), (12, 16), (20, 24)],
+                                  [(24, 28), (32, 36)],
+                                  [(28, 32), (36, 40)]],
+                [global_flat_indices(ddpr) for ddpr in dist2.get_dim_data_per_rank()])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
