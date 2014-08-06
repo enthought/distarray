@@ -26,10 +26,7 @@ from distarray.localapi.mpiutils import MPI
 from distarray.localapi import format, maps
 from distarray.localapi.error import InvalidDimensionError, IncompatibleArrayError
 
-def make_local_slices(local_arr, glb_indices):
-    slices = tuple(slice(*inds) for inds in glb_indices)
-    return local_arr.local_from_global(slices)
-
+# TODO: move to common place.
 def ndim_from_flat(flat, strides):
     res = []
     for st in strides:
@@ -37,15 +34,19 @@ def ndim_from_flat(flat, strides):
         flat %= st
     return tuple(res)
 
+# TODO: move to common place.
 def flat_from_ndim(ndim, strides):
     return sum(i * s for (i, s) in zip(ndim, strides))
 
+# TODO: move to common place.
 def _accum(start, next):
     return tuple(s * next for s in start) + (next,)
 
+# TODO: move to common place.
 def _get_strides(shape):
     return reduce(_accum, tuple(shape[1:]) + (1,), ())
 
+# TODO: move to common place.
 def _transform(local_distribution, glb_flat):
     glb_strides = _get_strides(local_distribution.global_shape)
     local_strides = _get_strides(local_distribution.local_shape)
@@ -54,6 +55,7 @@ def _transform(local_distribution, glb_flat):
     local_flat = local_distribution.local_flat_from_local(local_ind)
     return local_flat
 
+# TODO: move to common place.
 def _squeeze(accum, next):
     last = accum[-1]
     if not last:
@@ -63,10 +65,12 @@ def _squeeze(accum, next):
     elif last[-1] == next[0]:
         return accum[:-1] + [(last[0], next[-1])]
 
+# TODO: move to common place.
 def _condense(intervals):
     intervals = reduce(_squeeze, intervals, [[]])
     return intervals
 
+# TODO: move to common place.
 def _massage_indices(local_distribution, glb_intervals):
     # XXX: TODO: document why we do `-1)+1` below.
     local_flat_slices = [(_transform(local_distribution, i[0]),
@@ -100,6 +104,11 @@ def redistribute_general(comm, plan, la_from, la_to):
             # mpi_print("receiving from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
             to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
             comm.Recv([la_to.ndarray, 1, to_dtype], source=dta['source_rank'])
+
+
+def make_local_slices(local_arr, glb_indices):
+    slices = tuple(slice(*inds) for inds in glb_indices)
+    return local_arr.local_from_global(slices)
 
 def redistribute(comm, plan, la_from, la_to):
     myrank = comm.Get_rank()

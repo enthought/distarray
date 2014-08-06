@@ -971,6 +971,7 @@ def global_flat_indices(dim_data):
 
     intervals = zip(starts, stops)
 
+    # TODO: move to common place.  Code duplication!!!
     def squeeze(accum, next):
         last = accum[-1]
         if not last:
