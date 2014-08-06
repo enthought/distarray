@@ -1120,8 +1120,26 @@ class TestBlockRedistribution(DefaultContextTestCase):
     def test_redist_reshape_three_dee(self):
         three_dee_shape = (3, 5, 2)
         two_dee_shape = (3 * 2, 5)
-        NN = 3 * 5 * 2
         dist0 = Distribution(self.context, three_dee_shape, ('b', 'b', 'n'), (2, 2))
+        dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
+
+        da_src = self.context.empty(dist0)
+        da_src.fill(47)
+        
+        da_dest = da_src.distribute_as(dist1)
+
+        self.assertTrue(da_dest.distribution.is_compatible(dist1))
+
+        expected = numpy.empty(two_dee_shape)
+        expected.fill(47)
+
+        assert_array_equal(da_dest.tondarray(), expected)
+
+    def test_redist_reshape_big(self):
+        three_dee_shape = (13, 17, 19)
+        two_dee_shape = (13, 19 * 17)
+
+        dist0 = Distribution(self.context, three_dee_shape, ('b', 'n', 'b'), (2, 1, 2))
         dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
 
         da_src = self.context.empty(dist0)

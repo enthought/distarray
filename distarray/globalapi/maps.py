@@ -947,6 +947,11 @@ class Distribution(object):
 def global_flat_indices(dim_data):
     # TODO: FIXME: can be optimized when the last dimension is 'n'.
 
+    for dd in dim_data:
+        if dd['dist_type'] == 'n':
+            dd['start'] = 0
+            dd['stop'] = dd['size']
+
     glb_shape = tuple(dd['size'] for dd in dim_data)
 
     def accum(start, next):
@@ -955,8 +960,8 @@ def global_flat_indices(dim_data):
     glb_strides = reduce(accum, tuple(glb_shape[1:]) + (1,), ())
 
     ranges = [range(dd['start'], dd['stop']) for dd in dim_data[:-1]]
-    start_ranges = ranges + [[dim_data[-1].get('start', 0)]]
-    stop_ranges = ranges + [[dim_data[-1].get('stop', dim_data[-1]['size'])]]
+    start_ranges = ranges + [[dim_data[-1]['start']]]
+    stop_ranges = ranges + [[dim_data[-1]['stop']]]
 
     def flatten(idx):
         return sum(a * b for (a, b) in zip(idx, glb_strides))
