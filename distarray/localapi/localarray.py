@@ -18,7 +18,7 @@ from collections import Mapping
 import numpy as np
 
 from distarray.externals import six
-from distarray.externals.six.moves import zip
+from distarray.externals.six.moves import zip, reduce
 
 from distarray.metadata_utils import sanitize_indices
 

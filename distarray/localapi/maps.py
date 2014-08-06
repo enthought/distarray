@@ -25,7 +25,7 @@ from functools import reduce
 from numbers import Integral
 
 import numpy as np
-from distarray.externals.six.moves import range, zip
+from distarray.externals.six.moves import range, zip, reduce
 
 from distarray.localapi import construct
 from distarray.metadata_utils import (make_grid_shape, normalize_grid_shape,
