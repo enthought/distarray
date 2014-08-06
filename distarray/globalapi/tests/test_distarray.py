@@ -1117,24 +1117,25 @@ class TestBlockRedistribution(DefaultContextTestCase):
 
         assert_array_equal(da_dest.tondarray(), expected)
 
-    # def test_redist_reshape_big(self):
-        # three_dee_shape = (13, 17, 23)
-        # two_dee_shape = (13 * 23, 17)
-        # NN = 13 * 17 * 23
-        # dist0 = Distribution(self.context, three_dee_shape, ('b', 'b', 'n'), (2, 2))
-        # dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
+    @unittest.skip("Not working yet, and hangs...")
+    def test_redist_reshape_big(self):
+        three_dee_shape = (13, 17, 23)
+        two_dee_shape = (13 * 23, 17)
+        NN = 13 * 17 * 23
+        dist0 = Distribution(self.context, three_dee_shape, ('b', 'b', 'n'), (2, 2))
+        dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
 
-        # da_src = self.context.empty(dist0)
-        # da_src.fill(47)
+        da_src = self.context.empty(dist0)
+        da_src.fill(47)
         
-        # da_dest = da_src.distribute_as(dist1)
+        da_dest = da_src.distribute_as(dist1)
 
-        # self.assertTrue(da_dest.distribution.is_compatible(dist1))
+        self.assertTrue(da_dest.distribution.is_compatible(dist1))
 
-        # expected = numpy.empty(two_dee_shape)
-        # expected.fill(47)
+        expected = numpy.empty(two_dee_shape)
+        expected.fill(47)
 
-        # assert_array_equal(da_dest.tondarray(), expected)
+        assert_array_equal(da_dest.tondarray(), expected)
 
     def test_global_flat_indices(self):
         dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
