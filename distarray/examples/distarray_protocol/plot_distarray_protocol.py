@@ -5,21 +5,22 @@
 # ---------------------------------------------------------------------------
 
 """
-Plot distributions for some distarrays for the protocol documentation.
+Plot DistArray distributions for the Distributed Array Protocol documentation.
 
-The output from this example program should be directly usable in the
-distributed array protocol documentation, if saved as examples.rst.
-The output .png files should be copied to the images folder as well.
+The output from this script should be directly usable in the Distributed Array
+Protocol documentation (if saved as examples.rst).  The output .png files
+should be copied to the images folder as well.
 
-To generate the automatic documentation:
-Run:
-    $ python plot_distarray_protocol.py >examples.rst
-This should create both the examples.rst redirected output, and also
-create many .png files in the images subdirectory.
+To generate the documentation, run
 
-All of these should be copied to the corresponding location in the
-distributed-array-protocol directory tree, then the sphinx documentation
-can be rebuilt with 'make html'.
+    $ python plot_distarray_protocol.py > examples.rst
+
+This should create both the ``examples.rst`` RestructuredText file and many
+.png files in the ``images`` subdirectory.
+
+All of these can be copied to the corresponding location in the
+``distributed-array-protocol`` directory tree, and the sphinx documentation can
+be rebuilt with ``make html``.
 """
 
 from __future__ import print_function
