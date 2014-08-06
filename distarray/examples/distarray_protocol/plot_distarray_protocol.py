@@ -569,11 +569,16 @@ def main():
     need_targets = max(engine_counts)
     if num_targets < need_targets:
         raise ValueError('Need at least %d engines for all the examples, '
-                         'but only have %d.' % (need_targets, num_targets))
+                         'but only %d are available.' % (need_targets, num_targets))
     for engine_count in engine_counts:
         context_n = distarray.globalapi.Context(targets=range(engine_count))
         create_distribution_plot_and_documentation_all(context_n)
 
 
 if __name__ == '__main__':
+    import argparse
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=formatter)
+    parser.parse_args()
     main()
