@@ -144,14 +144,13 @@ class Distribution(object):
     def rank_from_coords(self, coords):
         return self.comm.Get_cart_rank(coords)
 
-    def local_from_global(self, global_ind, check_bounds=True):
+    def local_from_global(self, global_ind):
         """ Given `global_ind` indices, translate into local indices."""
-        if check_bounds:
-            _, idxs = sanitize_indices(global_ind, self.ndim, self.global_shape)
+        _, idxs = sanitize_indices(global_ind, self.ndim, self.global_shape)
         local_idxs = []
         for m, idx in zip(self._maps, global_ind):
             if isinstance(idx, Integral):
-                local_idxs.append(m.local_from_global_index(idx, check_bounds=check_bounds))
+                local_idxs.append(m.local_from_global_index(idx))
             elif isinstance(idx, slice):
                 local_idxs.append(m.local_from_global_slice(idx))
             else:
@@ -238,8 +237,8 @@ class BlockMap(MapBase):
         self.grid_size = grid_size
         self.grid_rank = grid_rank
 
-    def local_from_global_index(self, gidx, check_bounds=True):
-        if check_bounds and (gidx < self.start or gidx >= self.stop):
+    def local_from_global_index(self, gidx):
+        if gidx < self.start or gidx >= self.stop:
             raise IndexError("Global index %s out of bounds" % gidx)
         return gidx - self.start
 
@@ -316,8 +315,8 @@ class CyclicMap(MapBase):
         self.local_size = (global_size - 1 - grid_rank) // grid_size + 1
         self.global_size = global_size
 
-    def local_from_global_index(self, gidx, check_bounds=True):
-        if check_bounds and ((gidx - self.start) % self.grid_size):
+    def local_from_global_index(self, gidx):
+        if (gidx - self.start) % self.grid_size:
             raise IndexError("Global index %s out of bounds" % gidx)
         return (gidx - self.start) // self.grid_size
 
@@ -373,9 +372,9 @@ class BlockCyclicMap(MapBase):
         self.local_size = local_nblocks * block_size + local_partial
         self.global_size = global_size
 
-    def local_from_global_index(self, gidx, check_bounds=True):
+    def local_from_global_index(self, gidx):
         global_block, offset = divmod(gidx, self.block_size)
-        if check_bounds and ((global_block - self.start_block) % self.grid_size):
+        if (global_block - self.start_block) % self.grid_size:
             raise IndexError("Global index %s out of bounds" % gidx)
         return self.block_size * ((global_block - self.start_block) // self.grid_size) + offset
 
@@ -435,7 +434,7 @@ class UnstructuredMap(MapBase):
         local_indices = range(self.local_size)
         self._local_index = dict(zip(self.indices, local_indices))
 
-    def local_from_global_index(self, gidx, check_bounds=True):
+    def local_from_global_index(self, gidx):
         try:
             lidx = self._local_index[gidx]
         except KeyError:

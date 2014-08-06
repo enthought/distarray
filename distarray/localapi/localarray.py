@@ -50,7 +50,7 @@ def _transform(local_distribution, glb_flat):
     glb_strides = _get_strides(local_distribution.global_shape)
     local_strides = _get_strides(local_distribution.local_shape)
     glb_ndim_inds = ndim_from_flat(glb_flat, glb_strides)
-    local_ind = local_distribution.local_from_global(glb_ndim_inds, check_bounds=False)
+    local_ind = local_distribution.local_from_global(glb_ndim_inds)
     local_flat = local_distribution.local_flat_from_local(local_ind)
     return local_flat
 
@@ -68,8 +68,9 @@ def _condense(intervals):
     return intervals
 
 def _massage_indices(local_distribution, glb_intervals):
+    # XXX: TODO: document why we do `-1)+1` below.
     local_flat_slices = [(_transform(local_distribution, i[0]),
-                          _transform(local_distribution, i[1]))
+                          _transform(local_distribution, i[1]-1)+1)
                             for i in glb_intervals]
     return _condense(local_flat_slices)
 

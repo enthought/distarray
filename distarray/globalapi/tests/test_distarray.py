@@ -1117,11 +1117,10 @@ class TestBlockRedistribution(DefaultContextTestCase):
 
         assert_array_equal(da_dest.tondarray(), expected)
 
-    @unittest.skip("Not working yet, and hangs...")
-    def test_redist_reshape_big(self):
-        three_dee_shape = (13, 17, 23)
-        two_dee_shape = (13 * 23, 17)
-        NN = 13 * 17 * 23
+    def test_redist_reshape_three_dee(self):
+        three_dee_shape = (3, 5, 2)
+        two_dee_shape = (3 * 2, 5)
+        NN = 3 * 5 * 2
         dist0 = Distribution(self.context, three_dee_shape, ('b', 'b', 'n'), (2, 2))
         dist1 = Distribution(self.context, two_dee_shape, ('b', 'b'), (2, 2))
 
