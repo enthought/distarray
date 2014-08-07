@@ -618,7 +618,7 @@ class DistArray(object):
         return self
 
     def __abs__(self, *args, **kwargs):
-        return distarray.globalapi.abs(self, *args, **kwargs)
+        return distarray.globalapi.absolute(self, *args, **kwargs)
 
     def __invert__(self, *args, **kwargs):
         return distarray.globalapi.invert(self, *args, **kwargs)
