@@ -48,6 +48,7 @@ def numpy_julia_calc(z, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
+    z = numpy.asarray(z)
     counts = numpy.zeros_like(z, dtype=numpy.int32)
     hits = numpy.zeros_like(z, dtype=numpy.bool)
     mask = numpy.zeros_like(z, dtype=numpy.bool)
@@ -78,6 +79,7 @@ def fancy_numpy_julia_calc(z, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
+    z = numpy.asarray(z)
     counts = numpy.zeros_like(z, dtype=numpy.int32)
     hits = numpy.zeros_like(z, dtype=numpy.bool)
     mask = numpy.zeros_like(z, dtype=numpy.bool)
@@ -301,7 +303,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                     for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
-                            context.register(numpy_julia_calc)
+                            context.register(kernel)
                             complex_plane = create_complex_plane(context,
                                                                  dimensions,
                                                                  dist, re_ax,

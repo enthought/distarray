@@ -5,14 +5,9 @@
 # ---------------------------------------------------------------------------
 
 """
-Benchmark all the scripts. Usage:
-    $ python benchmark.py <n>
-
-Where in is the power of 2 for the maximum number of points
-benchmarked. i.e. N = 2**n where N is the number of points used.
+Benchmark all the scripts.
 """
 
-import sys
 import timeit
 
 from matplotlib import pyplot as plt
@@ -32,9 +27,9 @@ def bench(module, n_list):
         times.append(t)
     return times
 
-if __name__ == '__main__':
+
+def main(n):
     # n is maximum order of magnitude for the number of iterations.
-    n = int(sys.argv[1])
     n_list = [2**i for i in range(3, n)]
 
     # Do the benchmarking.
@@ -63,3 +58,14 @@ if __name__ == '__main__':
 
     # Save to plot.png.
     plt.savefig('plot')
+
+
+if __name__ == '__main__':
+    import argparse
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=formatter)
+    parser.add_argument("n", metavar="n", type=int,
+                        help=("the power of 2 for the maximum number of points benchmarked. i.e. N = 2**n where N is the number of points used."))
+    args = parser.parse_args()
+    main(args.n)
