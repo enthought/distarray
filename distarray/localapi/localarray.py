@@ -527,7 +527,7 @@ class LocalArray(object):
         return self
 
     def __abs__(self):
-        return abs(self)
+        return absolute(self)
 
     def __invert__(self):
         return invert(self)
