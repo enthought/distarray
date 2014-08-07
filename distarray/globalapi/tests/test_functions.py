@@ -102,7 +102,7 @@ class TestSpecialMethods(DefaultContextTestCase):
 
     ntargets = 'any'
 
-    def check_op(self, op_name, data, dist_data):
+    def check_binary_op(self, op_name, data, dist_data):
         a, b = data
         da, db = dist_data
         distop = getattr(da, op_name)
@@ -110,6 +110,16 @@ class TestSpecialMethods(DefaultContextTestCase):
         result = distop(db)
         expected = numpyop(b)
         assert_allclose(result.toarray(), expected)
+
+    def check_unary_op(self, op_name, data, dist_data):
+        a, = data
+        da, = dist_data
+        distop = getattr(da, op_name)
+        numpyop = getattr(a, op_name)
+        result = distop()
+        expected = numpyop()
+        assert_allclose(result.toarray(), expected)
+
 
 arr_a = np.arange(1, 11)
 arr_b = np.ones_like(arr_a) * 2
@@ -121,6 +131,9 @@ unary_ops_1 = (('absolute', 'arccosh', 'arcsinh', 'conjugate', 'cos',
 (arr_a,))
 
 unary_ops_2 = (('arccos', 'arcsin', 'arctanh'), (arr_c,))
+
+unary_special_methods = (('__neg__', '__pos__', '__abs__', '__invert__'),
+(arr_a,))
 
 binary_ops = (('add', 'arctan2', 'divide', 'floor_divide', 'fmod', 'hypot',
               'multiply', 'power', 'remainder', 'subtract', 'true_divide',
@@ -143,9 +156,10 @@ binary_special_methods = (('__lt__', '__le__', '__eq__', '__ne__', '__gt__',
 problematic_special_methods = ('__divmod__', '__rdivmod__', '__div__')
 
 add_checkers(TestDistArrayUfuncs, binary_ops, 'check_binary_op')
+add_checkers(TestSpecialMethods, binary_special_methods, 'check_binary_op')
 add_checkers(TestDistArrayUfuncs, unary_ops_1, 'check_unary_op')
 add_checkers(TestDistArrayUfuncs, unary_ops_2, 'check_unary_op')
-add_checkers(TestSpecialMethods, binary_special_methods, 'check_op')
+add_checkers(TestSpecialMethods, unary_special_methods, 'check_unary_op')
 
 
 if __name__ == '__main__':
