@@ -11,14 +11,13 @@ Many of these tests require a 4-engine cluster to be running locally.
 """
 
 import unittest
-import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose
 
 from distarray.testing import DefaultContextTestCase
 import distarray.globalapi.functions as functions
-from distarray.globalapi import Context, ContextCreationError
+from distarray.globalapi import Context
 
 SKIP = True
 try:
