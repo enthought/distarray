@@ -68,7 +68,6 @@ class TestDistArrayUfuncs(DefaultContextTestCase):
 
     ntargets = 'any'
 
-
     def check_binary_op(self, op_name, data, dist_data):
         """Check binary operation for success.
 
@@ -120,7 +119,6 @@ unary_ops_1 = (('absolute', 'arccosh', 'arcsinh', 'conjugate', 'cos',
 'cosh', 'exp', 'expm1', 'log', 'log10', 'log1p', 'negative', 'reciprocal',
 'rint', 'sign', 'sin', 'sinh', 'sqrt', 'square', 'tan', 'tanh', 'invert'),
 (arr_a,))
-
 
 unary_ops_2 = (('arccos', 'arcsin', 'arctanh'), (arr_c,))
 
