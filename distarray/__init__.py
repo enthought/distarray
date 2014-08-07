@@ -5,5 +5,5 @@
 # ---------------------------------------------------------------------------
 
 from distarray.__version__ import __version__
-from distarray.run_tests import test
+from distarray.alltests import test
 DISTARRAY_BASE_NAME = '__distarray__'
