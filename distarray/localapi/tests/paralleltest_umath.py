@@ -37,6 +37,15 @@ class TestUnaryUFunc(ParallelTestCase):
         b = LocalArray(d2, dtype='int32')
         self.assertRaises(IncompatibleArrayError, localarray.negative, b, a)
 
+    def test_abs(self):
+        """See if unary ufunc works for a LocalArray."""
+        d = Distribution.from_shape(comm=self.comm, shape=(16, 16))
+        a = LocalArray(d, dtype='int32')
+        a.fill(-5)
+        a[2, 3] = 11
+        b = abs(a)
+        self.assertTrue(np.all(abs(a.ndarray) == b.ndarray))
+
 
 class TestBinaryUFunc(ParallelTestCase):
 
