@@ -93,7 +93,7 @@ For example, to build the html documentation::
 
 from the ``docs`` directory.
 
-try::
+Try::
 
     make help
 
@@ -103,7 +103,7 @@ for more options.
 Getting Started
 ---------------
 
-To see some initial examples of what distarray can do, check out the IPython
+To see some initial examples of what DistArray can do, check out the IPython
 notebooks and python scripts in the ``examples`` directory.
 
 If you have questions or would like to contribute, contact us
