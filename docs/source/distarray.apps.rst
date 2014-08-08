@@ -18,3 +18,11 @@ apps Package
     :show-inheritance:
 
 .. program-output:: dacluster -h
+
+:mod:`engine` Module
+--------------------
+
+.. automodule:: distarray.apps.engine
+    :members:
+    :undoc-members:
+    :show-inheritance:
