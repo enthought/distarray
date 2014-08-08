@@ -16,3 +16,5 @@ apps Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. program-output:: dacluster -h
