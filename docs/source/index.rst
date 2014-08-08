@@ -11,8 +11,9 @@ DistArray provides general multidimensional NumPy-like distributed arrays to
 Python.  It intends to bring the strengths of NumPy to data-parallel
 high-performance computing.  DistArray has a similar API to `NumPy`_.
 
-The project is currently under heavy development and things are changing
-quickly!
+DistArray is ready for real-world testing and deployment. The project is still
+evolving rapidly, and we appreciate the continued input from the larger
+scientific-Python community.
 
 DistArray is for users who
 
@@ -90,10 +91,8 @@ from the ``docs`` directory.
 Getting Started
 ---------------
 
-To see some initial examples of what distarray can do, check out the
-``examples`` directory and our tests.  More usage examples will be forthcoming
-as the API stabilizes.
-
+To see some initial examples of what distarray can do, check out the IPython
+notebooks and python scripts in the ``examples`` directory and our tests.
 
 History
 -------
