@@ -17,7 +17,7 @@ apps Package
     :undoc-members:
     :show-inheritance:
 
-.. program-output:: dacluster -h
+.. program-output:: python -m distarray.apps.dacluster -h
 
 :mod:`engine` Module
 --------------------
@@ -26,3 +26,5 @@ apps Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. program-output:: python -m distarray.apps.engine -h
