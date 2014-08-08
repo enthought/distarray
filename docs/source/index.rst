@@ -52,6 +52,7 @@ Dependencies to build the documentation:
 
 * Sphinx
 * sphinxcontrib.napoleon
+* sphinxcontrib.programoutput
 
 If you have the above, you should be able to install this package with::
 
