@@ -5,5 +5,11 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Script for facilitating MPI-only mode.
+
+Starts an MPI-process-based engine.
+"""
+
 from distarray.mpi_engine import Engine
 Engine()
