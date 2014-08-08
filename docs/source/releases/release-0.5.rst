@@ -6,7 +6,7 @@ DistArray 0.5 release
 
 **License:** Three-clause BSD
 
-**Python versions:** 2.7 and 3.3
+**Python versions:** 2.7, 3.3, and 3.4
 
 **OS support:** \*nix and Mac OS X
 
@@ -14,10 +14,11 @@ What is DistArray?
 ------------------
 
 DistArray aims to bring the ease-of-use of NumPy to data-parallel
-high-performance computing.  It provides distributed multi-dimensional
-NumPy-like arrays and distributed ufuncs, distributed IO capabilities, and can
-integrate with external distributed libraries like Trilinos.  DistArray works
-with NumPy and builds on top of it in a flexible and natural way.
+high-performance computing.  It provides distributed multi-dimensional NumPy
+arrays, distributed ufuncs, and distributed IO capabilities.  It can
+efficiently interoperate with external distributed libraries like Trilinos.
+DistArray works with NumPy and builds on top of it in a flexible and natural
+way.
 
 0.5 Release
 -----------
@@ -26,8 +27,9 @@ Noteworthy improvements in this release include:
 
 * closer alignment with NumPy's API,
 * support for Python 3.4 (existing support for Python 2.7 and 3.3),
-* an MPI-only mode for deployment on clusters and supercomputers,
-* a way to register user-defined functions to be run locally on worker
+* a performance-oriented MPI-only mode for deployment on clusters and
+  supercomputers,
+* a way to register user-defined functions to be callable locally on worker
   processes,
 * more consistent naming of sub-packages,
 * testing with MPICH2 (already tested against OpenMPI),
@@ -43,7 +45,7 @@ Existing features
 
 DistArray:
 
-* supports NumPy-like slicing, reductions, and ufuncs, on distributed
+* supports NumPy-like slicing, reductions, and ufuncs on distributed
   multidimensional arrays;
 * has a client-engine process design -- data resides on the worker processes,
   commands are initiated from master;
@@ -124,4 +126,3 @@ United States Government or any agency thereof.
 .. [SBIR] http://www.sbir.gov/sbirsearch/detail/410257
 
 .. vim:spell
-
