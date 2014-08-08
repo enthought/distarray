@@ -1,18 +1,10 @@
-dist Package
-============
+globalapi Package
+=================
 
-:mod:`dist` Package
--------------------
+:mod:`globalapi` Package
+------------------------
 
 .. automodule:: distarray.globalapi.__init__
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`ipython_cleanup` Module
------------------------------
-
-.. automodule:: distarray.globalapi.ipython_cleanup
     :members:
     :undoc-members:
     :show-inheritance:
@@ -41,6 +33,14 @@ dist Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`ipython_cleanup` Module
+-----------------------------
+
+.. automodule:: distarray.globalapi.ipython_cleanup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`ipython_utils` Module
 ---------------------------
 
@@ -64,4 +64,3 @@ dist Package
     :members:
     :undoc-members:
     :show-inheritance:
-

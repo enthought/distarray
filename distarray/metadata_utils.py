@@ -4,6 +4,10 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Utility functions for dealing with DistArray metadata.
+"""
+
 from __future__ import division
 
 import operator

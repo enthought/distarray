@@ -20,7 +20,7 @@ before_install:
     - conda info -a
     - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
     - source activate test-environment
-    - pip install sphinxcontrib-napoleon coveralls
+    - pip install sphinxcontrib-napoleon sphinxcontrib-programoutput coveralls
     - if [[ "$PYVERSION" == "2.7" ]]; then
           conda install mpi4py;
       else

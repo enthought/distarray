@@ -5,7 +5,9 @@
 # ---------------------------------------------------------------------------
 
 
-"""Emulate numpy.random"""
+"""
+Contains the `Random` class that emulates `numpy.random` for `DistArray`.
+"""
 
 from __future__ import absolute_import
 

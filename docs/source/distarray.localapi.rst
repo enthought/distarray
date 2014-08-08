@@ -1,8 +1,8 @@
-local Package
-=============
+localapi Package
+================
 
-:mod:`local` Package
---------------------
+:mod:`localapi` Package
+-----------------------
 
 .. automodule:: distarray.localapi.__init__
     :members:

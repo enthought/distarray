@@ -5,5 +5,18 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Script for facilitating MPI-only mode.
+
+Starts an MPI-process-based engine.
+"""
+
 from distarray.mpi_engine import Engine
-Engine()
+
+if __name__ == '__main__':
+    # use argparse to generate usage text (-h)
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
+
+    Engine()
