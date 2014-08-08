@@ -45,7 +45,7 @@ if __name__ == "__main__":
         'long_description': parse_readme(),
         'platforms': ["Linux", "Mac OS-X"],
         'entry_points': {'console_scripts': ['dacluster = '
-                                            'distarray.apps.dacluster:main']},
+                                             'distarray.apps.dacluster:main']},
         'classifiers': [c.strip() for c in """\
             Development Status :: 2 - Pre-Alpha
             Intended Audience :: Developers
