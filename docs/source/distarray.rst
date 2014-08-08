@@ -14,6 +14,7 @@ DistArray API Reference
 
 .. automodule:: distarray.__version__
     :members:
+    :special-members:
     :undoc-members:
     :show-inheritance:
 
