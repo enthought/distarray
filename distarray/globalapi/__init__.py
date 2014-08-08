@@ -4,6 +4,12 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Modules dealing with the global index-space view of `DistArray`\s.
+
+In other words, the view from the client.
+"""
+
 from __future__ import absolute_import
 
 from distarray.globalapi.distarray import DistArray
