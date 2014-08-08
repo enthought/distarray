@@ -104,7 +104,10 @@ Getting Started
 ---------------
 
 To see some initial examples of what DistArray can do, check out the IPython
-notebooks and python scripts in the ``examples`` directory.
+notebooks and python scripts in the ``examples`` directory.  To start, see the
+`features`_ notebook, also viewable on nbviewer.
+
+.. _features: http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb
 
 If you have questions or would like to contribute, contact us
 
