@@ -33,7 +33,8 @@ Noteworthy improvements in this release include:
   processes,
 * more consistent naming of sub-packages,
 * testing with MPICH2 (already tested against OpenMPI),
-* improved and expanded examples, and
+* improved and expanded examples,
+* installed version testable via ``distarray.test()``, and
 * performance and scaling improvements.
 
 With this release, DistArray ready for real-world testing and deployment.  The
