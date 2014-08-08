@@ -73,6 +73,12 @@ You should then be able to run all the tests with::
 
     make test
 
+or::
+
+    python -m distarray.run_tests
+
+from the installed package.
+
 To build this documentation, navigate to the ``docs`` directory and use the
 Makefile there.  For example, to build the html documentation::
 
