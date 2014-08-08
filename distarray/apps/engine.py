@@ -12,4 +12,6 @@ Starts an MPI-process-based engine.
 """
 
 from distarray.mpi_engine import Engine
-Engine()
+
+if __name__ == '__main__':
+    Engine()
