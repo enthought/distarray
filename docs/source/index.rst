@@ -73,7 +73,6 @@ or from anywhere with::
 
     python -m distarray.run_tests
 
-.
 
 Building the docs
 -----------------
