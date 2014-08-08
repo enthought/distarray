@@ -7,6 +7,8 @@
 DistArray |version|
 ===================
 
+*Think globally, act locally.*
+
 DistArray provides general multidimensional NumPy-like distributed arrays to
 Python.  It intends to bring the strengths of NumPy to data-parallel
 high-performance computing.  DistArray has a similar API to `NumPy`_.
