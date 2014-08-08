@@ -92,7 +92,14 @@ Getting Started
 ---------------
 
 To see some initial examples of what distarray can do, check out the IPython
-notebooks and python scripts in the ``examples`` directory and our tests.
+notebooks and python scripts in the ``examples`` directory.
+
+If you have questions or would like to contribute, contact us
+
+* on the DistArray mailing list:  distarray.googlegroups.com,
+* in the DistArray IRC channel: #distarray on freenode, or
+* through the DistArray GitHub repo: https://github.com/enthought/distarray
+  (for bug reports and pull requests).
 
 History
 -------
