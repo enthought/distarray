@@ -48,7 +48,7 @@ if __name__ == "__main__":
         'entry_points': {'console_scripts': ['dacluster = '
                                              'distarray.apps.dacluster:main']},
         'classifiers': [c.strip() for c in """\
-            Development Status :: 2 - Pre-Alpha
+            Development Status :: 3 - Alpha
             Intended Audience :: Developers
             Intended Audience :: Science/Research
             License :: OSI Approved :: BSD License
