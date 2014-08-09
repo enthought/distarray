@@ -7,12 +7,15 @@
 DistArray |version|
 ===================
 
+*Think globally, act locally.*
+
 DistArray provides general multidimensional NumPy-like distributed arrays to
 Python.  It intends to bring the strengths of NumPy to data-parallel
 high-performance computing.  DistArray has a similar API to `NumPy`_.
 
-The project is currently under heavy development and things are changing
-quickly!
+DistArray is ready for real-world testing and deployment; however, the project
+is still evolving rapidly, and we appreciate continued input from the
+scientific-Python community.
 
 DistArray is for users who
 
@@ -48,11 +51,6 @@ Optional dependencies:
 * For HDF5 IO: h5py built against a parallel-enabled build of HDF5
 * For plotting: matplotlib
 
-Dependencies to build the documentation:
-
-* Sphinx
-* sphinxcontrib.napoleon
-
 If you have the above, you should be able to install this package with::
 
     python setup.py install
@@ -68,25 +66,57 @@ DistArray::
 
     dacluster start
 
-You should then be able to run all the tests with::
+You should then be able to run all the tests from the DistArray source
+directory with::
 
     make test
 
-To build this documentation, navigate to the ``docs`` directory and use the
-Makefile there.  For example, to build the html documentation::
+or from anywhere with::
+
+    python -m distarray.run_tests
+
+
+Building the docs
+-----------------
+
+Dependencies to build the documentation:
+
+* Sphinx
+* sphinxcontrib.napoleon
+* sphinxcontrib.programoutput
+
+If you have the dependencies listed above, and you want to build the
+documentation (also available at http://distarray.readthedocs.org), navigate to
+the ``docs`` subdirectory of the DistArray source and use the Makefile there.
+
+For example, to build the html documentation::
 
     make html
 
 from the ``docs`` directory.
 
+Try::
+
+    make help
+
+for more options.
+
 
 Getting Started
 ---------------
 
-To see some initial examples of what distarray can do, check out the
-``examples`` directory and our tests.  More usage examples will be forthcoming
-as the API stabilizes.
+To see some initial examples of what DistArray can do, check out the IPython
+notebooks and python scripts in the ``examples`` directory.  To start, see the
+`features`_ notebook, also viewable on nbviewer.
 
+.. _features: http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb
+
+If you have questions or would like to contribute, contact us
+
+* on the DistArray mailing list:  distarray.googlegroups.com,
+* in the DistArray IRC channel: #distarray on freenode, or
+* through the DistArray GitHub repo: https://github.com/enthought/distarray
+  (for bug reports and pull requests).
 
 History
 -------
@@ -125,4 +155,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
