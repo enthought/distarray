@@ -8,7 +8,8 @@ import os
 import numpy
 
 from numpy.testing import assert_allclose, assert_equal
-from distarray.testing import ParallelTestCase, import_or_skip, temp_filepath
+from distarray.testing import (ParallelTestCase, import_parallel_h5py,
+                               temp_filepath)
 from distarray.localapi import LocalArray, ndenumerate
 from distarray.localapi import (save_dnpy, load_dnpy, save_hdf5, load_hdf5,
                              load_npy)
@@ -188,7 +189,7 @@ class TestHdf5FileSave(ParallelTestCase):
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
-        self.h5py = import_or_skip('h5py')
+        self.h5py = import_parallel_h5py()
         self.key = "data"
 
         # set up a common file to work with
@@ -235,7 +236,7 @@ class TestHdf5FileLoad(ParallelTestCase):
 
     def setUp(self):
         self.rank = self.comm.Get_rank()
-        self.h5py = import_or_skip('h5py')
+        self.h5py = import_parallel_h5py()
         self.key = "data"
         self.expected = numpy.arange(20).reshape(2, 10)
 

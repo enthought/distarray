@@ -20,7 +20,7 @@ from numpy.testing import assert_array_equal
 
 from distarray.externals.six.moves import range
 
-from distarray.testing import import_or_skip, DefaultContextTestCase
+from distarray.testing import import_parallel_h5py, DefaultContextTestCase
 from distarray.globalapi.distarray import DistArray
 from distarray.globalapi.maps import Distribution
 
@@ -216,7 +216,7 @@ class TestHdf5FileSave(DefaultContextTestCase):
 
     def setUp(self):
         super(TestHdf5FileSave, self).setUp()
-        self.h5py = import_or_skip('h5py')
+        self.h5py = import_parallel_h5py()
         self.output_path = self.context.apply(engine_temp_path, ('.hdf5',),
                                               targets=[self.context.targets[0]])[0]
 
@@ -280,7 +280,7 @@ class TestHdf5FileLoad(DefaultContextTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.h5py = import_or_skip('h5py')
+        cls.h5py = import_parallel_h5py()
         super(TestHdf5FileLoad, cls).setUpClass()
         cls.output_path = cls.context.apply(engine_temp_path, ('.hdf5',),
                                             targets=[cls.context.targets[0]])[0]
