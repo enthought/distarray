@@ -8,5 +8,5 @@
 Version information for the DistArray package.
 """
 
-__short_version__ = "0.5"
-__version__ = "0.5.0"
+__short_version__ = "0.6"
+__version__ = "0.6.0-dev"
