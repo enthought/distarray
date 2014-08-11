@@ -4,6 +4,13 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+The `LocalArray` data structure.
+
+`DistArray` objects are proxies for collections of `LocalArray` objects (that
+usually reside on engines).
+"""
+
 from __future__ import print_function, division
 
 def mpi_print(*args, **kwargs):

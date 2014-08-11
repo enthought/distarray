@@ -16,3 +16,15 @@ apps Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. program-output:: python -m distarray.apps.dacluster -h
+
+:mod:`engine` Module
+--------------------
+
+.. automodule:: distarray.apps.engine
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. program-output:: python -m distarray.apps.engine -h

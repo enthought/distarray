@@ -9,6 +9,8 @@ Utilities for running Distarray in MPI mode.
 
 from __future__ import absolute_import
 
+import types
+
 from mpi4py import MPI as mpi
 
 from distarray.utils import uid
@@ -28,13 +30,16 @@ def get_world_rank():
 
 def push_function(context, key, func, targets=None):
     targets = targets or context.targets
-    func_code = func.__code__
-    func_globals = func.__globals__  # noqa
-    func_name = func.__name__
-    func_defaults = func.__defaults__
-    func_closure = func.__closure__
 
-    func_data = (func_code, func_name, func_defaults, func_closure)
+    if not isinstance(func, types.BuiltinFunctionType):
+        func_code = func.__code__
+        func_globals = func.__globals__  # noqa
+        func_name = func.__name__
+        func_defaults = func.__defaults__
+        func_closure = func.__closure__
+        func_data = ('function', func_code, func_name, func_defaults, func_closure)
+    else:
+        func_data = ('builtin_function_or_method', func)
 
     def reassemble_and_store_func(key_dummy_container, func_data):
         import types
@@ -42,8 +47,13 @@ def push_function(context, key, func, targets=None):
         from distarray.utils import set_from_dotted_name
         key = key_dummy_container[0]
         main = import_module('__main__')
-        func = types.FunctionType(func_data[0], main.__dict__, func_data[1],
-                                  func_data[2], func_data[3])
+        if func_data[0] == 'function':
+            code, name, defaults, closure = func_data[1:]
+            func = types.FunctionType(code=code, globals=main.__dict__,
+                                      name=name, argdefs=defaults,
+                                      closure=closure)
+        elif func_data[0] == 'builtin_function_or_method':
+            func = func_data[1]
         set_from_dotted_name(key, func)
 
     context.apply(reassemble_and_store_func, args=((key,), func_data),

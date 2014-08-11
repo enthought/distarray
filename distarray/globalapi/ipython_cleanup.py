@@ -4,6 +4,10 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 
+"""
+Functions for cleaning up `DistArray` objects from IPython parallel engines.
+"""
+
 from __future__ import print_function, absolute_import
 
 from distarray.globalapi.ipython_utils import IPythonClient

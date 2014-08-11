@@ -9,6 +9,15 @@ DistArray API Reference
     :undoc-members:
     :show-inheritance:
 
+:mod:`__version__` Module
+-------------------------
+
+.. automodule:: distarray.__version__
+    :members:
+    :special-members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`error` Module
 -------------------
 
@@ -21,6 +30,30 @@ DistArray API Reference
 ----------------------------
 
 .. automodule:: distarray.metadata_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`mpi_engine` Module
+------------------------
+
+.. automodule:: distarray.mpi_engine
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`mpionly_utils` Module
+---------------------------
+
+.. automodule:: distarray.mpionly_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`run_tests` Module
+----------------------------
+
+.. automodule:: distarray.run_tests
     :members:
     :undoc-members:
     :show-inheritance:

@@ -7,14 +7,13 @@
 """
 Calculate some Julia sets using DistArray and measure the performance.
 
-The Julia set, for a given complex number c, is the set of points z
-such that the repeated iteration z = z**2 + c never escapes to infinity.
+The Julia set, for a given complex number $c$, is the set of points $z$
+such that $|z_{i}|$ remains bounded where $z_{i+1} = z_{i}^2 + c$.
 
-This can be plotted by counting how many iterations are required for the
-magnitude of z to exceed a cutoff. (For example, if abs(z) > 2, then it
-it certain that the point will go off to infinity.)
+This can be plotted by counting how many iterations are required for $|z_{i}|$
+to exceed a cutoff.
 
-Depending on the value of c, the Julia set may be connected and contain
+Depending on the value of $c$, the Julia set may be connected and contain
 a lot of points, or it could be disconnected and contain fewer points.
 The points in the set will require the maximum iteration count, so
 the connected sets will usually take longer to compute.
@@ -48,6 +47,7 @@ def numpy_julia_calc(z, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
+    z = numpy.asarray(z)
     counts = numpy.zeros_like(z, dtype=numpy.int32)
     hits = numpy.zeros_like(z, dtype=numpy.bool)
     mask = numpy.zeros_like(z, dtype=numpy.bool)
@@ -78,6 +78,7 @@ def fancy_numpy_julia_calc(z, c, z_max, n_max):
     n_max : int
         Maximum number of iterations.
     """
+    z = numpy.asarray(z)
     counts = numpy.zeros_like(z, dtype=numpy.int32)
     hits = numpy.zeros_like(z, dtype=numpy.bool)
     mask = numpy.zeros_like(z, dtype=numpy.bool)
@@ -301,7 +302,7 @@ def do_julia_runs(repeat_count, engine_count_list, dist_list, resolution_list,
                     for dist in dist_list:
                         targets = list(range(engine_count))
                         with closing(Context(targets=targets)) as context:
-                            context.register(numpy_julia_calc)
+                            context.register(kernel)
                             complex_plane = create_complex_plane(context,
                                                                  dimensions,
                                                                  dist, re_ax,

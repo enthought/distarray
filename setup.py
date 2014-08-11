@@ -38,16 +38,17 @@ if __name__ == "__main__":
         'keywords': 'parallel mpi distributed array',
         'license': 'New BSD',
         'author': 'IPython Development Team and Enthought, Inc.',
-        'author_email': 'ksmith@enthought.com',
+        'maintainer': "DistArray Developers",
+        'maintainer_email': "distarray@googlegroups.com",
         'url': 'https://github.com/enthought/distarray',
         'packages': find_packages(),
         'install_requires': install_requires,
         'long_description': parse_readme(),
         'platforms': ["Linux", "Mac OS-X"],
         'entry_points': {'console_scripts': ['dacluster = '
-                                            'distarray.apps.dacluster:main']},
+                                             'distarray.apps.dacluster:main']},
         'classifiers': [c.strip() for c in """\
-            Development Status :: 2 - Pre-Alpha
+            Development Status :: 3 - Alpha
             Intended Audience :: Developers
             Intended Audience :: Science/Research
             License :: OSI Approved :: BSD License

@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 """
-Distributed unfuncs for distributed arrays.
+Distributed ufuncs for `DistArray`\s.
 """
 
 from __future__ import absolute_import
