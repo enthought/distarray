@@ -9,7 +9,6 @@ Tests for distarray's contexts.
 
 Many of these tests require a 4-engine cluster to be running locally.  The
 engines should be launched with MPI, using the MPIEngineSetLauncher.
-
 """
 
 import unittest
@@ -19,7 +18,8 @@ import numpy
 
 from numpy.testing import assert_allclose, assert_array_equal
 
-from distarray.testing import DefaultContextTestCase, IPythonContextTestCase, check_targets
+from distarray.testing import (DefaultContextTestCase, IPythonContextTestCase,
+                               check_targets)
 from distarray.globalapi.context import Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
@@ -53,7 +53,7 @@ class TestRegister(DefaultContextTestCase):
         def local_sin(da):
             return numpy.sin(da)
         self.context.register(local_sin)
-        
+
         db = self.context.local_sin(self.da)
         assert_allclose(0, db.tondarray(), atol=1e-14)
 
@@ -146,7 +146,7 @@ class TestRegister(DefaultContextTestCase):
         self.assertTrue(dp is None)
 
     def test_parameterless(self):
-        
+
         def parameterless():
             """This is a parameterless function."""
             return None
