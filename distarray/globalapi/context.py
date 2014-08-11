@@ -77,6 +77,12 @@ class BaseContext(object):
     def push_function(self, key, func):
         pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        self.close()
+
     def _setup_context_key(self):
         """
         Create a dict on the engines which will hold everything from
