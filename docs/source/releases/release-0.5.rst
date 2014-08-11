@@ -2,6 +2,8 @@
 DistArray 0.5 release
 ==============================================================================
 
+**Mailing List:** distarray@googlegroups.com
+
 **Documentation:** http://distarray.readthedocs.org
 
 **License:** Three-clause BSD
