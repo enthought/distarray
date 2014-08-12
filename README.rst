@@ -2,10 +2,15 @@
 .. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
    :target: https://travis-ci.org/enthought/distarray
 
-.. Coveralls badge
-.. image:: https://coveralls.io/repos/enthought/distarray/badge.png?branch=master
-   :target: https://coveralls.io/r/enthought/distarray?branch=master
-   
+.. readthedocs badge
+.. image:: https://readthedocs.org/projects/distarray/badge/?version=master
+   :target: http://distarray.readthedocs.org/en/master/
+
+.. pypi badge
+.. image:: https://badge.fury.io/py/distarray.svg
+    :target: http://badge.fury.io/py/distarray
+
+
 .. All content before the next comment will be stripped off for release.
 .. *** begin README content ***
 
