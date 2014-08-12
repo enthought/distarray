@@ -2,10 +2,6 @@
 .. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
    :target: https://travis-ci.org/enthought/distarray
 
-.. Coveralls badge
-.. image:: https://coveralls.io/repos/enthought/distarray/badge.png?branch=master
-   :target: https://coveralls.io/r/enthought/distarray?branch=master
-   
 .. All content before the next comment will be stripped off for release.
 .. *** begin README content ***
 
