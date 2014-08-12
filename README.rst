@@ -2,6 +2,10 @@
 .. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
    :target: https://travis-ci.org/enthought/distarray
 
+.. readthedocs badge
+.. image:: https://readthedocs.org/projects/distarray/badge/?version=master
+   :target: http://distarray.readthedocs.org/en/master/
+
 .. All content before the next comment will be stripped off for release.
 .. *** begin README content ***
 
