@@ -165,6 +165,8 @@ def initial_comm_setup():
         split_world = world.Split(0, 0)
     else:
         split_world = world.Split(1, world_rank)
+        from distarray.localapi.mpiutils import set_base_comm
+        set_base_comm(split_world)
 
     # create the intercomm
     if world_rank == client_rank:

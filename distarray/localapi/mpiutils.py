@@ -12,6 +12,13 @@ import numpy as np
 from mpi4py import MPI
 from distarray.error import InvalidCommSizeError, InvalidRankError
 
+def get_base_comm():
+    return _BASE_COMM
+
+_BASE_COMM = None
+def set_base_comm(comm):
+    global _BASE_COMM
+    _BASE_COMM = comm
 
 def get_comm_private():
     return MPI.COMM_WORLD.Clone()

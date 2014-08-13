@@ -399,6 +399,24 @@ class TestApply(DefaultContextTestCase):
         self.assertEqual(set(r[0].name for r in res), set([res[0][0].name]))
         self.assertEqual(set(r[-1].name for r in res), set([res[0][-1].name]))
 
+class TestGetBaseComm(DefaultContextTestCase):
+
+    ntargets = 'any'
+
+    def test_get_base_comm(self):
+
+        def local_test_type():
+            from mpi4py.MPI import Intracomm
+            from distarray.localapi.mpiutils import get_base_comm
+            bc = get_base_comm()
+            return isinstance(bc, Intracomm), bc.rank, bc.size
+
+        test, ranks, sizes = zip(*self.context.apply(local_test_type, ()))
+
+        self.assertTrue(all(test))
+        self.assertSetEqual(set(ranks), set(range(len(ranks))))
+        self.assertSetEqual(set(sizes), set([len(sizes)]))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

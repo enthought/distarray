@@ -710,6 +710,8 @@ class IPythonContext(BaseContext):
         def _make_new_comm(rank_list):
             import distarray.localapi.mpiutils as mpiutils
             new_comm = mpiutils.create_comm_with_list(rank_list)
+            if not mpiutils.get_base_comm():
+                mpiutils.set_base_comm(new_comm)
             return proxyize(new_comm)  # noqa
 
         return self.apply(_make_new_comm, args=(ranks,),
