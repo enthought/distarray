@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from distarray.testing import DefaultContextTestCase, IPythonContextTestCase, check_targets
 from distarray.globalapi.context import Context
 from distarray.globalapi.maps import Distribution
-from distarray.mpionly_utils import is_solo_mpi_process, get_nengines
+from distarray.mpionly_utils import is_solo_mpi_process
 from distarray.localapi import LocalArray
 
 
@@ -263,12 +263,14 @@ class TestMPIContextCreation(unittest.TestCase):
 
     def test_create_Context_with_targets(self):
         """Can we create a context with a subset of engines?"""
-        check_targets(required=2, available=get_nengines())
+        from distarray.globalapi.context import MPIContext
+        check_targets(required=2, available=MPIContext.INTERCOMM.remote_size)
         Context(targets=[0, 1])
 
     def test_create_Context_with_targets_ranks(self):
         """Check that the target <=> rank mapping is consistent."""
-        check_targets(required=4, available=get_nengines())
+        from distarray.globalapi.context import MPIContext
+        check_targets(required=4, available=MPIContext.INTERCOMM.remote_size)
         targets = [3, 2]
         dac = Context(targets=targets)
         self.assertEqual(set(dac.targets), set(targets))

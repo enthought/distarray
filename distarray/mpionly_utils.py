@@ -60,54 +60,11 @@ def push_function(context, key, func, targets=None):
                   targets=context.targets)
 
 
-def get_nengines():
-    """Get the number of engines which must be COMM_WORLD.size - 1 (for the
-    client)
-    """
-    return get_comm_world().size - 1
-
-
 def _set_on_main(name, obj):
     """Add obj as an attribute to the __main__ module with alias `name` like:
         __main__.name = obj
     """
     return Proxy(name, obj, '__main__')
-
-
-def make_intercomm(targets=None):
-    world = get_comm_world()
-    world_rank = world.rank
-    # create a comm that is split into client and engines.
-    targets = targets or list(range(world.size - 1))
-
-    if world_rank == client_rank:
-        split_world = world.Split(0, 0)
-    else:
-        split_world = world.Split(1, world_rank)
-
-    # create the intercomm
-    if world_rank == client_rank:
-        intercomm = split_world.Create_intercomm(0, world, 1)
-    else:
-        intercomm = split_world.Create_intercomm(0, world, 0)
-    return intercomm
-
-
-def make_base_comm():
-    """
-    Creates an intracomm consisting of all the engines. Then sets:
-        `__main__._base_comm = comm_name`
-    """
-    world = get_comm_world()
-    if world.rank == 0:
-        comm_name = uid()
-    else:
-        comm_name = ''
-    comm_name = world.bcast(comm_name)
-
-    engines = world.group.Excl([client_rank])
-    engine_comm = world.Create(engines)
-    return _set_on_main(comm_name, engine_comm)
 
 
 def make_targets_comm(targets):
@@ -138,21 +95,6 @@ def make_targets_comm(targets):
     targets_group = world.group.Incl(mapped_targets)
     targets_comm = world.Create(targets_group)
     return _set_on_main(comm_name, targets_comm)
-
-
-def setup_engine_comm(targets=None):
-    # create a comm that is split into client and engines.
-    world = get_comm_world()
-    world_rank = world.rank
-    targets = range(world.size - 1) if targets is None else targets
-    name = uid()
-    if world_rank == client_rank:
-        split_world = world.Split(0, 0)
-    elif (world_rank + 1) in targets:
-        split_world = world.Split(1, world_rank)
-        _set_on_main(name, split_world)
-    else:
-        world.Split(2, world_rank)
 
 
 def initial_comm_setup():
