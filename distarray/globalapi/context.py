@@ -30,7 +30,7 @@ from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
 from distarray.localapi.proxyize import Proxy
 
 # mpi context
-from distarray.mpionly_utils import (make_targets_comm, get_nengines,
+from distarray.mpionly_utils import (make_targets_comm,
                                      get_world_rank, initial_comm_setup,
                                      is_solo_mpi_process, get_comm_world,
                                      mpi, push_function)
@@ -710,6 +710,8 @@ class IPythonContext(BaseContext):
         def _make_new_comm(rank_list):
             import distarray.localapi.mpiutils as mpiutils
             new_comm = mpiutils.create_comm_with_list(rank_list)
+            if not mpiutils.get_base_comm():
+                mpiutils.set_base_comm(new_comm)
             return proxyize(new_comm)  # noqa
 
         return self.apply(_make_new_comm, args=(ranks,),
@@ -859,8 +861,7 @@ class MPIContext(BaseContext):
             MPIContext.INTERCOMM = initial_comm_setup()
             assert get_world_rank() == 0
 
-        self.nengines = get_nengines()
-
+        self.nengines = MPIContext.INTERCOMM.remote_size
         self.all_targets = list(range(self.nengines))
         self.targets = self.all_targets if targets is None else sorted(targets)
 
