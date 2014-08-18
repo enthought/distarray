@@ -21,12 +21,13 @@ from functools import wraps
 import numpy
 
 from distarray.externals import six
+from distarray import DISTARRAY_BASE_NAME
 from distarray.globalapi import ipython_cleanup
 from distarray.globalapi.distarray import DistArray
 from distarray.globalapi.maps import Distribution, asdistribution
 
 from distarray.globalapi.ipython_utils import IPythonClient
-from distarray.utils import uid, nonce, DISTARRAY_BASE_NAME, has_exactly_one
+from distarray.utils import uid, nonce, has_exactly_one
 from distarray.localapi.proxyize import Proxy
 
 # mpi context

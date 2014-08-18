@@ -13,9 +13,10 @@ from math import sqrt
 import random
 import uuid
 
+from distarray import DISTARRAY_BASE_NAME
 from distarray.externals.six import next
 
-DISTARRAY_BASE_NAME = '__distarray__'
+
 DISTARRAY_RANDOM = random.Random()
 
 
