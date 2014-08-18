@@ -26,7 +26,7 @@ from distarray.globalapi.distarray import DistArray
 from distarray.globalapi.maps import Distribution, asdistribution
 
 from distarray.globalapi.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
+from distarray.utils import uid, nonce, DISTARRAY_BASE_NAME, has_exactly_one
 from distarray.localapi.proxyize import Proxy
 
 # mpi context
@@ -815,7 +815,7 @@ class IPythonContext(BaseContext):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        apply_nonce = uid()[13:]
+        apply_nonce = nonce()
         wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize)
 
         targets = self.targets if targets is None else targets
@@ -973,7 +973,7 @@ class MPIContext(BaseContext):
         kwargs = {} if kwargs is None else kwargs
         targets = self.targets if targets is None else targets
 
-        apply_nonce = uid()[13:]
+        apply_nonce = nonce()
         apply_metadata = (apply_nonce, self.context_key)
 
         if not isinstance(func, types.BuiltinFunctionType):
