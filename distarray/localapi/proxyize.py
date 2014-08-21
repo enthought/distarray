@@ -30,6 +30,11 @@ class Proxy(object):
 
 class Proxyize(object):
 
+    """Callable that, given an object, returns a Proxy object.
+
+    You must call `set_state` on the instance before you can "call" it.
+    """
+
     def __init__(self):
         self.count = None
         self.state = None
@@ -39,6 +44,7 @@ class Proxyize(object):
         self.count = 0
 
     def str_counter(self):
+        """Return the str value of `self.count`, then increment its value."""
         res = str(self.count)
         self.count += 1
         return res
@@ -50,5 +56,6 @@ class Proxyize(object):
         return DISTARRAY_BASE_NAME + self.state + self.str_counter()
 
     def __call__(self, obj):
+        """Return a `Proxy` object given an object `obj`."""
         new_name = self.next_name()
         return Proxy(new_name, obj, '__main__')
