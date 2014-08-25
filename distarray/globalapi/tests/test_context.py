@@ -73,7 +73,7 @@ class TestRegister(DefaultContextTestCase):
         def local_sin(da):
             return numpy.sin(da)
         self.context.register(local_sin)
-        
+
         db = self.context.local_sin(self.da)
         assert_allclose(0, db.tondarray(), atol=1e-14)
 
@@ -166,7 +166,7 @@ class TestRegister(DefaultContextTestCase):
         self.assertTrue(dp is None)
 
     def test_parameterless(self):
-        
+
         def parameterless():
             """This is a parameterless function."""
             return None
