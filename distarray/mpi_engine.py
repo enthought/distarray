@@ -115,7 +115,7 @@ class Engine(object):
         res = new_func(*args, **kwargs)
         if autoproxyize and isinstance(res, LocalArray):
             res = module.proxyize(res)
-        Engine.INTERCOMM.send(res, dest=self.client_rank)
+        self._send(res)
 
     def execute(self, msg):
         main = import_module('__main__')
@@ -134,7 +134,7 @@ class Engine(object):
         name = msg[1]
         module = import_module('__main__')
         res = reduce(getattr, [module] + name.split('.'))
-        Engine.INTERCOMM.send(res, dest=self.client_rank)
+        self._send(res)
 
     def free_comm(self, msg):
         comm = msg[1].dereference()
@@ -156,4 +156,8 @@ class Engine(object):
         args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
 
         res = func(*args, **kwargs)
-        Engine.INTERCOMM.send(res, dest=self.client_rank)
+        self._send(res)
+
+    def _send(self, msg, dest=None):
+        dest = self.client_rank if dest is None else dest
+        Engine.INTERCOMM.send(msg, dest=dest)
