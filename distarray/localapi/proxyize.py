@@ -6,7 +6,12 @@
 
 from importlib import import_module
 
-from distarray.utils import DISTARRAY_BASE_NAME
+from distarray.utils import DISTARRAY_BASE_NAME, nonce
+
+
+class LazyPlaceholder(object):
+    pass
+
 
 class Proxy(object):
 
@@ -26,6 +31,12 @@ class Proxy(object):
         namespace = import_module(self.module_name)
         delattr(namespace, self.name)
         self.name = self.module_name = self.type_str = None
+
+
+def lazy_proxyize():
+    """Return a Proxy object for a delayed ("lazy") value."""
+    name = DISTARRAY_BASE_NAME + "lazy_" + nonce()
+    return Proxy(name, LazyPlaceholder(), '__main__')
 
 
 class Proxyize(object):

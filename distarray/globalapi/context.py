@@ -28,7 +28,7 @@ from distarray.globalapi.maps import Distribution, asdistribution
 
 from distarray.globalapi.ipython_utils import IPythonClient
 from distarray.utils import uid, nonce, has_exactly_one
-from distarray.localapi.proxyize import Proxy
+from distarray.localapi.proxyize import Proxy, lazy_proxyize
 
 # mpi context
 from distarray.mpionly_utils import (make_targets_comm,
@@ -71,7 +71,7 @@ class BaseContext(object):
         pass
 
     @abstractmethod
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def apply(self, func, args=None, kwargs=None, targets=None, nresults=None):
         pass
 
     @abstractmethod
@@ -743,7 +743,8 @@ class IPythonContext(BaseContext):
     def _push(self, d, targets):
         return self.view.push(d, targets=targets, block=True)
 
-    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
+    def apply(self, func, args=None, kwargs=None, targets=None,
+              autoproxyize=False, nresults=1):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -758,6 +759,8 @@ class IPythonContext(BaseContext):
             engines func is to be run on.
         autoproxyize: bool, default False
             If True, implicitly return a Proxy object from the function.
+        nresults: int, default 1
+            Number of return values.  Only implemented for MPIContext.
 
         Returns
         -------
@@ -856,7 +859,7 @@ class MPIContext(BaseContext):
         if MPIContext.INTERCOMM:
             self._send_msg(msg, targets=targets)
 
-    def __init__(self, targets=None):
+    def __init__(self, targets=None, lazy=False):
 
         if MPIContext.INTERCOMM is None:
             MPIContext.INTERCOMM = initial_comm_setup()
@@ -865,6 +868,16 @@ class MPIContext(BaseContext):
         self.nengines = MPIContext.INTERCOMM.remote_size
         self.all_targets = list(range(self.nengines))
         self.targets = self.all_targets if targets is None else sorted(targets)
+
+        self.lazy = lazy  # is the context in lazy-communication mode?
+
+        # message queues used for lazy mode
+        # mapping: target -> queue of messages for that target
+
+        # _sendq: batches up messages to send upon sync()
+        self._sendq = dict([(t, []) for t in self.targets])
+        # _recvq: stores proxy objects for expected return values
+        self._recvq = dict([(t, []) for t in self.targets])
 
         # make/get comms
         # this is the object we want to use with push, pull, etc'
@@ -910,14 +923,28 @@ class MPIContext(BaseContext):
 
     def _send_msg(self, msg, targets=None):
         targets = self.targets if targets is None else targets
-        for t in targets:
-            MPIContext.INTERCOMM.send(msg, dest=t)
+        if self.lazy and msg[0] != 'process_message_queue':
+            for t in targets:
+                self._sendq[t].append(msg)
+        else:
+            for t in targets:
+                MPIContext.INTERCOMM.send(msg, dest=t)
 
-    def _recv_msg(self, targets=None):
+    def _recv_msg(self, targets=None, nresults=1, sync=False):
         res = []
         targets = self.targets if targets is None else targets
         for t in targets:
-            res.append(MPIContext.INTERCOMM.recv(source=t))
+            if self.lazy and not sync:
+                if nresults in {0, 1}:
+                    res.append(lazy_proxyize())
+                else:
+                    target_results = []
+                    for i in range(nresults):
+                        target_results.append(lazy_proxyize())
+                    res.append(target_results)
+                self._recvq[t].append(res[-1])
+            else:
+                res.append(MPIContext.INTERCOMM.recv(source=t))
         return res
 
     def make_subcomm(self, targets):
@@ -948,7 +975,8 @@ class MPIContext(BaseContext):
         msg = ('push', d)
         return self._send_msg(msg, targets=targets)
 
-    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
+    def apply(self, func, args=None, kwargs=None, targets=None,
+              autoproxyize=False, nresults=1):
         """
         Analogous to IPython.parallel.view.apply_sync
 
@@ -963,6 +991,8 @@ class MPIContext(BaseContext):
             engines func is to be run on.
         autoproxyize: bool, default False
             If True, implicitly return a Proxy object from the function.
+        nresults: int, default 1
+            Number of return values.  Only needed for lazy evaluation.
 
         Returns
         -------
@@ -992,10 +1022,43 @@ class MPIContext(BaseContext):
             msg = ('builtin_call', func, args, kwargs, autoproxyize)
 
         self._send_msg(msg, targets=targets)
-        return self._recv_msg(targets=targets)
+        return self._recv_msg(targets=targets, nresults=nresults)
 
     def push_function(self, key, func, targets=None):
         push_function(self, key, func, targets=targets)
+
+    def sync(self, targets=None):
+        """Send queued messages, fill in expected result values."""
+        targets = self.targets if targets is None else targets
+        for t in targets:
+            msg = ('process_message_queue', self._sendq[t])
+            self._send_msg(msg, targets=[t])
+            self._sendq[t] = []  # empty the send queue
+            results = self._recv_msg(targets=[t], sync=True)[0]
+            lresults = self._recvq[t]
+            for lres, res in zip(lresults, results):
+                # multiple return values
+                if isinstance(res, collections.Sequence):
+                    if len(lres) != len(res):
+                        msg = ("Reserved lazy result object isn't the same"
+                               " size as the actual result object: {} != {}")
+                        raise TypeError(msg.format(len(lres), len(res)))
+                    for sublres, subres in zip(lres, res):
+                        if isinstance(subres, Proxy):
+                            sublres.__dict__ = subres.__dict__
+                        else:
+                            msg = ("Only DistArray return values are "
+                                   "supported in lazy mode.")
+                            raise TypeError(msg)
+                # single return value
+                else:
+                    if isinstance(res, Proxy):
+                        lres.__dict__ = res.__dict__
+                    else:
+                        msg = ("Only DistArray return values are "
+                               "currently supported in lazy mode.")
+                        raise TypeError(msg)
+                self._recvq[t] = []  # empty the recv queue
 
 
 class ContextCreationError(RuntimeError):

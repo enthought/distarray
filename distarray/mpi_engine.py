@@ -35,6 +35,8 @@ class Engine(object):
         # make engines intracomm (Context._base_comm):
         Engine.INTERCOMM = initial_comm_setup()
         assert self.is_engine()
+        self.lazy = False
+        self._client_sendq = []
         while True:
             msg = Engine.INTERCOMM.recv(source=self.client_rank)
             val = self.parse_msg(msg)
@@ -75,7 +77,8 @@ class Engine(object):
                 'free_comm': self.free_comm,
                 'delete': self.delete,
                 'make_targets_comm': self.engine_make_targets_comm,
-                'builtin_call': self.builtin_call}
+                'builtin_call': self.builtin_call,
+                'process_message_queue': self.process_message_queue}
         func = what[to_do]
         ret = func(msg)
         return ret
@@ -88,6 +91,7 @@ class Engine(object):
             name = obj
             try:
                 module = import_module('__main__')
+                print('delete', module, name)
                 delattr(module, name)
             except AttributeError:
                 pass
@@ -115,7 +119,7 @@ class Engine(object):
         res = new_func(*args, **kwargs)
         if autoproxyize and isinstance(res, LocalArray):
             res = module.proxyize(res)
-        self._send(res)
+        self._client_send(res)
 
     def execute(self, msg):
         main = import_module('__main__')
@@ -134,7 +138,7 @@ class Engine(object):
         name = msg[1]
         module = import_module('__main__')
         res = reduce(getattr, [module] + name.split('.'))
-        self._send(res)
+        self._client_send(res)
 
     def free_comm(self, msg):
         comm = msg[1].dereference()
@@ -156,8 +160,21 @@ class Engine(object):
         args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
 
         res = func(*args, **kwargs)
-        self._send(res)
+        self._client_send(res)
 
-    def _send(self, msg, dest=None):
-        dest = self.client_rank if dest is None else dest
-        Engine.INTERCOMM.send(msg, dest=dest)
+    def process_message_queue(self, msg):
+        mq = msg[1]
+        self.lazy = True
+        for submsg in mq:
+            val = self.parse_msg(submsg)
+            if val == 'kill':
+                return val
+        self.lazy = False
+        self._client_send(self._client_sendq)
+        self._client_sendq = []
+
+    def _client_send(self, msg):
+        if self.lazy:
+            self._client_sendq.append(msg)
+        else:
+            Engine.INTERCOMM.send(msg, dest=self.client_rank)
