@@ -34,7 +34,7 @@ class Engine(object):
 
         # make engines intracomm (Context._base_comm):
         Engine.INTERCOMM = initial_comm_setup()
-        assert self.world.rank != self.client_rank
+        assert self.is_engine()
         while True:
             msg = Engine.INTERCOMM.recv(source=self.client_rank)
             val = self.parse_msg(msg)
