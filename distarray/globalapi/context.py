@@ -17,6 +17,7 @@ import types
 from abc import ABCMeta, abstractmethod
 
 from functools import wraps
+from contextlib import contextmanager
 
 import numpy
 
@@ -920,6 +921,17 @@ class MPIContext(BaseContext):
             self._send_msg(('free_comm', subcomm), targets=targets)
 
     # End of key management routines.
+
+    @contextmanager
+    def lazy_eval(self):
+        """Context manager that enables lazy evaluation.
+
+        On exit, call `sync()` and set `self.lazy` to False
+        """
+        self.lazy = True
+        yield self
+        self.sync()
+        self.lazy = False
 
     def _send_msg(self, msg, targets=None):
         targets = self.targets if targets is None else targets
