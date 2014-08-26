@@ -39,11 +39,8 @@ class TestLazyEval(MPIContextTestCase):
         b = self.context.ones((5, 5))
         with self.context.lazy_eval():
             c = a + b
-            d = 2*a + b
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
-            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
         assert_array_equal(c.toarray(), a.toarray() + b.toarray())
-        assert_array_equal(d.toarray(), 2*a.toarray() + b.toarray())
 
 
 class TestRegister(DefaultContextTestCase):
