@@ -34,13 +34,85 @@ class TestLazyEval(MPIContextTestCase):
 
     ntargets = 'any'
 
-    def test_lazy_eval(self):
-        a = self.context.zeros((5, 5))
-        b = self.context.ones((5, 5))
+    def test_single_add(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
         with self.context.lazy_eval():
             c = a + b
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
         assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+
+    def test_single_mult(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        with self.context.lazy_eval():
+            c = a * b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() * b.toarray())
+
+    def test_constant_mult(self):
+        a = self.context.zeros((5, 6))
+        with self.context.lazy_eval():
+            c = a * 2
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() * 2)
+
+    def test_two_identical_add_expr(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        with self.context.lazy_eval():
+            c = a + b
+            d = a + b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray())
+
+    def test_two_lazy_add_expr(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        with self.context.lazy_eval():
+            c = a + b
+            d = a + b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray())
+
+    def test_different_adds(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        c = self.context.ones((5, 6)) + 1
+        d = self.context.ones((5, 6)) + 2
+        with self.context.lazy_eval():
+            e = a + b
+            f = c + d
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(f.key.dereference(), LazyPlaceholder))
+        assert_array_equal(e.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(f.toarray(), c.toarray() + d.toarray())
+
+    def test_more_different_adds(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        c = self.context.ones((5, 6)) + 1
+        with self.context.lazy_eval():
+            e = a + b
+            f = b + c
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(f.key.dereference(), LazyPlaceholder))
+        assert_array_equal(e.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(f.toarray(), b.toarray() + c.toarray())
+
+    @unittest.skip('Not yet supported')
+    def test_double_add(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        c = self.context.ones((5, 6)) + 1
+        with self.context.lazy_eval():
+            d = a + b + c
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
 
 
 class TestRegister(DefaultContextTestCase):
