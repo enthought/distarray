@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from distarray.testing import (DefaultContextTestCase, IPythonContextTestCase,
                                MPIContextTestCase, check_targets)
+import distarray.globalapi as gapi
 from distarray.globalapi.context import Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process
@@ -104,7 +105,17 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(e.toarray(), a.toarray() + b.toarray())
         assert_array_equal(f.toarray(), b.toarray() + c.toarray())
 
-    @unittest.skip('Not yet supported')
+    def test_unary_ufuncs(self):
+        a = self.context.ones((5, 6))
+        b = -1 * self.context.ones((5, 6))
+        with self.context.lazy_eval():
+            c = -a
+            d = gapi.absolute(b)
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), -a.toarray())
+        assert_array_equal(d.toarray(), numpy.absolute(b.toarray()))
+
     def test_double_add(self):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
