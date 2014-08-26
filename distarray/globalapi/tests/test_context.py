@@ -116,6 +116,7 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(c.toarray(), -a.toarray())
         assert_array_equal(d.toarray(), numpy.absolute(b.toarray()))
 
+    @unittest.skip('Not yet supported')
     def test_double_add(self):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
