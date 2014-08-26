@@ -91,7 +91,6 @@ class Engine(object):
             name = obj
             try:
                 module = import_module('__main__')
-                print('delete', module, name)
                 delattr(module, name)
             except AttributeError:
                 pass
