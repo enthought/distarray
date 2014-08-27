@@ -24,7 +24,7 @@ class Proxy(object):
         setattr(namespace, self.name, obj)
 
     def dereference(self):
-        """ Callable only on the engines. """
+        """Callable only on the engines."""
         namespace = import_module(self.module_name)
         return getattr(namespace, self.name)
 

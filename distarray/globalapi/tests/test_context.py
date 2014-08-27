@@ -514,6 +514,7 @@ class TestApply(DefaultContextTestCase):
         self.assertEqual(set(r[0].name for r in res), set([res[0][0].name]))
         self.assertEqual(set(r[-1].name for r in res), set([res[0][-1].name]))
 
+
 class TestGetBaseComm(DefaultContextTestCase):
 
     ntargets = 'any'
