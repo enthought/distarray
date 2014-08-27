@@ -116,11 +116,23 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(c.toarray(), -a.toarray())
         assert_array_equal(d.toarray(), numpy.absolute(b.toarray()))
 
-    @unittest.skip('Not yet supported')
-    def test_double_add(self):
+    def test_dependent_add(self):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
         c = self.context.ones((5, 6)) + 1
+        self.context.lazy = True
+        with self.context.lazy_eval():
+            t0 = a + b
+            d = t0 + c
+            self.assertTrue(isinstance(t0.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
+
+    def test_temporary_value(self):
+        a = self.context.zeros((5, 6))
+        b = self.context.ones((5, 6))
+        c = self.context.ones((5, 6)) + 1
+        self.context.lazy = True
         with self.context.lazy_eval():
             d = a + b + c
             self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))

@@ -15,9 +15,10 @@ class LazyPlaceholder(object):
 
 class Proxy(object):
 
-    def __init__(self, name, obj, module_name):
+    def __init__(self, name, obj, module_name, lazy=False):
         self.name = name
         self.module_name = module_name
+        self.lazy = lazy
         self.type_str = str(type(obj))
         namespace = import_module(self.module_name)
         setattr(namespace, self.name, obj)
@@ -29,14 +30,16 @@ class Proxy(object):
 
     def cleanup(self):
         namespace = import_module(self.module_name)
-        delattr(namespace, self.name)
+        if 'lazy' not in self.name:
+            delattr(namespace, self.name)
         self.name = self.module_name = self.type_str = None
 
 
 def lazy_proxyize():
     """Return a Proxy object for a delayed ("lazy") value."""
     name = DISTARRAY_BASE_NAME + "lazy_" + nonce()
-    return Proxy(name, LazyPlaceholder(), '__main__')
+    return Proxy(name=name, obj=LazyPlaceholder(),
+                 module_name='__main__', lazy=True)
 
 
 class Proxyize(object):

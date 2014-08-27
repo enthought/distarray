@@ -1043,7 +1043,7 @@ class MPIContext(BaseContext):
         """Send queued messages, fill in expected result values."""
         targets = self.targets if targets is None else targets
         for t in targets:
-            msg = ('process_message_queue', self._sendq[t])
+            msg = ('process_message_queue', self._recvq[t], self._sendq[t])
             self._send_msg(msg, targets=[t])
             self._sendq[t] = []  # empty the send queue
             results = self._recv_msg(targets=[t], sync=True)[0]

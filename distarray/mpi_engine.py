@@ -7,16 +7,19 @@
 The engine_loop function and utilities necessary for it.
 """
 
+from collections import OrderedDict
 from functools import reduce
 from importlib import import_module
 import types
 
+from distarray.externals.six import next
 from distarray.localapi import LocalArray
 from distarray.localapi.proxyize import Proxy
 
 from distarray.mpionly_utils import (initial_comm_setup,
                                      make_targets_comm,
                                      get_comm_world)
+from pprint import pprint
 
 
 class Engine(object):
@@ -37,6 +40,7 @@ class Engine(object):
         assert self.is_engine()
         self.lazy = False
         self._client_sendq = []
+        self._value_from_name = OrderedDict()
         while True:
             msg = Engine.INTERCOMM.recv(source=self.client_rank)
             val = self.parse_msg(msg)
@@ -50,7 +54,7 @@ class Engine(object):
         args = list(args)
         for i, a in enumerate(args):
             if isinstance(a, module.Proxy):
-                args[i] = a.dereference()
+                args[i] = self._value_from_name.get(a.name, a).dereference()
         args = tuple(args)
 
         # convert kwargs
@@ -96,7 +100,6 @@ class Engine(object):
                 pass
 
     def func_call(self, msg):
-
         func_data = msg[1]
         args = msg[2]
         kwargs = msg[3]
@@ -162,18 +165,26 @@ class Engine(object):
         self._client_send(res)
 
     def process_message_queue(self, msg):
-        mq = msg[1]
-        self.lazy = True
-        for submsg in mq:
+        # we need the recvq (msg[1]) to see which values are returned from
+        # which expression
+        lazy_proxies = msg[1]
+        self._value_from_name = OrderedDict([(lp.name, None) for lp in
+                                             lazy_proxies])
+        self._current_rval = iter(self._value_from_name)
+        msgq = msg[2]
+        self.lazy = True  # this msg is only received in lazy mode
+        for submsg in msgq:
             val = self.parse_msg(submsg)
             if val == 'kill':
                 return val
         self.lazy = False
         self._client_send(self._client_sendq)
         self._client_sendq = []
+        self._value_from_name = OrderedDict()
 
     def _client_send(self, msg):
         if self.lazy:
+            self._value_from_name[next(self._current_rval)] = msg
             self._client_sendq.append(msg)
         else:
             Engine.INTERCOMM.send(msg, dest=self.client_rank)
