@@ -147,6 +147,7 @@ class TestLazyEval(MPIContextTestCase):
             d = (2*a + (3*b + 4*c)) / 2
             e = gapi.negative(d * d)
             self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
         d_expected = (2*a.toarray() + (3*b.toarray() + 4*c.toarray())) / 2
         e_expected = numpy.negative(d * d)
         assert_array_equal(d.toarray(), d_expected)
