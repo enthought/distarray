@@ -4,7 +4,7 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # ---------------------------------------------------------------------------
 """
-The engine_loop function and utilities necessary for it.
+The MPI-based `Engine` class.
 """
 
 from collections import OrderedDict
