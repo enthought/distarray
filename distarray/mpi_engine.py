@@ -19,14 +19,16 @@ from distarray.localapi.proxyize import Proxy
 from distarray.mpionly_utils import (initial_comm_setup,
                                      make_targets_comm,
                                      get_comm_world)
-from pprint import pprint
 
 
 class Engine(object):
 
+    """MPI-based worker class."""
+
     INTERCOMM = None
 
     def __init__(self):
+        """Setup and execute the main ``recv`` loop."""
         self.world = get_comm_world()
         self.world_ranks = list(range(self.world.size))
 
@@ -49,6 +51,7 @@ class Engine(object):
         Engine.INTERCOMM.Free()
 
     def arg_kwarg_proxy_converter(self, args, kwargs):
+        """Dereference proxy arguments and update computed lazy proxies."""
         module = import_module('__main__')
         # convert args
         args = list(args)
@@ -66,12 +69,14 @@ class Engine(object):
         return args, kwargs
 
     def is_engine(self):
+        """Is this an engine (as opposed to the client)?"""
         if self.world.rank != self.client_rank:
             return True
         else:
             return False
 
     def parse_msg(self, msg):
+        """Given a message, execute the proper function."""
         to_do = msg[0]
         what = {'func_call': self.func_call,
                 'execute': self.execute,
@@ -88,6 +93,10 @@ class Engine(object):
         return ret
 
     def delete(self, msg):
+        """Process the 'delete' message.
+
+        Cleans up the namespace.
+        """
         obj = msg[1]
         if isinstance(obj, Proxy):
             obj.cleanup()
@@ -100,6 +109,7 @@ class Engine(object):
                 pass
 
     def func_call(self, msg):
+        """Process the 'func_call' message."""
         func_data = msg[1]
         args = msg[2]
         kwargs = msg[3]
@@ -124,11 +134,13 @@ class Engine(object):
         self._client_send(res)
 
     def execute(self, msg):
+        """Process the 'execute' message."""
         main = import_module('__main__')
         code = msg[1]
         exec(code, main.__dict__)
 
     def push(self, msg):
+        """Process the 'push' message."""
         d = msg[1]
         module = import_module('__main__')
         for k, v in d.items():
@@ -137,24 +149,31 @@ class Engine(object):
             setattr(place, pieces[-1], v)
 
     def pull(self, msg):
+        """Process the 'pull' message."""
         name = msg[1]
         module = import_module('__main__')
         res = reduce(getattr, [module] + name.split('.'))
         self._client_send(res)
 
     def free_comm(self, msg):
+        """Call `Free` on a communicator."""
         comm = msg[1].dereference()
         comm.Free()
 
     def kill(self, msg):
-        """Break out of the engine loop."""
+        """Process the 'kill' message.
+
+        Breaks out of the engine loop.
+        """
         return 'kill'
 
     def engine_make_targets_comm(self, msg):
+        """Process the 'make_targets_comm' message."""
         targets = msg[1]
         make_targets_comm(targets)
 
     def builtin_call(self, msg):
+        """Process the 'builtin_call' message."""
         func = msg[1]
         args = msg[2]
         kwargs = msg[3]
@@ -165,14 +184,21 @@ class Engine(object):
         self._client_send(res)
 
     def process_message_queue(self, msg):
+        """Process the 'process_message_queue' message.
+
+        This temporarily puts the engine in ``lazy`` mode, queueing up all the
+        replies (`_client_send`) to be sent at once.
+        """
         # we need the recvq (msg[1]) to see which values are returned from
         # which expression
         lazy_proxies = msg[1]
+        # set up mapping from lazy_proxy names to their computed values
+        # values to be filled in as the queue is processed
         self._value_from_name = OrderedDict([(lp.name, None) for lp in
                                              lazy_proxies])
         self._current_rval = iter(self._value_from_name)
         msgq = msg[2]
-        self.lazy = True  # this msg is only received in lazy mode
+        self.lazy = True  # 'process_message_queue' only received in lazy mode
         for submsg in msgq:
             val = self.parse_msg(submsg)
             if val == 'kill':
@@ -183,6 +209,10 @@ class Engine(object):
         self._value_from_name = OrderedDict()
 
     def _client_send(self, msg):
+        """Send a message to the client.
+
+        If in lazy mode, just queue up the message.
+        """
         if self.lazy:
             self._value_from_name[next(self._current_rval)] = msg
             self._client_sendq.append(msg)
