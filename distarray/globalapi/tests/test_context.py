@@ -120,7 +120,6 @@ class TestLazyEval(MPIContextTestCase):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
         c = self.context.ones((5, 6)) + 1
-        self.context.lazy = True
         with self.context.lazy_eval():
             t0 = a + b
             d = t0 + c
@@ -132,7 +131,6 @@ class TestLazyEval(MPIContextTestCase):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
         c = self.context.ones((5, 6)) + 1
-        self.context.lazy = True
         with self.context.lazy_eval():
             d = a + b + c
             self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
@@ -142,7 +140,6 @@ class TestLazyEval(MPIContextTestCase):
         a = self.context.zeros((5, 6))
         b = self.context.ones((5, 6))
         c = self.context.ones((5, 6)) + 1
-        self.context.lazy = True
         with self.context.lazy_eval():
             d = (2*a + (3*b + 4*c)) / 2
             e = gapi.negative(d * d)
