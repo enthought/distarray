@@ -29,7 +29,7 @@ from distarray.globalapi.maps import Distribution, asdistribution
 
 from distarray.globalapi.ipython_utils import IPythonClient
 from distarray.utils import uid, nonce, has_exactly_one
-from distarray.localapi.proxyize import Proxy, lazy_proxyize
+from distarray.localapi.proxyize import Proxy, lazy_proxyize, lazy_name
 
 # mpi context
 from distarray.mpionly_utils import (make_targets_comm,
@@ -945,17 +945,21 @@ class MPIContext(BaseContext):
     def _recv_msg(self, targets=None, nresults=1, sync=False):
         res = []
         targets = self.targets if targets is None else targets
-        for t in targets:
-            if self.lazy and not sync:
-                if nresults in {0, 1}:
-                    res.append(lazy_proxyize())
+        if self.lazy and not sync:
+            result_names = [lazy_name() for n in range(nresults)]
+            for t in targets:
+                if nresults == 0:
+                    res.append(None)
+                elif nresults == 1:
+                    res.append(lazy_proxyize(name=result_names[0]))
                 else:
                     target_results = []
-                    for i in range(nresults):
-                        target_results.append(lazy_proxyize())
+                    for name in result_names:
+                        target_results.append(lazy_proxyize(name))
                     res.append(target_results)
                 self._recvq[t].append(res[-1])
-            else:
+        else:
+            for t in targets:
                 res.append(MPIContext.INTERCOMM.recv(source=t))
         return res
 
@@ -1046,6 +1050,8 @@ class MPIContext(BaseContext):
             msg = ('process_message_queue', self._recvq[t], self._sendq[t])
             self._send_msg(msg, targets=[t])
             self._sendq[t] = []  # empty the send queue
+
+        for t in targets:
             results = self._recv_msg(targets=[t], sync=True)[0]
             lresults = self._recvq[t]
             for lres, res in zip(lresults, results):

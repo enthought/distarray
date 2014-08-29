@@ -36,42 +36,31 @@ class TestLazyEval(MPIContextTestCase):
     ntargets = 'any'
 
     def test_single_add(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
+        a = self.context.zeros((53, 63))
+        b = self.context.ones((53, 63))
         with self.context.lazy_eval():
             c = a + b
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
         assert_array_equal(c.toarray(), a.toarray() + b.toarray())
 
     def test_single_mult(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
+        a = self.context.zeros((54, 64))
+        b = self.context.ones((54, 64))
         with self.context.lazy_eval():
             c = a * b
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
         assert_array_equal(c.toarray(), a.toarray() * b.toarray())
 
     def test_constant_mult(self):
-        a = self.context.zeros((5, 6))
+        a = self.context.zeros((55, 65))
         with self.context.lazy_eval():
             c = a * 2
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
         assert_array_equal(c.toarray(), a.toarray() * 2)
 
     def test_two_identical_add_expr(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        with self.context.lazy_eval():
-            c = a + b
-            d = a + b
-            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
-            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
-        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
-        assert_array_equal(d.toarray(), a.toarray() + b.toarray())
-
-    def test_two_lazy_add_expr(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
+        a = self.context.zeros((56, 66))
+        b = self.context.ones((56, 66))
         with self.context.lazy_eval():
             c = a + b
             d = a + b
@@ -81,10 +70,10 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(d.toarray(), a.toarray() + b.toarray())
 
     def test_different_adds(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        c = self.context.ones((5, 6)) + 1
-        d = self.context.ones((5, 6)) + 2
+        a = self.context.zeros((58, 68))
+        b = self.context.ones((58, 68))
+        c = self.context.ones((58, 68)) + 1
+        d = self.context.ones((58, 68)) + 2
         with self.context.lazy_eval():
             e = a + b
             f = c + d
@@ -94,9 +83,9 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(f.toarray(), c.toarray() + d.toarray())
 
     def test_more_different_adds(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        c = self.context.ones((5, 6)) + 1
+        a = self.context.zeros((59, 69))
+        b = self.context.ones((59, 69))
+        c = self.context.ones((59, 69)) + 1
         with self.context.lazy_eval():
             e = a + b
             f = b + c
@@ -106,8 +95,8 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(f.toarray(), b.toarray() + c.toarray())
 
     def test_unary_ufuncs(self):
-        a = self.context.ones((5, 6))
-        b = -1 * self.context.ones((5, 6))
+        a = self.context.ones((60, 70))
+        b = -1 * self.context.ones((60, 70))
         with self.context.lazy_eval():
             c = -a
             d = gapi.absolute(b)
@@ -117,9 +106,9 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(d.toarray(), numpy.absolute(b.toarray()))
 
     def test_dependent_add(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        c = self.context.ones((5, 6)) + 1
+        a = self.context.zeros((61, 71))
+        b = self.context.ones((61, 71))
+        c = self.context.ones((61, 71)) + 1
         with self.context.lazy_eval():
             t0 = a + b
             d = t0 + c
@@ -127,19 +116,10 @@ class TestLazyEval(MPIContextTestCase):
             self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
         assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
 
-    def test_temporary_value(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        c = self.context.ones((5, 6)) + 1
-        with self.context.lazy_eval():
-            d = a + b + c
-            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
-        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
-
     def test_complex_expressions(self):
-        a = self.context.zeros((5, 6))
-        b = self.context.ones((5, 6))
-        c = self.context.ones((5, 6)) + 1
+        a = self.context.zeros((52, 62))
+        b = self.context.ones((52, 62))
+        c = self.context.ones((52, 62)) + 1
         with self.context.lazy_eval():
             d = (2*a + (3*b + 4*c)) / 2
             e = gapi.negative(d * d)
@@ -149,6 +129,13 @@ class TestLazyEval(MPIContextTestCase):
         e_expected = numpy.negative(d * d)
         assert_array_equal(d.toarray(), d_expected)
         assert_array_equal(e.toarray(), e_expected)
+
+    def test_lazy_creation(self):
+        with self.context.lazy_eval():
+            a = self.context.zeros((50, 60))
+            b = self.context.zeros((50, 60))
+        assert_array_equal(b.toarray(), numpy.zeros((50, 60)))
+        assert_array_equal(a.toarray(), numpy.zeros((50, 60)))
 
 
 class TestRegister(DefaultContextTestCase):

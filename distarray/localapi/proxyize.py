@@ -35,9 +35,14 @@ class Proxy(object):
         self.name = self.module_name = self.type_str = None
 
 
-def lazy_proxyize():
+def lazy_name():
+    return DISTARRAY_BASE_NAME + "lazy_" + nonce()
+
+
+def lazy_proxyize(name=None):
     """Return a Proxy object for a delayed ("lazy") value."""
-    name = DISTARRAY_BASE_NAME + "lazy_" + nonce()
+    if name is None:
+        name = lazy_name()
     return Proxy(name=name, obj=LazyPlaceholder(),
                  module_name='__main__', lazy=True)
 

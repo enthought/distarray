@@ -57,7 +57,10 @@ class Engine(object):
         args = list(args)
         for i, a in enumerate(args):
             if isinstance(a, module.Proxy):
-                args[i] = self._value_from_name.get(a.name, a).dereference()
+                if a.lazy:
+                    args[i] = self._value_from_name[a.name].dereference()
+                else:
+                    args[i] = a.dereference()
         args = tuple(args)
 
         # convert kwargs
