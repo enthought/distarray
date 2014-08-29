@@ -137,6 +137,20 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(b.toarray(), numpy.zeros((50, 60)))
         assert_array_equal(a.toarray(), numpy.zeros((50, 60)))
 
+    def test_creation_and_expressions(self):
+        with self.context.lazy_eval():
+            a = self.context.zeros((52, 62))
+            b = self.context.ones((52, 62))
+            c = self.context.ones((52, 62)) + 1
+            d = (2*a + (3*b + 4*c)) / 2
+            e = gapi.negative(d * d)
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+        d_expected = (2*a.toarray() + (3*b.toarray() + 4*c.toarray())) / 2
+        e_expected = numpy.negative(d * d)
+        assert_array_equal(d.toarray(), d_expected)
+        assert_array_equal(e.toarray(), e_expected)
+
 
 class TestRegister(DefaultContextTestCase):
 
