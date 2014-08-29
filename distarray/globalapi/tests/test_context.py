@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from distarray.testing import (DefaultContextTestCase, IPythonContextTestCase,
                                MPIContextTestCase, check_targets)
 import distarray.globalapi as gapi
-from distarray.globalapi.context import Context
+from distarray.globalapi.context import DistArray, Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process
 from distarray.localapi import LocalArray
@@ -150,6 +150,18 @@ class TestLazyEval(MPIContextTestCase):
         e_expected = numpy.negative(d * d)
         assert_array_equal(d.toarray(), d_expected)
         assert_array_equal(e.toarray(), e_expected)
+
+    def test_user_function(self):
+        with self.context.lazy_eval():
+            def local_square(la):
+                return la * la
+            da = self.context.ones((30, 40)) * 2
+            new_key = self.context.apply(local_square, (da.key,), autoproxyize=True)[0]
+            new_da = DistArray.from_localarrays(key=new_key,
+                                                distribution=da.distribution,
+                                                dtype=int)
+        assert_array_equal(new_da.toarray(), (numpy.ones((30, 40)) * 2) ** 2)
+
 
 
 class TestRegister(DefaultContextTestCase):
