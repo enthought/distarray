@@ -13,9 +13,10 @@ from math import sqrt
 import random
 import uuid
 
+from distarray import DISTARRAY_BASE_NAME
 from distarray.externals.six import next
 
-DISTARRAY_BASE_NAME = '__distarray__'
+
 DISTARRAY_RANDOM = random.Random()
 
 
@@ -31,10 +32,13 @@ def distarray_random_getstate():
     return DISTARRAY_RANDOM.getstate()
 
 
+def nonce():
+    return uuid.UUID(int=DISTARRAY_RANDOM.getrandbits(8 * 16)).hex[:16]
+
+
 def uid():
-    """ Get a unique name for a distarray object. """
-    suffix = uuid.UUID(int=DISTARRAY_RANDOM.getrandbits(8 * 16)).hex[:16]
-    return DISTARRAY_BASE_NAME + suffix
+    """Get a unique name for a distarray object. """
+    return DISTARRAY_BASE_NAME + nonce()
 
 
 def multi_for(iterables):
