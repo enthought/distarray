@@ -1065,6 +1065,28 @@ class TestBlockRedistribution(DefaultContextTestCase):
         dest_da = source_da.distribute_as(dest_dist)
         assert_array_equal(source_da.tondarray(), dest_da.tondarray())
 
+
+class TestReshapeRedistribution(DefaultContextTestCase):
+
+    def test_global_flat_indices(self):
+        dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
+
+        self.assertSequenceEqual([[(0, 20)], [(20, 40)]],
+                                 [global_flat_indices(ddpr) for ddpr in dist0.get_dim_data_per_rank()])
+
+        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (2,), targets=[0,2])
+
+        self.assertSequenceEqual([[(0, 24)], [(24, 40)]],
+                                 [global_flat_indices(ddpr) for ddpr in dist1.get_dim_data_per_rank()])
+
+        dist2 = Distribution(self.context, (5, 8), ('b', 'b'), (2, 2), targets=[0,1,2,3])
+        
+        self.assertSequenceEqual([[(0, 4), (8, 12), (16, 20)],
+                                  [(4, 8), (12, 16), (20, 24)],
+                                  [(24, 28), (32, 36)],
+                                  [(28, 32), (36, 40)]],
+                [global_flat_indices(ddpr) for ddpr in dist2.get_dim_data_per_rank()])
+
     def test_redist_reshape_same_target(self):
         dist0 = Distribution(self.context, (40,), ('b',), (1,), targets=[1])
         dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (1,), targets=[1])
@@ -1154,24 +1176,6 @@ class TestBlockRedistribution(DefaultContextTestCase):
 
         assert_array_equal(da_dest.tondarray(), expected)
 
-    def test_global_flat_indices(self):
-        dist0 = Distribution(self.context, (40,), ('b',), (2,), targets=[1,3])
-
-        self.assertSequenceEqual([[(0, 20)], [(20, 40)]],
-                                 [global_flat_indices(ddpr) for ddpr in dist0.get_dim_data_per_rank()])
-
-        dist1 = Distribution(self.context, (5, 8), ('b', 'n'), (2,), targets=[0,2])
-
-        self.assertSequenceEqual([[(0, 24)], [(24, 40)]],
-                                 [global_flat_indices(ddpr) for ddpr in dist1.get_dim_data_per_rank()])
-
-        dist2 = Distribution(self.context, (5, 8), ('b', 'b'), (2, 2), targets=[0,1,2,3])
-        
-        self.assertSequenceEqual([[(0, 4), (8, 12), (16, 20)],
-                                  [(4, 8), (12, 16), (20, 24)],
-                                  [(24, 28), (32, 36)],
-                                  [(28, 32), (36, 40)]],
-                [global_flat_indices(ddpr) for ddpr in dist2.get_dim_data_per_rank()])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
