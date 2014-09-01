@@ -41,7 +41,9 @@ from distarray.metadata_utils import (normalize_dist,
                                       sanitize_indices,
                                       _start_stop_block,
                                       tuple_intersection,
-                                      shapes_from_dim_data_per_rank)
+                                      shapes_from_dim_data_per_rank,
+                                      condense,
+                                      strides_from_shape)
 
 
 def _dedup_dim_dicts(dim_dicts):
@@ -876,6 +878,15 @@ class Distribution(object):
 
     def localshapes(self):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
+
+    def comm_union(self, *dists):
+        dist_targets = [d.targets for d in dists]
+        all_targets = sorted(reduce(set.union, dist_targets, set(self.targets)))
+        return self.context.make_subcomm(all_targets), all_targets
+
+    # ------------------------------------------------------------------------
+    # Redistribution
+    # ------------------------------------------------------------------------
     
     @staticmethod
     def _redist_intersection_same_shape(source_dimdata, dest_dimdata):
@@ -883,7 +894,8 @@ class Distribution(object):
         intersections = []
         for source_dimdict, dest_dimdict in zip(source_dimdata, dest_dimdata):
 
-            if not (source_dimdict['dist_type'] == dest_dimdict['dist_type'] == 'b'):
+            if not (source_dimdict['dist_type'] ==
+                    dest_dimdict['dist_type'] == 'b'):
                 raise ValueError("Only 'b' dist_type supported")
 
             source_idxs = source_dimdict['start'], source_dimdict['stop']
@@ -897,7 +909,7 @@ class Distribution(object):
     def _redist_intersection_reshape(source_dimdata, dest_dimdata):
         source_flat = global_flat_indices(source_dimdata)
         dest_flat = global_flat_indices(dest_dimdata)
-        return global_flat_indices_intersection(source_flat, dest_flat)
+        return _global_flat_indices_intersection(source_flat, dest_flat)
 
     def get_redist_plan(self, other_dist):
         # Get all targets
@@ -906,11 +918,15 @@ class Distribution(object):
 
         source_ranks = range(len(self.targets))
         source_targets = self.targets
-        union_rank_from_source_rank = {sr: union_rank_from_target[st] for (sr, st) in zip(source_ranks, source_targets)}
+        union_rank_from_source_rank = {sr: union_rank_from_target[st]
+                                       for (sr, st) in
+                                       zip(source_ranks, source_targets)}
 
         dest_ranks = range(len(other_dist.targets))
         dest_targets = other_dist.targets
-        union_rank_from_dest_rank = {sr: union_rank_from_target[st] for (sr, st) in zip(dest_ranks, dest_targets)}
+        union_rank_from_dest_rank = {sr: union_rank_from_target[st]
+                                     for (sr, st) in
+                                     zip(dest_ranks, dest_targets)}
 
         source_ddpr = self.get_dim_data_per_rank()
         dest_ddpr = other_dist.get_dim_data_per_rank()
@@ -929,20 +945,19 @@ class Distribution(object):
                 source_rank = self.rank_from_coords[source_coords]
                 dest_coords = tuple(dd['proc_grid_rank'] for dd in dest_dd)
                 dest_rank = other_dist.rank_from_coords[dest_coords]
-                plan.append(
-                        {
-                            'source_rank': union_rank_from_source_rank[source_rank],
-                            'dest_rank': union_rank_from_dest_rank[dest_rank],
-                            'indices': intersections,
-                            }
-                        )
+                plan.append({
+                    'source_rank': union_rank_from_source_rank[source_rank],
+                    'dest_rank': union_rank_from_dest_rank[dest_rank],
+                    'indices': intersections,
+                    }
+                )
 
         return plan
 
-    def comm_union(self, *dists):
-        all_targets = sorted(reduce(set.union, [d.targets for d in dists], set(self.targets)))
-        return self.context.make_subcomm(all_targets), all_targets
 
+# ----------------------------------------------------------------------------
+# Redistribution helper functions.
+# ----------------------------------------------------------------------------
 
 def global_flat_indices(dim_data):
     # TODO: FIXME: can be optimized when the last dimension is 'n'.
@@ -953,11 +968,7 @@ def global_flat_indices(dim_data):
             dd['stop'] = dd['size']
 
     glb_shape = tuple(dd['size'] for dd in dim_data)
-
-    def accum(start, next):
-        return tuple(s * next for s in start) + (next,)
-
-    glb_strides = reduce(accum, tuple(glb_shape[1:]) + (1,), ())
+    glb_strides = strides_from_shape(glb_shape)
 
     ranges = [range(dd['start'], dd['stop']) for dd in dim_data[:-1]]
     start_ranges = ranges + [[dim_data[-1]['start']]]
@@ -970,20 +981,9 @@ def global_flat_indices(dim_data):
     stops = map(flatten, product(*stop_ranges))
 
     intervals = zip(starts, stops)
+    return condense(intervals)
 
-    # TODO: move to common place.  Code duplication!!!
-    def squeeze(accum, next):
-        last = accum[-1]
-        if not last:
-            return [next]
-        elif last[-1] != next[0]:
-            return accum + [next]
-        elif last[-1] == next[0]:
-            return accum[:-1] + [(last[0], next[-1])]
-
-    intervals = reduce(squeeze, intervals, [[]])
-    return intervals
-
-def global_flat_indices_intersection(gfis0, gfis1):
-    intersections = filter(None, [tuple_intersection(a, b) for (a, b) in product(gfis0, gfis1)])
+def _global_flat_indices_intersection(gfis0, gfis1):
+    intersections = filter(None, [tuple_intersection(a, b)
+                                  for (a, b) in product(gfis0, gfis1)])
     return [i[:2] for i in intersections]

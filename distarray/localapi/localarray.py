@@ -27,63 +27,30 @@ import numpy as np
 from distarray.externals import six
 from distarray.externals.six.moves import zip, reduce
 
-from distarray.metadata_utils import sanitize_indices
+from distarray.metadata_utils import sanitize_indices, strides_from_shape, ndim_from_flat, condense
 
 from distarray.localapi.mpiutils import MPI
 from distarray.localapi import format, maps
 from distarray.localapi.error import InvalidDimensionError, IncompatibleArrayError
 
-# TODO: move to common place.
-def ndim_from_flat(flat, strides):
-    res = []
-    for st in strides:
-        res.append(flat // st)
-        flat %= st
-    return tuple(res)
+# ----------------------------------------------------------------------------
+# Local Redistribution functions
+# ----------------------------------------------------------------------------
 
-# TODO: move to common place.
-def flat_from_ndim(ndim, strides):
-    return sum(i * s for (i, s) in zip(ndim, strides))
-
-# TODO: move to common place.
-def _accum(start, next):
-    return tuple(s * next for s in start) + (next,)
-
-# TODO: move to common place.
-def _get_strides(shape):
-    return reduce(_accum, tuple(shape[1:]) + (1,), ())
-
-# TODO: move to common place.
 def _transform(local_distribution, glb_flat):
-    glb_strides = _get_strides(local_distribution.global_shape)
-    local_strides = _get_strides(local_distribution.local_shape)
+    glb_strides = strides_from_shape(local_distribution.global_shape)
+    local_strides = strides_from_shape(local_distribution.local_shape)
     glb_ndim_inds = ndim_from_flat(glb_flat, glb_strides)
     local_ind = local_distribution.local_from_global(glb_ndim_inds)
     local_flat = local_distribution.local_flat_from_local(local_ind)
     return local_flat
 
-# TODO: move to common place.
-def _squeeze(accum, next):
-    last = accum[-1]
-    if not last:
-        return [next]
-    elif last[-1] != next[0]:
-        return accum + [next]
-    elif last[-1] == next[0]:
-        return accum[:-1] + [(last[0], next[-1])]
-
-# TODO: move to common place.
-def _condense(intervals):
-    intervals = reduce(_squeeze, intervals, [[]])
-    return intervals
-
-# TODO: move to common place.
 def _massage_indices(local_distribution, glb_intervals):
     # XXX: TODO: document why we do `-1)+1` below.
     local_flat_slices = [(_transform(local_distribution, i[0]),
                           _transform(local_distribution, i[1]-1)+1)
                             for i in glb_intervals]
-    return _condense(local_flat_slices)
+    return condense(local_flat_slices)
 
 def _mpi_dtype_from_intervals(larr, glb_intervals):
     local_intervals = _massage_indices(larr.distribution, glb_intervals)
@@ -98,20 +65,16 @@ def redistribute_general(comm, plan, la_from, la_to):
     myrank = comm.Get_rank()
     for dta in plan:
         if dta['source_rank'] == dta['dest_rank'] == myrank:
-            # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
             from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
             to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
             comm.Sendrecv(sendbuf=[la_from.ndarray, 1, from_dtype], dest=myrank,
                           recvbuf=[la_to.ndarray, 1, to_dtype], source=myrank)
         elif dta['source_rank'] == myrank:
-            # mpi_print("sending from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
             from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
             comm.Send([la_from.ndarray, 1, from_dtype], dest=dta['dest_rank'])
         elif dta['dest_rank'] == myrank:
-            # mpi_print("receiving from source %d to dest %d" % (dta['source_rank'], dta['dest_rank']))
             to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
             comm.Recv([la_to.ndarray, 1, to_dtype], source=dta['source_rank'])
-
 
 def make_local_slices(local_arr, glb_indices):
     slices = tuple(slice(*inds) for inds in glb_indices)

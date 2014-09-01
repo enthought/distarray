@@ -529,3 +529,34 @@ def shapes_from_dim_data_per_rank(ddpr):  # ddpr = dim_data_per_rank
             shape.append(size_from_dim_data(dd))
         shape_list.append(tuple(shape))
     return shape_list
+
+# ----------------------------------------------------------------------------
+# Redistribution-related utilities.
+# ----------------------------------------------------------------------------
+
+def _accum(start, next):
+    return tuple(s * next for s in start) + (next,)
+
+def strides_from_shape(shape):
+    return reduce(_accum, tuple(shape[1:]) + (1,), ())
+
+def ndim_from_flat(flat, strides):
+    res = []
+    for st in strides:
+        res.append(flat // st)
+        flat %= st
+    return tuple(res)
+
+def _squeeze(accum, next):
+    last = accum[-1]
+    if not last:
+        return [next]
+    elif last[-1] != next[0]:
+        return accum + [next]
+    elif last[-1] == next[0]:
+        return accum[:-1] + [(last[0], next[-1])]
+
+def condense(intervals):
+    intervals = reduce(_squeeze, intervals, [[]])
+    return intervals
+
