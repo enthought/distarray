@@ -106,17 +106,20 @@ Getting Started
 ---------------
 
 To see some initial examples of what DistArray can do, check out the IPython
-notebooks and python scripts in the ``examples`` directory.  To start, see the
-`features`_ notebook, also viewable on nbviewer.
+notebooks and python scripts in the ``examples`` directory.  Read-only versions
+of our notebooks are also viewable on nbviewer:
 
-.. _features: http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb
+* `DistArray Features <http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb>`_ 
+* `Seismic Volume <http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/seismic_volume/seismic_volume.ipynb>`_
+* `Julia Set <http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/julia_set/julia_set.ipynb>`_
 
 If you have questions or would like to contribute, contact us
 
-* on the DistArray mailing list:  distarray.googlegroups.com,
+* on the DistArray mailing list:  distarray@googlegroups.com,
 * in the DistArray IRC channel: #distarray on freenode, or
 * through the DistArray GitHub repo: https://github.com/enthought/distarray
   (for bug reports and pull requests).
+
 
 History
 -------

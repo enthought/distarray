@@ -21,16 +21,17 @@ from functools import wraps
 import numpy
 
 from distarray.externals import six
+from distarray import DISTARRAY_BASE_NAME
 from distarray.globalapi import ipython_cleanup
 from distarray.globalapi.distarray import DistArray
 from distarray.globalapi.maps import Distribution, asdistribution
 
 from distarray.globalapi.ipython_utils import IPythonClient
-from distarray.utils import uid, DISTARRAY_BASE_NAME, has_exactly_one
+from distarray.utils import uid, nonce, has_exactly_one
 from distarray.localapi.proxyize import Proxy
 
 # mpi context
-from distarray.mpionly_utils import (make_targets_comm, get_nengines,
+from distarray.mpionly_utils import (make_targets_comm,
                                      get_world_rank, initial_comm_setup,
                                      is_solo_mpi_process, get_comm_world,
                                      mpi, push_function)
@@ -710,6 +711,8 @@ class IPythonContext(BaseContext):
         def _make_new_comm(rank_list):
             import distarray.localapi.mpiutils as mpiutils
             new_comm = mpiutils.create_comm_with_list(rank_list)
+            if not mpiutils.get_base_comm():
+                mpiutils.set_base_comm(new_comm)
             return proxyize(new_comm)  # noqa
 
         return self.apply(_make_new_comm, args=(ranks,),
@@ -819,7 +822,7 @@ class IPythonContext(BaseContext):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
-        apply_nonce = uid()[13:]
+        apply_nonce = nonce()
         wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize, default)
 
         targets = self.targets if targets is None else targets
@@ -865,8 +868,7 @@ class MPIContext(BaseContext):
             MPIContext.INTERCOMM = initial_comm_setup()
             assert get_world_rank() == 0
 
-        self.nengines = get_nengines()
-
+        self.nengines = MPIContext.INTERCOMM.remote_size
         self.all_targets = list(range(self.nengines))
         self.targets = self.all_targets if targets is None else sorted(targets)
 
@@ -978,7 +980,7 @@ class MPIContext(BaseContext):
         kwargs = {} if kwargs is None else kwargs
         targets = self.targets if targets is None else targets
 
-        apply_nonce = uid()[13:]
+        apply_nonce = nonce()
         apply_metadata = (apply_nonce, self.context_key)
 
         if not isinstance(func, types.BuiltinFunctionType):

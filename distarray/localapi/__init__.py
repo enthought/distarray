@@ -12,3 +12,4 @@ In other words, the view from an engine.
 
 from distarray.localapi import localarray
 from distarray.localapi.localarray import *
+from distarray.localapi.mpiutils import get_base_comm
