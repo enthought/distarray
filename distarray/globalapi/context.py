@@ -71,7 +71,7 @@ class BaseContext(object):
         pass
 
     @abstractmethod
-    def apply(self, func, args=None, kwargs=None, targets=None):
+    def apply(self, func, args=None, kwargs=None, targets=None, autoproxyize=False):
         pass
 
     @abstractmethod
@@ -816,6 +816,10 @@ class IPythonContext(BaseContext):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
+
+        args = tuple(a.key if isinstance(a, DistArray) else a for a in args)
+        kwargs = {k: (v.key if isinstance(v, DistArray) else v) for k, v in kwargs.items()}
+
         apply_nonce = nonce()
         wrapped_args = (func, apply_nonce, self.context_key, args, kwargs, autoproxyize)
 
@@ -972,6 +976,10 @@ class MPIContext(BaseContext):
         # default arguments
         args = () if args is None else args
         kwargs = {} if kwargs is None else kwargs
+
+        args = tuple(a.key if isinstance(a, DistArray) else a for a in args)
+        kwargs = {k: (v.key if isinstance(v, DistArray) else v) for k, v in kwargs.items()}
+
         targets = self.targets if targets is None else targets
 
         apply_nonce = nonce()
