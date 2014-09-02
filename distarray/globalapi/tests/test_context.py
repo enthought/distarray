@@ -378,7 +378,6 @@ class TestApply(DefaultContextTestCase):
 
         self.assertEqual(val, [9] * self.ntargets)
 
-
     def test_apply_proxy(self):
 
         def foo():
@@ -400,6 +399,20 @@ class TestApply(DefaultContextTestCase):
         res = self.context.apply(foo)
         self.assertEqual(set(r[0].name for r in res), set([res[0][0].name]))
         self.assertEqual(set(r[-1].name for r in res), set([res[0][-1].name]))
+
+    def test_apply_distarray(self):
+
+        da = self.context.empty((len(self.context.targets),), dtype=numpy.uint32)
+
+        def local_label(la):
+            la.ndarray.fill(la.comm.rank)
+
+        # Testing that we can pass in `da` and `apply()` extracts `da.key` automatically.
+        self.context.apply(local_label, (da,))
+        assert_array_equal(da.tondarray(), range(len(self.context.targets)))
+
+        self.context.apply(local_label, kwargs={'la': da})
+        assert_array_equal(da.tondarray(), range(len(self.context.targets)))
 
 class TestGetBaseComm(DefaultContextTestCase):
 
