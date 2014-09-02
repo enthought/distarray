@@ -148,6 +148,9 @@ def make_grid_shape(shape, dist, comm_size):
         # Trivial case: all processes used for the one distributed dimension.
         if comm_size >= shape[distdims[0]]:
             dist_grid_shape = (shape[distdims[0]],)
+        elif (('b' == shape[distdims[0]]) and
+              check_bad_dims(comm_size, shape[distdims[0]])):
+            return make_grid_shape(shape, dist, comm_size - 1)
         else:
             dist_grid_shape = (comm_size,)
 
@@ -529,3 +532,16 @@ def shapes_from_dim_data_per_rank(ddpr):  # ddpr = dim_data_per_rank
             shape.append(size_from_dim_data(dd))
         shape_list.append(tuple(shape))
     return shape_list
+
+
+def check_bad_dims(p, d):
+    """ check for block distributions that woul create empty localarrays
+    along some axis. For more information see gh-issue 442.
+    """
+    n = d // p
+    num = d - p + 1
+    div = p - 1
+    if (num / div) == n:
+        return True
+    else:
+        return False
