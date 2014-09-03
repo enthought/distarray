@@ -1066,7 +1066,8 @@ class MPIContext(BaseContext):
                             sublres.__dict__ = subres.__dict__
                         else:
                             msg = ("Only DistArray return values are "
-                                   "supported in lazy mode.")
+                                   "supported in lazy mode.  Type is: {}"
+                                   "".format(type(subres)))
                             raise TypeError(msg)
                 # single return value
                 else:
