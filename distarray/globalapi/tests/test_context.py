@@ -173,9 +173,8 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(new_da.toarray(), (numpy.ones((30, 40)) * 2) ** 2)
 
     def test_multiple_return_values(self):
-        da = self.context.ones((30, 40)) * 2
         with self.context.lazy_eval():
-            self.context.lazy = True
+            da = self.context.ones((30, 40)) * 2
             def local_powers(la):
                 return proxyize(la * la), proxyize(la * la * la)
             key0, key1 = self.context.apply(local_powers, (da.key,), nresults=2)[0]
