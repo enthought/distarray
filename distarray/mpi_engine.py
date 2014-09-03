@@ -7,7 +7,7 @@
 The MPI-based `Engine` class.
 """
 
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from functools import reduce
 from importlib import import_module
 import types
@@ -197,8 +197,17 @@ class Engine(object):
         lazy_proxies = msg[1]
         # set up mapping from lazy_proxy names to their computed values
         # values to be filled in as the queue is processed
-        self._value_from_name = OrderedDict([(lp.name, None) for lp in
-                                             lazy_proxies])
+        self._value_from_name = []
+        for val in lazy_proxies:
+            if isinstance(val, Proxy):
+                self._value_from_name.append((val.name, None))
+            elif isinstance(val, Iterable):
+                self._value_from_name.extend([(lp.name, None) for lp in val])
+            else:
+                msg = "recvq contains an unrecognized type."
+                raise TypeError(msg)
+        self._value_from_name = OrderedDict(self._value_from_name)
+
         self._current_rval = iter(self._value_from_name)
         msgq = msg[2]
         self.lazy = True  # 'process_message_queue' only received in lazy mode
