@@ -38,6 +38,16 @@ class TestLazyEval(MPIContextTestCase):
     def test_single_add(self):
         a = self.context.zeros((53, 63))
         b = self.context.ones((53, 63))
+        self.context.lazy = True
+        c = a + b
+        self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        self.context.sync()
+        self.context.lazy = False
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+
+    def test_single_add_with_context_manager(self):
+        a = self.context.zeros((53, 63))
+        b = self.context.ones((53, 63))
         with self.context.lazy_eval():
             c = a + b
             self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
