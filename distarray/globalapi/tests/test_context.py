@@ -189,6 +189,15 @@ class TestLazyEval(MPIContextTestCase):
         assert_array_equal(da0.toarray(), (numpy.ones((30, 40)) * 2) ** 2)
         assert_array_equal(da1.toarray(), (numpy.ones((30, 40)) * 2) ** 3)
 
+    def test_lazy_loop(self):
+        rvalues = []
+        with self.context.lazy_eval():
+            for i in range(10):
+                rvalues.append(i * self.context.ones((10, 3)))
+
+        for i, value in enumerate(rvalues):
+            assert_array_equal(value.toarray(), i * numpy.ones((10, 3)))
+
 
 class TestRegister(DefaultContextTestCase):
 
