@@ -12,32 +12,57 @@ evaluation.
 
 from __future__ import print_function, division
 
+import json
 from sys import stderr
 from timeit import default_timer as time
-from pprint import pprint
 
+import numpy
 from distarray.globalapi import Context, tanh
 
 
-nops_list = range(1, 10002, 1000)
+nops_list = range(1, 20002, 1000)
 arr_shape = (10, 10)
 arr_size = arr_shape[0] * arr_shape[1]
 
 context = Context()
 
+numpy_times = []
 eager_times = []
 lazy_times = []
 
+data = {"nops": list(nops_list),
+        "Numpy": numpy_times,
+        "Eager": eager_times,
+        "Lazy": lazy_times,
+       }
+
+total_tests = len(nops_list) * 3
+test_num = 1
 for nops in nops_list:
 
+    # bench Numpy
+    arr = numpy.ones(arr_shape)
+    start = time()
+    for _ in range(nops):
+        arr = numpy.tanh(arr)
+    result = time() - start
+    numpy_times.append(result)
+    print('({}/{}), Numpy, {} ops, {:0.3f} s'.format(test_num, total_tests, nops, result),
+          file=stderr, flush=True)
+    test_num += 1
+
+    # bench DistArray eager eval
     arr = context.ones(arr_shape)
     start = time()
     for _ in range(nops):
         arr = tanh(arr)
     result = time() - start
     eager_times.append(result)
-    print('.', end='', file=stderr, flush=True)
+    print('({}/{}), Eager, {} ops, {:0.3f} s'.format(test_num, total_tests, nops, result),
+          file=stderr, flush=True)
+    test_num += 1
 
+    # bench DistArray lazy eval
     arr = context.ones(arr_shape)
     start = time()
     with context.lazy_eval():
@@ -45,10 +70,9 @@ for nops in nops_list:
             arr = tanh(arr)
     result = time() - start
     lazy_times.append(result)
-    print('.', end='', file=stderr, flush=True)
+    print('({}/{}),  Lazy, {} ops, {:0.3f} s'.format(test_num, total_tests, nops, result),
+          file=stderr, flush=True)
+    test_num += 1
 
-print(file=stderr, flush=True)
-pprint({"nops": list(nops_list),
-        "Eager": eager_times,
-        "Lazy": lazy_times,
-       }, stream=stderr)
+    with open("benchmark_data.json", 'w') as fp:
+        json.dump(data, fp, indent=4)
