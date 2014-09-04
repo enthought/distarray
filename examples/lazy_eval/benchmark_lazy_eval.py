@@ -13,6 +13,7 @@ evaluation.
 from __future__ import print_function, division
 
 import json
+import datetime
 from sys import stderr
 from timeit import default_timer as time
 
@@ -74,5 +75,7 @@ for nops in nops_list:
           file=stderr, flush=True)
     test_num += 1
 
-    with open("benchmark_data.json", 'w') as fp:
-        json.dump(data, fp, indent=4)
+now = datetime.datetime.now()
+filename = '_'.join((now.strftime("%Y-%m-%dT%H-%M-%S"), str(nops_list[-1]))) + ".json"
+with open(filename, 'w') as fp:
+    json.dump(data, fp, indent=4)
