@@ -126,6 +126,18 @@ class TestLazyEval(MPIContextTestCase):
             self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
         assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
 
+    def test_temporary_add(self):
+        from pprint import pprint
+        a = self.context.zeros((61, 71))
+        b = self.context.ones((61, 71))
+        c = self.context.ones((61, 71)) + 1
+        with self.context.lazy_eval():
+            d = a + b + c
+            pprint(('recvq:', self.context._recvq), indent=4)
+            pprint(('sendq:', self.context._sendq), indent=4)
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
+
     def test_complex_expressions(self):
         a = self.context.zeros((52, 62))
         b = self.context.ones((52, 62))
