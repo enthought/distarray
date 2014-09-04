@@ -271,7 +271,7 @@ class NoDistMap(MapBase):
 
     def is_compatible(self, other):
         return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
-                other.grid_size == self.grid_size and 
+                other.grid_size == self.grid_size and
                 other.size == self.size)
 
 

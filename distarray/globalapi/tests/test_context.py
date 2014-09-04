@@ -19,11 +19,193 @@ import numpy
 
 from numpy.testing import assert_allclose, assert_array_equal
 
-from distarray.testing import DefaultContextTestCase, IPythonContextTestCase, check_targets
-from distarray.globalapi.context import Context
+from distarray.testing import (DefaultContextTestCase, IPythonContextTestCase,
+                               MPIContextTestCase, check_targets)
+import distarray.globalapi as gapi
+from distarray.globalapi.context import DistArray, Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process
 from distarray.localapi import LocalArray
+from distarray.localapi.proxyize import LazyPlaceholder
+
+
+@unittest.skipIf(is_solo_mpi_process(),  # not in MPI mode
+                 "Cannot test MPIContext in IPython mode")
+class TestLazyEval(MPIContextTestCase):
+
+    ntargets = 'any'
+
+    def test_single_add(self):
+        a = self.context.zeros((53, 63))
+        b = self.context.ones((53, 63))
+        self.context.lazy = True
+        c = a + b
+        self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        self.context.sync()
+        self.context.lazy = False
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+
+    def test_single_add_with_context_manager(self):
+        a = self.context.zeros((53, 63))
+        b = self.context.ones((53, 63))
+        with self.context.lazy_eval():
+            c = a + b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+
+    def test_single_mult(self):
+        a = self.context.zeros((54, 64))
+        b = self.context.ones((54, 64))
+        with self.context.lazy_eval():
+            c = a * b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() * b.toarray())
+
+    def test_constant_mult(self):
+        a = self.context.zeros((55, 65))
+        with self.context.lazy_eval():
+            c = a * 2
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() * 2)
+
+    def test_two_identical_add_expr(self):
+        a = self.context.zeros((56, 66))
+        b = self.context.ones((56, 66))
+        with self.context.lazy_eval():
+            c = a + b
+            d = a + b
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray())
+
+    def test_different_adds(self):
+        a = self.context.zeros((58, 68))
+        b = self.context.ones((58, 68))
+        c = self.context.ones((58, 68)) + 1
+        d = self.context.ones((58, 68)) + 2
+        with self.context.lazy_eval():
+            e = a + b
+            f = c + d
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(f.key.dereference(), LazyPlaceholder))
+        assert_array_equal(e.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(f.toarray(), c.toarray() + d.toarray())
+
+    def test_more_different_adds(self):
+        a = self.context.zeros((59, 69))
+        b = self.context.ones((59, 69))
+        c = self.context.ones((59, 69)) + 1
+        with self.context.lazy_eval():
+            e = a + b
+            f = b + c
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(f.key.dereference(), LazyPlaceholder))
+        assert_array_equal(e.toarray(), a.toarray() + b.toarray())
+        assert_array_equal(f.toarray(), b.toarray() + c.toarray())
+
+    def test_unary_ufuncs(self):
+        a = self.context.ones((60, 70))
+        b = -1 * self.context.ones((60, 70))
+        with self.context.lazy_eval():
+            c = -a
+            d = gapi.absolute(b)
+            self.assertTrue(isinstance(c.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(c.toarray(), -a.toarray())
+        assert_array_equal(d.toarray(), numpy.absolute(b.toarray()))
+
+    def test_dependent_add(self):
+        a = self.context.zeros((61, 71))
+        b = self.context.ones((61, 71))
+        c = self.context.ones((61, 71)) + 1
+        with self.context.lazy_eval():
+            t0 = a + b
+            d = t0 + c
+            self.assertTrue(isinstance(t0.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
+
+    def test_temporary_add(self):
+        a = self.context.zeros((61, 71))
+        b = self.context.ones((61, 71))
+        c = self.context.ones((61, 71)) + 1
+        with self.context.lazy_eval():
+            d = a + b + c
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+        assert_array_equal(d.toarray(), a.toarray() + b.toarray() + c.toarray())
+
+    def test_complex_expressions(self):
+        a = self.context.zeros((52, 62))
+        b = self.context.ones((52, 62))
+        c = self.context.ones((52, 62)) + 1
+        with self.context.lazy_eval():
+            d = (2*a + (3*b + 4*c)) / 2
+            e = gapi.negative(d * d)
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+        d_expected = (2*a.toarray() + (3*b.toarray() + 4*c.toarray())) / 2
+        e_expected = numpy.negative(d * d)
+        assert_array_equal(d.toarray(), d_expected)
+        assert_array_equal(e.toarray(), e_expected)
+
+    def test_lazy_creation(self):
+        with self.context.lazy_eval():
+            a = self.context.zeros((50, 60))
+            b = self.context.zeros((50, 60))
+        assert_array_equal(b.toarray(), numpy.zeros((50, 60)))
+        assert_array_equal(a.toarray(), numpy.zeros((50, 60)))
+
+    def test_creation_and_expressions(self):
+        with self.context.lazy_eval():
+            a = self.context.zeros((52, 62))
+            b = self.context.ones((52, 62))
+            c = self.context.ones((52, 62)) + 1
+            d = (2*a + (3*b + 4*c)) / 2
+            e = gapi.negative(d * d)
+            self.assertTrue(isinstance(d.key.dereference(), LazyPlaceholder))
+            self.assertTrue(isinstance(e.key.dereference(), LazyPlaceholder))
+        d_expected = (2*a.toarray() + (3*b.toarray() + 4*c.toarray())) / 2
+        e_expected = numpy.negative(d * d)
+        assert_array_equal(d.toarray(), d_expected)
+        assert_array_equal(e.toarray(), e_expected)
+
+    def test_user_function(self):
+        with self.context.lazy_eval():
+            def local_square(la):
+                return la * la
+            da = self.context.ones((30, 40)) * 2
+            new_key = self.context.apply(local_square, (da.key,), autoproxyize=True)[0]
+            new_da = DistArray.from_localarrays(key=new_key,
+                                                distribution=da.distribution,
+                                                dtype=int)
+        assert_array_equal(new_da.toarray(), (numpy.ones((30, 40)) * 2) ** 2)
+
+    def test_multiple_return_values(self):
+        with self.context.lazy_eval():
+            da = self.context.ones((30, 40)) * 2
+            def local_powers(la):
+                return proxyize(la * la), proxyize(la * la * la)
+            key0, key1 = self.context.apply(local_powers, (da.key,), nresults=2)[0]
+            da0 = DistArray.from_localarrays(key=key0,
+                                            distribution=da.distribution,
+                                            dtype=int)
+            self.assertTrue(isinstance(da0.key.dereference(), LazyPlaceholder))
+            da1 = DistArray.from_localarrays(key=key1,
+                                             distribution=da.distribution,
+                                             dtype=int)
+            self.assertTrue(isinstance(da1.key.dereference(), LazyPlaceholder))
+        assert_array_equal(da0.toarray(), (numpy.ones((30, 40)) * 2) ** 2)
+        assert_array_equal(da1.toarray(), (numpy.ones((30, 40)) * 2) ** 3)
+
+    def test_lazy_loop(self):
+        rvalues = []
+        with self.context.lazy_eval():
+            for i in range(10):
+                rvalues.append(i * self.context.ones((10, 3)))
+
+        for i, value in enumerate(rvalues):
+            assert_array_equal(value.toarray(), i * numpy.ones((10, 3)))
 
 
 class TestRegister(DefaultContextTestCase):
@@ -53,7 +235,7 @@ class TestRegister(DefaultContextTestCase):
         def local_sin(da):
             return numpy.sin(da)
         self.context.register(local_sin)
-        
+
         db = self.context.local_sin(self.da)
         assert_allclose(0, db.tondarray(), atol=1e-14)
 
@@ -146,7 +328,7 @@ class TestRegister(DefaultContextTestCase):
         self.assertTrue(dp is None)
 
     def test_parameterless(self):
-        
+
         def parameterless():
             """This is a parameterless function."""
             return None
@@ -413,6 +595,7 @@ class TestApply(DefaultContextTestCase):
 
         self.context.apply(local_label, kwargs={'la': da})
         assert_array_equal(da.tondarray(), range(len(self.context.targets)))
+
 
 class TestGetBaseComm(DefaultContextTestCase):
 

@@ -35,6 +35,25 @@ for func_name in unary_names + binary_names:
     __all__.append(func_name)
 
 
+def unary_output_dtype(ufunc, val):
+    """Determine the output dtype of a unary ufunc with input `val`.
+
+    Use the ufunc.types attribute and the input dtype.
+    """
+    input_dtype = numpy.result_type(val)  # find out dtype of scalars
+    # Look at the built-in implementations to find an output type.
+    for input_type, _, _, output_type in ufunc.types:
+        if input_dtype.char == input_type:
+            return numpy.dtype(output_type)
+    # Nothing found.  Try coercion.
+    for input_type, _, _, output_type in ufunc.types:
+        if numpy.can_cast(input_dtype, input_type):
+            return numpy.dtype(output_type)
+    else:  # Can't even coerce to a known input type.  Give up.
+        msg = "Unary ufunc doesn't have a mapping for this type: {}."
+        raise TypeError(msg.format(input_dtype))
+
+
 def unary_proxy(name):
     def proxy_func(a, *args, **kwargs):
         context = determine_context(a)
@@ -44,16 +63,39 @@ def unary_proxy(name):
             dotted_name = 'distarray.localapi.%s' % (func_name,)
             func = get_from_dotted_name(dotted_name)
             res = func(arr_name, *args, **kwargs)
-            return proxyize(res), res.dtype  # noqa
+            return proxyize(res)
 
         res = context.apply(func_call, args=(name, a.key, args, kwargs),
                             targets=a.targets)
-        new_key = res[0][0]
-        dtype = res[0][1]
+        new_key = res[0]
+        dtype = unary_output_dtype(getattr(numpy, name), a)
         return DistArray.from_localarrays(new_key,
                                           distribution=a.distribution,
                                           dtype=dtype)
     return proxy_func
+
+
+def binary_output_dtype(ufunc, val0, val1):
+    """Determine the output dtype of a binary ufunc, given input values.
+
+    Use the ufunc.types attribute and the input dtypes.
+    """
+    # find out dtype of scalars
+    input_dtype_0, input_dtype_1 = map(numpy.result_type, (val0, val1))
+    # Look at the built-in implementations to find an output type.
+    for input_type_0, input_type_1, _, _, output_type in ufunc.types:
+        if ((input_dtype_0.char == input_type_0) and
+                (input_dtype_1.char == input_type_1)):
+            return numpy.dtype(output_type)
+    # Nothing found.  Try coercion.
+    for input_type_0, input_type_1, _, _, output_type in ufunc.types:
+        if (numpy.can_cast(input_dtype_0, input_type_0) and
+                numpy.can_cast(input_dtype_1, input_type_1)):
+            return numpy.dtype(output_type)
+    else:  # Can't even coerce to a known input type.  Give up.
+        msg = ("Binary ufunc doesn't have a mapping for these input types: "
+               "{}, {}")
+        raise TypeError(msg.format(input_dtype_0, input_dtype_1))
 
 
 def binary_proxy(name):
@@ -83,12 +125,12 @@ def binary_proxy(name):
             dotted_name = 'distarray.localapi.%s' % (func_name,)
             func = get_from_dotted_name(dotted_name)
             res = func(a, b, *args, **kwargs)
-            return proxyize(res), res.dtype  # noqa
+            return proxyize(res)
 
         res = context.apply(func_call, args=(name, a_key, b_key, args, kwargs),
-                            targets=distribution.targets)
-        new_key = res[0][0]
-        dtype = res[0][1]
+                            targets=distribution.targets, nresults=1)
+        new_key = res[0]
+        dtype = binary_output_dtype(getattr(numpy, name), a, b)
         return DistArray.from_localarrays(new_key,
                                           distribution=distribution,
                                           dtype=dtype)

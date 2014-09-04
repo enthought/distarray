@@ -77,7 +77,6 @@ class DistArray(object):
 
         If `dtype` is not provided, it will be fetched from the engines.
         """
-
         def get_dim_datas_and_dtype(arr):
             return (arr.dim_data, arr.dtype)
 

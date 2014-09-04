@@ -6,26 +6,45 @@
 
 from importlib import import_module
 
-from distarray.utils import DISTARRAY_BASE_NAME
+from distarray.utils import DISTARRAY_BASE_NAME, nonce
+
+
+class LazyPlaceholder(object):
+    pass
+
 
 class Proxy(object):
 
-    def __init__(self, name, obj, module_name):
+    def __init__(self, name, obj, module_name, lazy=False):
         self.name = name
         self.module_name = module_name
+        self.lazy = lazy
         self.type_str = str(type(obj))
         namespace = import_module(self.module_name)
         setattr(namespace, self.name, obj)
 
     def dereference(self):
-        """ Callable only on the engines. """
+        """Callable only on the engines."""
         namespace = import_module(self.module_name)
         return getattr(namespace, self.name)
 
     def cleanup(self):
         namespace = import_module(self.module_name)
-        delattr(namespace, self.name)
+        if 'lazy' not in self.name:
+            delattr(namespace, self.name)
         self.name = self.module_name = self.type_str = None
+
+
+def lazy_name():
+    return DISTARRAY_BASE_NAME + "lazy_" + nonce()
+
+
+def lazy_proxyize(name=None):
+    """Return a Proxy object for a delayed ("lazy") value."""
+    if name is None:
+        name = lazy_name()
+    return Proxy(name=name, obj=LazyPlaceholder(),
+                 module_name='__main__', lazy=True)
 
 
 class Proxyize(object):
