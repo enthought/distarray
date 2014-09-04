@@ -8,7 +8,6 @@
 """
 See if lazy evaluation (promise pipelining) can be more efficient than eager
 evaluation.
-
 """
 
 from __future__ import print_function, division
@@ -26,8 +25,8 @@ arr_size = arr_shape[0] * arr_shape[1]
 
 context = Context()
 
-eager = []
-lazy = []
+eager_times = []
+lazy_times = []
 
 for nops in nops_list:
 
@@ -36,7 +35,7 @@ for nops in nops_list:
     for _ in range(nops):
         arr = tanh(arr)
     result = time() - start
-    eager.append(result)
+    eager_times.append(result)
     print('.', end='', file=stderr, flush=True)
 
     arr = context.ones(arr_shape)
@@ -45,11 +44,11 @@ for nops in nops_list:
         for i in range(nops):
             arr = tanh(arr)
     result = time() - start
-    lazy.append(result)
+    lazy_times.append(result)
     print('.', end='', file=stderr, flush=True)
 
 print(file=stderr, flush=True)
 pprint({"nops": list(nops_list),
-        "Eager": eager,
-        "Lazy": lazy,
+        "Eager": eager_times,
+        "Lazy": lazy_times,
        }, stream=stderr)
