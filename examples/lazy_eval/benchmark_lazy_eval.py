@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 
 """
-See if lazy evaluation (promise pipelining) can be more efficeint than eager
+See if lazy evaluation (promise pipelining) can be more efficient than eager
 evaluation.
 
 """
