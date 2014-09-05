@@ -6,7 +6,8 @@ DistArray at APUG
 :date: 2014-06-11
 :category: Talks
 
-We presented DistArray at the Austin Python User's group!
+Robert Grant presented DistArray to the Austin Python User's group in June
+2014.
 
 * `Slides`_
 * `IPython Notebook`_
