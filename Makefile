@@ -64,9 +64,9 @@ test_ipython:
 	${PYTHON} -m unittest discover -c
 .PHONY: test_ipython
 
-test_client_with_coverage:
+test_ipython_with_coverage:
 	${COVERAGE} run -pm unittest discover -cv
-.PHONY: test_client_with_coverage
+.PHONY: test_ipython_with_coverage
 
 ${PARALLEL_OUT_DIR} :
 	mkdir ${PARALLEL_OUT_DIR}
@@ -98,7 +98,7 @@ test_mpi_with_coverage:
 test: test_ipython test_mpi test_engines
 .PHONY: test
 
-test_with_coverage: test_client_with_coverage test_mpi_with_coverage test_engines_with_coverage 
+test_with_coverage: test_ipython_with_coverage test_mpi_with_coverage test_engines_with_coverage 
 .PHONY: test_with_coverage
 
 coverage_report:
