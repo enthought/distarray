@@ -41,5 +41,5 @@ DISPLAY_ARTICLE_INFO_ON_INDEX = False
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
-BOOTSTRAP_THEME = 'Flatly'
+BOOTSTRAP_THEME = "flatly"
 THEME = "./pelican-bootstrap3/"
