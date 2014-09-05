@@ -1,10 +1,9 @@
-DistArray at AMS
-================
-
-:tags: talks
-:slug: 2014-02-03-ams
 :date: 2014-02-03
 :category: Talks
+:tags: talks
+
+DistArray at AMS
+================
 
 Jonathan Rocher presented DistArray at meeting of the American Meteorological
 Society in February 2014.

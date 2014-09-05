@@ -1,10 +1,9 @@
-Early DistArray talk at SIAM CSE09
-==================================
-
-:tags: talks
-:slug: 2009-03-05-ams
 :date: 2009-03-05
 :category: Talks
+:tags: talks
+
+Early DistArray talk at SIAM CSE09
+==================================
 
 In 2009, Brian Granger gave a talk on a early version of DistArray.
 

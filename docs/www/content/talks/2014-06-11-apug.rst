@@ -1,10 +1,9 @@
-DistArray at APUG
-=================
-
-:tags: talks
-:slug: 2014-06-11-apug
 :date: 2014-06-11
 :category: Talks
+:tags: talks
+
+DistArray at APUG
+=================
 
 Robert Grant presented DistArray to the Austin Python User's group in June
 2014.

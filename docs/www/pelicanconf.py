@@ -34,12 +34,14 @@ SOCIAL = (
 )
 
 DEFAULT_PAGINATION = False
-
-SHOW_ARTICLE_AUTHOR = False
-DISPLAY_ARTICLE_INFO_ON_INDEX = False
+CACHE_CONTENT = False
+SLUGIFY_SOURCE = 'basename'
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
-BOOTSTRAP_THEME = "flatly"
+# pelican-bootstrap3 settings
 THEME = "./pelican-bootstrap3/"
+BOOTSTRAP_THEME = "flatly"
+SHOW_ARTICLE_AUTHOR = False
+DISPLAY_ARTICLE_INFO_ON_INDEX = False
