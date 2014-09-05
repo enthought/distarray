@@ -2,7 +2,7 @@ DistArray at AMS
 ================
 
 :tags: talks
-:slug: ams-2014-02-03
+:slug: 2014-02-03-ams
 :date: 2014-02-03
 :category: Talks
 

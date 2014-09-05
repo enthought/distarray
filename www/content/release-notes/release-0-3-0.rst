@@ -3,4 +3,4 @@
 :date: 2014-06-04
 :category: Release Notes
 
-.. include:: ../../docs/source/releases/release-0.3.rst
+.. include:: ../../../docs/source/releases/release-0.3.rst

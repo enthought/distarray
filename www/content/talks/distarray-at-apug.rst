@@ -2,7 +2,7 @@ DistArray at APUG
 =================
 
 :tags: talks
-:slug: apug-2014-06
+:slug: 2014-06-11-apug
 :date: 2014-06-11
 :category: Talks
 
