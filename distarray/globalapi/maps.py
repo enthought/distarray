@@ -554,7 +554,6 @@ class Distribution(object):
         self.context = context
         self.targets = sorted(targets or context.targets)
         self._comm = None
-        # self.context.make_subcomm(self.targets)
         self.maps = maps
         self.shape = tuple(m.size for m in self.maps)
         self.ndim = len(self.maps)
@@ -880,6 +879,20 @@ class Distribution(object):
         return shapes_from_dim_data_per_rank(self.get_dim_data_per_rank())
 
     def comm_union(self, *dists):
+        """
+        Make a communicator that includes the union of all targets in `dists`.
+
+        Parameters
+        ----------
+        dists: sequence of distribution objects.
+
+        Returns
+        -------
+        tuple
+            First element is encompassing communicator proxy; second is a
+            sequence of all targets in `dists`.
+            
+        """
         dist_targets = [d.targets for d in dists]
         all_targets = sorted(reduce(set.union, dist_targets, set(self.targets)))
         return self.context.make_subcomm(all_targets), all_targets
@@ -960,6 +973,20 @@ class Distribution(object):
 # ----------------------------------------------------------------------------
 
 def global_flat_indices(dim_data):
+    """
+    Return a list of tuples of indices into the flattened global array.
+
+    Parameters
+    ----------
+    dim_data: dimension dictionary.
+
+    Returns
+    -------
+    list of 2-tuples of ints.
+        Each tuple is a (start, stop) interval into the flattened global array.
+        All selected ranges comprise the indices for this dim_data's sub-array.
+
+    """
     # TODO: FIXME: can be optimized when the last dimension is 'n'.
 
     for dd in dim_data:

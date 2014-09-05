@@ -496,6 +496,27 @@ class DistArray(object):
                                           dtype=dtype)
 
     def distribute_as(self, dist):
+        """
+        Redistributes this DistArray, returning a new DistArray with the same
+        data and corresponding distribution.
+
+        Parameters
+        ----------
+        dist : distribution object
+            Distribution for the new DistArray.  The new distribution must have
+            the same number of items as this distarray.  The global shape and
+            targets may be different.
+
+        Returns
+        -------
+        DistArray
+            A new DistArray distributed according to `dist`.
+
+        Note
+        ----
+        Implemented for block and non-distributed dimensions only.
+
+        """
         plan = self.distribution.get_redist_plan(dist)
         ubercomm, all_targets = self.distribution.comm_union(dist)
         result = DistArray(dist, dtype=self.dtype)
