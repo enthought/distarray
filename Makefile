@@ -114,7 +114,8 @@ clean:
 	-${PYTHON} setup.py clean --all
 	-find . \( -iname '*.py[co]' -or -iname '*.so' -or -iname '*.c' -or -iname '__pycache__' -or -iname '.ipynb_checkpoints' \) -exec ${RM} -r '{}' +
 	-${RM} -r ${PARALLEL_OUT_DIR} build coverage_report examples/julia_set/build
-	-${MAKE} clean -C docs
+	-${MAKE} clean -C docs/sphinx
+	-${MAKE} clean -C docs/www
 .PHONY: clean
 
 cleanall: clean
