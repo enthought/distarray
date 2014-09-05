@@ -52,9 +52,6 @@ DistArray            </a>
                          <li class="active"><a href="http://docs.enthought.com/distarray/">
                              DistArray
                           </a></li>
-                         <li><a href="http://docs.enthought.com/distarray/pages/overview.html">
-                             Overview
-                          </a></li>
                         <li >
                             <a href="http://docs.enthought.com/distarray/category/release-notes.html">Release notes</a>
                         </li>
@@ -110,15 +107,35 @@ on nbviewer (also in the <tt class="docutils literal">examples</tt> directory of
 <li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/julia_set/julia_set.ipynb">Julia Set</a></li>
 </ul>
 </div>
-<div class="section" id="contact-us">
-<h2>Contact Us</h2>
-<p>If you have questions or would like to contribute, contact us</p>
-<ul class="simple">
-<li>on the DistArray mailing list:  <a class="reference external" href="mailto:distarray&#64;googlegroups.com">distarray&#64;googlegroups.com</a>,</li>
-<li>in the DistArray IRC channel: #distarray on freenode, or</li>
-<li>through the DistArray GitHub repo: <a class="reference external" href="https://github.com/enthought/distarray">https://github.com/enthought/distarray</a>
-(for bug reports and pull requests).</li>
-</ul>
+<div class="section" id="overview">
+<h2>Overview</h2>
+<p><em>Think globally, act locally.</em></p>
+<p>NumPy is at the foundation of the scientific Python stack for good reason:
+NumPy arrays are easy to use, they have many powerful features like ufuncs,
+slicing, and broadcasting, and they work easily with external libraries.</p>
+<p>As data sets grow and parallel hardware becomes more widely available,
+wouldn't it be great if NumPy easily supported parallel execution, without
+loosing its nice interface in a miasma of low-level parallel coordination?
+What would that look like?</p>
+<p>What we want is transparent distribution of NumPy arrays over the CPU,
+cluster, and supercomputer.  We want to interact with distributed NumPy arrays
+the way we think about them, and get the benefit of all that parallelism.  We
+also want to be able to drop down a level to control what's going on at the
+data-local level when performance demands it.</p>
+<p>Such a NumPy opens doors to providing a high-level numpy-like interface to
+distributed libraries like Trilinos, PETSc, Global Arrays, Elemental, and
+ScaLAPACK, among others.</p>
+<p>All this coordination has overhead, and is at risk of becoming a performance
+bottlneck.  This NumPy will need a way to allow direct execution at a
+data-local level.  We will also need a way to communicate directly between
+local processes when needed, rather than doing everything at a global level.</p>
+<p>This distributed NumPy should be a good citizen and work easily with regular
+NumPy arrays, with MPI, with IPython parallel, and with external distributed
+algorithms.</p>
+<p>DistArray is our vision of what distributed NumPy can be.  It brings the best
+parts of NumPy to data parallel computing.  We want to <em>think globally</em> about
+our arrays, interacting with them as if they are just really big NumPy arrays,
+all the while <em>acting locally</em> on them for performance and control.</p>
 </div>
 <div class="section" id="installation">
 <h2>Installation</h2>
@@ -186,6 +203,16 @@ at Enthought by a team led by Kurt Smith, in partnership with Bill Spotz from
 Sandia's (Py)Trilinos project and Brian Granger and Min RK from the IPython
 project.</p>
 </div>
+<div class="section" id="contact-us">
+<h2>Contact Us</h2>
+<p>If you have questions or would like to contribute, contact us</p>
+<ul class="simple">
+<li>on the DistArray mailing list:  <a class="reference external" href="mailto:distarray&#64;googlegroups.com">distarray&#64;googlegroups.com</a>,</li>
+<li>in the DistArray IRC channel: #distarray on freenode, or</li>
+<li>through the DistArray GitHub repo: <a class="reference external" href="https://github.com/enthought/distarray">https://github.com/enthought/distarray</a>
+(for bug reports and pull requests).</li>
+</ul>
+</div>
 
         </div>
     </section>
@@ -242,13 +269,13 @@ project.</p>
                 <li class="list-group-item"><a href="http://docs.enthought.com/distarray/"><h4><i class="fa fa-tags fa-lg"></i><span class="icon-label">Tags</span></h4></a>
                     <ul class="list-group " id="tags">
                         <li class="list-group-item tag-1">
-                            <a href="http://docs.enthought.com/distarray/tag/releases.html">
-                                releases
+                            <a href="http://docs.enthought.com/distarray/tag/talks.html">
+                                talks
                             </a>
                         </li>
                         <li class="list-group-item tag-1">
-                            <a href="http://docs.enthought.com/distarray/tag/talks.html">
-                                talks
+                            <a href="http://docs.enthought.com/distarray/tag/releases.html">
+                                releases
                             </a>
                         </li>
                     </ul>
