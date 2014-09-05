@@ -14,5 +14,5 @@ Robert Grant presented DistArray to the Austin Python User's group in June
 * `IPython Notebook`_
  
 .. _APUG Announcement: http://www.meetup.com/austinpython/events/183962712/
-.. _Slides: https://github.com/enthought/distarray/blob/master/docs/2014-06-apug/2014-06-apug.pdf?raw=true
+.. _Slides: https://github.com/enthought/distarray/blob/master/docs/talks/2014-06-apug/2014-06-apug.pdf?raw=true
 .. _IPython Notebook: http://nbviewer.ipython.org/github/enthought/distarray/blob/master/docs/2014-06-apug/2014-06-apug.ipynb

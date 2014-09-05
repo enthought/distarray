@@ -3,4 +3,4 @@
 :date: 2014-07-07
 :category: Release Notes
 
-.. include:: ../../../docs/source/releases/release-0.4.rst
+.. include:: ../../../sphinx/source/releases/release-0.4.rst

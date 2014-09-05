@@ -5,4 +5,4 @@ DistArray
 :slug: home
 :save_as: index.html
 
-.. include:: ../../../docs/source/main.rst
+.. include:: ../../../sphinx/source/main.rst
