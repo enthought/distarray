@@ -18,21 +18,28 @@ CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
 # Blogroll
-LINKS = (('Docs', 'http://distarray.readthedocs.org/'),
-         ('Mailing List', 'https://groups.google.com/forum/#!forum/distarray'),
-         ('Distributed Array Protocol', 'http://distributed-array-protocol.readthedocs.org'),
-         ('PyPI Package', 'https://pypi.python.org/pypi/distarray'),
-         ('SciPy', 'http://www.scipy.org/'),
-         ('IPython', 'http://ipython.org/'),
-         ('Enthought', 'http://www.enthought.com/'),
-        )
+LINKS = (
+    ('DistArray Docs', 'http://distarray.readthedocs.org/'),
+    ('Distributed Array Protocol', 'http://distributed-array-protocol.readthedocs.org'),
+    ('Mailing List', 'https://groups.google.com/forum/#!forum/distarray'),
+    ('SciPy', 'http://www.scipy.org/'),
+    ('IPython', 'http://ipython.org/'),
+    ('Enthought', 'http://www.enthought.com/'),
+)
 
 # Social widget
-SOCIAL = (('github', 'https://github.com/enthought/distarray'),)
+SOCIAL = (
+    ('github', 'https://github.com/enthought/distarray'),
+    ('twitter', 'https://twitter.com/enthought'),
+)
 
 DEFAULT_PAGINATION = False
+
+SHOW_ARTICLE_AUTHOR = False
+DISPLAY_ARTICLE_INFO_ON_INDEX = False
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
+BOOTSTRAP_THEME = 'Flatly'
 THEME = "./pelican-bootstrap3/"
