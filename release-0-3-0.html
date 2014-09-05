@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"
+>
+<head>
+    <title> - DistArray</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="http://docs.enthought.com/distarray/release-0-3-0.html">
+
+        <meta name="author" content="IPython development team and Enthought, Inc." />
+        <meta name="keywords" content="releases" />
+        <meta name="description" content="DistArray 0.3: development release Documentation: http://distarray.readthedocs.org License: Three-clause BSD Python versions: 2.7 and 3.3 OS support: *nix and Mac OS X What is DistArray? DistArray aims to bring the strengths of NumPy to data-parallel high-performance computing. It provides distributed multi-dimensional NumPy-like arrays and distributed ..." />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="http://docs.enthought.com/distarray/theme/css/bootstrap.Flatly.min.css" type="text/css"/>
+    <link href="http://docs.enthought.com/distarray/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="http://docs.enthought.com/distarray/theme/css/pygments/native.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://docs.enthought.com/distarray/theme/css/style.css" type="text/css"/>
+
+        <link href="http://docs.enthought.com/distarray/feeds/all.atom.xml" type="application/atom+xml" rel="alternate"
+              title="DistArray ATOM Feed"/>
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="http://docs.enthought.com/distarray/" class="navbar-brand">
+DistArray            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="http://docs.enthought.com/distarray/">
+                             DistArray
+                          </a></li>
+                         <li><a href="http://docs.enthought.com/distarray/pages/overview.html">
+                             Overview
+                          </a></li>
+                        <li class="active">
+                            <a href="http://docs.enthought.com/distarray/category/release-notes.html">Release notes</a>
+                        </li>
+                        <li >
+                            <a href="http://docs.enthought.com/distarray/category/talks.html">Talks</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="http://docs.enthought.com/distarray/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="http://docs.enthought.com/distarray/release-0-3-0.html"
+                       rel="bookmark"
+                       title="Permalink to ">
+                        
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-06-04T00:00:00"> Wed 04 June 2014</time>
+    </span>
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="http://docs.enthought.com/distarray/tag/releases.html">releases</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <div class="section" id="distarray-0-3-development-release">
+<h2>DistArray 0.3: development release</h2>
+<p><strong>Documentation:</strong> <a class="reference external" href="http://distarray.readthedocs.org">http://distarray.readthedocs.org</a></p>
+<p><strong>License:</strong> Three-clause BSD</p>
+<p><strong>Python versions:</strong> 2.7 and 3.3</p>
+<p><strong>OS support:</strong> *nix and Mac OS X</p>
+<div class="section" id="what-is-distarray">
+<h3>What is DistArray?</h3>
+<p>DistArray aims to bring the strengths of NumPy to data-parallel
+high-performance computing. It provides distributed multi-dimensional
+NumPy-like arrays and distributed ufuncs, distributed IO capabilities, and can
+integrate with external distributed libraries, like Trilinos. DistArray works
+with NumPy and builds on top of it in a flexible and natural way.</p>
+</div>
+<div class="section" id="release">
+<h3>0.3 Release</h3>
+<p>This is the second development release.</p>
+<p>Noteworthy improvements in 0.3 include:</p>
+<ul class="simple">
+<li>support for distributions over a subset of processes;</li>
+<li>distributed reductions with a simple NumPy-like API: <tt class="docutils literal">da.sum(axis=3)</tt> ;</li>
+<li>an <tt class="docutils literal">apply()</tt> function for easier computation with process-local data;</li>
+<li>performance improvements and reduced communication overhead;</li>
+<li>cleanup, renamings, and refactorings;</li>
+<li>test suite improvements for parallel testing; and</li>
+<li>start of a more frequent release schedule.</li>
+</ul>
+<p>DistArray is not ready for real-world use.  We want to get input from the
+larger scientific-Python community to help drive its development. The API is
+changing rapidly and we are adding many new features on a fast timescale.
+DistArray is currently implemented in pure Python for maximal flexibility.
+Performance improvements are ongoing.</p>
+</div>
+<div class="section" id="existing-features">
+<h3>Existing features</h3>
+<p>Distarray:</p>
+<ul class="simple">
+<li>has a client-engine (or master-worker) process design -- data resides on the
+worker processes, commands are initiated from master;</li>
+<li>allows full control over what is executed on the worker processes and
+integrates transparently with the master process;</li>
+<li>allows direct communication between workers bypassing the master process for
+scalability;</li>
+<li>integrates with IPython.parallel for interactive creation and exploration of
+distributed data;</li>
+<li>supports distributed ufuncs (currently without broadcasting);</li>
+<li>builds on and leverages MPI via MPI4Py in a transparent and user-friendly
+way;</li>
+<li>supports NumPy-like structured multidimensional arrays;</li>
+<li>has basic support for unstructured arrays;</li>
+<li>supports user-controllable array distributions across workers (block,
+cyclic, block-cyclic, and unstructured) on a per-axis basis;</li>
+<li>has a straightforward API to control how an array is distributed;</li>
+<li>has basic plotting support for visualization of array distributions;</li>
+<li>separates the array’s distribution from the array’s data -- useful for
+slicing, reductions, redistribution, broadcasting, and other operations;</li>
+<li>implements distributed random arrays;</li>
+<li>supports <tt class="docutils literal">.npy</tt>-like flat-file IO and hdf5 parallel IO (via <tt class="docutils literal">h5py</tt>);
+leverages MPI-based IO parallelism in an easy-to-use and transparent way;
+and</li>
+<li>supports the distributed array protocol <a class="citation-reference" href="#protocol" id="id1">[protocol]</a>, which allows
+independently developed parallel libraries to share distributed arrays
+without copying, analogous to the PEP-3118 new buffer protocol.</li>
+</ul>
+</div>
+<div class="section" id="planned-features-and-roadmap">
+<h3>Planned features and roadmap</h3>
+<ul class="simple">
+<li>Distributed slicing</li>
+<li>Re-distribution methods</li>
+<li>Integration with Trilinos <a class="citation-reference" href="#trilinos" id="id2">[Trilinos]</a> and other packages <a class="citation-reference" href="#petsc" id="id3">[petsc]</a> that
+subscribe to the distributed array protocol <a class="citation-reference" href="#protocol" id="id4">[protocol]</a></li>
+<li>Distributed broadcasting</li>
+<li>Distributed fancy indexing</li>
+<li>MPI-only communication for non-interactive deployment on clusters and
+supercomputers</li>
+<li>Lazy evaluation and deferred computation for latency hiding</li>
+<li>Out-of-core computations</li>
+<li>Extensive examples, tutorials, documentation</li>
+<li>Support for distributed sorting and other non-trivial distributed algorithms</li>
+<li>End-user control over communication and temporary array creation, and other
+performance aspects of distributed computations</li>
+</ul>
+</div>
+<div class="section" id="history">
+<h3>History</h3>
+<p>Brian Granger started DistArray as a NASA-funded SBIR project in 2008.
+Enthought picked it up as part of a DOE Phase II SBIR <a class="citation-reference" href="#sbir" id="id5">[SBIR]</a> to provide a
+generally useful distributed array package. It builds on IPython,
+IPython.parallel, NumPy, MPI, and interfaces with the Trilinos suite of
+distributed HPC solvers (via PyTrilinos <a class="citation-reference" href="#trilinos" id="id6">[Trilinos]</a>).</p>
+<table class="docutils citation" frame="void" id="protocol" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[protocol]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id4">2</a>)</em> <a class="reference external" href="http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/">http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="trilinos" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Trilinos]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id6">2</a>)</em> <a class="reference external" href="http://trilinos.org/">http://trilinos.org/</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="petsc" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[petsc]</a></td><td><a class="reference external" href="http://www.mcs.anl.gov/petsc/">http://www.mcs.anl.gov/petsc/</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="sbir" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[SBIR]</a></td><td><a class="reference external" href="http://www.sbir.gov/sbirsearch/detail/410257">http://www.sbir.gov/sbirsearch/detail/410257</a></td></tr>
+</tbody>
+</table>
+<!-- vim:spell -->
+</div>
+</div>
+
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="https://github.com/enthought/distarray"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+                    <li class="list-group-item"><a href="https://twitter.com/enthought"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+                  </ul>
+                </li>
+
+    <li class="list-group-item"><h4><i class="fa fa-external-link-square fa-lg"></i><span class="icon-label">Links</span></h4>
+      <ul class="list-group" id="links">
+        <li class="list-group-item">
+            <a href="http://distarray.readthedocs.org/" target="_blank">
+                DistArray Docs
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="http://distributed-array-protocol.readthedocs.org" target="_blank">
+                Distributed Array Protocol
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="https://groups.google.com/forum/#!forum/distarray" target="_blank">
+                Mailing List
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="http://www.scipy.org/" target="_blank">
+                SciPy
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="http://ipython.org/" target="_blank">
+                IPython
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="http://www.enthought.com/" target="_blank">
+                Enthought
+            </a>
+        </li>
+      </ul>
+    </li>
+
+
+
+                <li class="list-group-item"><a href="http://docs.enthought.com/distarray/"><h4><i class="fa fa-tags fa-lg"></i><span class="icon-label">Tags</span></h4></a>
+                    <ul class="list-group " id="tags">
+                        <li class="list-group-item tag-1">
+                            <a href="http://docs.enthought.com/distarray/tag/releases.html">
+                                releases
+                            </a>
+                        </li>
+                        <li class="list-group-item tag-4">
+                            <a href="http://docs.enthought.com/distarray/tag/talks.html">
+                                talks
+                            </a>
+                        </li>
+                    </ul>
+                </li>    
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 IPython development team and Enthought, Inc.
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="http://docs.enthought.com/distarray/theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="http://docs.enthought.com/distarray/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="http://docs.enthought.com/distarray/theme/js/respond.min.js"></script>
+
+</body>
+</html>

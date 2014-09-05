@@ -2,7 +2,7 @@
 <html lang="en"
 >
 <head>
-    <title>DistArray - DistArray</title>
+    <title>Categories - DistArray</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
@@ -10,16 +10,15 @@
 
 
 
-<link rel="canonical" href="http://docs.enthought.com/distarray/">
 
         <meta name="author" content="IPython development team and Enthought, Inc." />
-        <meta name="description" content="Think globally, act locally. DistArray provides general multidimensional NumPy-like distributed arrays to Python. It intends to bring the strengths of NumPy to data-parallel high-performance computing. DistArray has a similar API to NumPy. DistArray is ready for real-world testing and deployment; however, the project is still evolving rapidly, and we appreciate ..." />
 
-    <meta property="og:site_name" content="DistArray" />
-    <meta property="og:type" content="article"/>
-    <meta property="og:title" content="DistArray"/>
-    <meta property="og:url" content="http://docs.enthought.com/distarray/"/>
-    <meta property="og:description" content="Think globally, act locally. DistArray provides general multidimensional NumPy-like distributed arrays to Python. It intends to bring the strengths of NumPy to data-parallel high-performance computing. DistArray has a similar API to NumPy. DistArray is ready for real-world testing and deployment; however, the project is still evolving rapidly, and we appreciate ..." />
+    <!-- Open Graph tags -->
+        <meta property="og:site_name" content="DistArray" />
+        <meta property="og:type" content="website"/>
+        <meta property="og:title" content="DistArray"/>
+        <meta property="og:url" content="http://docs.enthought.com/distarray"/>
+        <meta property="og:description" content="DistArray"/>
 
 
     <!-- Bootstrap -->
@@ -49,7 +48,7 @@ DistArray            </a>
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                         <li class="active"><a href="http://docs.enthought.com/distarray/">
+                         <li><a href="http://docs.enthought.com/distarray/">
                              DistArray
                           </a></li>
                          <li><a href="http://docs.enthought.com/distarray/pages/overview.html">
@@ -74,118 +73,38 @@ DistArray            </a>
     <div class="row">
         <div class="col-sm-9">
 
-    <section id="content" class="body">
-        <h1 class="entry-title">DistArray</h1>
-        
-        <div class="entry-content">
-            <p><em>Think globally, act locally.</em></p>
-<p>DistArray provides general multidimensional NumPy-like distributed arrays to
-Python.  It intends to bring the strengths of NumPy to data-parallel
-high-performance computing.  DistArray has a similar API to <a class="reference external" href="http://www.numpy.org">NumPy</a>.</p>
-<p>DistArray is ready for real-world testing and deployment; however, the project
-is still evolving rapidly, and we appreciate continued input from the
-scientific-Python community.</p>
-<p>DistArray is for users who</p>
-<ul class="simple">
-<li>know and love Python and NumPy,</li>
-<li>want to scale NumPy to larger distributed datasets,</li>
-<li>want to interactively play with distributed data but also</li>
-<li>want to run batch-oriented distributed programs;</li>
-<li>want an easier way to drive and coordinate existing MPI-based codes,</li>
-<li>have a lot of data that may already be distributed,</li>
-<li>want a global view (&quot;think globally&quot;) with local control (&quot;act locally&quot;),</li>
-<li>need to tap into existing parallel libraries like Trilinos, PETSc, or
-Elemental,</li>
-<li>want the interactivity of IPython and the performance of MPI.</li>
-</ul>
-<p>DistArray is designed to work with other packages that implement the
-<a class="reference external" href="http://distributed-array-protocol.readthedocs.org">Distributed Array Protocol</a>.</p>
-<div class="section" id="installation">
-<h2>Installation</h2>
-<p>Dependencies for DistArray:</p>
-<ul class="simple">
-<li>NumPy</li>
-<li>IPython</li>
-<li>Mpi4Py</li>
-</ul>
-<p>Optional dependencies:</p>
-<ul class="simple">
-<li>For HDF5 IO: h5py built against a parallel-enabled build of HDF5</li>
-<li>For plotting: matplotlib</li>
-</ul>
-<p>If you have the above, you should be able to install this package with:</p>
-<pre class="literal-block">
-python setup.py install
-</pre>
-<p>or:</p>
-<pre class="literal-block">
-python setup.py develop
-</pre>
-<p>To run the tests, you will need to start an IPython.parallel cluster.  You can
-use <tt class="docutils literal">ipcluster</tt>, or you can use the <tt class="docutils literal">dacluster</tt> command which comes with
-DistArray:</p>
-<pre class="literal-block">
-dacluster start
-</pre>
-<p>You should then be able to run all the tests from the DistArray source
-directory with:</p>
-<pre class="literal-block">
-make test
-</pre>
-<p>or from anywhere with:</p>
-<pre class="literal-block">
-python -m distarray.run_tests
-</pre>
-</div>
-<div class="section" id="building-the-docs">
-<h2>Building the docs</h2>
-<p>Dependencies to build the documentation:</p>
-<ul class="simple">
-<li>Sphinx</li>
-<li>sphinxcontrib.napoleon</li>
-<li>sphinxcontrib.programoutput</li>
-</ul>
-<p>If you have the dependencies listed above, and you want to build the
-documentation (also available at <a class="reference external" href="http://distarray.readthedocs.org">http://distarray.readthedocs.org</a>), navigate to
-the <tt class="docutils literal">docs</tt> subdirectory of the DistArray source and use the Makefile there.</p>
-<p>For example, to build the html documentation:</p>
-<pre class="literal-block">
-make html
-</pre>
-<p>from the <tt class="docutils literal">docs</tt> directory.</p>
-<p>Try:</p>
-<pre class="literal-block">
-make help
-</pre>
-<p>for more options.</p>
-</div>
-<div class="section" id="getting-started">
-<h2>Getting Started</h2>
-<p>To see some initial examples of what DistArray can do, check out the IPython
-notebooks and python scripts in the <tt class="docutils literal">examples</tt> directory.  Read-only versions
-of our notebooks are also viewable on nbviewer:</p>
-<ul class="simple">
-<li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb">DistArray Features</a></li>
-<li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/seismic_volume/seismic_volume.ipynb">Seismic Volume</a></li>
-<li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/julia_set/julia_set.ipynb">Julia Set</a></li>
-</ul>
-<p>If you have questions or would like to contribute, contact us</p>
-<ul class="simple">
-<li>on the DistArray mailing list:  <a class="reference external" href="mailto:distarray&#64;googlegroups.com">distarray&#64;googlegroups.com</a>,</li>
-<li>in the DistArray IRC channel: #distarray on freenode, or</li>
-<li>through the DistArray GitHub repo: <a class="reference external" href="https://github.com/enthought/distarray">https://github.com/enthought/distarray</a>
-(for bug reports and pull requests).</li>
-</ul>
-</div>
-<div class="section" id="history">
-<h2>History</h2>
-<p>DistArray was started by Brian Granger in 2008 and is currently being developed
-at Enthought by a team led by Kurt Smith, in partnership with Bill Spotz from
-Sandia's (Py)Trilinos project and Brian Granger and Min RK from the IPython
-project.</p>
-</div>
-
+    <section id="categories">
+        <h1>All Categories for DistArray</h1>
+        <div class="panel-group" id="accordion">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#collapse-release-notes">Release Notes <span class="badge pull-right">4</span></a>
+                    </h4>
+                </div>
+                <div id="collapse-release-notes" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <p><span class="categories-timestamp"><time datetime="2014-08-03T00:00:00">Sun 03 August 2014</time></span> <a href="http://docs.enthought.com/distarray/release-0-5-0.html"></a></p>
+                        <p><span class="categories-timestamp"><time datetime="2014-07-07T00:00:00">Mon 07 July 2014</time></span> <a href="http://docs.enthought.com/distarray/release-0-4-0.html"></a></p>
+                        <p><span class="categories-timestamp"><time datetime="2014-06-04T00:00:00">Wed 04 June 2014</time></span> <a href="http://docs.enthought.com/distarray/release-0-3-0.html"></a></p>
+                        <p><span class="categories-timestamp"><time datetime="2014-04-14T00:00:00">Mon 14 April 2014</time></span> <a href="http://docs.enthought.com/distarray/release-0-2-0.html"></a></p>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#collapse-talks">Talks <span class="badge pull-right">1</span></a>
+                    </h4>
+                </div>
+                <div id="collapse-talks" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <p><span class="categories-timestamp"><time datetime="2014-06-11T00:00:00">Wed 11 June 2014</time></span> <a href="http://docs.enthought.com/distarray/apug-2014-06.html">DistArray at APUG</a></p>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </section>
         </div>
         <div class="col-sm-3 well well-sm" id="sidebar">
