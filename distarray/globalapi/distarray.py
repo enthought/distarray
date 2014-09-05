@@ -24,7 +24,7 @@ import numpy as np
 
 import distarray.localapi
 from distarray.metadata_utils import sanitize_indices
-from distarray.globalapi.maps import Distribution
+from distarray.globalapi.maps import Distribution, asdistribution
 from distarray.utils import _raise_nie
 from distarray.metadata_utils import normalize_reduction_axes
 
@@ -495,17 +495,18 @@ class DistArray(object):
         return DistArray.from_localarrays(key=new_key, distribution=new_dist,
                                           dtype=dtype)
 
-    def distribute_as(self, dist):
+    def distribute_as(self, shape_or_dist):
         """
         Redistributes this DistArray, returning a new DistArray with the same
         data and corresponding distribution.
 
         Parameters
         ----------
-        dist : distribution object
+        shape_or_dist : shape tuple or Distribution object.
             Distribution for the new DistArray.  The new distribution must have
             the same number of items as this distarray.  The global shape and
-            targets may be different.
+            targets may be different.  If shape tuple, immediately converted to
+            a Distribution object with default parameters.
 
         Returns
         -------
@@ -514,12 +515,16 @@ class DistArray(object):
 
         Note
         ----
-        Implemented for block and non-distributed dimensions only.
+        Currently implemented for block and non-distributed maps only.
 
         """
-        plan = self.distribution.get_redist_plan(dist)
-        ubercomm, all_targets = self.distribution.comm_union(dist)
-        result = DistArray(dist, dtype=self.dtype)
+
+        dist = asdistribution(self.context, shape_or_dist)
+
+        if (any(d not in ('b', 'n') for d in self.distribution.dist) or
+                any(d not in ('b', 'n') for d in dist.dist)):
+            msg = "Only block and non-distributed dimensions currently supported."
+            raise NotImplementedError(msg)
 
         def _local_redistribute_same_shape(comm, plan, la_from, la_to):
             from distarray.localapi import redistribute
@@ -540,6 +545,10 @@ class DistArray(object):
             msg = ("Original size %d != new size %d,"
                    " and total size of new array must be unchanged.")
             raise ValueError(msg % (source_size, dest_size))
+
+        plan = self.distribution.get_redist_plan(dist)
+        ubercomm, all_targets = self.distribution.comm_union(dist)
+        result = DistArray(dist, dtype=self.dtype)
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=all_targets)

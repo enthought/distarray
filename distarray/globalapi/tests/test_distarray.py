@@ -1077,6 +1077,20 @@ class TestBlockRedistribution(DefaultContextTestCase):
         with self.assertRaises(ValueError):
             source_da.distribute_as(Distribution(self.context, (3, 4000)))
 
+    def test_redist_unsupported_dist_types(self):
+        source_dist = Distribution(self.context, (10, 20), ('n', 'c'))
+        source_da = self.context.empty(source_dist)
+
+        with self.assertRaises(NotImplementedError):
+            source_da.distribute_as(source_da.distribution)
+
+        source_da = self.context.empty((10, 20), ('b', 'b'))
+        dest_dist = Distribution(self.context, (10, 20), ('b', 'c'))
+
+        with self.assertRaises(NotImplementedError):
+            source_da.distribute_as(dest_dist)
+
+
 class TestReshapeRedistribution(DefaultContextTestCase):
 
     def test_global_flat_indices(self):
