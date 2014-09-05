@@ -21,6 +21,8 @@
                 </li>
             {% endif %}
 
+            {% include 'includes/links.html' %}
+
             {% if DISPLAY_RECENT_POSTS_ON_SIDEBAR %}
                 {% if RECENT_POST_COUNT is not defined %}
                     {% set RECENT_POST_COUNT = 5 %}
@@ -72,7 +74,6 @@
             {% endif %}
             {% include 'includes/github.html' %}
             {% include 'includes/twitter_timeline.html' %}
-            {% include 'includes/links.html' %}
 
         </ul>
     </section>
