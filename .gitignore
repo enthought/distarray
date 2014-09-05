@@ -100,6 +100,8 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/generated
+www/output/*
+www/cache/*
 
 # Things specific to this project #
 ###################################
