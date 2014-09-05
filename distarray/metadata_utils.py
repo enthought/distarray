@@ -560,3 +560,40 @@ def condense(intervals):
     intervals = reduce(_squeeze, intervals, [[]])
     return intervals
 
+# ----------------------------------------------------------------------------
+# `apply` related utilities.
+# ----------------------------------------------------------------------------
+
+def arg_kwarg_proxy_converter(args, kwargs, module_name='__main__'):
+    from importlib import import_module
+
+    module = import_module(module_name)
+    # convert args
+
+    # In some situations, like redistributing a DistArray from one set of
+    # targets to a disjoint set, the source and destination DistArrays (and
+    # associated LocalArrays) are in different communicators with different
+    # targets.  In those cases, it is possible for a proxy object for one
+    # DistArray to not refer to anything on this target.  In that case,
+    # `a.dereference()` raises an `AttributeError`.  We intercept that here and
+    # assign `None` instead.
+
+    args = list(args)
+    for i, a in enumerate(args):
+        if isinstance(a, module.Proxy):
+            try:
+                args[i] = a.dereference()
+            except AttributeError:
+                args[i] = None
+    args = tuple(args)
+
+    # convert kwargs
+    for k in kwargs.keys():
+        val = kwargs[k]
+        if isinstance(val, module.Proxy):
+            try:
+                kwargs[k] = val.dereference()
+            except AttributeError:
+                kwargs[k] = None
+
+    return args, kwargs

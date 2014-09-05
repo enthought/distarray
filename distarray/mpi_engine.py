@@ -11,6 +11,7 @@ from functools import reduce
 from importlib import import_module
 import types
 
+from distarray.metadata_utils import arg_kwarg_proxy_converter
 from distarray.localapi import LocalArray
 from distarray.localapi.proxyize import Proxy
 
@@ -42,28 +43,6 @@ class Engine(object):
                 break
         Engine.INTERCOMM.Free()
 
-    def arg_kwarg_proxy_converter(self, args, kwargs, default):
-        module = import_module('__main__')
-        # convert args
-        args = list(args)
-        for i, a in enumerate(args):
-            if isinstance(a, module.Proxy):
-                try:
-                    args[i] = a.dereference()
-                except AttributeError:
-                    args[i] = default
-        args = tuple(args)
-
-        # convert kwargs
-        for k in kwargs.keys():
-            val = kwargs[k]
-            if isinstance(val, module.Proxy):
-                try:
-                    kwargs[k] = val.dereference()
-                except AttributeError:
-                    kwargs[k] = default
-
-        return args, kwargs
 
     def is_engine(self):
         if self.world.rank != self.client_rank:
@@ -105,12 +84,11 @@ class Engine(object):
         kwargs = msg[3]
         nonce, context_key = msg[4]
         autoproxyize = msg[5]
-        default = msg[6]
 
         module = import_module('__main__')
         module.proxyize.set_state(nonce)
 
-        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs, default)
+        args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
 
         new_func_globals = module.__dict__  # add proper proxyize, context_key
         new_func_globals.update({'proxyize': module.proxyize,
@@ -159,9 +137,8 @@ class Engine(object):
         func = msg[1]
         args = msg[2]
         kwargs = msg[3]
-        default = msg[4]
 
-        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs, default)
+        args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
 
         res = func(*args, **kwargs)
         Engine.INTERCOMM.send(res, dest=self.client_rank)
