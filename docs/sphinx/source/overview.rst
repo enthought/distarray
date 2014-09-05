@@ -1,5 +1,5 @@
-DistArray Overview
-==================
+Overview
+========
 
 *Think globally, act locally.*
 
