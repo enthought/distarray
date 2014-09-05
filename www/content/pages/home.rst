@@ -1,9 +1,9 @@
 DistArray
----------
+=========
 
 :url:
+:slug: home
 :save_as: index.html
-
 
 *Think globally, act locally.*
 
