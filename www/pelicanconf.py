@@ -18,8 +18,10 @@ CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
 # Blogroll
-LINKS = (('NumPy', 'http://www.numpy.org/'),
-         ('SciPy', 'http://www.scipy.org'),
+LINKS = (('PyPI', 'https://pypi.python.org/pypi/distarray'),
+         ('Docs', 'http://distarray.readthedocs.org/'),
+         ('Distributed Array Protocol', 'http://distributed-array-protocol.readthedocs.org'),
+         ('SciPy', 'http://www.scipy.org/'),
          ('IPython', 'http://ipython.org/'),
          ('Enthought', 'http://www.enthought.com/'),
         )
