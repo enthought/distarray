@@ -22,6 +22,7 @@ Other Documentation
    Notes on building environment-modules <environment-modules-notes.rst>
    Licensing for bundled `six` module (Python 2 / 3 compatibility) <six-license.rst>
 
+
 Release Notes
 -------------
 .. toctree::
@@ -29,7 +30,6 @@ Release Notes
    :glob:
 
    releases/*
-
 
 
 Indices and tables
