@@ -98,10 +98,9 @@ Thumbs.db
 
 # Documentation generated files #
 #################################
-doc/frontpage/build
-doc/source/generated
-www/output/*
-www/cache/*
+docs/sphinx/build/*
+docs/www/output/*
+docs/www/cache/*
 
 # Things specific to this project #
 ###################################
