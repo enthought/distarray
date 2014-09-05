@@ -270,7 +270,8 @@ United States Government or any agency thereof.&lt;/p&gt;
 &lt;!-- vim:spell --&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-</summary><category term="releases"></category></entry><entry><title>DistArray at APUG</title><link href="http://docs.enthought.com/distarray/apug-2014-06.html" rel="alternate"></link><updated>2014-06-11T00:00:00-05:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-06-11:distarray/apug-2014-06.html</id><summary type="html">&lt;p&gt;We presented DistArray at the Austin Python User's group!&lt;/p&gt;
+</summary><category term="releases"></category></entry><entry><title>DistArray at APUG</title><link href="http://docs.enthought.com/distarray/2014-06-11-apug.html" rel="alternate"></link><updated>2014-06-11T00:00:00-05:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-06-11:distarray/2014-06-11-apug.html</id><summary type="html">&lt;p&gt;Robert Grant presented DistArray to the Austin Python User's group in June
+2014.&lt;/p&gt;
 &lt;ul class="simple"&gt;
 &lt;li&gt;&lt;a class="reference external" href="https://github.com/enthought/distarray/blob/master/docs/2014-06-apug/2014-06-apug.pdf?raw=true"&gt;Slides&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/docs/2014-06-apug/2014-06-apug.ipynb"&gt;IPython Notebook&lt;/a&gt;&lt;/li&gt;
@@ -470,4 +471,11 @@ performance aspects of distributed computations&lt;/li&gt;
 [2] &lt;a class="reference external" href="http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/"&gt;http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/&lt;/a&gt;
 [3] &lt;a class="reference external" href="http://www.mcs.anl.gov/petsc/"&gt;http://www.mcs.anl.gov/petsc/&lt;/a&gt;&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="releases"></category></entry></feed>
+</summary><category term="releases"></category></entry><entry><title>DistArray at AMS</title><link href="http://docs.enthought.com/distarray/2014-02-03-ams.html" rel="alternate"></link><updated>2014-02-03T00:00:00-06:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-02-03:distarray/2014-02-03-ams.html</id><summary type="html">&lt;p&gt;Jonathan Rocher presented DistArray at meeting of the American Meteorological
+Society in February 2014.&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;&lt;a class="reference external" href="https://github.com/enthought/distarray/blob/master/docs/2014-02-03-ams/Enthought_distarray.pdf?raw=true"&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="reference external" href="https://ams.confex.com/ams/94Annual/webprogram/Paper242484.html"&gt;AMS site&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="reference external" href="https://ams.confex.com/ams/94Annual/videogateway.cgi/id/26661?recordingid=26661"&gt;Recorded presentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</summary><category term="talks"></category></entry></feed>
