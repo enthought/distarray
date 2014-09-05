@@ -529,10 +529,17 @@ class DistArray(object):
             from distarray.localapi import redistribute_general
             redistribute_general(comm, plan, la_from, la_to)
 
+        source_size = self.global_size
+        dest_size = reduce(operator.mul, dist.shape, 1)
+
         if self.distribution.shape == dist.shape:
             _local_redistribute = _local_redistribute_same_shape
-        else:
+        elif source_size == dest_size:
             _local_redistribute = _local_redistribute_general
+        else:
+            msg = ("Original size %d != new size %d,"
+                   " and total size of new array must be unchanged.")
+            raise ValueError(msg % (source_size, dest_size))
 
         self.context.apply(_local_redistribute, (ubercomm, plan, self.key, result.key),
                                                 targets=all_targets)

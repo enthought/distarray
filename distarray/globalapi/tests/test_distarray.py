@@ -1065,6 +1065,17 @@ class TestBlockRedistribution(DefaultContextTestCase):
         dest_da = source_da.distribute_as(dest_dist)
         assert_array_equal(source_da.tondarray(), dest_da.tondarray())
 
+    def test_redist_incompatible_sizes(self):
+        source_da = self.context.empty((10,), dtype=numpy.int32)
+
+        with self.assertRaises(ValueError):
+            source_da.distribute_as(Distribution(self.context, (9,)))
+
+        with self.assertRaises(ValueError):
+            source_da.distribute_as(Distribution(self.context, (3, 4)))
+
+        with self.assertRaises(ValueError):
+            source_da.distribute_as(Distribution(self.context, (3, 4000)))
 
 class TestReshapeRedistribution(DefaultContextTestCase):
 
