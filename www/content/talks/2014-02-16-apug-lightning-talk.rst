@@ -7,7 +7,10 @@ APUG Lightning Talk
 :category: Talks
 
 Blake Griffith gave a DistArray lightning talk to the Austin Python User's
-group in February 2014.  Check out his `blog post`_ and `slides`_.
+group in February 2014.  Check it out!
 
-.. _blog post: http://cwl.cx/posts/distarray-lightning-talk-slides.html
-.. _slides: http://cwl.cx/distarray.slides.html
+* `Blog post`_
+* `Slides`_
+
+.. _Blog post: http://cwl.cx/posts/distarray-lightning-talk-slides.html
+.. _Slides: http://cwl.cx/distarray.slides.html
