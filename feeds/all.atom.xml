@@ -477,7 +477,11 @@ performance aspects of distributed computations&lt;/li&gt;
 [3] &lt;a class="reference external" href="http://www.mcs.anl.gov/petsc/"&gt;http://www.mcs.anl.gov/petsc/&lt;/a&gt;&lt;/p&gt;
 &lt;/div&gt;
 </summary><category term="releases"></category></entry><entry><title>APUG Lightning Talk</title><link href="http://docs.enthought.com/distarray/2014-02-16-apug.html" rel="alternate"></link><updated>2014-02-16T00:00:00-06:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-02-16:distarray/2014-02-16-apug.html</id><summary type="html">&lt;p&gt;Blake Griffith gave a DistArray lightning talk to the Austin Python User's
-group in February 2014.  Check out his &lt;a class="reference external" href="http://cwl.cx/posts/distarray-lightning-talk-slides.html"&gt;blog post&lt;/a&gt; and &lt;a class="reference external" href="http://cwl.cx/distarray.slides.html"&gt;slides&lt;/a&gt;.&lt;/p&gt;
+group in February 2014.  Check it out!&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;&lt;a class="reference external" href="http://cwl.cx/posts/distarray-lightning-talk-slides.html"&gt;Blog post&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="reference external" href="http://cwl.cx/distarray.slides.html"&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
 </summary><category term="talks"></category></entry><entry><title>DistArray at AMS</title><link href="http://docs.enthought.com/distarray/2014-02-03-ams.html" rel="alternate"></link><updated>2014-02-03T00:00:00-06:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-02-03:distarray/2014-02-03-ams.html</id><summary type="html">&lt;p&gt;Jonathan Rocher presented DistArray at meeting of the American Meteorological
 Society in February 2014.&lt;/p&gt;
 &lt;ul class="simple"&gt;
