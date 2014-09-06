@@ -21,6 +21,7 @@ before_install:
     - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
     - source activate test-environment
     - pip install sphinxcontrib-napoleon sphinxcontrib-programoutput coveralls
+    - pip install pelican
     - if [[ "$PYVERSION" == "2.7" ]]; then
           conda install mpi4py;
       else
@@ -30,8 +31,9 @@ before_install:
     - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
 install:
-    - python setup.py install
-    - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)
+    - python setup.py install  # build DistArray
+    - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
+    - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build docs
 before_script:
     - "export DISPLAY=:99.0"  # for plotting.py
     - "sh -e /etc/init.d/xvfb start"  # for plotting.py
