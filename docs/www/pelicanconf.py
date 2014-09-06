@@ -42,11 +42,11 @@ DISPLAY_CATEGORIES_ON_MENU = False
 DISPLAY_PAGES_ON_MENU = False
 
 MENUITEMS = (
-        ('Home', '/'),
-        ('Features', '/pages/features.html'),
-        ('Releases', '/category/release-notes.html'),
-        ('Talks', '/category/talks.html'),
-        ('Contact', '/pages/contact.html'),
+    ('Home', '/'),
+    ('Features', '/pages/features.html'),
+    ('Releases', '/category/release-notes.html'),
+    ('Talks', '/category/talks.html'),
+    ('Contact', '/pages/contact.html'),
 )
 
 # Uncomment following line if you want document-relative URLs when developing
