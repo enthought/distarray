@@ -38,6 +38,18 @@ CACHE_CONTENT = False
 SLUGIFY_SOURCE = 'basename'
 PYGMENTS_STYLE = 'default'
 
+DISPLAY_CATEGORIES_ON_MENU = False
+DISPLAY_PAGES_ON_MENU = False
+
+MENUITEMS = (
+        ('Home', '/'),
+        ('Features', '/pages/features.html'),
+        ('Docs', 'http://distarray.readthedocs.org'),
+        ('Releases', '/category/release-notes.html'),
+        ('Talks', '/category/talks.html'),
+        ('Contact', '/pages/contact.html'),
+)
+
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
