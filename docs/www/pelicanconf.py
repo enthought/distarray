@@ -36,6 +36,7 @@ SOCIAL = (
 DEFAULT_PAGINATION = False
 CACHE_CONTENT = False
 SLUGIFY_SOURCE = 'basename'
+PYGMENTS_STYLE = 'default'
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
