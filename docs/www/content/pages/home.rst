@@ -7,4 +7,3 @@
 .. include:: ../../../sphinx/source/overview.rst
 .. include:: ../../../sphinx/source/installation.rst
 .. include:: ../../../sphinx/source/history.rst
-.. include:: ../../../sphinx/source/contact_us.rst
