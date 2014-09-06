@@ -25,7 +25,7 @@ from functools import reduce
 from numbers import Integral
 
 import numpy as np
-from distarray.externals.six.moves import range, zip
+from distarray.externals.six.moves import range, zip, reduce
 
 from distarray.localapi import construct
 from distarray.metadata_utils import (make_grid_shape, normalize_grid_shape,
@@ -169,6 +169,12 @@ class Distribution(object):
                 raise TypeError("Index must be Integral or slice.")
         return tuple(global_idxs)
 
+    def local_flat_from_local(self, local_ind):
+        local_strides = _get_strides(self.local_shape)
+        def flatten(idx, strides):
+            return sum(a * b for (a, b) in zip(idx, strides))
+        return flatten(local_ind, local_strides)
+
 
 def map_from_dim_dict(dd):
     """ Factory function that returns a 1D map for a given dimension
@@ -203,6 +209,12 @@ def map_from_dim_dict(dd):
                                grid_rank=grid_rank, indices=indices)
 
     raise ValueError("Unsupported dist_type of %r" % dist_type)
+
+def _accum(start, next):
+    return tuple(s * next for s in start) + (next,)
+
+def _get_strides(shape):
+    return reduce(_accum, tuple(shape[1:]) + (1,), ())
 
 
 class MapBase(object):

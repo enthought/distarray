@@ -13,6 +13,9 @@ usually reside on engines).
 
 from __future__ import print_function, division
 
+def mpi_print(*args, **kwargs):
+    from distarray.mpionly_utils import get_world_rank
+    print("[%d]" % get_world_rank(), *args, **kwargs)
 
 # ---------------------------------------------------------------------------
 # Imports
@@ -22,14 +25,80 @@ from collections import Mapping
 import numpy as np
 
 from distarray.externals import six
-from distarray.externals.six.moves import zip
+from distarray.externals.six.moves import zip, reduce
 
-from distarray.metadata_utils import sanitize_indices
+from distarray.metadata_utils import sanitize_indices, strides_from_shape, ndim_from_flat, condense
 
 from distarray.localapi.mpiutils import MPI
 from distarray.localapi import format, maps
 from distarray.localapi.error import InvalidDimensionError, IncompatibleArrayError
 
+# ----------------------------------------------------------------------------
+# Local Redistribution functions
+# ----------------------------------------------------------------------------
+
+def _transform(local_distribution, glb_flat):
+    glb_strides = strides_from_shape(local_distribution.global_shape)
+    local_strides = strides_from_shape(local_distribution.local_shape)
+    glb_ndim_inds = ndim_from_flat(glb_flat, glb_strides)
+    local_ind = local_distribution.local_from_global(glb_ndim_inds)
+    local_flat = local_distribution.local_flat_from_local(local_ind)
+    return local_flat
+
+def _massage_indices(local_distribution, glb_intervals):
+    # XXX: TODO: document why we do `-1)+1` below.
+    local_flat_slices = [(_transform(local_distribution, i[0]),
+                          _transform(local_distribution, i[1]-1)+1)
+                            for i in glb_intervals]
+    return condense(local_flat_slices)
+
+def _mpi_dtype_from_intervals(larr, glb_intervals):
+    local_intervals = _massage_indices(larr.distribution, glb_intervals)
+    blocklengths = [stop-start for (start, stop) in local_intervals]
+    displacements = [start for (start, _) in local_intervals]
+    mpidtype = MPI.__TypeDict__[np.sctype2char(larr.dtype)]
+    newtype = mpidtype.Create_indexed(blocklengths, displacements)
+    newtype.Commit()
+    return newtype
+
+def redistribute_general(comm, plan, la_from, la_to):
+    myrank = comm.Get_rank()
+    for dta in plan:
+        if dta['source_rank'] == dta['dest_rank'] == myrank:
+            from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
+            to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
+            comm.Sendrecv(sendbuf=[la_from.ndarray, 1, from_dtype], dest=myrank,
+                          recvbuf=[la_to.ndarray, 1, to_dtype], source=myrank)
+        elif dta['source_rank'] == myrank:
+            from_dtype = _mpi_dtype_from_intervals(la_from, dta['indices'])
+            comm.Send([la_from.ndarray, 1, from_dtype], dest=dta['dest_rank'])
+        elif dta['dest_rank'] == myrank:
+            to_dtype = _mpi_dtype_from_intervals(la_to, dta['indices'])
+            comm.Recv([la_to.ndarray, 1, to_dtype], source=dta['source_rank'])
+
+def make_local_slices(local_arr, glb_indices):
+    slices = tuple(slice(*inds) for inds in glb_indices)
+    return local_arr.local_from_global(slices)
+
+def redistribute(comm, plan, la_from, la_to):
+    myrank = comm.Get_rank()
+    for dta in plan:
+        if dta['source_rank'] == dta['dest_rank'] == myrank:
+            # simple local copy from `la_from` to `la_to`
+            slices_from = make_local_slices(la_from, dta['indices'])
+            slices_to = make_local_slices(la_to, dta['indices'])
+            la_to.ndarray[slices_to] = la_from.ndarray[slices_from]
+        elif dta['source_rank'] == myrank:
+            source_slices = make_local_slices(la_from, dta['indices'])
+            sliced_ndarr = la_from.ndarray[source_slices]
+            sliced_buffer = sliced_ndarr.ravel()
+            comm.Send(sliced_buffer, dest=dta['dest_rank'])
+        elif dta['dest_rank'] == myrank:
+            dest_slices = make_local_slices(la_to, dta['indices'])
+            sliced_ndarr = la_to.ndarray[dest_slices]
+            recv_buffer = np.empty_like(sliced_ndarr)
+            comm.Recv(recv_buffer, source=dta['source_rank'])
+            sliced_ndarr[...] = recv_buffer
 
 class GlobalIndex(object):
     """Object which provides access to global indexing on LocalArrays."""

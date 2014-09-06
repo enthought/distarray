@@ -772,6 +772,7 @@ class IPythonContext(BaseContext):
             """
             from importlib import import_module
             import types
+            from distarray.metadata_utils import arg_kwarg_proxy_converter
             from distarray.localapi import LocalArray
 
             main = import_module('__main__')
@@ -793,19 +794,8 @@ class IPythonContext(BaseContext):
                 func = types.FunctionType(func_code, new_func_globals,
                                           func_name, func_defaults,
                                           func_closure)
-            # convert args
-            args = list(args)
-            for i, a in enumerate(args):
-                if isinstance(a, main.Proxy):
-                    args[i] = a.dereference()
-            args = tuple(args)
 
-            # convert kwargs
-            for k in kwargs.keys():
-                val = kwargs[k]
-                if isinstance(val, main.Proxy):
-                    kwargs[k] = val.dereference()
-
+            args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
             result = func(*args, **kwargs)
 
             if autoproxyize and isinstance(result, LocalArray):

@@ -299,6 +299,96 @@ class TestDistributionCreation(DefaultContextTestCase):
                                     dist=('n', 'n'))
         self.context.ones(distribution)
 
+class TestRedistribution(DefaultContextTestCase):
+
+    def test_block_redistribution_one_to_one(self):
+        source_dist = Distribution(self.context, (40,),
+                                  ('b',), (2,), targets=[1, 3])
+        dest_dist = Distribution(self.context, (40,),
+                                  ('b',), (2,), targets=[0, 2])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 3, 'dest_rank': 2, 'indices': [(20, 40, 1)]},
+                ]
+        self.assertEqual(plan, expected)
+
+    def test_block_redist_one_to_many(self):
+        source_dist = Distribution(self.context, (40,),
+                                   ('b',), (1,), targets=[1])
+        dest_dist = Distribution(self.context, (40,),
+                                ('b',), (2,), targets=[0,2])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 1, 'dest_rank': 2, 'indices': [(20, 40, 1)]},
+                ]
+        self.assertEqual(plan, expected)
+
+    def test_block_redist_many_to_one(self):
+        source_dist = Distribution(self.context, (40,),
+                                   ('b',), (2,), targets=[1, 2])
+        dest_dist = Distribution(self.context, (40,),
+                                ('b',), (1,), targets=[0])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 1, 'dest_rank': 0, 'indices': [(0, 20, 1)]},
+                {'source_rank': 2, 'dest_rank': 0, 'indices': [(20, 40, 1)]},
+                ]
+        self.assertEqual(plan, expected)
+
+    def test_block_redist_identity(self):
+        source_dist = dest_dist = Distribution(self.context, (40,),
+                                               ('b',), (4,))
+        plan_a = source_dist.get_redist_plan(dest_dist)
+        plan_b = dest_dist.get_redist_plan(source_dist)
+        self.assertSequenceEqual(plan_a, plan_b)
+        for p, lshape in zip(plan_a, source_dist.localshapes()):
+            self.assertEqual(p['source_rank'], p['dest_rank'])
+            start, stop, step = p['indices'][0]
+            self.assertEqual(step, 1)
+            self.assertEqual(stop - start, lshape[0])
+
+    def test_block_redist_2D_identity(self):
+        source_dist = dest_dist = Distribution(self.context, (10, 10),
+                                               ('b', 'b'), (1, 1),
+                                               targets=[0])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 0, 'dest_rank': 0, 'indices': [(0, 10, 1), (0, 10, 1)]},
+                ]
+        self.assertEqual(plan, expected)
+
+    def test_block_redist_2D_many_to_one(self):
+        source_dist = Distribution(self.context, (9, 9),
+                                   ('b', 'b'), (2, 2), targets=range(4))
+        dest_dist = Distribution(self.context, (9, 9),
+                                 ('b', 'b'), (1, 1), targets=[2])
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 0, 'dest_rank': 2, 'indices': [(0, 5, 1), (0, 5, 1)]},
+                {'source_rank': 1, 'dest_rank': 2, 'indices': [(0, 5, 1), (5, 9, 1)]},
+                {'source_rank': 2, 'dest_rank': 2, 'indices': [(5, 9, 1), (0, 5, 1)]},
+                {'source_rank': 3, 'dest_rank': 2, 'indices': [(5, 9, 1), (5, 9, 1)]},
+                ]
+        for p, e in zip(plan, expected):
+            self.assertEqual(p, e)
+
+    def test_block_redist_2D_one_to_many(self):
+        source_dist = Distribution(self.context, (9, 9),
+                                   ('b', 'b'), (1, 1), targets=[2])
+        dest_dist = Distribution(self.context, (9, 9),
+                                 ('b', 'b'), (2, 2), targets=range(4))
+        plan = source_dist.get_redist_plan(dest_dist)
+        expected = [
+                {'source_rank': 2, 'dest_rank': 0, 'indices': [(0, 5, 1), (0, 5, 1)]},
+                {'source_rank': 2, 'dest_rank': 1, 'indices': [(0, 5, 1), (5, 9, 1)]},
+                {'source_rank': 2, 'dest_rank': 2, 'indices': [(5, 9, 1), (0, 5, 1)]},
+                {'source_rank': 2, 'dest_rank': 3, 'indices': [(5, 9, 1), (5, 9, 1)]},
+                ]
+        for p, e in zip(plan, expected):
+            self.assertEqual(p, e)
+
 
 class TestNoEmptyLocals(DefaultContextTestCase):
 

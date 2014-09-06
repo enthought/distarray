@@ -11,6 +11,7 @@ from functools import reduce
 from importlib import import_module
 import types
 
+from distarray.metadata_utils import arg_kwarg_proxy_converter
 from distarray.localapi import LocalArray
 from distarray.localapi.proxyize import Proxy
 
@@ -42,22 +43,6 @@ class Engine(object):
                 break
         Engine.INTERCOMM.Free()
 
-    def arg_kwarg_proxy_converter(self, args, kwargs):
-        module = import_module('__main__')
-        # convert args
-        args = list(args)
-        for i, a in enumerate(args):
-            if isinstance(a, module.Proxy):
-                args[i] = a.dereference()
-        args = tuple(args)
-
-        # convert kwargs
-        for k in kwargs.keys():
-            val = kwargs[k]
-            if isinstance(val, module.Proxy):
-                kwargs[k] = val.dereference()
-
-        return args, kwargs
 
     def is_engine(self):
         if self.world.rank != self.client_rank:
@@ -103,7 +88,7 @@ class Engine(object):
         module = import_module('__main__')
         module.proxyize.set_state(nonce)
 
-        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
+        args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
 
         new_func_globals = module.__dict__  # add proper proxyize, context_key
         new_func_globals.update({'proxyize': module.proxyize,
@@ -153,7 +138,7 @@ class Engine(object):
         args = msg[2]
         kwargs = msg[3]
 
-        args, kwargs = self.arg_kwarg_proxy_converter(args, kwargs)
+        args, kwargs = arg_kwarg_proxy_converter(args, kwargs)
 
         res = func(*args, **kwargs)
         Engine.INTERCOMM.send(res, dest=self.client_rank)
