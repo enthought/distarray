@@ -44,7 +44,6 @@ DISPLAY_PAGES_ON_MENU = False
 MENUITEMS = (
         ('Home', '/'),
         ('Features', '/pages/features.html'),
-        ('Docs', 'http://distarray.readthedocs.org'),
         ('Releases', '/category/release-notes.html'),
         ('Talks', '/category/talks.html'),
         ('Contact', '/pages/contact.html'),
