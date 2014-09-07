@@ -13,6 +13,8 @@ from pelicanconf import *
 SITEURL = 'http://docs.enthought.com/distarray'
 RELATIVE_URLS = False
 
+MENUITEMS = [(name, SITEURL + url) for (name, url) in MENUITEMS]
+
 FEED_ALL_ATOM = 'feeds/all.atom.xml'
 CATEGORY_FEED_ATOM = 'feeds/%s.atom.xml'
 
