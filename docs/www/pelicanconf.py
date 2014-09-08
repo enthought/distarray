@@ -38,7 +38,7 @@ CACHE_CONTENT = False
 SLUGIFY_SOURCE = 'basename'
 PYGMENTS_STYLE = 'default'
 
-SITELOGO = 'images/DistArray-v3.png'
+SITELOGO = 'images/distarray-logo.png'
 SITELOGO_SIZE = 140
 HIDE_SITENAME = True
 
