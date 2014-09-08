@@ -202,14 +202,14 @@ init_mathjax();
             </button>
             <div style="position: relative; left: -12px; top: -27px; width: 140;">
             <a href="http://docs.enthought.com/distarray/" class="navbar-brand" style=position>
-<img src="http://docs.enthought.com/distarray/images/DistArray-v3.png" width="140"/>             </a>
+<img src="http://docs.enthought.com/distarray/images/distarray-logo.png" width="140"/>             </a>
             </div>
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
                     <li><a href="http://docs.enthought.com/distarray/">Home</a></li>
                     <li><a href="http://docs.enthought.com/distarray/pages/features.html">Features</a></li>
-                    <li><a href="http://docs.enthought.com/distarray/category/release-notes.html">Releases</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/category/release-notes.html">Release Notes</a></li>
                     <li><a href="http://docs.enthought.com/distarray/category/talks.html">Talks</a></li>
                     <li><a href="http://docs.enthought.com/distarray/pages/contact.html">Contact</a></li>
             </ul>
@@ -269,54 +269,61 @@ NumPy arrays are easy to use, they have many powerful features like ufuncs,
 slicing, and broadcasting, and they work easily with external libraries.</p>
 <p>As data sets grow and parallel hardware becomes more widely available,
 wouldn't it be great if NumPy easily supported parallel execution, without
-loosing its nice interface in a miasma of low-level parallel coordination?
+losing its nice interface in a miasma of low-level parallel coordination?
 What would that look like?</p>
 <p>What we want is transparent distribution of NumPy arrays over the CPU,
 cluster, and supercomputer.  We want to interact with distributed NumPy arrays
-the way we think about them, and get the benefit of all that parallelism.  We
+the way we think about them and get the benefit of all that parallelism.  We
 also want to be able to drop down a level to control what's going on at the
 data-local level when performance demands it.</p>
-<p>Such a NumPy opens doors to providing a high-level numpy-like interface to
+<p>Such a NumPy opens doors to providing a high-level NumPy-like interface to
 distributed libraries like Trilinos, PETSc, Global Arrays, Elemental, and
 ScaLAPACK, among others.</p>
-<p>All this coordination has overhead, and is at risk of becoming a performance
-bottlneck.  This NumPy will need a way to allow direct execution at a
+<p>All this coordination has overhead and is at risk of becoming a performance
+bottleneck.  This NumPy will need a way to allow direct execution at a
 data-local level.  We will also need a way to communicate directly between
 local processes when needed, rather than doing everything at a global level.</p>
 <p>This distributed NumPy should be a good citizen and work easily with regular
 NumPy arrays, with MPI, with IPython parallel, and with external distributed
 algorithms.</p>
 <p>DistArray is our vision of what distributed NumPy can be.  It brings the best
-parts of NumPy to data parallel computing.  We want to <em>think globally</em> about
+parts of NumPy to data-parallel computing.  We want to <em>think globally</em> about
 our arrays, interacting with them as if they are just really big NumPy arrays,
 all the while <em>acting locally</em> on them for performance and control.</p>
 </div>
 <div class="section" id="installation">
 <h2>Installation</h2>
-<p>Dependencies for DistArray:</p>
+<p>DistArray requires the following Python libraries:</p>
 <ul class="simple">
-<li>NumPy</li>
-<li>IPython</li>
-<li>Mpi4Py</li>
+<li><a class="reference external" href="http://www.numpy.org">NumPy</a>,</li>
+<li><a class="reference external" href="http://ipython.org">IPython</a>, and</li>
+<li><a class="reference external" href="http://mpi4py.scipy.org">Mpi4Py</a>.</li>
 </ul>
-<p>Optional dependencies:</p>
+<p>Optionally, DistArray can make use of:</p>
 <ul class="simple">
-<li>For HDF5 IO: h5py built against a parallel-enabled build of HDF5</li>
-<li>For plotting: matplotlib</li>
+<li><a class="reference external" href="http://www.h5py.org/">h5py</a> built against a parallel-enabled build of HDF5 (for HDF5 IO), and</li>
+<li><a class="reference external" href="http://matplotlib.org/">matplotlib</a> (for making plots of DistArray distributions).</li>
 </ul>
-<p>If you have the above, you should be able to install this package with:</p>
+<p>If you have the above, you should be able to install DistArray with:</p>
 <pre class="literal-block">
 python setup.py install
 </pre>
 <p>or:</p>
 <pre class="literal-block">
-python setup.py develop
+pip install distarray
 </pre>
-<p>To run the tests, you will need to start an IPython.parallel cluster.  You can
-use <tt class="docutils literal">ipcluster</tt>, or you can use the <tt class="docutils literal">dacluster</tt> command which comes with
-DistArray:</p>
+</div>
+<div class="section" id="testing-your-installation">
+<h2>Testing Your Installation</h2>
+<p>To test your installation, you will first need to start an IPython.parallel
+cluster with MPI enabled.  The easist way is to use use the <tt class="docutils literal">dacluster</tt>
+command that comes with DistArray:</p>
 <pre class="literal-block">
 dacluster start
+</pre>
+<p>See <tt class="docutils literal">dacluster</tt>'s help for more:</p>
+<pre class="literal-block">
+dacluster --help
 </pre>
 <p>You should then be able to run all the tests from the DistArray source
 directory with:</p>
@@ -327,28 +334,6 @@ make test
 <pre class="literal-block">
 python -m distarray.run_tests
 </pre>
-</div>
-<div class="section" id="building-the-docs">
-<h2>Building the docs</h2>
-<p>Dependencies to build the documentation:</p>
-<ul class="simple">
-<li>Sphinx</li>
-<li>sphinxcontrib.napoleon</li>
-<li>sphinxcontrib.programoutput</li>
-</ul>
-<p>If you have the dependencies listed above, and you want to build the
-documentation (also available at <a class="reference external" href="http://distarray.readthedocs.org">http://distarray.readthedocs.org</a>), navigate to
-the <tt class="docutils literal">docs</tt> subdirectory of the DistArray source and use the Makefile there.</p>
-<p>For example, to build the html documentation:</p>
-<pre class="literal-block">
-make html
-</pre>
-<p>from the <tt class="docutils literal">docs</tt> directory.</p>
-<p>Try:</p>
-<pre class="literal-block">
-make help
-</pre>
-<p>for more options.</p>
 </div>
 <div class="section" id="history">
 <h2>History</h2>
