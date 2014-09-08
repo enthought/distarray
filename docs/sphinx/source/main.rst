@@ -1,6 +1,7 @@
 .. include:: blurb.rst
-.. include:: getting_started.rst
+.. include:: getting-started.rst
 .. include:: overview.rst
 .. include:: installation.rst
+.. include:: build-the-docs.rst
 .. include:: history.rst
-.. include:: contact_us.rst
+.. include:: contact-us.rst

@@ -1,4 +1,4 @@
 :title: Contact Us
 
-.. include:: ../../../sphinx/source/contact_us.rst
+.. include:: ../../../sphinx/source/contact-us.rst
     :start-line: 3
