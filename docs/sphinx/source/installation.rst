@@ -1,31 +1,45 @@
 Installation
 ------------
 
-Dependencies for DistArray:
+DistArray requires the following Python libraries:
 
-* NumPy
-* IPython
-* Mpi4Py
+* `NumPy`_,
+* `IPython`_, and
+* `Mpi4Py`_.
 
-Optional dependencies:
+.. _NumPy: http://www.numpy.org
+.. _IPython: http://ipython.org
+.. _Mpi4Py: http://mpi4py.scipy.org
 
-* For HDF5 IO: h5py built against a parallel-enabled build of HDF5
-* For plotting: matplotlib
+Optionally, DistArray can make use of:
 
-If you have the above, you should be able to install this package with::
+* `h5py`_ built against a parallel-enabled build of HDF5 (for HDF5 IO), and
+* `matplotlib`_ (for making plots of DistArray distributions).
+
+.. _h5py: http://www.h5py.org/
+.. _matplotlib: http://matplotlib.org/
+
+If you have the above, you should be able to install DistArray with::
 
     python setup.py install
 
 or::
 
-    python setup.py develop
+    pip install distarray
 
 
-To run the tests, you will need to start an IPython.parallel cluster.  You can
-use ``ipcluster``, or you can use the ``dacluster`` command which comes with
-DistArray::
+Testing Your Installation
+-------------------------
+
+To test your installation, you will first need to start an IPython.parallel
+cluster with MPI enabled.  The easist way is to use use the ``dacluster``
+command that comes with DistArray::
 
     dacluster start
+
+See ``dacluster``'s help for more::
+    
+    dacluster --help
 
 You should then be able to run all the tests from the DistArray source
 directory with::
