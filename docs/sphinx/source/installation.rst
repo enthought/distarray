@@ -48,7 +48,7 @@ Dependencies to build the documentation:
 
 If you have the dependencies listed above, and you want to build the
 documentation (also available at http://distarray.readthedocs.org), navigate to
-the ``docs`` subdirectory of the DistArray source and use the Makefile there.
+the ``docs/sphinx`` subdirectory of the DistArray source and use the Makefile there.
 
 For example, to build the html documentation::
 
