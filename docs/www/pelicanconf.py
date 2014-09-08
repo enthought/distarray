@@ -48,7 +48,7 @@ DISPLAY_PAGES_ON_MENU = False
 MENUITEMS = (
     ('Home', '/'),
     ('Features', '/pages/features.html'),
-    ('Releases', '/category/release-notes.html'),
+    ('Release Notes', '/category/release-notes.html'),
     ('Talks', '/category/talks.html'),
     ('Contact', '/pages/contact.html'),
 )
