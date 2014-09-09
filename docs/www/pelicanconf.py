@@ -58,7 +58,7 @@ MENUITEMS = (
 
 # pelican-bootstrap3 settings
 THEME = "./pelican-bootstrap3/"
-BOOTSTRAP_THEME = "flatly"
+BOOTSTRAP_THEME = "enthought"
 SHOW_ARTICLE_AUTHOR = False
 DISPLAY_ARTICLE_INFO_ON_INDEX = False
 
