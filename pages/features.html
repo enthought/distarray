@@ -2133,7 +2133,7 @@ In&nbsp;[45]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can run your DistArray code MPI-only mode (using an extra MPI process for the client).  This can be more performant.</p>
+<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can run your DistArray code in MPI-only mode (using an extra MPI process for the client).  This can be more performant.</p>
 </div>
 </div>
 </div>
@@ -2248,7 +2248,7 @@ In&nbsp;[47]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distributed-array-protocol">Distributed Array Protocol</h2>
-<p>Already have a library with it&#39;s own distributed arrays?  Use the Distributed Array Protocol to work with DistArray.</p>
+<p>Already have a library with its own distributed arrays?  Use the Distributed Array Protocol to work with DistArray.</p>
 <p>The Distributed Array Protocol (DAP) is a process-local protocol that allows two subscribers, called the &quot;producer&quot; and the &quot;consumer&quot; or the &quot;exporter&quot; and the &quot;importer&quot;, to communicate the essential data and metadata necessary to share a distributed-memory array between them. This allows two independently developed components to access, modify, and update a distributed array without copying. The protocol formalizes the metadata and buffers involved in the transfer, allowing several distributed array projects to collaborate, facilitating interoperability. By not copying the underlying array data, the protocol allows for efficient sharing of array data.</p>
 <p><a href="http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/">http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/</a></p>
 </div>
@@ -2409,20 +2409,6 @@ In&nbsp;[48]:
 
 
 
-                <li class="list-group-item"><a href="http://docs.enthought.com/distarray/"><h4><i class="fa fa-tags fa-lg"></i><span class="icon-label">Tags</span></h4></a>
-                    <ul class="list-group " id="tags">
-                        <li class="list-group-item tag-1">
-                            <a href="http://docs.enthought.com/distarray/tag/releases.html">
-                                releases
-                            </a>
-                        </li>
-                        <li class="list-group-item tag-1">
-                            <a href="http://docs.enthought.com/distarray/tag/talks.html">
-                                talks
-                            </a>
-                        </li>
-                    </ul>
-                </li>    
 
         </ul>
     </section>
