@@ -18,11 +18,11 @@ CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
 MENUITEMS = (
-    ('Home', '/'),
-    ('Features', '/pages/features.html'),
-    ('Release Notes', '/category/release-notes.html'),
-    ('Talks', '/category/talks.html'),
-    ('Contact', '/pages/contact.html'),
+    ('HOME', '/'),
+    ('FEATURES', '/pages/features.html'),
+    ('RELEASE NOTES', '/category/release-notes.html'),
+    ('TALKS', '/category/talks.html'),
+    ('CONTACT', '/pages/contact.html'),
 )
 
 
