@@ -17,7 +17,15 @@ FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
-# Blogroll
+MENUITEMS = (
+    ('Home', '/'),
+    ('Features', '/pages/features.html'),
+    ('Release Notes', '/category/release-notes.html'),
+    ('Talks', '/category/talks.html'),
+    ('Contact', '/pages/contact.html'),
+)
+
+
 LINKS = (
     ('DistArray Docs', 'http://distarray.readthedocs.org/'),
     ('Distributed Array Protocol', 'http://distributed-array-protocol.readthedocs.org'),
@@ -27,7 +35,6 @@ LINKS = (
     ('Enthought', 'http://www.enthought.com/'),
 )
 
-# Social widget
 SOCIAL = (
     ('github', 'https://github.com/enthought/distarray'),
     ('twitter', 'https://twitter.com/enthought'),
@@ -44,14 +51,6 @@ HIDE_SITENAME = True
 
 DISPLAY_CATEGORIES_ON_MENU = False
 DISPLAY_PAGES_ON_MENU = False
-
-MENUITEMS = (
-    ('Home', '/'),
-    ('Features', '/pages/features.html'),
-    ('Release Notes', '/category/release-notes.html'),
-    ('Talks', '/category/talks.html'),
-    ('Contact', '/pages/contact.html'),
-)
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
