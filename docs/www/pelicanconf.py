@@ -63,6 +63,4 @@ SHOW_ARTICLE_AUTHOR = False
 DISPLAY_ARTICLE_INFO_ON_INDEX = False
 
 PLUGIN_PATHS = ['./pelican-plugins']
-PLUGINS = ['liquid_tags.img', 'liquid_tags.video',
-           'liquid_tags.youtube', 'liquid_tags.vimeo',
-           'liquid_tags.include_code', 'liquid_tags.notebook']
+PLUGINS = ['liquid_tags.notebook']
