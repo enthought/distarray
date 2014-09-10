@@ -51,6 +51,7 @@ HIDE_SITENAME = True
 
 DISPLAY_CATEGORIES_ON_MENU = False
 DISPLAY_PAGES_ON_MENU = False
+DISPLAY_TAGS_ON_SIDEBAR = False
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
