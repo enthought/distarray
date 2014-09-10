@@ -169,13 +169,13 @@ init_mathjax();
 <link rel="canonical" href="http://docs.enthought.com/distarray/pages/features.html">
 
         <meta name="author" content="IPython development team and Enthought, Inc." />
-        <meta name="description" content="Start a cluster These examples require an IPython.parallel cluster to be running. Outside the notebook, run dacluster start -n4 In [1]: # some utility imports from __future__ import print_function from pprint import pprint from matplotlib import pyplot as plt # main imports import numpy import distarray # reduce precision on printed array ..." />
+        <meta name="description" content="Setup Much of this notebook requires an IPython.parallel cluster to be running. Outside the notebook, run dacluster start -n4 In [1]: # some utility imports from __future__ import print_function from pprint import pprint from matplotlib import pyplot as plt # main imports import numpy import distarray # reduce precision on printed array ..." />
 
     <meta property="og:site_name" content="DistArray" />
     <meta property="og:type" content="article"/>
     <meta property="og:title" content="Features"/>
     <meta property="og:url" content="http://docs.enthought.com/distarray/pages/features.html"/>
-    <meta property="og:description" content="Start a cluster These examples require an IPython.parallel cluster to be running. Outside the notebook, run dacluster start -n4 In [1]: # some utility imports from __future__ import print_function from pprint import pprint from matplotlib import pyplot as plt # main imports import numpy import distarray # reduce precision on printed array ..." />
+    <meta property="og:description" content="Setup Much of this notebook requires an IPython.parallel cluster to be running. Outside the notebook, run dacluster start -n4 In [1]: # some utility imports from __future__ import print_function from pprint import pprint from matplotlib import pyplot as plt # main imports import numpy import distarray # reduce precision on printed array ..." />
 
 
     <!-- Bootstrap -->
@@ -207,11 +207,11 @@ init_mathjax();
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                    <li><a href="http://docs.enthought.com/distarray/">Home</a></li>
-                    <li><a href="http://docs.enthought.com/distarray/pages/features.html">Features</a></li>
-                    <li><a href="http://docs.enthought.com/distarray/category/release-notes.html">Release Notes</a></li>
-                    <li><a href="http://docs.enthought.com/distarray/category/talks.html">Talks</a></li>
-                    <li><a href="http://docs.enthought.com/distarray/pages/contact.html">Contact</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/">HOME</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/pages/features.html">FEATURES</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/category/release-notes.html">RELEASE NOTES</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/category/talks.html">TALKS</a></li>
+                    <li><a href="http://docs.enthought.com/distarray/pages/contact.html">CONTACT</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="http://docs.enthought.com/distarray/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
@@ -235,8 +235,8 @@ init_mathjax();
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="start-a-cluster">Start a cluster</h2>
-<p>These examples require an <code>IPython.parallel</code> cluster to be running.
+<h2 id="setup">Setup</h2>
+<p>Much of this notebook requires an <code>IPython.parallel</code> cluster to be running.
 Outside the notebook, run</p>
 <pre><code>dacluster start -n4
 </code></pre>
@@ -277,15 +277,7 @@ In&nbsp;[1]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="numpy-arrays">NumPy Arrays</h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>DistArray is heavily inspired by NumPy.</p>
+<p>DistArray is built on NumPy and provides a NumPy-array-like interface.  First, let&#39;s generate a NumPy array and examine some of its attributes.</p>
 </div>
 </div>
 </div>
@@ -296,7 +288,8 @@ In&nbsp;[2]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># a 4-row 5-column NumPy array with random contents</span>
+<span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="n">nparr</span>
 </pre></div>
 
@@ -314,10 +307,10 @@ In&nbsp;[2]:
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-array([[ 0.48,  0.75,  0.  ,  0.71,  0.06],
-       [ 0.21,  0.74,  0.79,  0.23,  0.54],
-       [ 0.84,  0.33,  0.71,  0.62,  0.98],
-       [ 0.46,  0.13,  0.12,  0.61,  0.35]])
+array([[ 0.44,  0.87,  0.87,  0.22,  0.23],
+       [ 0.15,  0.05,  0.7 ,  0.04,  0.8 ],
+       [ 0.68,  0.94,  0.51,  0.01,  0.2 ],
+       [ 0.84,  0.81,  0.99,  0.45,  0.02]])
 </pre>
 </div>
 
@@ -375,6 +368,7 @@ nbytes: 160
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distarrays">DistArrays</h2>
+<p>We&#39;ll make our first <code>DistArray</code> out of the NumPy array created above.</p>
 </div>
 </div>
 </div>
@@ -385,8 +379,28 @@ In&nbsp;[4]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="kn">from</span> <span class="nn">distarray.globalapi</span> <span class="kn">import</span> <span class="n">Context</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># First we need a `Context` object.  More on this later.</span>
+<span class="c"># For now, think of this object like the `NumPy` module.</span>
+<span class="c"># `Context`s manage the worker engines for us.</span>
+<span class="kn">from</span> <span class="nn">distarray.globalapi</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[5]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Make a DistArray from a NumPy array.</span>
+<span class="c"># This will push sections of the original NumPy array out</span>
+<span class="c"># to the engines.</span>
 <span class="n">darr</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
 <span class="n">darr</span>
 </pre></div>
@@ -400,7 +414,7 @@ In&nbsp;[4]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[4]:</div>
+    Out[5]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -418,11 +432,11 @@ In&nbsp;[4]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[5]:
+In&nbsp;[6]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># parts of the array are stored on each engine</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Print the array section stored on each engine</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">darr</span><span class="o">.</span><span class="n">get_localarrays</span><span class="p">()):</span>
     <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
 </pre></div>
@@ -438,10 +452,10 @@ In&nbsp;[5]:
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
-0 [[ 0.48  0.75  0.    0.71  0.06]]
-1 [[ 0.21  0.74  0.79  0.23  0.54]]
-2 [[ 0.84  0.33  0.71  0.62  0.98]]
-3 [[ 0.46  0.13  0.12  0.61  0.35]]
+0 [[ 0.44  0.87  0.87  0.22  0.23]]
+1 [[ 0.15  0.05  0.7   0.04  0.8 ]]
+2 [[ 0.68  0.94  0.51  0.01  0.2 ]]
+3 [[ 0.84  0.81  0.99  0.45  0.02]]
 
 </pre>
 </div>
@@ -454,11 +468,11 @@ In&nbsp;[5]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[6]:
+In&nbsp;[7]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray attributes</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArrays have similar attributes to NumPy arrays,</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;type:&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">darr</span><span class="p">))</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;dtype:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;ndim:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
@@ -496,11 +510,11 @@ nbytes: 160
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[7]:
+In&nbsp;[8]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># with some extra...</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># and some additional attributes.</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;targets:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;context:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;distribution:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">distribution</span><span class="p">)</span>
@@ -518,8 +532,8 @@ In&nbsp;[7]:
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
 targets: [0, 1, 2, 3]
-context: &lt;distarray.globalapi.context.IPythonContext object at 0x10809f850&gt;
-distribution: &lt;distarray.globalapi.maps.Distribution object at 0x108763650&gt;
+context: &lt;distarray.globalapi.context.IPythonContext object at 0x101a9d690&gt;
+distribution: &lt;distarray.globalapi.maps.Distribution object at 0x108f7e0d0&gt;
 
 </pre>
 </div>
@@ -541,51 +555,13 @@ distribution: &lt;distarray.globalapi.maps.Distribution object at 0x108763650&gt
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[8]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># NumPy</span>
-<span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[8]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-array([[ 0.46,  0.69,  0.  ,  0.65,  0.06],
-       [ 0.21,  0.67,  0.71,  0.22,  0.51],
-       [ 0.75,  0.32,  0.65,  0.58,  0.83],
-       [ 0.44,  0.13,  0.12,  0.57,  0.35]])
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
 In&nbsp;[9]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray</span>
-<span class="kn">import</span> <span class="nn">distarray.globalapi</span> <span class="kn">as</span> <span class="nn">da</span>
-<span class="n">da</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">darr</span><span class="p">)</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># NumPy provides `ufuncs`, or Universal Functions, that operate</span>
+<span class="c"># elementwise over NumPy arrays.</span>
+<span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -602,7 +578,10 @@ In&nbsp;[9]:
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-&lt;DistArray(shape=(4, 5), targets=[0, 1, 2, 3])&gt;
+array([[ 0.42,  0.76,  0.76,  0.22,  0.23],
+       [ 0.15,  0.05,  0.64,  0.04,  0.72],
+       [ 0.63,  0.81,  0.49,  0.01,  0.2 ],
+       [ 0.74,  0.72,  0.84,  0.43,  0.02]])
 </pre>
 </div>
 
@@ -619,7 +598,9 @@ In&nbsp;[10]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="n">da</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">darr</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray provides ufuncs as well, for `DistArray`s.</span>
+<span class="kn">import</span> <span class="nn">distarray.globalapi</span> <span class="kn">as</span> <span class="nn">da</span>
+<span class="n">da</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">darr</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -632,82 +613,6 @@ In&nbsp;[10]:
 
 <div class="output_area"><div class="prompt output_prompt">
     Out[10]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-array([[ 0.46,  0.69,  0.  ,  0.65,  0.06],
-       [ 0.21,  0.67,  0.71,  0.22,  0.51],
-       [ 0.75,  0.32,  0.65,  0.58,  0.83],
-       [ 0.44,  0.13,  0.12,  0.57,  0.35]])
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[11]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># NumPy</span>
-<span class="n">nparr</span> <span class="o">+</span> <span class="n">nparr</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[11]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-array([[ 0.96,  1.51,  0.01,  1.43,  0.12],
-       [ 0.43,  1.48,  1.57,  0.45,  1.08],
-       [ 1.69,  0.66,  1.41,  1.25,  1.96],
-       [ 0.92,  0.26,  0.24,  1.22,  0.71]])
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[12]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray</span>
-<span class="n">darr</span> <span class="o">+</span> <span class="n">darr</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[12]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -725,11 +630,92 @@ In&nbsp;[12]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
+In&nbsp;[11]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># `toarray` makes a NumPy array out of a DistArray, pulling all of the</span>
+<span class="c"># pieces back to the client.  We do this to display the contents of the</span>
+<span class="c"># DistArray.</span>
+<span class="n">da</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">darr</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[11]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.42,  0.76,  0.76,  0.22,  0.23],
+       [ 0.15,  0.05,  0.64,  0.04,  0.72],
+       [ 0.63,  0.81,  0.49,  0.01,  0.2 ],
+       [ 0.74,  0.72,  0.84,  0.43,  0.02]])
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[12]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># A NumPy binary ufunc.</span>
+<span class="n">nparr</span> <span class="o">+</span> <span class="n">nparr</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[12]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.87,  1.74,  1.73,  0.44,  0.46],
+       [ 0.3 ,  0.1 ,  1.4 ,  0.07,  1.6 ],
+       [ 1.36,  1.88,  1.02,  0.02,  0.4 ],
+       [ 1.68,  1.61,  1.98,  0.9 ,  0.05]])
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
 In&nbsp;[13]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="p">(</span><span class="n">darr</span> <span class="o">+</span> <span class="n">darr</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># The equivalent DistArray ufunc.</span>
+<span class="c"># Notice that a new DistArray is created without</span>
+<span class="c"># pulling data back to the client.</span>
+<span class="n">darr</span> <span class="o">+</span> <span class="n">darr</span>
 </pre></div>
 
 </div>
@@ -746,10 +732,45 @@ In&nbsp;[13]:
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-array([[ 0.96,  1.51,  0.01,  1.43,  0.12],
-       [ 0.43,  1.48,  1.57,  0.45,  1.08],
-       [ 1.69,  0.66,  1.41,  1.25,  1.96],
-       [ 0.92,  0.26,  0.24,  1.22,  0.71]])
+&lt;DistArray(shape=(4, 5), targets=[0, 1, 2, 3])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[14]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Contents of the resulting DistArray.</span>
+<span class="p">(</span><span class="n">darr</span> <span class="o">+</span> <span class="n">darr</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[14]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.87,  1.74,  1.73,  0.44,  0.46],
+       [ 0.3 ,  0.1 ,  1.4 ,  0.07,  1.6 ],
+       [ 1.36,  1.88,  1.02,  0.02,  0.4 ],
+       [ 1.68,  1.61,  1.98,  0.9 ,  0.05]])
 </pre>
 </div>
 
@@ -764,25 +785,10 @@ array([[ 0.96,  1.51,  0.01,  1.43,  0.12],
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="distributions">Distributions</h2>
+<h2 id="reductions">Reductions</h2>
+<p>Functions like <code>sum</code>, <code>mean</code>, <code>min</code>, and <code>max</code> are known as <em>reductions</em>, since they take an array and produce a smaller array or a scalar.  In NumPy and DistArray, some of these functions can be applied over a specific <code>axis</code>.</p>
 </div>
 </div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[14]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Distributions control which processes own which (global) indices</span>
-<span class="n">distribution</span> <span class="o">=</span> <span class="n">darr</span><span class="o">.</span><span class="n">distribution</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
@@ -791,8 +797,9 @@ In&nbsp;[15]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># this is a 2D distribution</span>
-<span class="n">pprint</span><span class="p">(</span><span class="n">distribution</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># NumPy sum</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum:&quot;</span><span class="p">,</span> <span class="n">nparr</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum over an axis:&quot;</span><span class="p">,</span> <span class="n">nparr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 
 </div>
@@ -806,8 +813,8 @@ In&nbsp;[15]:
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
-[&lt;distarray.globalapi.maps.BlockMap object at 0x108763510&gt;,
- &lt;distarray.globalapi.maps.NoDistMap object at 0x108763550&gt;]
+sum: 9.79905043187
+sum over an axis: [ 2.62  1.73  2.33  3.11]
 
 </pre>
 </div>
@@ -824,15 +831,42 @@ In&nbsp;[16]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># setup</span>
-<span class="kn">from</span> <span class="nn">distarray.plotting</span> <span class="kn">import</span> <span class="n">plot_array_distribution</span>
-<span class="n">process_coords</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray sum</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum over an axis:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+sum: &lt;DistArray(shape=(), targets=[0])&gt; 9.79905043187
+sum over an axis: &lt;DistArray(shape=(4,), targets=[0, 1, 2, 3])&gt; [ 2.62  1.73  2.33  3.11]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="indexing-and-slicing">Indexing and Slicing</h2>
+<p>DistArrays support standard NumPy Indexing and distributed slicing, including slices with a step.  Slicing is currently only supported for Block (and undistributed) DistArrays.</p>
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
@@ -841,7 +875,8 @@ In&nbsp;[17]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="n">plot_array_distribution</span><span class="p">(</span><span class="n">darr</span><span class="p">,</span> <span class="n">process_coords</span><span class="p">,</span> <span class="n">cell_label</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Our example array, as a reminder:</span>
+<span class="n">darr</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
 </pre></div>
 
 </div>
@@ -854,6 +889,330 @@ In&nbsp;[17]:
 
 <div class="output_area"><div class="prompt output_prompt">
     Out[17]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.44,  0.87,  0.87,  0.22,  0.23],
+       [ 0.15,  0.05,  0.7 ,  0.04,  0.8 ],
+       [ 0.68,  0.94,  0.51,  0.01,  0.2 ],
+       [ 0.84,  0.81,  0.99,  0.45,  0.02]])
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[18]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># The shapes of the local sections of our DistArray</span>
+<span class="n">darr</span><span class="o">.</span><span class="n">localshapes</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[18]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+[(1, 5), (1, 5), (1, 5), (1, 5)]
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[19]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Return the value of a single element</span>
+<span class="n">darr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[19]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+0.86608017321365971
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[20]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Take a column slice</span>
+<span class="n">darr_view</span> <span class="o">=</span> <span class="n">darr</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c"># all rows, third column</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+&lt;DistArray(shape=(4,), targets=[0, 1, 2, 3])&gt;
+[ 0.22  0.04  0.01  0.45]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[21]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Slices return a new DistArray that is a view on the</span>
+<span class="c"># original, just like in NumPy.</span>
+<span class="c"># Changes in the view change the original array.</span>
+<span class="n">darr_view</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.99</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;view:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;original:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+view:
+[ 0.22  0.04  0.01 -0.99]
+original:
+[[ 0.44  0.87  0.87  0.22  0.23]
+ [ 0.15  0.05  0.7   0.04  0.8 ]
+ [ 0.68  0.94  0.51  0.01  0.2 ]
+ [ 0.84  0.81  0.99 -0.99  0.02]]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[22]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># A more complex slice, with negative indices and a step.</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+&lt;DistArray(shape=(4, 2), targets=[0, 1, 2, 3])&gt;
+[[ 0.87  0.23]
+ [ 0.7   0.8 ]
+ [ 0.51  0.2 ]]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[23]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Incomplete indexing</span>
+<span class="c"># Grab the first row</span>
+<span class="n">darr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[23]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(5,), targets=[0])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="distributions">Distributions</h2>
+<p>Above, when we created a DistArray out of a NumPy array, we didn&#39;t specify <em>how</em> the elements should be distributed among our engines.  <code>Distribution</code>s give you control over this, if you want it.  In other words, <code>Distribution</code>s control which processes own which (global) indices.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[24]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Let&#39;s look at the `Distribution` object that was created for us</span>
+<span class="c"># automatically by `fromarray`.</span>
+<span class="n">distribution</span> <span class="o">=</span> <span class="n">darr</span><span class="o">.</span><span class="n">distribution</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[25]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># This is a 2D distribution: its 0th dimension is Block-distributed,</span>
+<span class="c"># and it&#39;s 1st dimension isn&#39;t distributed.</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">distribution</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+[&lt;distarray.globalapi.maps.BlockMap object at 0x108f7e110&gt;,
+ &lt;distarray.globalapi.maps.NoDistMap object at 0x108f7e050&gt;]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[26]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Plot this Distribution, color-coding which process each global index</span>
+<span class="c"># belongs to.</span>
+<span class="kn">from</span> <span class="nn">distarray.plotting</span> <span class="kn">import</span> <span class="n">plot_array_distribution</span>
+<span class="n">process_coords</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+<span class="n">plot_array_distribution</span><span class="p">(</span><span class="n">darr</span><span class="p">,</span> <span class="n">process_coords</span><span class="p">,</span> <span class="n">cell_label</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[26]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -954,11 +1313,13 @@ RK5CYII=
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[18]:
+In&nbsp;[27]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="n">distribution</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bounds</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Check out which sections of this array&#39;s 0th dimension are on</span>
+<span class="c"># each process.</span>
+<span class="n">distribution</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bounds</span>
 </pre></div>
 
 </div>
@@ -970,7 +1331,7 @@ In&nbsp;[18]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[18]:</div>
+    Out[27]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -985,16 +1346,31 @@ In&nbsp;[18]:
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The Distribution above was created for us by <code>fromarray</code>,
+but DistArray lets us specify more complex distributions.</p>
+<p>Here, we specify that the 0th dimension has a Block distribution (&#39;b&#39;)
+and the 1st dimension has a Cyclic distribution.</p>
+<p>DistArray supports Block, Cyclic, Block-Cyclic, Unstructured,
+and No-distribution dimensions.  See the
+<a href="http://netlib.org/scalapack/slug/node75.html">ScaLAPACK Documentation</a> for more information about Distribution types.</p>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[19]:
+In&nbsp;[28]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># the above is the default, but you can make more complex distributions</span>
-<span class="kn">from</span> <span class="nn">distarray.globalapi</span> <span class="kn">import</span> <span class="n">Distribution</span>
-<span class="n">distribution</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="n">dist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">))</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="kn">from</span> <span class="nn">distarray.globalapi</span> <span class="kn">import</span> <span class="n">Distribution</span>
+
+<span class="n">distribution</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="n">dist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">))</span>
 <span class="n">a</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;int32&#39;</span><span class="p">)</span>
 <span class="n">plot_array_distribution</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">process_coords</span><span class="p">,</span> <span class="n">cell_label</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
@@ -1008,7 +1384,7 @@ In&nbsp;[19]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[19]:</div>
+    Out[28]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -1133,20 +1509,218 @@ JDXGYpekxljsktQYi12SGvP/AdzJez1KiumSAAAAAElFTkSuQmCC
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="contexts">Contexts</h2>
+<h2 id="redistribution">Redistribution</h2>
+<p>Since <code>DistArray</code>s are distributed, the equivalent to NumPy&#39;s <code>reshape</code> (<code>distribute_as</code>) can be a more complex and costly operation.  For convenience, you can supply either a <code>shape</code> or a full <code>Distribution</code> object.  Only Block distributions (and No-dist) are currently redistributable.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[20]:
+In&nbsp;[29]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Context objects manage the setup and communication of the worker processes</span>
-<span class="c"># for DistArray objects. </span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;targets:&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="n">darr</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[29]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(4, 5), targets=[0, 1, 2, 3])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[30]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="n">darr</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[30]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.44,  0.87,  0.87,  0.22,  0.23],
+       [ 0.15,  0.05,  0.7 ,  0.04,  0.8 ],
+       [ 0.68,  0.94,  0.51,  0.01,  0.2 ],
+       [ 0.84,  0.81,  0.99, -0.99,  0.02]])
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[31]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># simple reshaping</span>
+<span class="n">reshaped</span> <span class="o">=</span> <span class="n">darr</span><span class="o">.</span><span class="n">distribute_as</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">reshaped</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[31]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(10, 2), targets=[0, 1, 2, 3])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[32]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="n">reshaped</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[32]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+array([[ 0.44,  0.87],
+       [ 0.87,  0.22],
+       [ 0.23,  0.15],
+       [ 0.05,  0.7 ],
+       [ 0.04,  0.8 ],
+       [ 0.68,  0.94],
+       [ 0.51,  0.01],
+       [ 0.2 ,  0.84],
+       [ 0.81,  0.99],
+       [-0.99,  0.02]])
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[33]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># A more complex resdistribution,</span>
+<span class="c"># changing shape, dist, and targets</span>
+<span class="n">dist</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">),</span> <span class="n">targets</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">darr</span><span class="o">.</span><span class="n">distribute_as</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[33]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(5, 4), targets=[1, 3])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="contexts">Contexts</h2>
+<p>Context objects manage the setup of and communication to the worker processes for DistArray objects.  They also act as the namespace to which
+DistArray creation functions are attached.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[34]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="k">print</span><span class="p">(</span><span class="s">&quot;targets:&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
 <span class="k">print</span><span class="p">(</span><span class="s">&quot;comm:&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
 </pre></div>
 
@@ -1162,10 +1736,78 @@ In&nbsp;[20]:
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
 targets: [0, 1, 2, 3]
-comm: &lt;distarray.localapi.proxyize.Proxy object at 0x108763a10&gt;
+comm: &lt;distarray.localapi.proxyize.Proxy object at 0x108f7e950&gt;
 
 </pre>
 </div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[35]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="n">context</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[35]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(5, 3), targets=[0, 1, 2])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[36]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="n">context</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[36]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(20, 20), targets=[0, 1, 2, 3])&gt;
+</pre>
+</div>
+
 </div>
 
 </div>
@@ -1177,14 +1819,15 @@ comm: &lt;distarray.localapi.proxyize.Proxy object at 0x108763a10&gt;
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="io-support">IO Support</h2>
+<h2 id="parallel-io">Parallel IO</h2>
+<p>DistArray has support for reading NumPy <code>.npy</code> files in parallel, for reading <em>and</em> writing <code>.dnpy</code> files in parallel (our own flat-file format), and reading and writing HDF5 files in parallel (if you have a parallel build of <code>h5py</code>).</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[21]:
+In&nbsp;[37]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1204,7 +1847,7 @@ In&nbsp;[21]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[21]:</div>
+    Out[37]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -1222,58 +1865,7 @@ In&nbsp;[21]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[22]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># save DistArrays to .hdf5 files in parallel</span>
-<span class="n">context</span><span class="o">.</span><span class="n">save_hdf5</span><span class="p">(</span><span class="s">&quot;/tmp/outfile.hdf5&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[23]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># load DistArrays from .hdf5 files in parallel (using h5py)</span>
-<span class="n">context</span><span class="o">.</span><span class="n">load_hdf5</span><span class="p">(</span><span class="s">&quot;/tmp/outfile.hdf5&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[23]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-&lt;DistArray(shape=(4, 5), targets=[0, 1, 2, 3])&gt;
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[24]:
+In&nbsp;[38]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1289,7 +1881,7 @@ In&nbsp;[24]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[25]:
+In&nbsp;[39]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1306,7 +1898,58 @@ In&nbsp;[25]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[25]:</div>
+    Out[39]:</div>
+
+
+<div class="output_text output_subarea output_pyout">
+<pre>
+&lt;DistArray(shape=(4, 5), targets=[0, 1, 2, 3])&gt;
+</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[40]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># save DistArrays to .hdf5 files in parallel</span>
+<span class="n">context</span><span class="o">.</span><span class="n">save_hdf5</span><span class="p">(</span><span class="s">&quot;/tmp/outfile.hdf5&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[41]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># load DistArrays from .hdf5 files in parallel (using h5py)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">load_hdf5</span><span class="p">(</span><span class="s">&quot;/tmp/outfile.hdf5&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[41]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
@@ -1326,96 +1969,20 @@ In&nbsp;[25]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="reductions">Reductions</h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[26]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># NumPy</span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum:&quot;</span><span class="p">,</span> <span class="n">nparr</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum over an axis:&quot;</span><span class="p">,</span> <span class="n">nparr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>
-sum: 9.67697548135
-sum over an axis: [ 2.01  2.51  3.48  1.67]
-
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[27]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># DistArray</span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;sum over an axis:&quot;</span><span class="p">,</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">darr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>
-sum: &lt;DistArray(shape=(), targets=[0])&gt; 9.67697548135
-sum over an axis: &lt;DistArray(shape=(4,), targets=[0, 1, 2, 3])&gt; [ 2.01  2.51  3.48  1.67]
-
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="context-apply">Context.apply</h2>
-<p>Global view, local control</p>
+<p>Global view, local control.  The <code>apply</code> method on a <code>Context</code> allows you to write functions that are applied <em>locally</em> (that is, on the engines) to each section of a DistArray.  This allows you to push your computation close to your data, avoiding communication round-trips and possibly speeding up your computations.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[28]:
+In&nbsp;[42]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
 <div class="highlight-ipynb"><pre class="ipynb"><span class="k">def</span> <span class="nf">get_local_random</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Function to be applied locally.&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">numpy</span>
     <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
@@ -1431,12 +1998,12 @@ In&nbsp;[28]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[28]:</div>
+    Out[42]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-[9, 7, 1, 8]
+[0, 4, 7, 4]
 </pre>
 </div>
 
@@ -1449,11 +2016,12 @@ In&nbsp;[28]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[29]:
+In&nbsp;[43]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
 <div class="highlight-ipynb"><pre class="ipynb"><span class="k">def</span> <span class="nf">get_local_var</span><span class="p">(</span><span class="n">darr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Another local computation.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">darr</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
 
 <span class="n">context</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">get_local_var</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">darr</span><span class="o">.</span><span class="n">key</span><span class="p">,))</span>
@@ -1468,15 +2036,15 @@ In&nbsp;[29]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[29]:</div>
+    Out[43]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-[0.10035742766264857,
- 0.059686240460491848,
- 0.048523006620087086,
- 0.036220776799519065]
+[0.084390695325227721,
+ 0.11007623996111866,
+ 0.11016943924066562,
+ 0.5519645107967377]
 </pre>
 </div>
 
@@ -1491,209 +2059,15 @@ In&nbsp;[29]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="distributed-slicing">Distributed Slicing</h2>
+<h2 id="context-register">Context.register</h2>
+<p><code>Context.register</code> is similar to <code>Context.apply</code>, but it allows you to <em>register</em> your function with a <code>Context</code> up front, and then call it repeatedly, with a nice syntax.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[30]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># as a reminder</span>
-<span class="n">darr</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[30]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-array([[ 0.48,  0.75,  0.  ,  0.71,  0.06],
-       [ 0.21,  0.74,  0.79,  0.23,  0.54],
-       [ 0.84,  0.33,  0.71,  0.62,  0.98],
-       [ 0.46,  0.13,  0.12,  0.61,  0.35]])
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[31]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="n">darr</span><span class="o">.</span><span class="n">localshapes</span><span class="p">()</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt output_prompt">
-    Out[31]:</div>
-
-
-<div class="output_text output_subarea output_pyout">
-<pre>
-[(1, 5), (1, 5), (1, 5), (1, 5)]
-</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[32]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># take a column slice</span>
-<span class="n">darr_view</span> <span class="o">=</span> <span class="n">darr</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>
-&lt;DistArray(shape=(4,), targets=[0, 1, 2, 3])&gt;
-[ 0.71  0.23  0.62  0.61]
-
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[33]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># changes in the view change the original</span>
-<span class="n">darr_view</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.99</span>
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;view:&quot;</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr_view</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;original:&quot;</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>
-view:
-[ 0.71  0.23  0.62 -0.99]
-original:
-[[ 0.48  0.75  0.    0.71  0.06]
- [ 0.21  0.74  0.79  0.23  0.54]
- [ 0.84  0.33  0.71  0.62  0.98]
- [ 0.46  0.13  0.12 -0.99  0.35]]
-
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[34]:
-</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># a more complex slice</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
-<span class="k">print</span><span class="p">(</span><span class="n">darr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>
-&lt;DistArray(shape=(4, 2), targets=[0, 1, 2, 3])&gt;
-[[ 0.    0.06]
- [ 0.79  0.54]
- [ 0.71  0.98]]
-
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="registering-functions-in-a-context">Registering Functions in a Context</h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[35]:
+In&nbsp;[44]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1711,7 +2085,7 @@ In&nbsp;[35]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[36]:
+In&nbsp;[45]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1727,15 +2101,15 @@ In&nbsp;[36]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[36]:</div>
+    Out[45]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
 <pre>
-[array([[ 0.08,  0.35, -0.4 ,  0.31, -0.34]]),
- array([[-0.29,  0.24,  0.29, -0.28,  0.04]]),
- array([[ 0.15, -0.37,  0.01, -0.07,  0.28]]),
- array([[ 0.44,  0.11,  0.11, -1.  ,  0.34]])]
+[array([[-0.09,  0.34,  0.34, -0.3 , -0.3 ]]),
+ array([[-0.2 , -0.3 ,  0.35, -0.31,  0.45]]),
+ array([[ 0.21,  0.47,  0.04, -0.46, -0.27]]),
+ array([[ 0.51,  0.47,  0.66, -1.32, -0.31]])]
 </pre>
 </div>
 
@@ -1759,18 +2133,19 @@ In&nbsp;[36]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can now run in MPI-only mode (using an extra MPI process for the client).  This can be more performant.</p>
+<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can run your DistArray code MPI-only mode (using an extra MPI process for the client).  This can be more performant.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[37]:
+In&nbsp;[46]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="o">%</span><span class="k">cd</span> <span class="n">julia_set</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># an example script to run in MPI-only mode</span>
+<span class="o">%</span><span class="k">cd</span> <span class="n">julia_set</span>
 <span class="o">!</span>python benchmark_julia.py -h
 </pre></div>
 
@@ -1786,12 +2161,14 @@ In&nbsp;[37]:
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
 /Users/robertgrant/development/distarray/examples/julia_set
-usage: benchmark_julia.py [-h] [-r REPEAT_COUNT] [-o OUTPUT_FILENAME] [-k {fancy,numpy,cython}] [-s {strong,weak}] N [N ...]
+usage: benchmark_julia.py [-h] [-r REPEAT_COUNT] [-o OUTPUT_FILENAME] [-k {fancy,numpy,cython}] [-s {strong,weak}]
+                          N [N ...]
 
-Calculate some Julia sets using DistArray and measure the performance. The Julia set, for a given complex number $c$, is the set of points $z$ such
-that $|z_{i}|$ remains bounded where $z_{i+1} = z_{i}^2 + c$. This can be plotted by counting how many iterations are required for $|z_{i}|$ to exceed
-a cutoff. Depending on the value of $c$, the Julia set may be connected and contain a lot of points, or it could be disconnected and contain fewer
-points. The points in the set will require the maximum iteration count, so the connected sets will usually take longer to compute.
+Calculate some Julia sets using DistArray and measure the performance. The Julia set, for a given complex number $c$, is
+the set of points $z$ such that $|z_{i}|$ remains bounded where $z_{i+1} = z_{i}^2 + c$. This can be plotted by counting
+how many iterations are required for $|z_{i}|$ to exceed a cutoff. Depending on the value of $c$, the Julia set may be
+connected and contain a lot of points, or it could be disconnected and contain fewer points. The points in the set will
+require the maximum iteration count, so the connected sets will usually take longer to compute.
 
 positional arguments:
   N                     resolutions of the Julia set to benchmark (NxN)
@@ -1818,11 +2195,11 @@ optional arguments:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[38]:
+In&nbsp;[47]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Note that we&#39;re using 5 MPI processes:</span>
+<div class="highlight-ipynb"><pre class="ipynb"><span class="c"># Run the benchmarking script with 5 MPI processes:</span>
 <span class="c"># 4 worker processes and 1 client process</span>
 <span class="o">!</span>mpiexec -np 5 python benchmark_julia.py --kernel<span class="o">=</span>cython -r1 1024
 </pre></div>
@@ -1839,23 +2216,23 @@ In&nbsp;[38]:
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
 (n/n_runs: time) (&apos;Start&apos;, &apos;End&apos;, &apos;Dist&apos;, &apos;Resolution&apos;, &apos;c&apos;, &apos;Engines&apos;, &apos;Iters&apos;)
-(1/17: 0.181s) (1408556620.436587, 1408556620.617281, &apos;numpy&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
-(2/17: 0.183s) (1408556620.627409, 1408556620.810083, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
-(3/17: 0.180s) (1408556620.818441, 1408556620.998368, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
-(4/17: 0.178s) (1408556621.006173, 1408556621.184294, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
-(5/17: 0.175s) (1408556621.195951, 1408556621.370637, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
-(6/17: 0.090s) (1408556621.379416, 1408556621.469484, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16345977L, 16417855L])
-(7/17: 0.091s) (1408556621.476928, 1408556621.567663, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16382826L, 16381006L])
-(8/17: 0.091s) (1408556621.573445, 1408556621.663993, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16354361L, 16409471L])
-(9/17: 0.094s) (1408556621.66925, 1408556621.763122, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16384932L, 16378900L])
-(10/17: 0.114s) (1408556621.772253, 1408556621.886436, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [6243924L, 20326746L, 6193162L])
-(11/17: 0.066s) (1408556621.896535, 1408556621.962862, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [10922548L, 10921645L, 10919639L])
-(12/17: 0.103s) (1408556621.969013, 1408556622.071996, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [6779920L, 19264315L, 6719597L])
-(13/17: 0.063s) (1408556622.076449, 1408556622.139083, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [10921355L, 10920452L, 10922025L])
-(14/17: 0.074s) (1408556622.145831, 1408556622.219845, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [2725843L, 13620134L, 13659620L, 2758235L])
-(15/17: 0.048s) (1408556622.226353, 1408556622.274515, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [8190582L, 8190503L, 8192244L, 8190503L])
-(16/17: 0.058s) (1408556622.280794, 1408556622.339083, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [5859333L, 10486644L, 10495028L, 5922827L])
-(17/17: 0.047s) (1408556622.343801, 1408556622.390988, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [8193330L, 8189496L, 8191602L, 8189404L])
+(1/17: 0.177s) (1410237104.372746, 1410237104.549673, &apos;numpy&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
+(2/17: 0.178s) (1410237104.55856, 1410237104.736667, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
+(3/17: 0.175s) (1410237104.743266, 1410237104.918744, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
+(4/17: 0.176s) (1410237104.926051, 1410237105.101706, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
+(5/17: 0.176s) (1410237105.109474, 1410237105.285465, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 1, [32763832L])
+(6/17: 0.093s) (1410237105.29489, 1410237105.38807, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16345977L, 16417855L])
+(7/17: 0.089s) (1410237105.395181, 1410237105.483749, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16382826L, 16381006L])
+(8/17: 0.089s) (1410237105.489446, 1410237105.57825, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16354361L, 16409471L])
+(9/17: 0.091s) (1410237105.584189, 1410237105.675209, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 2, [16384932L, 16378900L])
+(10/17: 0.111s) (1410237105.683329, 1410237105.794306, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [6243924L, 20326746L, 6193162L])
+(11/17: 0.062s) (1410237105.800505, 1410237105.862825, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [10922548L, 10921645L, 10919639L])
+(12/17: 0.106s) (1410237105.868804, 1410237105.974531, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [6779920L, 19264315L, 6719597L])
+(13/17: 0.061s) (1410237105.979521, 1410237106.040812, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 3, [10921355L, 10920452L, 10922025L])
+(14/17: 0.077s) (1410237106.04839, 1410237106.125411, &apos;b-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [2725843L, 13620134L, 13659620L, 2758235L])
+(15/17: 0.049s) (1410237106.131263, 1410237106.179974, &apos;c-n&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [8190582L, 8190503L, 8192244L, 8190503L])
+(16/17: 0.059s) (1410237106.186044, 1410237106.244741, &apos;b-b&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [5859333L, 10486644L, 10495028L, 5922827L])
+(17/17: 0.049s) (1410237106.249857, 1410237106.29855, &apos;c-c&apos;, 1024, &apos;(-0.045+0.45j)&apos;, 4, [8193330L, 8189496L, 8191602L, 8189404L])
 
 </pre>
 </div>
@@ -1871,6 +2248,7 @@ In&nbsp;[38]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distributed-array-protocol">Distributed Array Protocol</h2>
+<p>Already have a library with it&#39;s own distributed arrays?  Use the Distributed Array Protocol to work with DistArray.</p>
 <p>The Distributed Array Protocol (DAP) is a process-local protocol that allows two subscribers, called the &quot;producer&quot; and the &quot;consumer&quot; or the &quot;exporter&quot; and the &quot;importer&quot;, to communicate the essential data and metadata necessary to share a distributed-memory array between them. This allows two independently developed components to access, modify, and update a distributed array without copying. The protocol formalizes the metadata and buffers involved in the transfer, allowing several distributed array projects to collaborate, facilitating interoperability. By not copying the underlying array data, the protocol allows for efficient sharing of array data.</p>
 <p><a href="http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/">http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/</a></p>
 </div>
@@ -1879,7 +2257,7 @@ In&nbsp;[38]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[39]:
+In&nbsp;[48]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1898,13 +2276,13 @@ In&nbsp;[39]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[39]:</div>
+    Out[48]:</div>
 
 
 <div class="output_text output_subarea output_pyout">
 <pre>
 [{&apos;__version__&apos;: &apos;0.10.0&apos;,
-  &apos;buffer&apos;: array([[ 0.48,  0.75,  0.  ,  0.71,  0.06]]),
+  &apos;buffer&apos;: array([[ 0.44,  0.87,  0.87,  0.22,  0.23]]),
   &apos;dim_data&apos;: ({&apos;dist_type&apos;: &apos;b&apos;,
     &apos;proc_grid_rank&apos;: 0,
     &apos;proc_grid_size&apos;: 4,
@@ -1918,7 +2296,7 @@ In&nbsp;[39]:
     &apos;start&apos;: 0,
     &apos;stop&apos;: 5})},
  {&apos;__version__&apos;: &apos;0.10.0&apos;,
-  &apos;buffer&apos;: array([[ 0.21,  0.74,  0.79,  0.23,  0.54]]),
+  &apos;buffer&apos;: array([[ 0.15,  0.05,  0.7 ,  0.04,  0.8 ]]),
   &apos;dim_data&apos;: ({&apos;dist_type&apos;: &apos;b&apos;,
     &apos;proc_grid_rank&apos;: 1,
     &apos;proc_grid_size&apos;: 4,
@@ -1932,7 +2310,7 @@ In&nbsp;[39]:
     &apos;start&apos;: 0,
     &apos;stop&apos;: 5})},
  {&apos;__version__&apos;: &apos;0.10.0&apos;,
-  &apos;buffer&apos;: array([[ 0.84,  0.33,  0.71,  0.62,  0.98]]),
+  &apos;buffer&apos;: array([[ 0.68,  0.94,  0.51,  0.01,  0.2 ]]),
   &apos;dim_data&apos;: ({&apos;dist_type&apos;: &apos;b&apos;,
     &apos;proc_grid_rank&apos;: 2,
     &apos;proc_grid_size&apos;: 4,
@@ -1946,7 +2324,7 @@ In&nbsp;[39]:
     &apos;start&apos;: 0,
     &apos;stop&apos;: 5})},
  {&apos;__version__&apos;: &apos;0.10.0&apos;,
-  &apos;buffer&apos;: array([[ 0.46,  0.13,  0.12, -0.99,  0.35]]),
+  &apos;buffer&apos;: array([[ 0.84,  0.81,  0.99, -0.99,  0.02]]),
   &apos;dim_data&apos;: ({&apos;dist_type&apos;: &apos;b&apos;,
     &apos;proc_grid_rank&apos;: 3,
     &apos;proc_grid_size&apos;: 4,
