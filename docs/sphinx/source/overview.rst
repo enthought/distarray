@@ -1,8 +1,6 @@
 Overview
 --------
 
-*Think globally, act locally.*
-
 NumPy is at the foundation of the scientific Python stack for good reason:
 NumPy arrays are easy to use, they have many powerful features like ufuncs,
 slicing, and broadcasting, and they work easily with external libraries.
