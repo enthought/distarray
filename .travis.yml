@@ -18,7 +18,7 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
+    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.1 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
     - source activate test-environment
     - pip install sphinxcontrib-napoleon sphinxcontrib-programoutput coveralls
     - if [[ "$PYVERSION" == "2.7" ]]; then
