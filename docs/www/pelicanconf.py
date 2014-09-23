@@ -46,7 +46,7 @@ SLUGIFY_SOURCE = 'basename'
 PYGMENTS_STYLE = 'default'
 
 SITELOGO = 'images/distarray-logo.png'
-SITELOGO_SIZE = 140
+SITELOGO_SIZE = 230
 HIDE_SITENAME = True
 
 DISPLAY_CATEGORIES_ON_MENU = False
@@ -58,7 +58,7 @@ DISPLAY_TAGS_ON_SIDEBAR = False
 
 # pelican-bootstrap3 settings
 THEME = "./pelican-bootstrap3/"
-BOOTSTRAP_THEME = "enthought"
+BOOTSTRAP_THEME = "enthought_dark"
 SHOW_ARTICLE_AUTHOR = False
 DISPLAY_ARTICLE_INFO_ON_INDEX = False
 
