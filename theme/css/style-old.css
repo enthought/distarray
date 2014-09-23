@@ -67,16 +67,13 @@ body {
     margin-right: 3px;
 }
 
-a {
-    color: #397CC5;
-}
-
-a:hover {
-    color: #285689;
+a, a:hover {
+    color: inherit;
 }
 
 .entry-content a {
     text-decoration: none;
+    border-bottom: 1px dotted;
 }
 
 .entry-content a:hover {
