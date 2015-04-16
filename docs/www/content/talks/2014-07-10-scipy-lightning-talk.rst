@@ -2,8 +2,8 @@
 :category: Talks
 :tags: talks
 
-SciPy 2014 Lightning Talk
-=========================
+SciPy 2014 DistArray Lightning Talk
+===================================
 
 Check out Kurt Smith's DistArray lightning talk at Scipy 2014!
 

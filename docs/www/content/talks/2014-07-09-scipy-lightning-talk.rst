@@ -2,8 +2,8 @@
 :category: Talks
 :tags: talks
 
-SciPy 2014 Lightning Talk
-=========================
+SciPy 2014 Distributed Array Protocol Lightning Talk
+====================================================
 
 Bill Spotz's lightning talk on the Distributed Array Protocol at Scipy 2014.
 
