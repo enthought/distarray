@@ -236,10 +236,8 @@ init_mathjax();
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="setup">Setup</h2>
-<p>Much of this notebook requires an <code>IPython.parallel</code> cluster to be running.
-Outside the notebook, run</p>
-<pre><code>dacluster start -n4
-</code></pre>
+<p>Much of this notebook requires an <code>IPython.parallel</code> cluster to be running. Outside the notebook, run</p>
+<pre><code>dacluster start -n4</code></pre>
 </div>
 </div>
 </div>
@@ -277,7 +275,7 @@ In&nbsp;[1]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="numpy-arrays">NumPy Arrays</h2>
-<p>DistArray is built on NumPy and provides a NumPy-array-like interface.  First, let&#39;s generate a NumPy array and examine some of its attributes.</p>
+<p>DistArray is built on NumPy and provides a NumPy-array-like interface. First, let's generate a NumPy array and examine some of its attributes.</p>
 </div>
 </div>
 </div>
@@ -368,7 +366,7 @@ nbytes: 160
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distarrays">DistArrays</h2>
-<p>We&#39;ll make our first <code>DistArray</code> out of the NumPy array created above.</p>
+<p>We'll make our first <code>DistArray</code> out of the NumPy array created above.</p>
 </div>
 </div>
 </div>
@@ -548,7 +546,7 @@ distribution: &lt;distarray.globalapi.maps.Distribution object at 0x108f7e0d0&gt
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="universal-functions-ufuncs-">Universal Functions (ufuncs)</h2>
+<h2 id="universal-functions-ufuncs">Universal Functions (ufuncs)</h2>
 </div>
 </div>
 </div>
@@ -786,7 +784,7 @@ array([[ 0.87,  1.74,  1.73,  0.44,  0.46],
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="reductions">Reductions</h2>
-<p>Functions like <code>sum</code>, <code>mean</code>, <code>min</code>, and <code>max</code> are known as <em>reductions</em>, since they take an array and produce a smaller array or a scalar.  In NumPy and DistArray, some of these functions can be applied over a specific <code>axis</code>.</p>
+<p>Functions like <code>sum</code>, <code>mean</code>, <code>min</code>, and <code>max</code> are known as <em>reductions</em>, since they take an array and produce a smaller array or a scalar. In NumPy and DistArray, some of these functions can be applied over a specific <code>axis</code>.</p>
 </div>
 </div>
 </div>
@@ -864,7 +862,7 @@ sum over an axis: &lt;DistArray(shape=(4,), targets=[0, 1, 2, 3])&gt; [ 2.62  1.
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="indexing-and-slicing">Indexing and Slicing</h2>
-<p>DistArrays support standard NumPy Indexing and distributed slicing, including slices with a step.  Slicing is currently only supported for Block (and undistributed) DistArrays.</p>
+<p>DistArrays support standard NumPy Indexing and distributed slicing, including slices with a step. Slicing is currently only supported for Block (and undistributed) DistArrays.</p>
 </div>
 </div>
 </div>
@@ -1134,7 +1132,7 @@ In&nbsp;[23]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distributions">Distributions</h2>
-<p>Above, when we created a DistArray out of a NumPy array, we didn&#39;t specify <em>how</em> the elements should be distributed among our engines.  <code>Distribution</code>s give you control over this, if you want it.  In other words, <code>Distribution</code>s control which processes own which (global) indices.</p>
+<p>Above, when we created a DistArray out of a NumPy array, we didn't specify <em>how</em> the elements should be distributed among our engines. <code>Distribution</code>s give you control over this, if you want it. In other words, <code>Distribution</code>s control which processes own which (global) indices.</p>
 </div>
 </div>
 </div>
@@ -1351,13 +1349,9 @@ In&nbsp;[27]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The Distribution above was created for us by <code>fromarray</code>,
-but DistArray lets us specify more complex distributions.</p>
-<p>Here, we specify that the 0th dimension has a Block distribution (&#39;b&#39;)
-and the 1st dimension has a Cyclic distribution.</p>
-<p>DistArray supports Block, Cyclic, Block-Cyclic, Unstructured,
-and No-distribution dimensions.  See the
-<a href="http://netlib.org/scalapack/slug/node75.html">ScaLAPACK Documentation</a> for more information about Distribution types.</p>
+<p>The Distribution above was created for us by <code>fromarray</code>, but DistArray lets us specify more complex distributions.</p>
+<p>Here, we specify that the 0th dimension has a Block distribution ('b') and the 1st dimension has a Cyclic distribution.</p>
+<p>DistArray supports Block, Cyclic, Block-Cyclic, Unstructured, and No-distribution dimensions. See the <a href="http://netlib.org/scalapack/slug/node75.html">ScaLAPACK Documentation</a> for more information about Distribution types.</p>
 </div>
 </div>
 </div>
@@ -1510,7 +1504,7 @@ JDXGYpekxljsktQYi12SGvP/AdzJez1KiumSAAAAAElFTkSuQmCC
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="redistribution">Redistribution</h2>
-<p>Since <code>DistArray</code>s are distributed, the equivalent to NumPy&#39;s <code>reshape</code> (<code>distribute_as</code>) can be a more complex and costly operation.  For convenience, you can supply either a <code>shape</code> or a full <code>Distribution</code> object.  Only Block distributions (and No-dist) are currently redistributable.</p>
+<p>Since <code>DistArray</code>s are distributed, the equivalent to NumPy's <code>reshape</code> (<code>distribute_as</code>) can be a more complex and costly operation. For convenience, you can supply either a <code>shape</code> or a full <code>Distribution</code> object. Only Block distributions (and No-dist) are currently redistributable.</p>
 </div>
 </div>
 </div>
@@ -1708,8 +1702,7 @@ In&nbsp;[33]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="contexts">Contexts</h2>
-<p>Context objects manage the setup of and communication to the worker processes for DistArray objects.  They also act as the namespace to which
-DistArray creation functions are attached.</p>
+<p>Context objects manage the setup of and communication to the worker processes for DistArray objects. They also act as the namespace to which DistArray creation functions are attached.</p>
 </div>
 </div>
 </div>
@@ -1969,8 +1962,8 @@ In&nbsp;[41]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="context-apply">Context.apply</h2>
-<p>Global view, local control.  The <code>apply</code> method on a <code>Context</code> allows you to write functions that are applied <em>locally</em> (that is, on the engines) to each section of a DistArray.  This allows you to push your computation close to your data, avoiding communication round-trips and possibly speeding up your computations.</p>
+<h2 id="context.apply">Context.apply</h2>
+<p>Global view, local control. The <code>apply</code> method on a <code>Context</code> allows you to write functions that are applied <em>locally</em> (that is, on the engines) to each section of a DistArray. This allows you to push your computation close to your data, avoiding communication round-trips and possibly speeding up your computations.</p>
 </div>
 </div>
 </div>
@@ -2059,7 +2052,7 @@ In&nbsp;[43]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="context-register">Context.register</h2>
+<h2 id="context.register">Context.register</h2>
 <p><code>Context.register</code> is similar to <code>Context.apply</code>, but it allows you to <em>register</em> your function with a <code>Context</code> up front, and then call it repeatedly, with a nice syntax.</p>
 </div>
 </div>
@@ -2133,7 +2126,7 @@ In&nbsp;[45]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can run your DistArray code in MPI-only mode (using an extra MPI process for the client).  This can be more performant.</p>
+<p>Instead of using an IPython client (which uses ZeroMQ to communicate to the engines), you can run your DistArray code in MPI-only mode (using an extra MPI process for the client). This can be more performant.</p>
 </div>
 </div>
 </div>
@@ -2248,9 +2241,9 @@ In&nbsp;[47]:
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="distributed-array-protocol">Distributed Array Protocol</h2>
-<p>Already have a library with its own distributed arrays?  Use the Distributed Array Protocol to work with DistArray.</p>
+<p>Already have a library with its own distributed arrays? Use the Distributed Array Protocol to work with DistArray.</p>
 <p>The Distributed Array Protocol (DAP) is a process-local protocol that allows two subscribers, called the &quot;producer&quot; and the &quot;consumer&quot; or the &quot;exporter&quot; and the &quot;importer&quot;, to communicate the essential data and metadata necessary to share a distributed-memory array between them. This allows two independently developed components to access, modify, and update a distributed array without copying. The protocol formalizes the metadata and buffers involved in the transfer, allowing several distributed array projects to collaborate, facilitating interoperability. By not copying the underlying array data, the protocol allows for efficient sharing of array data.</p>
-<p><a href="http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/">http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/</a></p>
+<p>http://distributed-array-protocol.readthedocs.org/en/rel-0.9.0/</p>
 </div>
 </div>
 </div>
@@ -2353,7 +2346,7 @@ In&nbsp;[48]:
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="acknowledgement-and-disclaimer">Acknowledgement and Disclaimer</h2>
 <p>This material is based upon work supported by the Department of Energy under Award Number DE-SC0007699.</p>
-<p>This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof. </p>
+<p>This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p>
 </div>
 </div>
 </div></p>
