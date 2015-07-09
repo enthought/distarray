@@ -20,6 +20,7 @@ before_install:
     - conda info -a
     - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.2 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
     - source activate test-environment
+    - python -c "import numpy; print('Numpy version', numpy.__version__)"
     - pip install sphinxcontrib-programoutput coveralls
     - pip install pelican
     - if [[ "$PYVERSION" == "2.7" ]]; then
