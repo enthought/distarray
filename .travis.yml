@@ -18,16 +18,9 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.1 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml
+    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.2 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml mpi4py
     - source activate test-environment
-    - pip install sphinxcontrib-programoutput coveralls
-    - pip install pelican
-    - if [[ "$PYVERSION" == "2.7" ]]; then
-          conda install mpi4py;
-      else
-          sudo apt-get install libmpich2-dev mpich2;
-          pip install mpi4py --allow-all-external --allow-unverified mpi4py;
-      fi
+    - pip install sphinxcontrib-programoutput coveralls pelican
     - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
 install:
@@ -35,6 +28,7 @@ install:
     - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
     - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build docs
 before_script:
+    - python -c "import numpy; print('Numpy version', numpy.__version__)"
     - "export DISPLAY=:99.0"  # for plotting.py
     - "sh -e /etc/init.d/xvfb start"  # for plotting.py
     - (cd $TRAVIS_BUILD_DIR && dacluster start -n$NENGINES)
