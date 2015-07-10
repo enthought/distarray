@@ -5,6 +5,7 @@ env:
     - PYVERSION="3.3"   NENGINES=9
     - PYVERSION="3.4"   NENGINES=9
 before_install:
+    - sudo add-apt-repository -y ppa:andrikos/ppa
     - sudo apt-get update
     - if [[ "$PYVERSION" == "2.7" ]]; then
           wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -21,7 +22,7 @@ before_install:
     - source activate test-environment
     - pip install sphinxcontrib-programoutput coveralls
     - pip install pelican
-    - sudo apt-get install libhdf5-mpich-dev
+    - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
     - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
 install:
     - python setup.py install  # build DistArray
