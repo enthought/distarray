@@ -23,7 +23,7 @@ before_install:
     - pip install sphinxcontrib-programoutput coveralls
     - pip install pelican
     - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
-    - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.5.0 --install-option="--mpi"
+    - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
 install:
     - python setup.py install  # build DistArray
     - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
