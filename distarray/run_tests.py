@@ -23,7 +23,7 @@ def _run_shell_command(specific_cmd):
 
     First, change directory to the project directory.
     """
-    path = os.path.split(os.path.split(distarray.__file__)[0])[0]
+    path = os.path.split(os.path.split(os.path.abspath(distarray.__file__))[0])[0]
     os.chdir(path)
     proc = subprocess.Popen(shlex.split(specific_cmd),
                             stdout=subprocess.PIPE,
