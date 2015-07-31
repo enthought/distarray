@@ -21,7 +21,7 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.2 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml mpi4py
+    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.9.2 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml mpi4py
     - source activate test-environment
     - pip install sphinxcontrib-programoutput codecov pelican
     - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
