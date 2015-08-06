@@ -89,8 +89,10 @@ else
     exit 1
 fi
 
-conda env create --name $CONDA_ENV --file utils/distarray_conda-env.yml
+conda create -n $CONDA_ENV numpy ipython ipython-notebook cython sphinx mock
 source activate $CONDA_ENV
+pip install mpi4py
+pip install sphinxcontrib-programoutput
 python setup.py $INSTALL_MODE
 source deactivate
 
