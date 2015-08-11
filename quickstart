@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+PY_VER=2
+CONDA_ENV=distarray
+INSTALL_MODE=install
+
+usage() {
+    echo "usage: quickstart [options] <inputs>"
+    echo "-------------------------------------------------------------------------"
+    echo "OPTIONS"
+    echo "--pyversion <arg>		select which version of python to use options = (2, 3) DEFAULT 2"
+    echo "-h | --help			display usage message"
+    echo "-n | --name <arg>		set name of created conda environment to <arg> DEFAULT distarray"
+    echo "-d | --develop		perform a development install of distarray"
+}
+
+while [ "$1" != "" ]; do
+    case $1 in
+	-n | --name )		shift
+				CONDA_ENV=$1
+				;;
+	-d | --develop )	INSTALL_MODE=develop
+				;;
+	-h | --help )		usage
+				exit
+				;;
+	--pyversion )		shift
+				PY_VER=$1
+				;;
+		 *  )		usage
+				exit 1
+    esac
+    shift
+done
+
+install_openmpi() {
+    if command -v port >/dev/null 2>&1; then
+	sudo port install openmpi
+	sudo port select --set mpi openmpi-mp-fortran
+	return 0
+    elif command -v brew >/dev/null 2>&1; then
+	sudo brew install open-mpi
+	return 0
+    else
+	echo "Could not install OpenMPI: no working installation of homebrew or macports found."
+	return 1
+    fi
+}
+
+resolve_mpicc() {
+    if command -v mpicc >/dev/null 2>&1; then
+	echo "Working MPI installation found at `which mpicc`."
+	return 0
+    else
+	install_openmpi
+	r_stat=$?
+	if [[ $r_stat != 0 ]]; then
+	    return 1
+	else
+	    return 0
+	fi
+    fi
+}
+
+resolve_conda() {
+    if command -v conda >/dev/null 2>&1; then
+	echo "Working conda installation found at `which conda`."
+	return 0
+    else
+	echo "No working installation of Anaconda/Miniconda found."
+	return 1
+    fi
+}
+
+exit_install() {
+    if [[ $1 != 0 ]]; then 
+	echo "Aborting DistArray quickstart install. Please refer to the quickstart instructions for troubleshooting"
+	exit 1
+    else
+	return 0
+    fi
+}
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    resolve_mpicc
+    r_stat=$?
+    exit_install $r_stat
+
+    resolve_conda
+    r_stat=$?
+    exit_install $r_stat
+else
+    echo "DistArray quickstart is only supported on OSX."
+    exit 1
+fi
+
+conda create -n $CONDA_ENV python=$PY_VER numpy ipython ipython-notebook cython sphinx mock matplotlib
+source activate $CONDA_ENV
+pip install mpi4py
+pip install sphinxcontrib-programoutput
+python setup.py $INSTALL_MODE
+source deactivate
+
+echo "--------------------------------------------------------------------------------------"
+echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
