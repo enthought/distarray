@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+PY_VER=2
 CONDA_ENV=distarray
 INSTALL_MODE=install
 
@@ -7,8 +8,9 @@ usage() {
     echo "usage: quickstart [options] <inputs>"
     echo "-------------------------------------------------------------------------"
     echo "OPTIONS"
+    echo "--pyversion <arg>		select which version of python to use options = (2, 3) DEFAULT 2"
     echo "-h | --help			display usage message"
-    echo "-n | --name <arg>		set name of created conda environment to <arg>"
+    echo "-n | --name <arg>		set name of created conda environment to <arg> DEFAULT distarray"
     echo "-d | --develop		perform a development install of distarray"
 }
 
@@ -21,6 +23,9 @@ while [ "$1" != "" ]; do
 				;;
 	-h | --help )		usage
 				exit
+				;;
+	--pyversion )		shift
+				PY_VER=$1
 				;;
 		 *  )		usage
 				exit 1
@@ -89,7 +94,7 @@ else
     exit 1
 fi
 
-conda create -n $CONDA_ENV numpy ipython ipython-notebook cython sphinx mock
+conda create -n $CONDA_ENV python=$PY_VER numpy ipython ipython-notebook cython sphinx mock matplotlib
 source activate $CONDA_ENV
 pip install mpi4py
 pip install sphinxcontrib-programoutput
