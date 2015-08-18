@@ -107,3 +107,4 @@ source deactivate
 
 echo "--------------------------------------------------------------------------------------"
 echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
+echo "Test your installation by running  dacluster start followed by python -m distarray.run_tests."
