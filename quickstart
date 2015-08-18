@@ -82,11 +82,8 @@ exit_install() {
 }
 
 cat docs/quickstart-readme.txt
-read -n1 -rsp $'Press SPACE to continue. Press ANY key to abort.\n' key
-
-if [[ "$key" != ' ' ]]; then
-    exit 0
-fi
+echo "Press any key to continue installation. Ctrl+C to abort."
+read -n 1
 
 if [[ "$(uname)" == "Darwin" ]]; then
     resolve_mpicc
