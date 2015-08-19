@@ -6,7 +6,7 @@ and re-run this script.
 
 Prerequisites for using DistArray quickstart:
 - A working conda installation (Anaconda/Miniconda)
-- A working OSX package manager installation (MacPorts/HomeBrew)
+- OSX only: a working package manager (MacPorts/HomeBrew)
 
 This script allows you to configure some aspects of the resulting DistArray
 install. Refer to the script usage message for details [./quickstart --help].
