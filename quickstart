@@ -9,10 +9,10 @@ usage() {
     echo "usage: quickstart [options] <inputs>"
     echo "-------------------------------------------------------------------------"
     echo "OPTIONS"
-    echo "--pyversion <arg>		select which version of python to use options = (2, 3) DEFAULT 2"
-    echo "-h | --help			display usage message"
-    echo "-n | --name <arg>		set name of created conda environment to <arg> DEFAULT distarray"
-    echo "-d | --develop		perform a development install of distarray"
+    echo "--pyversion <arg>     select which version of python to use options = (2, 3) DEFAULT 2"
+    echo "-h | --help           display usage message"
+    echo "-n | --name <arg>     set name of created conda environment to <arg> DEFAULT distarray"
+    echo "-d | --develop        perform a development install of distarray"
     echo "-t | --test           test distarray after installation"
 }
 
@@ -119,7 +119,8 @@ test_install() {
 }
 
 cat docs/quickstart-readme.txt
-echo "Press any key to continue installation. Ctrl+C to abort."
+usage
+echo "Press any key to continue installation with the provided options. Ctrl+C to abort."
 read -n 1
 
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -152,7 +153,9 @@ if [ "$TEST_INSTALL" = true ] ; then
     echo "Install Complete. Testing DistArray"
     echo "--------------------------------------------------------------------------------------"
     test_install
-    echo "----------------------------------------DONE------------------------------------------"
+    echo "--------------------------------------------------------------------------------------------"
+    echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
+    echo "--------------------------------------------------------------------------------------------"
 else
     echo "--------------------------------------------------------------------------------------------"
     echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
