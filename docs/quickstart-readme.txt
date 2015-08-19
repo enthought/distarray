@@ -1,3 +1,5 @@
+                            DistArray Quickstart
+================================================================================
 This script will setup a new conda environment with DistArray. Depending on the
 prior availability of dependencies and system hardware, this process could take
 anywhere from less than a minute upto a few hours. If installation fails,
@@ -9,4 +11,5 @@ Prerequisites for using DistArray quickstart:
 - OSX only: a working package manager (MacPorts/HomeBrew)
 
 This script allows you to configure some aspects of the resulting DistArray
-install. Refer to the script usage message for details [./quickstart --help].
+install. Refer to the script usage message below for details.
+--------------------------------------------------------------------------------
