@@ -1,29 +1,26 @@
-language: python
+language: c
 os:
   - linux
   - osx
 env:
     - PYVERSION="2.7"   NENGINES=1
-    - PYVERSION="2.7"   NENGINES=9
-    - PYVERSION="3.3"   NENGINES=9
-    - PYVERSION="3.4"   NENGINES=9
+      #    - PYVERSION="2.7"   NENGINES=9
+      #    - PYVERSION="3.4"   NENGINES=9
 before_install:
   #    - if [[ "$TRAVIS_OS_NAME" == "linux"]; then
   #          sudo add-apt-repository -y ppa:andrikos/ppa;  # PPA with parallel hdf5
   #          sudo apt-get update;
   #      fi
-    - if [[ "$PYVERSION" == "2.7" ]]; then
-          if [[ "$TRAVIS_OS_NAME" == "linux"]; then
-              wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-          else
-              wget https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -O miniconda.sh;
-          fi
+    - if [[ "$PYVERSION" == "2.7" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+      elif [[ "$PYVERSION" == "2.7" && "$TRAVIS_OS_NAME" == "osx" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -O miniconda.sh;
+      elif [[ "$PYVERSION" == "3.4" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      elif [[ "$PYVERSION" == "3.4" && "$TRAVIS_OS_NAME" == "osx" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
       else
-          if [[ "$TRAVIS_OS_NAME" == "linux"]; then
-              wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-          else
-              wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
-          fi
+          exit 1;
       fi
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -31,7 +28,7 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - enthought/distarray/quickstart --pyversion $PYVERSION --name distarray-env
+    - $TRAVIS_BUILD_DIR/quickstart --pyversion $PYVERSION --name distarray-env
     - source activate distarray-env
     - pip install codecov pelican
       #    - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
