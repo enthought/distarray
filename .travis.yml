@@ -28,7 +28,7 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - $TRAVIS_BUILD_DIR/quickstart --pyversion $PYVERSION --name distarray-env
+    - $TRAVIS_BUILD_DIR/quickstart --pyversion $PYVERSION --name distarray-env --yes
     - source activate distarray-env
     - pip install codecov pelican
       #    - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
