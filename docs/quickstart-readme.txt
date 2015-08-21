@@ -17,7 +17,7 @@ Additionally, OSX users will need:
 - A working MPI distribution that provides the 'mpicc' compiler wrapper
                                       OR
 - A working copy of HomeBrew or MacPorts to install MPI (MacPorts users will
-  need to supply ROOT password when prompted)
+  need 'sudo' privileges)
 
 Notes
     - OSX: Using quickstart with MacPorts/HomeBrew will build DistArray 
