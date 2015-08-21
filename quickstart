@@ -15,7 +15,7 @@ usage() {
     echo "-n | --name <arg>     set name of created conda environment to <arg> DEFAULT distarray"
     echo "-d | --develop        perform a development install of distarray"
     echo "-t | --test           test distarray after installation"
-    echo "-y | --yes            respond affirmatively to all prompts
+    echo "-y | --yes            respond affirmatively to all prompts"
 }
 
 while [[ "$1" != "" ]]; do

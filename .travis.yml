@@ -4,8 +4,8 @@ os:
   - osx
 env:
     - PYVERSION="2.7"   NENGINES=1
-      #    - PYVERSION="2.7"   NENGINES=9
-      #    - PYVERSION="3.4"   NENGINES=9
+    - PYVERSION="2.7"   NENGINES=9
+    - PYVERSION="3.4"   NENGINES=9
 before_install:
   #    - if [[ "$TRAVIS_OS_NAME" == "linux"]; then
   #          sudo add-apt-repository -y ppa:andrikos/ppa;  # PPA with parallel hdf5
@@ -36,11 +36,17 @@ before_install:
 install:
     - python setup.py install  # build DistArray
     - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
-    - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build docs
+    - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build website
 before_script:
     - python -c "import numpy; print('Numpy version', numpy.__version__)"
-    - "export DISPLAY=:99.0"  # for plotting.py
-    - "sh -e /etc/init.d/xvfb start"  # for plotting.py
+      #- "export DISPLAY=:99.0"  # for plotting.py
+      #- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      #-     "sh -e /etc/init.d/xvfb start"  # for plotting.py
+      #- elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      #-     Xvfb   # for plotting.py
+      #- else
+      #-     exit 1
+      #- fi
     - (cd $TRAVIS_BUILD_DIR && dacluster start -n$NENGINES)
     - lsof | grep python | wc -l
 script:
