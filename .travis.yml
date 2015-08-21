@@ -1,4 +1,7 @@
 language: python
+os:
+  - linux
+  - osx
 env:
     - PYVERSION="2.7"   NENGINES=1
     - PYVERSION="2.7"   NENGINES=9
