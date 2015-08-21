@@ -3,6 +3,7 @@
 PY_VER=2
 CONDA_ENV=distarray
 INSTALL_MODE=install
+USER_PROMPT=true
 TEST_INSTALL=false
 
 usage() {
@@ -14,25 +15,30 @@ usage() {
     echo "-n | --name <arg>     set name of created conda environment to <arg> DEFAULT distarray"
     echo "-d | --develop        perform a development install of distarray"
     echo "-t | --test           test distarray after installation"
+    echo "-y | --yes            respond affirmatively to all prompts
 }
 
 while [[ "$1" != "" ]]; do
     case $1 in
-	-n | --name )
+    -n | --name )
                 shift
                 CONDA_ENV=$1
-				;;
-	-d | --develop )
+                ;;
+    -d | --develop )
                 INSTALL_MODE=develop
-				;;
-	-h | --help )
+                ;;
+    -h | --help )
                 usage
-				exit
-				;;
-	--pyversion )
+                exit
+                ;;
+    -y | --yes)
                 shift
-				PY_VER=$1
-				;;
+                USER_PROMPT=false
+                ;;
+    --pyversion )
+                shift
+                PY_VER=$1
+                ;;
     -t | --test )
                 TEST_INSTALL=true
                 ;;
@@ -118,10 +124,12 @@ test_install() {
     return 0
 }
 
-cat docs/quickstart-readme.txt
-usage
-echo "Press any key to continue installation with the provided options. Ctrl+C to abort."
-read -n 1
+if $USER_PROMPT; then
+    cat docs/quickstart-readme.txt
+    usage
+    echo "Press any key to continue installation with the provided options. Ctrl+C to abort."
+    read -n 1
+fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
     resolve_mpicc
@@ -136,9 +144,11 @@ if [[ "$(uname)" == "Darwin" ]]; then
     r_stat=$?
     exit_install $r_stat
 else
-    echo "Linux support for DistArray quickstart is experimental and may not produce desired results."
-    echo "Press any key to continue installation. Ctrl+C to abort."
-    read -n 1
+    if $USER_PROMPT; then
+        echo "Linux support for DistArray quickstart is experimental and may not produce desired results."
+        echo "Press any key to continue installation. Ctrl+C to abort."
+        read -n 1
+    fi
 
     resolve_conda
     r_stat=$?
