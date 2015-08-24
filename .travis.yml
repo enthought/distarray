@@ -44,12 +44,12 @@ install:
   - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build website
 before_script:
   - python -c "import numpy; print('Numpy version', numpy.__version__)"
-  - "export DISPLAY=:99.0"  # for plotting.py
+  - export DISPLAY=:99.0   # for plotting.py
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      "sh -e /etc/init.d/xvfb start"  # for plotting.py
+      sh -e /etc/init.d/xvfb start  # for plotting.py
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      "Xvfb :99 -ac -screen 0 1024x768x8 &"  # for plotting.py
+      Xvfb :99 -ac -screen 0 1024x768x8 &  # for plotting.py
     else
       exit 1;
     fi
