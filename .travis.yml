@@ -1,45 +1,71 @@
-language: python
+language: c
+os:
+  - linux
+  - osx
 env:
-    - PYVERSION="2.7"   NENGINES=1
-    - PYVERSION="2.7"   NENGINES=9
-    - PYVERSION="3.3"   NENGINES=9
-    - PYVERSION="3.4"   NENGINES=9
+  - PYVERSION="2.7"   NENGINES=1
+  - PYVERSION="2.7"   NENGINES=9
+  - PYVERSION="3.4"   NENGINES=9
 before_install:
-    - sudo add-apt-repository -y ppa:andrikos/ppa
-    - sudo apt-get update
-    - if [[ "$PYVERSION" == "2.7" ]]; then
-          wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    - conda info -a
-    - conda create -q -n test-environment python=$PYVERSION setuptools pip numpy=1.8.2 pyzmq ipython matplotlib cython sphinx mock coverage requests pyyaml mpi4py
-    - source activate test-environment
-    - pip install sphinxcontrib-programoutput codecov pelican
-    - sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev  # from Nick Andrik's PPA
-    - CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi"
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      ulimit -n 4096;  # bump osx ulimit
+    fi
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo add-apt-repository -y ppa:andrikos/ppa;  # PPA with parallel hdf5
+      sudo apt-get update;
+    fi
+  - |
+    if [[ "$PYVERSION" == "2.7" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    elif [[ "$PYVERSION" == "2.7" && "$TRAVIS_OS_NAME" == "osx" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    elif [[ "$PYVERSION" == "3.4" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    elif [[ "$PYVERSION" == "3.4" && "$TRAVIS_OS_NAME" == "osx" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    else
+      exit 1;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - travis_wait $TRAVIS_BUILD_DIR/quickstart --pyversion $PYVERSION --name distarray-env --yes
+  - source activate distarray-env
+  - pip install codecov pelican
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then  # test parallel hdf5
+      sudo apt-get install libhdf5-mpich2-7 libhdf5-mpich2-dev;  # from Nick Andrik's PPA
+      CC=mpicc pip install git+https://github.com/h5py/h5py.git@2.2.1 --install-option="--mpi";
+    fi
 install:
-    - python setup.py install  # build DistArray
-    - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
-    - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build docs
+  - python setup.py install  # build DistArray
+  - (cd $TRAVIS_BUILD_DIR/docs/sphinx && make html)  # build docs
+  - (cd $TRAVIS_BUILD_DIR/docs/www && make html)  # build website
 before_script:
-    - python -c "import numpy; print('Numpy version', numpy.__version__)"
-    - "export DISPLAY=:99.0"  # for plotting.py
-    - "sh -e /etc/init.d/xvfb start"  # for plotting.py
-    - (cd $TRAVIS_BUILD_DIR && dacluster start -n$NENGINES)
-    - lsof | grep python | wc -l
+  - python -c "import numpy; print('Numpy version', numpy.__version__)"
+  - export DISPLAY=:99.0   # for plotting.py
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sh -e /etc/init.d/xvfb start  # for plotting.py
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      sudo Xvfb :99 -ac -screen 0 1024x768x8 &  # for plotting.py
+    else
+      exit 1;
+    fi
+  - (cd $TRAVIS_BUILD_DIR && dacluster start -n$NENGINES)
+  - lsof | grep python | wc -l
 script:
-    - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
+  - (cd $TRAVIS_BUILD_DIR && make test_with_coverage)
 after_script:
-    - lsof | grep python | wc -l
-    - (cd $TRAVIS_BUILD_DIR && dacluster stop)
+  - lsof | grep python | wc -l
+  - (cd $TRAVIS_BUILD_DIR && dacluster stop)
 after_success:
-    - if [[ $PYVERSION == "3.4" && $NENGINES -eq 9 ]] ; then
-         echo "coverage combine"; coverage combine;
-         echo "codecov"; codecov;
-      fi
+  - if [[ $PYVERSION == "3.4" && "$TRAVIS_OS_NAME" == "linux" && $NENGINES -eq 9 ]] ; then
+      echo "coverage combine"; coverage combine;
+      echo "codecov"; codecov;
+    fi
