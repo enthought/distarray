@@ -88,7 +88,7 @@ resolve_conda() {
 }
 
 install_osx() {
-    conda create -n $CONDA_ENV python=$PY_VER numpy ipython ipython-notebook cython sphinx mock matplotlib
+    conda create -n $CONDA_ENV python=$PY_VER numpy ipyparallel notebook cython sphinx mock matplotlib
     source activate $CONDA_ENV
     pip install mpi4py
     pip install sphinxcontrib-programoutput
@@ -98,7 +98,7 @@ install_osx() {
 }
 
 install_linux() {
-    conda create -n $CONDA_ENV python=$PY_VER mpi4py numpy ipython ipython-notebook cython sphinx mock matplotlib
+    conda create -n $CONDA_ENV python=$PY_VER mpi4py numpy ipyparallel notebook cython sphinx mock matplotlib
     source activate $CONDA_ENV
     pip install sphinxcontrib-programoutput
     python setup.py $INSTALL_MODE
