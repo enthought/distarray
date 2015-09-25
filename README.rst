@@ -1,5 +1,5 @@
 .. Travis badge
-.. image:: https://travis-ci.org/enthought/distarray.png?branch=master   
+.. image:: https://travis-ci.org/enthought/distarray.png?branch=master
    :target: https://travis-ci.org/enthought/distarray
 
 .. readthedocs badge
@@ -47,8 +47,7 @@ DistArray is designed to work with other packages that implement the
 .. _NumPy: http://www.numpy.org
 
 Please see our documentation at `readthedocs`_ (or in the `docs` directory) for
-more, join our `mailing list`_, or chat with us on #distarray on freenode.
-Pull requests gladly accepted.
+more, or ask us questions on our `mailing list`_.  Pull requests gladly accepted.
 
 
 .. _readthedocs: http://distarray.readthedocs.org
