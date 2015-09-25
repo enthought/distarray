@@ -26,7 +26,7 @@ def parse_readme(filename='README.rst', sentinel="README"):
 if __name__ == "__main__":
 
     install_requires = [
-        'ipython',
+        'ipyparallel',
         'numpy',
         'mpi4py'
     ]
