@@ -18,6 +18,8 @@ from distarray.localapi.maps import Distribution
 
 class TestDnpyFileIO(ParallelTestCase):
 
+    comm_size = 1
+
     def setUp(self):
         d = Distribution.from_shape(comm=self.comm, shape=(7,))
         self.larr0 = LocalArray(d)
