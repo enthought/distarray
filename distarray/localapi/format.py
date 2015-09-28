@@ -73,8 +73,6 @@ from numpy.lib.format import write_array_header_1_0
 from numpy.lib.utils import safe_eval
 from numpy.compat import asbytes
 
-from distarray.utils import _raise_nie
-
 
 MAGIC_PREFIX = asbytes('\x93DARRY')
 MAGIC_LEN = len(MAGIC_PREFIX) + 2
