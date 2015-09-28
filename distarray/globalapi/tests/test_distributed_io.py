@@ -45,7 +45,6 @@ class TestDnpyFileIO(DefaultContextTestCase):
         cls.da = cls.context.empty(cls.distribution)
         cls.output_paths = cls.context.apply(engine_temp_path)
 
-    @unittest.skip("FIXME")
     def test_save_load_with_filenames(self):
 
         try:
@@ -57,7 +56,6 @@ class TestDnpyFileIO(DefaultContextTestCase):
             for filepath, target in zip(self.output_paths, self.context.targets):
                 self.context.apply(cleanup_file, (filepath,), targets=(target,))
 
-    @unittest.skip("FIXME")
     def test_save_load_with_prefix(self):
 
         output_path = self.output_paths[0]
