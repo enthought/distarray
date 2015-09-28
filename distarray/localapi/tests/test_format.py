@@ -32,3 +32,16 @@ class TestMagic(unittest.TestCase):
 
         result = fmt.magic(major=major, minor=minor, prefix=prefix)
         self.assertEqual(result, expected)
+
+
+class TestReadMagic(unittest.TestCase):
+
+    def test_read_magic(self):
+        prefix = six.b('\x93DARRY')
+        prefix_len = 8
+        fp = six.BytesIO(six.b('\x93DARRY\x03\x02'))
+
+        major, minor = fmt.read_magic(fp, prefix=prefix, prefix_len=prefix_len)
+
+        expected = (3, 2)
+        self.assertEqual((major, minor), expected)
