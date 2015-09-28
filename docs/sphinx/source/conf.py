@@ -30,7 +30,7 @@ MOCK_MODULES = ['mpi4py', 'h5py', 'zmq',
                 'numpy.lib.utils',
                 'numpy.compat',
                 'IPython',
-                'IPython.parallel',
+                'ipyparallel',
                 'numbers',
                 ]
 
@@ -68,7 +68,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'DistArray'
-copyright = u'2008-2014, IPython Development Team and Enthought, Inc.'
+copyright = u'2008-2015, IPython Development Team and Enthought, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
