@@ -22,3 +22,13 @@ class TestMagic(unittest.TestCase):
 
         result = fmt.magic(major=major, minor=minor, prefix=prefix)
         self.assertEqual(result, expected)
+
+    def test_magic_1(self):
+        expected = six.b('\x93NUMPY\x01\x00')
+
+        prefix = six.b('\x93NUMPY')
+        major = 1
+        minor = 0
+
+        result = fmt.magic(major=major, minor=minor, prefix=prefix)
+        self.assertEqual(result, expected)
