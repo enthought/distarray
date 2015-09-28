@@ -69,7 +69,6 @@ import io
 from distarray.externals import six
 
 import numpy as np
-from numpy.lib.format import write_array_header_1_0
 from numpy.lib.utils import safe_eval
 from numpy.compat import asbytes
 
@@ -133,7 +132,59 @@ def read_magic(fp, prefix=MAGIC_PREFIX, prefix_len=MAGIC_LEN):
     return major, minor
 
 
-def write_localarray(fp, arr, version=(1, 0)):
+# mostly copied from numpy/lib/format
+# dependance on _filter_header removed, since we don't care about npz-style
+# headers
+def write_localarray_header(fp, d, version=None):
+    """Write the header for a localarray and return the version used
+
+    Parameters
+    ----------
+    fp : filelike object
+    d : dict
+        This has the appropriate entries for writing its string representation
+        to the header of the file.
+    version: tuple or None
+        None means use oldest that works
+        explicit version will raise a ValueError if the format does not
+        allow saving this data.  Default: None
+
+    Returns
+    -------
+    version : tuple of int
+        the file version which needs to be used to store the data
+    """
+    import struct
+    header = ["{"]
+    for key, value in sorted(d.items()):
+        # Need to use repr here, since we eval these when reading
+        header.append("'%s': %s, " % (key, repr(value)))
+    header.append("}")
+    header = "".join(header)
+    # Pad the header with spaces and a final newline such that the magic
+    # string, the header-length short and the header are aligned on a
+    # 16-byte boundary.  Hopefully, some system, possibly memory-mapping,
+    # can take advantage of our premature optimization.
+    current_header_len = MAGIC_LEN + 2 + len(header) + 1  # 1 for the newline
+    topad = 16 - (current_header_len % 16)
+    header = header + ' '*topad + '\n'
+    header = asbytes(header)
+
+    hlen = len(header)
+    if hlen < 256*256 and version in (None, (1, 0)):
+        version = (1, 0)
+        header_prefix = magic(1, 0) + struct.pack('<H', hlen)
+    else:
+        msg = "Header length %s too big for version=%s"
+        msg %= (hlen, version)
+        raise ValueError(msg)
+
+    fp.write(header_prefix)
+    fp.write(header)
+    return version
+
+
+def write_localarray(fp, larr, version=(1, 0)):
     """
     Write a LocalArray to a .dnpy file, including a header.
 
@@ -146,7 +197,7 @@ def write_localarray(fp, arr, version=(1, 0)):
     fp : file_like object
         An open, writable file object, or similar object with a ``.write()``
         method.
-    arr : LocalArray
+    larr : LocalArray
         The array to write to disk.
     version : (int, int), optional
         The version number of the file format.  Default: (1, 0)
@@ -167,16 +218,16 @@ def write_localarray(fp, arr, version=(1, 0)):
 
     fp.write(magic(*version))
 
-    distbuffer = arr.__distarray__()
+    distbuffer = larr.__distarray__()
     metadata = {'__version__': distbuffer['__version__'],
                 'dim_data': distbuffer['dim_data'],
                 }
 
-    write_array_header_1_0(fp, metadata)
+    write_localarray_header(fp, metadata, version=(1, 0))
     np.save(fp, distbuffer['buffer'])
 
 
-def read_array_header_1_0(fp):
+def read_localarray_header(fp, version):
     """
     Read an array header from a filelike object using the 1.0 file format
     version.
@@ -187,6 +238,7 @@ def read_array_header_1_0(fp):
     ----------
     fp : filelike object
         A file object or something with a `.read()` method like a file.
+    version : tuple of int
 
     Returns
     -------
@@ -205,9 +257,12 @@ def read_array_header_1_0(fp):
     # Read an unsigned, little-endian short int which has the length of the
     # header.
     import struct
-    hlength_str = _read_bytes(fp, 2, "Array header length")
-    header_length = struct.unpack('<H', hlength_str)[0]
-    header = _read_bytes(fp, header_length, "Array header")
+    if version == (1, 0):
+        hlength_str = _read_bytes(fp, 2, "Array header length")
+        header_length = struct.unpack('<H', hlength_str)[0]
+        header = _read_bytes(fp, header_length, "Array header")
+    else:
+        raise ValueError("Invalid version %r" % version)
 
     # The header is a pretty-printed string representation of a literal Python
     # dictionary with trailing newlines padded to a 16-byte boundary. The keys
@@ -256,7 +311,7 @@ def read_localarray(fp):
         msg = "only support version (1,0) of file format, not %r"
         raise ValueError(msg % (version,))
 
-    __version__, dim_data = read_array_header_1_0(fp)
+    __version__, dim_data = read_localarray_header(fp, version=(1, 0))
 
     buf = np.load(fp)
 
