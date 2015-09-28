@@ -6,7 +6,6 @@
 
 import os
 import numpy
-import unittest
 
 from numpy.testing import assert_allclose, assert_equal
 from distarray.testing import ParallelTestCase, import_or_skip, temp_filepath
