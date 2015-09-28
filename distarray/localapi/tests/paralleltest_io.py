@@ -12,7 +12,7 @@ from numpy.testing import assert_allclose, assert_equal
 from distarray.testing import ParallelTestCase, import_or_skip, temp_filepath
 from distarray.localapi import LocalArray, ndenumerate
 from distarray.localapi import (save_dnpy, load_dnpy, save_hdf5, load_hdf5,
-                             load_npy)
+                                load_npy)
 from distarray.localapi.maps import Distribution
 
 
