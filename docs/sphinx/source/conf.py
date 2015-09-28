@@ -50,8 +50,11 @@ needs_sphinx = '1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax',
-              'sphinx.ext.autosummary', 'sphinx.ext.napoleon',
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode',
               'sphinxcontrib.programoutput']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -137,7 +140,7 @@ html_theme = 'alabaster'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "../../../docs/www/output/images/distarray-logo.png"
+html_logo = "../../../branding/logos/pngs/DistArray-LOGO-smallest.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
