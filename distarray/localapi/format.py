@@ -128,7 +128,10 @@ def read_magic(fp, prefix=MAGIC_PREFIX, prefix_len=MAGIC_LEN):
         msg = "the magic string is not correct; expected %r, got %r"
         raise ValueError(msg % (prefix, magic_str[:-2]))
 
-    major, minor = map(six.byte2int, magic_str[-2:])
+    if six.PY2:
+        major, minor = map(ord, magic_str[-2:])
+    if six.PY3:
+        major, minor = magic_str[-2:]
     return major, minor
 
 
