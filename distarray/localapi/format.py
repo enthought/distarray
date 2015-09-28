@@ -216,8 +216,6 @@ def write_localarray(fp, larr, version=(1, 0)):
         msg = "Only version (1, 0) is supported, not %s."
         raise ValueError(msg % (version,))
 
-    fp.write(magic(*version))
-
     distbuffer = larr.__distarray__()
     metadata = {'__version__': distbuffer['__version__'],
                 'dim_data': distbuffer['dim_data'],
