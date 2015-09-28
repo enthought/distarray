@@ -89,10 +89,12 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
     ----------
     major : int in [0, 255]
     minor : int in [0, 255]
+    prefix : bytes
+        The magic prefix to concatenate with version number
 
     Returns
     -------
-    magic : str
+    magic : bytes
 
     Raises
     ------
