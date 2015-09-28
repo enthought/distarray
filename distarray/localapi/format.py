@@ -56,6 +56,9 @@ data buffer.  This contains the full output of ``save``, beginning with
 the magic number for ``.npy`` files, followed by the ``.npy`` header and
 array data.
 
+Notes
+-----
+
 The ``.npy`` format, including reasons for creating it and a comparison
 of alternatives, is described fully in the "npy-format" NEP and in the
 module docstring for ``numpy.lib.format``.
