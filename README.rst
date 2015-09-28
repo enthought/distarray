@@ -10,6 +10,9 @@
 .. image:: https://badge.fury.io/py/distarray.svg
     :target: http://badge.fury.io/py/distarray
 
+.. codecov badge
+.. image:: http://codecov.io/github/enthought/distarray/coverage.svg?branch=master
+    :target: http://codecov.io/github/enthought/distarray?branch=master
 
 .. All content before the next comment will be stripped off for release.
 .. *** begin README content ***
