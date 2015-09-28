@@ -108,6 +108,31 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
     return prefix + six.int2byte(major) + six.int2byte(minor)
 
 
+def read_magic(fp):
+    """Read the magic string to get the version of the file format.
+
+    Parameters
+    ----------
+    fp : filelike object
+
+    Returns
+    -------
+    major : int
+    minor : int
+    """
+    magic_str = _read_bytes(fp, MAGIC_LEN, "magic string")
+    if magic_str[:-2] != MAGIC_PREFIX:
+        msg = "the magic string is not correct; expected %r, got %r"
+        raise ValueError(msg % (MAGIC_PREFIX, magic_str[:-2]))
+    if six.PY2:
+        major, minor = map(ord, magic_str[-2:])
+    elif six.PY3:
+        major, minor = magic_str[-2:]
+    else:
+        raise _raise_nie()
+    return major, minor
+
+
 def write_localarray(fp, arr, version=(1, 0)):
     """
     Write a LocalArray to a .dnpy file, including a header.
@@ -149,31 +174,6 @@ def write_localarray(fp, arr, version=(1, 0)):
 
     write_array_header_1_0(fp, metadata)
     np.save(fp, distbuffer['buffer'])
-
-
-def read_magic(fp):
-    """Read the magic string to get the version of the file format.
-
-    Parameters
-    ----------
-    fp : filelike object
-
-    Returns
-    -------
-    major : int
-    minor : int
-    """
-    magic_str = _read_bytes(fp, MAGIC_LEN, "magic string")
-    if magic_str[:-2] != MAGIC_PREFIX:
-        msg = "the magic string is not correct; expected %r, got %r"
-        raise ValueError(msg % (MAGIC_PREFIX, magic_str[:-2]))
-    if six.PY2:
-        major, minor = map(ord, magic_str[-2:])
-    elif six.PY3:
-        major, minor = magic_str[-2:]
-    else:
-        raise _raise_nie()
-    return major, minor
 
 
 def read_array_header_1_0(fp):
