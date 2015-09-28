@@ -56,6 +56,9 @@ data buffer.  This contains the full output of ``save``, beginning with
 the magic number for ``.npy`` files, followed by the ``.npy`` header and
 array data.
 
+Notes
+-----
+
 The ``.npy`` format, including reasons for creating it and a comparison
 of alternatives, is described fully in the "npy-format" NEP and in the
 module docstring for ``numpy.lib.format``.
@@ -66,11 +69,8 @@ import io
 from distarray.externals import six
 
 import numpy as np
-from numpy.lib.format import write_array_header_1_0
 from numpy.lib.utils import safe_eval
 from numpy.compat import asbytes
-
-from distarray.utils import _raise_nie
 
 
 MAGIC_PREFIX = asbytes('\x93DARRY')
@@ -86,10 +86,12 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
     ----------
     major : int in [0, 255]
     minor : int in [0, 255]
+    prefix : bytes
+        The magic prefix to concatenate with version number
 
     Returns
     -------
-    magic : str
+    magic : bytes
 
     Raises
     ------
@@ -101,15 +103,91 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
         raise ValueError("Major version must be 0 <= major < 256.")
     if minor < 0 or minor > 255:
         raise ValueError("Minor version must be 0 <= minor < 256.")
+
+    return prefix + six.int2byte(major) + six.int2byte(minor)
+
+
+def read_magic(fp, prefix=MAGIC_PREFIX, prefix_len=MAGIC_LEN):
+    """Read the magic string to get the version of the file format.
+
+    Parameters
+    ----------
+    fp : filelike object
+    prefix : bytes
+        Magic prefix to look for
+    prefix_len : int
+        Number of bytes in `prefix`
+
+    Returns
+    -------
+    major : int
+    minor : int
+    """
+    magic_str = _read_bytes(fp, prefix_len, "magic string")
+    if magic_str[:-2] != prefix:
+        msg = "the magic string is not correct; expected %r, got %r"
+        raise ValueError(msg % (prefix, magic_str[:-2]))
+
     if six.PY2:
-        return prefix + chr(major) + chr(minor)
-    elif six.PY3:
-        return prefix + bytes([major, minor])
+        major, minor = map(ord, magic_str[-2:])
+    if six.PY3:
+        major, minor = magic_str[-2:]
+    return major, minor
+
+
+# mostly copied from numpy/lib/format
+# dependance on _filter_header removed, since we don't care about npz-style
+# headers
+def write_localarray_header(fp, d, version=None):
+    """Write the header for a localarray and return the version used
+
+    Parameters
+    ----------
+    fp : filelike object
+    d : dict
+        This has the appropriate entries for writing its string representation
+        to the header of the file.
+    version: tuple or None
+        None means use oldest that works
+        explicit version will raise a ValueError if the format does not
+        allow saving this data.  Default: None
+
+    Returns
+    -------
+    version : tuple of int
+        the file version which needs to be used to store the data
+    """
+    import struct
+    header = ["{"]
+    for key, value in sorted(d.items()):
+        # Need to use repr here, since we eval these when reading
+        header.append("'%s': %s, " % (key, repr(value)))
+    header.append("}")
+    header = "".join(header)
+    # Pad the header with spaces and a final newline such that the magic
+    # string, the header-length short and the header are aligned on a
+    # 16-byte boundary.  Hopefully, some system, possibly memory-mapping,
+    # can take advantage of our premature optimization.
+    current_header_len = MAGIC_LEN + 2 + len(header) + 1  # 1 for the newline
+    topad = 16 - (current_header_len % 16)
+    header = header + ' '*topad + '\n'
+    header = asbytes(header)
+
+    hlen = len(header)
+    if hlen < 256*256 and version in (None, (1, 0)):
+        version = (1, 0)
+        header_prefix = magic(1, 0) + struct.pack('<H', hlen)
     else:
-        raise _raise_nie()
+        msg = "Header length %s too big for version=%s"
+        msg %= (hlen, version)
+        raise ValueError(msg)
+
+    fp.write(header_prefix)
+    fp.write(header)
+    return version
 
 
-def write_localarray(fp, arr, version=(1, 0)):
+def write_localarray(fp, larr, version=(1, 0)):
     """
     Write a LocalArray to a .dnpy file, including a header.
 
@@ -122,7 +200,7 @@ def write_localarray(fp, arr, version=(1, 0)):
     fp : file_like object
         An open, writable file object, or similar object with a ``.write()``
         method.
-    arr : LocalArray
+    larr : LocalArray
         The array to write to disk.
     version : (int, int), optional
         The version number of the file format.  Default: (1, 0)
@@ -141,43 +219,16 @@ def write_localarray(fp, arr, version=(1, 0)):
         msg = "Only version (1, 0) is supported, not %s."
         raise ValueError(msg % (version,))
 
-    fp.write(magic(*version))
-
-    distbuffer = arr.__distarray__()
+    distbuffer = larr.__distarray__()
     metadata = {'__version__': distbuffer['__version__'],
                 'dim_data': distbuffer['dim_data'],
                 }
 
-    write_array_header_1_0(fp, metadata)
+    write_localarray_header(fp, metadata, version=(1, 0))
     np.save(fp, distbuffer['buffer'])
 
 
-def read_magic(fp):
-    """Read the magic string to get the version of the file format.
-
-    Parameters
-    ----------
-    fp : filelike object
-
-    Returns
-    -------
-    major : int
-    minor : int
-    """
-    magic_str = _read_bytes(fp, MAGIC_LEN, "magic string")
-    if magic_str[:-2] != MAGIC_PREFIX:
-        msg = "the magic string is not correct; expected %r, got %r"
-        raise ValueError(msg % (MAGIC_PREFIX, magic_str[:-2]))
-    if six.PY2:
-        major, minor = map(ord, magic_str[-2:])
-    elif six.PY3:
-        major, minor = magic_str[-2:]
-    else:
-        raise _raise_nie()
-    return major, minor
-
-
-def read_array_header_1_0(fp):
+def read_localarray_header(fp, version):
     """
     Read an array header from a filelike object using the 1.0 file format
     version.
@@ -188,6 +239,7 @@ def read_array_header_1_0(fp):
     ----------
     fp : filelike object
         A file object or something with a `.read()` method like a file.
+    version : tuple of int
 
     Returns
     -------
@@ -206,9 +258,12 @@ def read_array_header_1_0(fp):
     # Read an unsigned, little-endian short int which has the length of the
     # header.
     import struct
-    hlength_str = _read_bytes(fp, 2, "Array header length")
-    header_length = struct.unpack('<H', hlength_str)[0]
-    header = _read_bytes(fp, header_length, "Array header")
+    if version == (1, 0):
+        hlength_str = _read_bytes(fp, 2, "Array header length")
+        header_length = struct.unpack('<H', hlength_str)[0]
+        header = _read_bytes(fp, header_length, "Array header")
+    else:
+        raise ValueError("Invalid version %r" % version)
 
     # The header is a pretty-printed string representation of a literal Python
     # dictionary with trailing newlines padded to a 16-byte boundary. The keys
@@ -257,7 +312,7 @@ def read_localarray(fp):
         msg = "only support version (1,0) of file format, not %r"
         raise ValueError(msg % (version,))
 
-    __version__, dim_data = read_array_header_1_0(fp)
+    __version__, dim_data = read_localarray_header(fp, version=(1, 0))
 
     buf = np.load(fp)
 
