@@ -104,12 +104,8 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
         raise ValueError("Major version must be 0 <= major < 256.")
     if minor < 0 or minor > 255:
         raise ValueError("Minor version must be 0 <= minor < 256.")
-    if six.PY2:
-        return prefix + chr(major) + chr(minor)
-    elif six.PY3:
-        return prefix + bytes([major, minor])
-    else:
-        raise _raise_nie()
+
+    return prefix + six.int2byte(major) + six.int2byte(minor)
 
 
 def write_localarray(fp, arr, version=(1, 0)):
