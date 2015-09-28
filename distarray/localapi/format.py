@@ -110,28 +110,28 @@ def magic(major, minor, prefix=MAGIC_PREFIX):
     return prefix + six.int2byte(major) + six.int2byte(minor)
 
 
-def read_magic(fp):
+def read_magic(fp, prefix=MAGIC_PREFIX, prefix_len=MAGIC_LEN):
     """Read the magic string to get the version of the file format.
 
     Parameters
     ----------
     fp : filelike object
+    prefix : bytes
+        Magic prefix to look for
+    prefix_len : int
+        Number of bytes in `prefix`
 
     Returns
     -------
     major : int
     minor : int
     """
-    magic_str = _read_bytes(fp, MAGIC_LEN, "magic string")
-    if magic_str[:-2] != MAGIC_PREFIX:
+    magic_str = _read_bytes(fp, prefix_len, "magic string")
+    if magic_str[:-2] != prefix:
         msg = "the magic string is not correct; expected %r, got %r"
-        raise ValueError(msg % (MAGIC_PREFIX, magic_str[:-2]))
-    if six.PY2:
-        major, minor = map(ord, magic_str[-2:])
-    elif six.PY3:
-        major, minor = magic_str[-2:]
-    else:
-        raise _raise_nie()
+        raise ValueError(msg % (prefix, magic_str[:-2]))
+
+    major, minor = map(six.byte2int, magic_str[-2:])
     return major, minor
 
 
