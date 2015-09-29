@@ -1,6 +1,10 @@
 .. Travis badge
-.. image:: https://travis-ci.org/enthought/distarray.png?branch=master
+.. image:: https://travis-ci.org/enthought/distarray.svg?branch=master
    :target: https://travis-ci.org/enthought/distarray
+
+.. codecov badge
+.. image:: http://codecov.io/github/enthought/distarray/coverage.svg?branch=master
+    :target: http://codecov.io/github/enthought/distarray?branch=master
 
 .. readthedocs badge
 .. image:: https://readthedocs.org/projects/distarray/badge/?version=master
@@ -9,10 +13,6 @@
 .. pypi badge
 .. image:: https://badge.fury.io/py/distarray.svg
     :target: http://badge.fury.io/py/distarray
-
-.. codecov badge
-.. image:: http://codecov.io/github/enthought/distarray/coverage.svg?branch=master
-    :target: http://codecov.io/github/enthought/distarray?branch=master
 
 .. All content before the next comment will be stripped off for release.
 .. *** begin README content ***
