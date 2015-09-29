@@ -4,8 +4,20 @@
 #  Distributed under the terms of the BSD License.  See COPYING.rst.
 # -----------------------------------------------------------------------------
 
+import os
 from setuptools import setup, find_packages
 from distarray.__version__ import __version__
+
+# let our mocks work on ReadTheDocs
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    install_requires = []
+else:
+    install_requires = [
+        'ipyparallel',
+        'numpy',
+        'mpi4py'
+    ]
 
 
 def parse_readme(filename='README.rst', sentinel="README"):
@@ -24,12 +36,6 @@ def parse_readme(filename='README.rst', sentinel="README"):
 
 
 if __name__ == "__main__":
-
-    install_requires = [
-        'ipyparallel',
-        'numpy',
-        'mpi4py'
-    ]
 
     metadata = {
         'name': 'distarray',
