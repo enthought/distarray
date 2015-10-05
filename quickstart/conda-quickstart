@@ -128,7 +128,7 @@ prompt_user() {
     read -n 1
 }
 
-cat quickstart/quickstart-readme.txt
+cat quickstart/README.rst
 usage
 
 if [[ "$(uname)" == "Darwin" ]]; then
