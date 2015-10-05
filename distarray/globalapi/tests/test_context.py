@@ -19,7 +19,8 @@ import numpy
 
 from numpy.testing import assert_allclose, assert_array_equal
 
-from distarray.testing import DefaultContextTestCase, IPythonContextTestCase, check_targets
+from distarray.testing import (DefaultContextTestCase, IPythonContextTestCase,
+                               check_targets)
 from distarray.globalapi.context import Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process
@@ -53,7 +54,7 @@ class TestRegister(DefaultContextTestCase):
         def local_sin(da):
             return numpy.sin(da)
         self.context.register(local_sin)
-        
+
         db = self.context.local_sin(self.da)
         assert_allclose(0, db.tondarray(), atol=1e-14)
 
@@ -132,7 +133,8 @@ class TestRegister(DefaultContextTestCase):
         dm.fill(22)
         dn = self.context.empty(self.da.distribution)
         dn.fill(44)
-        do = self.context.local_add_supermix(self.da, 11, dm, 33, dc=dn, num3=55)
+        do = self.context.local_add_supermix(self.da, 11, dm,
+                                             33, dc=dn, num3=55)
         expected = 2 * numpy.pi + 11 + 22 + 33 + 44 + 55 + 66
         assert_allclose(do.tondarray(), expected)
 
@@ -146,7 +148,7 @@ class TestRegister(DefaultContextTestCase):
         self.assertTrue(dp is None)
 
     def test_parameterless(self):
-        
+
         def parameterless():
             """This is a parameterless function."""
             return None
@@ -304,10 +306,10 @@ class TestPrimeCluster(DefaultContextTestCase):
     def test_3D(self):
         a = self.context.empty((3, 3, 3))
         db = Distribution(self.context, (3, 3, 3),
-                                     dist=('n', 'b', 'n'))
+                          dist=('n', 'b', 'n'))
         b = self.context.empty(db)
         dc = Distribution(self.context, (3, 3, 3),
-                                     dist=('n', 'n', 'b'))
+                          dist=('n', 'n', 'b'))
         c = self.context.empty(dc)
         self.assertEqual(a.grid_shape, (3, 1, 1))
         self.assertEqual(b.grid_shape, (1, 3, 1))
@@ -402,17 +404,20 @@ class TestApply(DefaultContextTestCase):
 
     def test_apply_distarray(self):
 
-        da = self.context.empty((len(self.context.targets),), dtype=numpy.uint32)
+        da = self.context.empty((len(self.context.targets),),
+                                dtype=numpy.uint32)
 
         def local_label(la):
             la.ndarray.fill(la.comm.rank)
 
-        # Testing that we can pass in `da` and `apply()` extracts `da.key` automatically.
+        # Testing that we can pass in `da`
+        # and `apply()` extracts `da.key` automatically.
         self.context.apply(local_label, (da,))
         assert_array_equal(da.tondarray(), range(len(self.context.targets)))
 
         self.context.apply(local_label, kwargs={'la': da})
         assert_array_equal(da.tondarray(), range(len(self.context.targets)))
+
 
 class TestGetBaseComm(DefaultContextTestCase):
 

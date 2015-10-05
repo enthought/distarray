@@ -22,7 +22,7 @@ MPI_OUT_BASE := unittest.out
 MPI_OUT_PREFIX := ${PARALLEL_OUT_DIR}/${PYTHON_VERSION}-${MPI_OUT_BASE}
 
 
-MPI_ONLY_LAUNCH_TEST := mpiexec -np 5 python ./distarray/globalapi/tests/launch_mpi.py 
+MPI_ONLY_LAUNCH_TEST := mpiexec -np 5 python ./distarray/globalapi/tests/launch_mpi.py
 
 # see if we're using MPICH2, else assume OpenMPI
 ifneq (,$(findstring MPICH2,$(shell mpicc -v 2>&1)))
@@ -98,7 +98,7 @@ test_mpi_with_coverage:
 test: test_ipython test_mpi test_engines
 .PHONY: test
 
-test_with_coverage: test_ipython_with_coverage test_mpi_with_coverage test_engines_with_coverage 
+test_with_coverage: test_ipython_with_coverage test_mpi_with_coverage test_engines_with_coverage
 .PHONY: test_with_coverage
 
 coverage_report:
