@@ -3,8 +3,7 @@ Building the docs
 
 Dependencies to build the documentation:
 
-* Sphinx
-* sphinxcontrib.napoleon
+* Sphinx >= 1.3
 * sphinxcontrib.programoutput
 
 If you have the dependencies listed above, and you want to build the
