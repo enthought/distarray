@@ -6,6 +6,7 @@ env:
   - PYVERSION="2.7"   NENGINES=1
   - PYVERSION="2.7"   NENGINES=9
   - PYVERSION="3.4"   NENGINES=9
+  - PYVERSION="3.5"   NENGINES=9
 before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
