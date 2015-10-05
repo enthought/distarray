@@ -7,7 +7,7 @@ PROMPT_USER=false
 TEST_INSTALL=false
 
 usage() {
-    echo "usage: quickstart [options] <inputs>"
+    echo "usage: conda-quickstart [options] <inputs>"
     echo "-------------------------------------------------------------------------"
     echo "OPTIONS"
     echo "--pyversion <arg>     select which version of python to use options = (2, 3) DEFAULT 2"
@@ -128,7 +128,7 @@ prompt_user() {
     read -n 1
 }
 
-cat docs/quickstart-readme.txt
+cat quickstart/quickstart-readme.txt
 usage
 
 if [[ "$(uname)" == "Darwin" ]]; then
