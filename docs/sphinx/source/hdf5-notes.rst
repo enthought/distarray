@@ -1,6 +1,26 @@
 Building HDF5 and h5py for DistArray
 ====================================
 
+If you want to use DistArray's parallel IO capabilities on HDF5 files,
+parallel-enabled HDF5 and h5py installations are required.  Unfortunately,
+installing these can be somewhat of a pain.
+
+Update 2015-10-05
+-----------------
+
+The "Original Notes" below are pretty old at this point.  Recently I have had
+success installing a parallel-enabled HDF5 (1.8.15) using Homebrew on OS X::
+
+    $ brew install hdf5 --with-mpi
+
+The instructions for building ``h5py`` on top of a parallel hdf5 have also
+changed, but are available
+`here <http://docs.h5py.org/en/latest/mpi.html#building-against-parallel-hdf5>`_.
+
+
+Original Notes
+--------------
+
 These are notes from trying to build HDF5 1.8.12 and h5py 2.2.1 against mpi4py
 1.3 and openmpi-1.6.5 on OS X 10.8.5.
 
@@ -43,7 +63,7 @@ directory::
 This gives me an error about "MPI Message" addressed here::
 
     https://github.com/h5py/h5py/issues/401
-   
+
 After patching api_compat.h as suggested, it builds.  One could also use the
 ``master`` version of h5py from GitHub instead of the latest release.
 

@@ -1,6 +1,18 @@
 Notes on building environment-modules
 =====================================
 
+Update 2015-10-05
+-----------------
+Below are Mark Kness' notes on building and using ``environment-modules``.  I
+have since found lmod_ to be a slightly better documented and supported
+alternative.
+
+- Bob Grant
+
+.. _lmod: https://www.tacc.utexas.edu/research-development/tacc-projects/lmod
+
+Environment Modules
+-------------------
 environment-modules is a tool, written with Tcl, that makes it convenient to
 switch environment settings.  It is not required to use DistArray, but we find
 it useful in development.  It is a difficult name to google.  I had to build it
