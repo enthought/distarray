@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+INSTALL_MODE=install
+PROMPT_USER=true
+
+usage() {
+    echo "usage: enpkg-quickstart [options] <inputs>"
+    echo "-------------------------------------------------------------------------"
+    echo "OPTIONS"
+    echo "-h | --help           display usage message"
+    echo "-d | --develop        perform a development install of distarray"
+    echo "-y | --yes            do not ask for confirmation"
+}
+
+while [[ "$1" != "" ]]; do
+    case $1 in
+    -h | --help )
+                usage
+                exit
+                ;;
+    -d | --develop )
+                INSTALL_MODE=develop
+                ;;
+    -y | --yes )
+                PROMPT_USER=false
+                ;;
+             *  )
+                usage
+                exit 1
+    esac
+    shift
+done
+
+install_openmpi() {
+    if  command -v port >/dev/null 2>&1 ; then
+        sudo port install openmpi
+        sudo port select --set mpi openmpi-mp-fortran
+        return 0
+    elif  command -v brew >/dev/null 2>&1 ; then
+        brew install openmpi
+        return 0
+    else
+        echo "Could not install OpenMPI: no working installation of homebrew"
+        echo "or macports found."
+        return 1
+    fi
+}
+
+resolve_mpicc() {
+    if  command -v mpicc >/dev/null 2>&1 ; then
+        echo "Working MPI installation found at `which mpicc`."
+        return 0
+    else
+        install_openmpi
+        r_stat=$?
+        if [[ $r_stat != 0 ]]; then
+            return 1
+        else
+            return 0
+        fi
+    fi
+}
+
+resolve_enpkg() {
+    if  command -v enpkg >/dev/null 2>&1 ; then
+        echo "Working enpkg installation found at `which enpkg`."
+        return 0
+    else
+        echo "No working installation of Canopy or EPD found."
+        return 1
+    fi
+}
+
+install_osx() {
+    enpkg numpy notebook cython sphinx mock matplotlib
+    pip install ipyparallel mpi4py sphinxcontrib-programoutput
+    pushd ..
+    python setup.py $INSTALL_MODE
+    popd
+    return 0
+}
+
+install_linux() {
+    enpkg numpy notebook cython sphinx mock matplotlib
+    pip install ipyparallel mpi4py sphinxcontrib-programoutput
+    pushd ..
+    python setup.py $INSTALL_MODE
+    popd
+    return 0
+}
+
+exit_install() {
+    if [[ $1 != 0 ]]; then
+        echo "Aborting DistArray quickstart install. Please refer to the"
+        echo "quickstart instructions for troubleshooting."
+        exit 1
+    else
+        return 0
+    fi
+}
+
+prompt_user() {
+    echo "Press any key to continue installation with the provided options."
+    echo "Ctrl+C to abort."
+    read -n 1
+}
+
+cat enpkg-readme.rst
+echo
+usage
+
+
+if [ "$PROMPT_USER" = true ] ; then
+    prompt_user
+fi
+
+resolve_mpicc
+r_stat=$?
+exit_install $r_stat
+
+resolve_enpkg
+r_stat=$?
+exit_install $r_stat
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    install_osx
+    r_stat=$?
+    exit_install $r_stat
+else
+    install_linux
+    r_stat=$?
+    exit_install $r_stat
+fi
+
+
+echo '-------------------------------------------------------------------------------'
+echo 'Installation complete.'
+echo
+echo 'If you performed a development installation (with --develop), you can'
+echo 'test DistArray by running "dacluster start" followed by'
+echo '"python -m distarray.run_tests".'
+echo '-------------------------------------------------------------------------------'
