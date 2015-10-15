@@ -35,7 +35,7 @@ before_install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - travis_wait $TRAVIS_BUILD_DIR/quickstart --pyversion $PYVERSION --name distarray-env --yes
+  - travis_wait $TRAVIS_BUILD_DIR/quickstart/conda-quickstart --pyversion $PYVERSION --name distarray-env --yes
   - source activate distarray-env
   - pip install codecov pelican
   - |

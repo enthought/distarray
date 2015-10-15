@@ -28,14 +28,14 @@ or::
     pip install distarray
 
 
-Experimental conda-quickstart
------------------------------
+Experimental quickstart scripts
+-------------------------------
 
-Alternatively, we have an experimental `conda-quickstart` script in the
-``quickstart`` directory of the root of this source tree.  Given an Anaconda
-installation, this script will attempt to install create a conda environment
-for you, installing MPI, mpi4py, and the above Python dependencies as
-necessary.  See ``README.rst`` in that directory for more information.
+Alternatively, we have experimental installation scripts in the ``quickstart``
+directory of the root of this source tree.  Given a Canopy or Anaconda
+installation and a couple of other prerequisites, these scripts attempt to
+install DistArray and its dependencies for you.  See the readme files in that
+directory for more information.
 
 
 Testing Your Installation
@@ -56,6 +56,7 @@ directory with::
 
     make test
 
-or from anywhere with::
+If you've installed DistArray with ``python setup.py develop``, you should be
+able to run the tests  from anywhere with::
 
     python -m distarray.run_tests

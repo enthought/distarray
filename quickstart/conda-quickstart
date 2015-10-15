@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
 
+INSTALL_MODE=install
+PROMPT_USER=true
+
 PY_VER=2
 CONDA_ENV=distarray
-INSTALL_MODE=install
-PROMPT_USER=false
-TEST_INSTALL=false
 
 usage() {
-    echo "usage: quickstart [options] <inputs>"
+    echo "usage: conda-quickstart [options] <inputs>"
     echo "-------------------------------------------------------------------------"
     echo "OPTIONS"
-    echo "--pyversion <arg>     select which version of python to use options = (2, 3) DEFAULT 2"
     echo "-h | --help           display usage message"
+    echo "--pyversion <arg>     select which version of python to use options = (2, 3) DEFAULT 2"
     echo "-n | --name <arg>     set name of created conda environment to <arg> DEFAULT distarray"
     echo "-d | --develop        perform a development install of distarray"
     echo "-y | --yes            do not ask for confirmation"
-    echo "-t | --test           test distarray after installation"
 }
 
 while [[ "$1" != "" ]]; do
     case $1 in
+    -h | --help )
+                usage
+                exit
+                ;;
+    --pyversion )
+                shift
+                PY_VER=$1
+                ;;
     -n | --name )
                 shift
                 CONDA_ENV=$1
@@ -27,19 +34,8 @@ while [[ "$1" != "" ]]; do
     -d | --develop )
                 INSTALL_MODE=develop
                 ;;
-    -h | --help )
-                usage
-                exit
-                ;;
     -y | --yes )
-                PROMPT_USER=true
-                ;;
-    --pyversion )
-                shift
-                PY_VER=$1
-                ;;
-    -t | --test )
-                TEST_INSTALL=true
+                PROMPT_USER=false
                 ;;
              *  )
                 usage
@@ -57,8 +53,8 @@ install_openmpi() {
         brew install openmpi
         return 0
     else
-        echo "Could not install OpenMPI: no working installation of homebrew or macports found."
-        return 1
+        echo "Could not install OpenMPI: no working installation of homebrew"
+        echo "or macports found."
     fi
 }
 
@@ -90,9 +86,10 @@ resolve_conda() {
 install_osx() {
     conda create -n $CONDA_ENV python=$PY_VER numpy ipyparallel notebook cython sphinx=1.3 mock matplotlib
     source activate $CONDA_ENV
-    pip install mpi4py
-    pip install sphinxcontrib-programoutput
+    pip install mpi4py sphinxcontrib-programoutput
+    pushd ..
     python setup.py $INSTALL_MODE
+    popd
     source deactivate
     return 0
 }
@@ -101,14 +98,17 @@ install_linux() {
     conda create -n $CONDA_ENV python=$PY_VER mpi4py numpy ipyparallel notebook cython sphinx=1.3 mock matplotlib
     source activate $CONDA_ENV
     pip install sphinxcontrib-programoutput
+    pushd ..
     python setup.py $INSTALL_MODE
+    popd
     source deactivate
     return 0
 }
 
 exit_install() {
     if [[ $1 != 0 ]]; then
-        echo "Aborting DistArray quickstart install. Please refer to the quickstart instructions for troubleshooting"
+        echo "Aborting DistArray quickstart install. Please refer to the"
+        echo "quickstart instructions for troubleshooting."
         exit 1
     else
         return 0
@@ -124,11 +124,13 @@ test_install() {
 }
 
 prompt_user() {
-    echo "Press any key to continue installation with the provided options. Ctrl+C to abort."
+    echo "Press any key to continue installation with the provided options."
+    echo "Ctrl+C to abort."
     read -n 1
 }
 
-cat docs/quickstart-readme.txt
+cat conda-readme.rst
+echo
 usage
 
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -150,7 +152,6 @@ if [[ "$(uname)" == "Darwin" ]]; then
     exit_install $r_stat
 else
 
-    echo "Linux support for DistArray quickstart is experimental and may not produce desired results."
     if [ "$PROMPT_USER" = true ] ; then
         prompt_user
     fi
@@ -164,16 +165,11 @@ else
     exit_install $r_stat
 fi
 
-if [ "$TEST_INSTALL" = true ] ; then
-    echo "Install Complete. Testing DistArray"
-    echo "--------------------------------------------------------------------------------------"
-    test_install
-    echo "--------------------------------------------------------------------------------------------"
-    echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
-    echo "--------------------------------------------------------------------------------------------"
-else
-    echo "--------------------------------------------------------------------------------------------"
-    echo "Installation complete. Use source activate $CONDA_ENV to begin working with DistArray."
-    echo "Test your installation by running dacluster start followed by python -m distarray.run_tests."
-    echo "--------------------------------------------------------------------------------------------"
-fi
+echo "-------------------------------------------------------------------------------"
+echo "Installation complete. Use source activate $CONDA_ENV to begin working."
+echo "with DistArray."
+echo
+echo 'If you performed a development installation (with --develop), you can'
+echo 'test DistArray by running "dacluster start" followed by'
+echo '"python -m distarray.run_tests".'
+echo "-------------------------------------------------------------------------------"
