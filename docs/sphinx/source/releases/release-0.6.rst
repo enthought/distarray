@@ -32,11 +32,12 @@ Noteworthy improvements in this release include:
 * redistribution for block-distributed (and non-distributed) DistArrays,
 * experimental "quickstart" installation scripts,
 * an easier API for ``Context.apply``
-* expanded examples (parallel Gaussian Elimination by Prashant Mital)
+* expanded and improved example notebooks, including a new parallel Gaussian
+  Elimination example by Prashant Mital,
 * compatibility with NumPy 1.9,
-* expanded TravisCI testing on (OS X and Python 3.5),
+* expanded TravisCI testing (OS X and Python 3.5),
 * logos by Erick Michaud, and
-* bug-fixes and code improvements
+* several bug-fixes and code improvements.
 
 Existing features
 -----------------
