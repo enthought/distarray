@@ -23,9 +23,9 @@ documentation).
 If you want to change major features or styling of the site, you can change
 settings in ``pelicanconf.py``.  We're currently using the
 ``pelican-bootstrap3`` theme for Pelican, and the ``flatly`` theme for
-Bootstrap.  The easist way to change the look of the site is to choose another
+Bootstrap.  The easiest way to change the look of the site is to choose another
 Bootstrap theme from `bootswatch`_, but there are also other `pelican themes`_
-available 
+available.
 
 
 .. _pelican: http://blog.getpelican.com/
