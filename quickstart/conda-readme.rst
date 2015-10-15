@@ -3,7 +3,7 @@ conda-quickstart
 
 [OS X or Linux]
 
-Note: this script is currently experimental.
+Note: this script is currently *experimental*.
 
 The ``conda-quickstart`` script attempts to create a new conda environment that
 includes DistArray, its dependencies, and the dependencies required to build
@@ -28,8 +28,8 @@ Prerequisites for using ``conda-quickstart`` are:
 
 Additionally, OSX users will need:
 
-- A working MPI distribution that provides the ``mpicc`` compiler wrapper, *OR*
-  a working copy of HomeBrew or MacPorts to install MPI (MacPorts users will
+- A working MPI distribution that provides the ``mpicc`` compiler wrapper
+- *OR* a working copy of HomeBrew or MacPorts to install MPI (MacPorts users will
   need 'sudo' privileges)
 
 Notes on OS X
@@ -39,8 +39,8 @@ On OSX, ``conda-quickstart`` will install
 
 - Open MPI with MacPorts or Homebrew, if ``mpicc`` isn't found,
 - several Python dependencies using ``conda``, and finally
-- a couple of Python dependencies (those not installable with enpkg) through
-  ``pip``.
+- a couple of Python dependencies (those not installable with ``conda``)
+  through ``pip``.
 
 Notes on Linux
 --------------
@@ -49,5 +49,5 @@ On Linux, ``conda-quickstart`` will install
 
 - Several Python dependencies using ``conda`` (including MPICH2 and mpi4py),
   and
-- a couple of Python dependencies (those not installable with enpkg) through
-  ``pip``.
+- a couple of Python dependencies (those not installable with ``conda``)
+  through ``pip``.

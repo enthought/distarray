@@ -3,11 +3,12 @@ enpkg-quickstart
 
 [OS X only]
 
-Note: this script is currently experimental.
+Note: this script is currently *experimental*.
 
 The ``enpkg-quickstart`` script attempts to install DistArray, its
 dependencies, and the dependencies needed to build the DistArray docs.  This
-script is intended to work with your Enthought Canopy installation.
+script is intended to work with your Enthought Canopy installation.  This
+script may update existing packages.
 
 This script does *not* attempt to install parallel versions of hdf5 or h5py,
 which are optional dependencies.
@@ -24,9 +25,9 @@ Prerequisites for using ``enpkg-quickstart`` are:
 
 - A working Canopy or EPD installation, and
 
-- A working MPI distribution that provides the ``mpicc`` compiler wrapper, *OR*
-  a working copy of HomeBrew or MacPorts to install MPI (MacPorts users will
-  need 'sudo' privileges)
+- A working MPI distribution that provides the ``mpicc`` compiler wrapper
+- *OR* a working copy of HomeBrew or MacPorts to install MPI (MacPorts users
+  will need 'sudo' privileges)
 
 
 Notes
