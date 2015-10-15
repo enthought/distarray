@@ -259,6 +259,7 @@ on nbviewer (also in the <tt class="docutils literal">examples</tt> directory of
 <li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/features.ipynb">DistArray Features</a></li>
 <li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/seismic_volume/seismic_volume.ipynb">Seismic Volume</a></li>
 <li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/julia_set/julia_set.ipynb">Julia Set</a></li>
+<li><a class="reference external" href="http://nbviewer.ipython.org/github/enthought/distarray/blob/master/examples/gauss_elimination/ge_notebook.ipynb">Gaussian Elimination</a></li>
 </ul>
 </div>
 <div class="section" id="overview">
@@ -294,9 +295,9 @@ all the while <em>acting locally</em> on them for performance and control.</p>
 <h2>Installation</h2>
 <p>DistArray requires the following Python libraries:</p>
 <ul class="simple">
-<li><a class="reference external" href="http://www.numpy.org">NumPy</a>,</li>
-<li><a class="reference external" href="http://ipython.org">IPython</a>, and</li>
-<li><a class="reference external" href="http://mpi4py.scipy.org">Mpi4Py</a>.</li>
+<li><a class="reference external" href="http://www.numpy.org">numpy</a>,</li>
+<li><a class="reference external" href="https://github.com/ipython/ipyparallel">ipyparallel</a>, and</li>
+<li><a class="reference external" href="http://mpi4py.scipy.org">mpi4py</a>.</li>
 </ul>
 <p>Optionally, DistArray can make use of:</p>
 <ul class="simple">
@@ -312,11 +313,19 @@ python setup.py install
 pip install distarray
 </pre>
 </div>
+<div class="section" id="experimental-quickstart-scripts">
+<h2>Experimental quickstart scripts</h2>
+<p>Alternatively, we have experimental installation scripts in the <tt class="docutils literal">quickstart</tt>
+directory of the root of this source tree.  Given a Canopy or Anaconda
+installation and a couple of other prerequisites, these scripts attempt to
+install DistArray and its dependencies for you.  See the readme files in that
+directory for more information.</p>
+</div>
 <div class="section" id="testing-your-installation">
 <h2>Testing Your Installation</h2>
 <p>To test your installation, you will first need to start an IPython.parallel
-cluster with MPI enabled.  The easist way is to use use the <tt class="docutils literal">dacluster</tt>
-command that comes with DistArray:</p>
+cluster with MPI enabled.  The easist way is to use the <tt class="docutils literal">dacluster</tt> command
+that comes with DistArray:</p>
 <pre class="literal-block">
 dacluster start
 </pre>
@@ -329,7 +338,8 @@ directory with:</p>
 <pre class="literal-block">
 make test
 </pre>
-<p>or from anywhere with:</p>
+<p>If you've installed DistArray with <tt class="docutils literal">python setup.py develop</tt>, you should be
+able to run the tests  from anywhere with:</p>
 <pre class="literal-block">
 python -m distarray.run_tests
 </pre>
@@ -337,9 +347,8 @@ python -m distarray.run_tests
 <div class="section" id="history">
 <h2>History</h2>
 <p>DistArray was started by Brian Granger in 2008 and is currently being developed
-at Enthought by a team led by Kurt Smith, in partnership with Bill Spotz from
-Sandia's (Py)Trilinos project and Brian Granger and Min RK from the IPython
-project.</p>
+by Enthought in partnership with Bill Spotz from Sandia's (Py)Trilinos project
+and Brian Granger and Min RK from the IPython project.</p>
 </div>
 
         </div>

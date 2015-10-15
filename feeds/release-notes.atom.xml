@@ -1,5 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>DistArray</title><link href="http://docs.enthought.com/distarray/" rel="alternate"></link><link href="http://docs.enthought.com/distarray/feeds/release-notes.atom.xml" rel="self"></link><id>http://docs.enthought.com/distarray/</id><updated>2014-08-03T00:00:00-05:00</updated><entry><title></title><link href="http://docs.enthought.com/distarray/release-0-5-0.html" rel="alternate"></link><updated>2014-08-03T00:00:00-05:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-08-03:distarray/release-0-5-0.html</id><summary type="html">&lt;div class="section" id="distarray-0-5-release"&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>DistArray</title><link href="http://docs.enthought.com/distarray/" rel="alternate"></link><link href="http://docs.enthought.com/distarray/feeds/release-notes.atom.xml" rel="self"></link><id>http://docs.enthought.com/distarray/</id><updated>2015-10-15T00:00:00-05:00</updated><entry><title></title><link href="http://docs.enthought.com/distarray/release-0-6-0.html" rel="alternate"></link><updated>2015-10-15T00:00:00-05:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2015-10-15:distarray/release-0-6-0.html</id><summary type="html">&lt;div class="section" id="distarray-0-6-release"&gt;
+&lt;h2&gt;DistArray 0.6 release&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;Mailing List:&lt;/strong&gt; &lt;a class="reference external" href="mailto:distarray&amp;#64;googlegroups.com"&gt;distarray&amp;#64;googlegroups.com&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Documentation:&lt;/strong&gt; &lt;a class="reference external" href="http://distarray.readthedocs.org"&gt;http://distarray.readthedocs.org&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;License:&lt;/strong&gt; Three-clause BSD&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Python versions:&lt;/strong&gt; 2.7, 3.4, and 3.5&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;OS support:&lt;/strong&gt; *nix and Mac OS X&lt;/p&gt;
+&lt;div class="section" id="what-is-distarray"&gt;
+&lt;h3&gt;What is DistArray?&lt;/h3&gt;
+&lt;p&gt;DistArray aims to bring the ease-of-use of NumPy to data-parallel
+high-performance computing.  It provides distributed multi-dimensional NumPy
+arrays, distributed ufuncs, and distributed IO capabilities.  It can
+efficiently interoperate with external distributed libraries like Trilinos.
+DistArray works with NumPy and builds on top of it in a flexible and natural
+way.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="release"&gt;
+&lt;h3&gt;0.6 Release&lt;/h3&gt;
+&lt;p&gt;Noteworthy improvements in this release include:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;a new website, (&lt;a class="reference external" href="http://docs.enthought.com/distarray/"&gt;http://docs.enthought.com/distarray/&lt;/a&gt;), with links to
+DistArray talks and presentations,&lt;/li&gt;
+&lt;li&gt;redistribution for block-distributed (and non-distributed) DistArrays,&lt;/li&gt;
+&lt;li&gt;experimental &amp;quot;quickstart&amp;quot; installation scripts,&lt;/li&gt;
+&lt;li&gt;an easier API for &lt;tt class="docutils literal"&gt;Context.apply&lt;/tt&gt;&lt;/li&gt;
+&lt;li&gt;expanded and improved example notebooks, including a new parallel Gaussian
+Elimination example by Prashant Mital,&lt;/li&gt;
+&lt;li&gt;compatibility with NumPy 1.9,&lt;/li&gt;
+&lt;li&gt;expanded TravisCI testing (OS X and Python 3.5),&lt;/li&gt;
+&lt;li&gt;logos by Erick Michaud, and&lt;/li&gt;
+&lt;li&gt;several bug-fixes and code improvements.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="existing-features"&gt;
+&lt;h3&gt;Existing features&lt;/h3&gt;
+&lt;p&gt;DistArray&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;supports NumPy-like slicing, reductions, and ufuncs on distributed
+multidimensional arrays;&lt;/li&gt;
+&lt;li&gt;has a client-engine process design -- data resides on the worker processes,
+commands are initiated from master;&lt;/li&gt;
+&lt;li&gt;allows full control over what is executed on the worker processes and
+integrates transparently with the master process;&lt;/li&gt;
+&lt;li&gt;allows direct communication between workers, bypassing the master process
+for scalability;&lt;/li&gt;
+&lt;li&gt;integrates with IPython.parallel for interactive creation and exploration of
+distributed data;&lt;/li&gt;
+&lt;li&gt;supports distributed ufuncs (currently without broadcasting);&lt;/li&gt;
+&lt;li&gt;builds on and leverages MPI via MPI4Py in a transparent and user-friendly
+way;&lt;/li&gt;
+&lt;li&gt;has basic support for unstructured arrays;&lt;/li&gt;
+&lt;li&gt;supports user-controllable array distributions across workers (block,
+cyclic, block-cyclic, and unstructured) on a per-axis basis;&lt;/li&gt;
+&lt;li&gt;has a straightforward API to control how an array is distributed;&lt;/li&gt;
+&lt;li&gt;has basic plotting support for visualization of array distributions;&lt;/li&gt;
+&lt;li&gt;separates the array’s distribution from the array’s data -- useful for
+slicing, reductions, redistribution, broadcasting, and other operations;&lt;/li&gt;
+&lt;li&gt;implements distributed random arrays;&lt;/li&gt;
+&lt;li&gt;supports &lt;tt class="docutils literal"&gt;.npy&lt;/tt&gt;-like flat-file IO and hdf5 parallel IO (via &lt;tt class="docutils literal"&gt;h5py&lt;/tt&gt;);
+leverages MPI-based IO parallelism in an easy-to-use and transparent way;
+and&lt;/li&gt;
+&lt;li&gt;supports the distributed array protocol &lt;a class="citation-reference" href="#protocol" id="id1"&gt;[protocol]&lt;/a&gt;, which allows
+independently developed parallel libraries to share distributed arrays
+without copying, analogous to the PEP-3118 new buffer protocol.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="planned-features"&gt;
+&lt;h3&gt;Planned features&lt;/h3&gt;
+&lt;p&gt;Planned features include&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;array re-distribution capabilities for more distribution types;&lt;/li&gt;
+&lt;li&gt;lazy evaluation and deferred computation for latency hiding;&lt;/li&gt;
+&lt;li&gt;examples of interoperation with Trilinos &lt;a class="citation-reference" href="#trilinos" id="id2"&gt;[Trilinos]&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;distributed broadcasting support.&lt;/li&gt;
+&lt;li&gt;integration with other packages &lt;a class="citation-reference" href="#petsc" id="id3"&gt;[petsc]&lt;/a&gt; that subscribe to the distributed
+array protocol &lt;a class="citation-reference" href="#protocol" id="id4"&gt;[protocol]&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;distributed fancy indexing;&lt;/li&gt;
+&lt;li&gt;out-of-core computations;&lt;/li&gt;
+&lt;li&gt;support for distributed sorting and other non-trivial distributed
+algorithms; and&lt;/li&gt;
+&lt;li&gt;end-user control over communication and temporary array creation, and other
+performance aspects of distributed computations.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="history-and-funding"&gt;
+&lt;h3&gt;History and funding&lt;/h3&gt;
+&lt;p&gt;Brian Granger started DistArray as a NASA-funded SBIR project in 2008.
+Enthought picked it up as part of a DOE Phase II SBIR &lt;a class="citation-reference" href="#sbir" id="id5"&gt;[SBIR]&lt;/a&gt; to provide a
+generally useful distributed array package.  It builds on NumPy, MPI, MPI4Py,
+IPython, IPython.parallel, and interfaces with the Trilinos suite of
+distributed HPC solvers (via PyTrilinos &lt;a class="citation-reference" href="#trilinos" id="id6"&gt;[Trilinos]&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;This material is based upon work supported by the Department of Energy under
+Award Number DE-SC0007699.&lt;/p&gt;
+&lt;p&gt;This report was prepared as an account of work sponsored by an agency of the
+United States Government.  Neither the United States Government nor any agency
+thereof, nor any of their employees, makes any warranty, express or implied,
+or assumes any legal liability or responsibility for the accuracy,
+completeness, or usefulness of any information, apparatus, product, or process
+disclosed, or represents that its use would not infringe privately owned
+rights.  Reference herein to any specific commercial product, process, or
+service by trade name, trademark, manufacturer, or otherwise does not
+necessarily constitute or imply its endorsement, recommendation, or favoring
+by the United States Government or any agency thereof.  The views and opinions
+of authors expressed herein do not necessarily state or reflect those of the
+United States Government or any agency thereof.&lt;/p&gt;
+&lt;table class="docutils citation" frame="void" id="protocol" rules="none"&gt;
+&lt;colgroup&gt;&lt;col class="label" /&gt;&lt;col /&gt;&lt;/colgroup&gt;
+&lt;tbody valign="top"&gt;
+&lt;tr&gt;&lt;td class="label"&gt;[protocol]&lt;/td&gt;&lt;td&gt;&lt;em&gt;(&lt;a class="fn-backref" href="#id1"&gt;1&lt;/a&gt;, &lt;a class="fn-backref" href="#id4"&gt;2&lt;/a&gt;)&lt;/em&gt; &lt;a class="reference external" href="http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/"&gt;http://distributed-array-protocol.readthedocs.org/en/rel-0.10.0/&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;table class="docutils citation" frame="void" id="trilinos" rules="none"&gt;
+&lt;colgroup&gt;&lt;col class="label" /&gt;&lt;col /&gt;&lt;/colgroup&gt;
+&lt;tbody valign="top"&gt;
+&lt;tr&gt;&lt;td class="label"&gt;[Trilinos]&lt;/td&gt;&lt;td&gt;&lt;em&gt;(&lt;a class="fn-backref" href="#id2"&gt;1&lt;/a&gt;, &lt;a class="fn-backref" href="#id6"&gt;2&lt;/a&gt;)&lt;/em&gt; &lt;a class="reference external" href="http://trilinos.org/"&gt;http://trilinos.org/&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;table class="docutils citation" frame="void" id="petsc" rules="none"&gt;
+&lt;colgroup&gt;&lt;col class="label" /&gt;&lt;col /&gt;&lt;/colgroup&gt;
+&lt;tbody valign="top"&gt;
+&lt;tr&gt;&lt;td class="label"&gt;&lt;a class="fn-backref" href="#id3"&gt;[petsc]&lt;/a&gt;&lt;/td&gt;&lt;td&gt;&lt;a class="reference external" href="http://www.mcs.anl.gov/petsc/"&gt;http://www.mcs.anl.gov/petsc/&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;table class="docutils citation" frame="void" id="sbir" rules="none"&gt;
+&lt;colgroup&gt;&lt;col class="label" /&gt;&lt;col /&gt;&lt;/colgroup&gt;
+&lt;tbody valign="top"&gt;
+&lt;tr&gt;&lt;td class="label"&gt;&lt;a class="fn-backref" href="#id5"&gt;[SBIR]&lt;/a&gt;&lt;/td&gt;&lt;td&gt;&lt;a class="reference external" href="http://www.sbir.gov/sbirsearch/detail/410257"&gt;http://www.sbir.gov/sbirsearch/detail/410257&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;!-- vim:spell --&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</summary><category term="releases"></category></entry><entry><title></title><link href="http://docs.enthought.com/distarray/release-0-5-0.html" rel="alternate"></link><updated>2014-08-03T00:00:00-05:00</updated><author><name>IPython development team and Enthought, Inc.</name></author><id>tag:docs.enthought.com,2014-08-03:distarray/release-0-5-0.html</id><summary type="html">&lt;div class="section" id="distarray-0-5-release"&gt;
 &lt;h2&gt;DistArray 0.5 release&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;Mailing List:&lt;/strong&gt; &lt;a class="reference external" href="mailto:distarray&amp;#64;googlegroups.com"&gt;distarray&amp;#64;googlegroups.com&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Documentation:&lt;/strong&gt; &lt;a class="reference external" href="http://distarray.readthedocs.org"&gt;http://distarray.readthedocs.org&lt;/a&gt;&lt;/p&gt;
