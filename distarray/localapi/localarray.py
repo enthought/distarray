@@ -56,7 +56,7 @@ def _mpi_dtype_from_intervals(larr, glb_intervals):
     local_intervals = _massage_indices(larr.distribution, glb_intervals)
     blocklengths = [stop-start for (start, stop) in local_intervals]
     displacements = [start for (start, _) in local_intervals]
-    mpidtype = MPI.__TypeDict__[np.sctype2char(larr.dtype)]
+    mpidtype = MPI._typedict[np.sctype2char(larr.dtype)]
     newtype = mpidtype.Create_indexed(blocklengths, displacements)
     newtype.Commit()
     return newtype
