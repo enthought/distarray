@@ -90,6 +90,32 @@ def import_or_skip(name):
         raise unittest.SkipTest(errmsg)
 
 
+def import_parallel_h5py():
+    """Import h5py built against parallel HDF5. Raise SkipTest on failure.
+
+    Returns
+    -------
+    h5py_module: module object
+        Module object imported by importlib.
+
+    Raises
+    ------
+    unittest.SkipTest
+        If the attempted import raises an ImportError.
+
+    Examples
+    --------
+    >>> h5py = import_parallel_h5py('h5py')
+    >>> h5py.get_config()
+    <h5py.h5.H5PYConfig at 0x103dd5a78>
+
+    """
+    h5py = import_or_skip('h5py')
+    if not h5py.get_config().mpi:
+        errmsg = 'h5py not built against parallel hdf5... skipping.'
+        raise unittest.SkipTest(errmsg)
+
+
 def comm_null_passes(fn):
     """Decorator. If `self.comm` is COMM_NULL, pass.
 
