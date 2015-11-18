@@ -16,7 +16,7 @@ else:
     install_requires = [
         'ipyparallel',
         'numpy',
-        'mpi4py'
+        'mpi4py >= 2.0.0'
     ]
 
 
