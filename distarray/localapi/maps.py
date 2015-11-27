@@ -295,6 +295,79 @@ class BlockMap(MapBase):
         return slice(self.start, self.stop)
 
 
+class MirrorMap(MapBase):
+    """
+    One-dimensional mirror map class.
+    """
+
+    dist = 'm'
+
+    def __init__(self, global_size, grid_size, grid_rank, start, stop):
+        self.start = start
+        self.stop = stop
+        self.local_size = stop - start
+        self.global_size = global_size
+        self.grid_size = grid_size
+        self.grid_rank = grid_rank
+
+    def local_from_global_index(self, gidx):
+        if gidx < self.start or gidx >= self.stop:
+            raise IndexError("Global index %s out of bounds" % gidx)
+        return gidx - self.start
+
+    def local_from_global_slice(self, gidx):
+        # we don't make the effort to compute the exact slice
+        # `__getitem__` doesn't care about overly-large slices, we just
+        # have to get the offset from the start correct based on the `step`
+        start = gidx.start if gidx.start is not None else 0
+        stop = gidx.stop if gidx.stop is not None else self.global_size
+        step = gidx.step if gidx.step is not None else 1
+        new_start = start - self.start
+        if new_start < 0:  # don't allow negative starts
+            new_start += step * abs(new_start // step)
+            if new_start < 0:
+                new_start += step
+        new_stop = stop - self.start
+        return slice(new_start, new_stop, gidx.step)
+
+    def global_from_local_index(self, lidx):
+        if lidx >= self.local_size:
+            raise IndexError("Local index %s out of bounds" % lidx)
+        return lidx + self.start
+
+    def global_from_local_slice(self, lidx):
+        start = lidx.start if lidx.start is not None else 0
+        stop = lidx.stop if lidx.stop is not None else self.global_size
+        new_start = start + self.start
+        new_stop = stop + self.start
+        return slice(new_start, new_stop)
+
+    @property
+    def dim_dict(self):
+        return {'dist_type': self.dist,
+                'size': self.global_size,
+                'proc_grid_rank': self.grid_rank,
+                'proc_grid_size': self.grid_size,
+                'start': self.start,
+                'stop': self.stop,
+                }
+
+    @property
+    def global_iter(self):
+        return iter(range(self.start, self.stop))
+
+    @property
+    def size(self):
+        return self.local_size
+
+    @property
+    def global_slice(self):
+        """Return a slice representing the global index space of this
+        dimension.
+        """
+        return slice(self.start, self.stop)
+
+
 class CyclicMap(MapBase):
     """ One-dimensional cyclic map class.
     """

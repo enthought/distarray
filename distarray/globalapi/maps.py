@@ -74,6 +74,7 @@ def choose_map(dist_type):
     """Choose a map class given one of the distribution types."""
     cls_from_dist_type = {
         'b': BlockMap,
+        'm': MirrorMap,
         'c': BlockCyclicMap,
         'n': NoDistMap,
         'u': UnstructuredMap,
@@ -406,6 +407,137 @@ class BlockMap(MapBase):
         if isinstance(other, NoDistMap):
             return other.is_compatible(self)
         return super(BlockMap, self).is_compatible(other)
+
+
+class MirrorMap(MapBase):
+
+    dist = 'm'
+
+    @classmethod
+    def from_global_dim_dict(cls, glb_dim_dict):
+        if glb_dim_dict['dist_type'] != 'm':
+            msg = "Wrong dist_type (%r) for mirror map."
+            raise ValueError(msg % glb_dim_dict['dist_type'])
+
+        bounds = glb_dim_dict['bounds']
+        tuple_bounds = list(zip(bounds[:-1], bounds[1:]))
+
+        size = bounds[-1]
+        grid_size = max(len(bounds) - 1, 1)
+
+        comm_padding = int(glb_dim_dict.get('comm_padding', 0))
+        boundary_padding = int(glb_dim_dict.get('boundary_padding', 0))
+
+        return cls(size=size, grid_size=grid_size, bounds=tuple_bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
+
+    @classmethod
+    def from_axis_dim_dicts(cls, axis_dim_dicts):
+        dd = axis_dim_dicts[0]
+        if dd['dist_type'] != 'm':
+            msg = "Wrong dist_type (%r) for mirror map."
+            raise ValueError(msg % dd['dist_type'])
+
+        size = dd['size']
+        grid_size = dd['proc_grid_size']
+        if grid_size != len(axis_dim_dicts):
+            msg = ("Number of dimension dictionaries (%r)"
+                   "inconsistent with proc_grid_size (%r).")
+            raise ValueError(msg % (len(axis_dim_dicts), grid_size))
+        bounds = [(d['start'], d['stop']) for d in axis_dim_dicts]
+        boundary_padding, comm_padding = dd.get('padding', (0, 0))
+
+        return cls(size=size, grid_size=grid_size, bounds=bounds,
+                   comm_padding=comm_padding,
+                   boundary_padding=boundary_padding)
+
+    def __init__(self, size, grid_size, bounds=None,
+                 comm_padding=None, boundary_padding=None):
+        self.size = size
+        self.grid_size = grid_size
+        if bounds is None:
+            self.bounds = [_start_stop_block(size, grid_size, grid_rank)
+                           for grid_rank in range(grid_size)]
+        else:
+            self.bounds = bounds
+        self.comm_padding = comm_padding or 0
+        self.boundary_padding = boundary_padding or 0
+
+    def index_owners(self, idx):
+        coords = []
+        for (coord, (lower, upper)) in enumerate(self.bounds):
+            if lower <= idx < upper:
+                coords.append(coord)
+        return coords
+
+    def slice_owners(self, idx):
+        coords = []
+        start = idx.start if idx.start is not None else 0
+        stop = idx.stop if idx.stop is not None else self.size
+        step = idx.step if idx.step is not None else 1
+        for (coord, (lower, upper)) in enumerate(self.bounds):
+            if tuple_intersection((start, stop, step), (lower, upper)):
+                coords.append(coord)
+        return coords
+
+    def get_dimdicts(self):
+        bounds = self.bounds or [[0, 0]]
+        grid_ranks = range(len(bounds))
+        cpadding = self.comm_padding
+        padding = [[cpadding, cpadding] for _ in grid_ranks]
+        if len(padding) > 0:
+            padding[0][0] = self.boundary_padding
+            padding[-1][-1] = self.boundary_padding
+        data_tuples = zip(grid_ranks, padding, bounds)
+        # Build the result
+        out = []
+        for grid_rank, padding, (start, stop) in data_tuples:
+            out.append({
+                'dist_type': 'm',
+                'size': self.size,
+                'proc_grid_size': self.grid_size,
+                'proc_grid_rank': grid_rank,
+                'start': start,
+                'stop': stop,
+                'padding': padding,
+                })
+        return tuple(out)
+
+    def slice(self, idx):
+        """Make a new Map from a slice."""
+        new_bounds = [0]
+        start = idx.start if idx.start is not None else 0
+        step = idx.step if idx.step is not None else 1
+        # iterate over the processes in this dimension
+        for proc_start, proc_stop in self.bounds:
+            stop = idx.stop if idx.stop is not None else proc_stop
+            isection = tuple_intersection((start, stop, step),
+                                          (proc_start, proc_stop))
+            if isection:
+                isection_size = int(np.ceil((isection[1] - (isection[0])) / step))
+                new_bounds.append(isection_size + new_bounds[-1])
+        if new_bounds == [0]:
+            new_bounds = []
+
+        size = new_bounds[-1] if len(new_bounds) > 0 else 0
+        grid_size = max(len(new_bounds) - 1, 1)
+        new_bounds = list(zip(new_bounds[:-1], new_bounds[1:]))
+        return self.__class__(size=size, grid_size=grid_size,
+                              bounds=new_bounds)
+
+    def view(self, new_dimsize):
+        """Scale this map for the `view` method."""
+        factor = new_dimsize / self.size
+        new_bounds = [(int(start*factor), int(stop*factor))
+                      for (start, stop) in self.bounds]
+        return self.__class__(size=int(new_dimsize), grid_size=self.grid_size,
+                              bounds=new_bounds)
+
+    def is_compatible(self, other):
+        if isinstance(other, NoDistMap):
+            return other.is_compatible(self)
+        return super(MirrorMap, self).is_compatible(other)
 
 
 class BlockCyclicMap(MapBase):
