@@ -51,8 +51,8 @@ def check_grid_shape_preconditions(shape, dist, comm_size):
     if any(i < 0 for i in shape):
         raise ValueError("shape must be a sequence of non-negative integers, "
                          "shape = %s" % (shape,))
-    if any(i not in ('b', 'c', 'n', 'u') for i in dist):
-        raise ValueError("dist must be a sequence of 'b', 'n', 'c', 'u' "
+    if any(i not in ('b', 'm', 'c', 'n', 'u') for i in dist):
+        raise ValueError("dist must be a sequence of 'b', 'm', 'n', 'c', 'u' "
                          "strings, dist = %s" % (dist,))
 
 
@@ -265,6 +265,7 @@ def distribute_indices(dd):
     try:
         {'n': lambda dd: None,
          'b': distribute_block_indices,
+         'm': lambda dd: None, # size is default
          'c': distribute_cyclic_indices}[dist_type](dd)
     except KeyError:
         msg = "dist_type %r not supported."
@@ -511,6 +512,7 @@ def size_chooser(dist_type):
     """
     chooser = {'n': non_dist_size,
                'b': block_size,
+               'm': non_dist_size,
                'c': c_or_bc_chooser,
                'u': unstructured_size}
     return chooser[dist_type]
