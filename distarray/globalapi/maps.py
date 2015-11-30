@@ -477,8 +477,6 @@ class MirrorMap(MapBase):
                 'size': self.size,
                 'proc_grid_size': self.grid_size,
                 'proc_grid_rank': grid_rank,
-                'start': 0,
-                'stop': self.size,
                 'padding': padding,
                 })
         return tuple(out)
