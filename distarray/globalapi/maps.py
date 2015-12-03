@@ -74,7 +74,7 @@ def choose_map(dist_type):
     """Choose a map class given one of the distribution types."""
     cls_from_dist_type = {
         'b': BlockMap,
-        'm': MirrorMap,
+        'o': BroadcastMap,
         'c': BlockCyclicMap,
         'n': NoDistMap,
         'u': UnstructuredMap,
@@ -409,13 +409,13 @@ class BlockMap(MapBase):
         return super(BlockMap, self).is_compatible(other)
 
 
-class MirrorMap(MapBase):
+class BroadcastMap(MapBase):
 
-    dist = 'm'
+    dist = 'o'
 
     @classmethod
     def from_global_dim_dict(cls, glb_dim_dict):
-        if glb_dim_dict['dist_type'] != MirrorMap.dist:
+        if glb_dim_dict['dist_type'] != BroadcastMap.dist:
             msg = "Wrong dist_type (%r) for mirror map."
             raise ValueError(msg % glb_dim_dict['dist_type'])
 
@@ -432,7 +432,7 @@ class MirrorMap(MapBase):
     @classmethod
     def from_axis_dim_dicts(cls, axis_dim_dicts):
         dd = axis_dim_dicts[0]
-        if dd['dist_type'] != MirrorMap.dist:
+        if dd['dist_type'] != BroadcastMap.dist:
             msg = "Wrong dist_type (%r) for mirror map."
             raise ValueError(msg % dd['dist_type'])
 
@@ -473,7 +473,7 @@ class MirrorMap(MapBase):
         out = []
         for grid_rank, padding in data_tuples:
             out.append({
-                'dist_type': 'm',
+                'dist_type': 'o',
                 'size': self.size,
                 'proc_grid_size': self.grid_size,
                 'proc_grid_rank': grid_rank,
@@ -504,7 +504,7 @@ class MirrorMap(MapBase):
     def is_compatible(self, other):
         if isinstance(other, NoDistMap):
             return other.is_compatible(self)
-        return super(MirrorMap, self).is_compatible(other)
+        return super(BroadcastMap, self).is_compatible(other)
 
 
 class BlockCyclicMap(MapBase):

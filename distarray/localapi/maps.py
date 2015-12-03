@@ -197,8 +197,8 @@ def map_from_dim_dict(dd):
     if dist_type == 'b':
         return BlockMap(global_size=size, grid_size=grid_size,
                         grid_rank=grid_rank, start=start, stop=stop)
-    if dist_type == 'm':
-        return MirrorMap(global_size=size, grid_size=grid_size,
+    if dist_type == 'o':
+        return BroadcastMap(global_size=size, grid_size=grid_size,
                         grid_rank=grid_rank, size=size)
     if dist_type == 'c' and block_size == 1:
         return CyclicMap(global_size=size, grid_size=grid_size,
@@ -298,12 +298,12 @@ class BlockMap(MapBase):
         return slice(self.start, self.stop)
 
 
-class MirrorMap(MapBase):
+class BroadcastMap(MapBase):
     """
     One-dimensional mirror map class.
     """
 
-    dist = 'm'
+    dist = 'o'
 
     def __init__(self, global_size, grid_size, grid_rank, size):
         self.local_size = size
