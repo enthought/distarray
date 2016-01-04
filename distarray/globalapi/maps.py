@@ -184,7 +184,7 @@ class MapBase(object):
         pass
 
     def _is_compatible_degenerate(self, map):
-        right_types = all(isinstance(m, (NoDistMap, BlockMap, BlockCyclicMap))
+        right_types = all(isinstance(m, (NoDistMap, BlockMap, BroadcastMap, BlockCyclicMap))
                           for m in (self, map))
         return (right_types
                 and self.grid_size == map.grid_size == 1
@@ -273,7 +273,7 @@ class NoDistMap(MapBase):
         return self.__class__(size=int(new_dimsize), grid_size=1)
 
     def is_compatible(self, other):
-        return (isinstance(other, (NoDistMap, BlockMap, BlockCyclicMap)) and
+        return (isinstance(other, (NoDistMap, BlockMap, BroadcastMap, BlockCyclicMap)) and
                 other.grid_size == self.grid_size and 
                 other.size == self.size)
 
