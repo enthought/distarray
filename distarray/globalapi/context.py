@@ -78,6 +78,12 @@ class BaseContext(object):
     def push_function(self, key, func):
         pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        self.close()
+
     def _setup_context_key(self):
         """
         Create a dict on the engines which will hold everything from
@@ -206,7 +212,7 @@ class BaseContext(object):
             from numpy import allclose
             return allclose(la.ndarray, lb.ndarray, rtol, atol)
 
-        local_results = self.apply(local_allclose, 
+        local_results = self.apply(local_allclose,
                                   (a.key, b.key, rtol, atol),
                                   targets=a.targets)
         return all(local_results)
@@ -580,7 +586,7 @@ class BaseContext(object):
             return pxy.type_str == str(type(None))
 
         def is_LocalArray(pxy):
-            return (isinstance(pxy, Proxy) and 
+            return (isinstance(pxy, Proxy) and
                     pxy.type_str == "<class 'distarray.localapi.localarray.LocalArray'>")
 
         if all(is_LocalArray(r) for r in results):

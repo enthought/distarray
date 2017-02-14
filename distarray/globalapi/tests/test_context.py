@@ -9,7 +9,6 @@ Tests for distarray's contexts.
 
 Many of these tests require a 4-engine cluster to be running locally.  The
 engines should be launched with MPI, using the MPIEngineSetLauncher.
-
 """
 
 import unittest
@@ -25,6 +24,17 @@ from distarray.globalapi.context import Context
 from distarray.globalapi.maps import Distribution
 from distarray.mpionly_utils import is_solo_mpi_process
 from distarray.localapi import LocalArray
+
+
+class TestContextManager(DefaultContextTestCase):
+
+    ntargets = 'any'
+
+    def test_manager(self):
+        with Context() as mycon:
+            testarr = mycon.zeros((10,10))
+        # `close` is currently a no-op for MPI contexts, so I don't test
+        # anything regarding the __exit__ behavior
 
 
 class TestRegister(DefaultContextTestCase):
